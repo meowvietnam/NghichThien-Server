@@ -2,6 +2,12 @@
 import { RouterView } from 'vue-router'
 import AppHeader from './components/layout/AppHeader.vue'
 import AppFooter from './components/layout/AppFooter.vue'
+import { onMounted } from 'vue';
+const env = import.meta.env;
+onMounted(() => {
+  const apiUrl = env.VITE_API_BASE_URL;
+  console.log(apiUrl)
+})
 </script>
 
 <template>
