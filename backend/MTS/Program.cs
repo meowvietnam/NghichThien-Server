@@ -8,10 +8,10 @@ public static class Program
     {
         var app = new Application();
         
-        var tcpServer = new TcpServer(9000);
+        var tcpServer = new TcpServer(6785);
         app.AddServer(tcpServer);
 
-        var httpServer = new HttpServer(443);
+        var httpServer = new HttpServer(9481);
         app.AddServer(httpServer);
 
         app.RunAll();
