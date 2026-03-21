@@ -1,0 +1,12 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+.vscode/
+docker-compose.yml
+.env
+appsettings.json
+*.sln
+*.sln.DotSettings.user
