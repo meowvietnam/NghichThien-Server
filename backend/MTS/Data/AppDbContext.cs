@@ -7,6 +7,7 @@ namespace MTS.Data;
 
 public class AppDbContext : DbContext
 {
+    public DbSet<DeveloperAccount> DeveloperAccounts { get; set; }
     public DbSet<UserData> Users { get; private set; }
     public DbSet<CharacterData> Characters { get; private set; }
     public DbSet<CharacterStats> CharacterStats { get; private set; }
@@ -16,6 +17,15 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DeveloperAccount>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserName).IsUnique();
+            e.HasOne(x => x.UserData)
+                .WithOne()
+                .HasForeignKey<DeveloperAccount>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<UserData>((e) =>
         {
             e.HasKey(x => x.Id);

@@ -57,6 +57,28 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "DeveloperAccounts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    UserName = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeveloperAccounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeveloperAccounts_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "CharacterStats",
                 columns: table => new
                 {
@@ -103,6 +125,18 @@ namespace MTS.Migrations
                 name: "IX_Characters_UserId",
                 table: "Characters",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeveloperAccounts_UserId",
+                table: "DeveloperAccounts",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeveloperAccounts_UserName",
+                table: "DeveloperAccounts",
+                column: "UserName",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -110,6 +144,9 @@ namespace MTS.Migrations
         {
             migrationBuilder.DropTable(
                 name: "CharacterStats");
+
+            migrationBuilder.DropTable(
+                name: "DeveloperAccounts");
 
             migrationBuilder.DropTable(
                 name: "Characters");

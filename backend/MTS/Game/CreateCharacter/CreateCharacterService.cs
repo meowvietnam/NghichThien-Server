@@ -1,4 +1,8 @@
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+using MTS.Data;
 using MTS.Models;
+using Network;
 
 namespace MTS.Game.CreateCharacter;
 
@@ -9,6 +13,88 @@ public class CreateCharacterService
     public CreateCharacterService()
     {
         Char = new CharacterData(GameConfig.CharacterTemplate);
+    }
+
+    public void SetName(string name)
+    {
+        ValidateName(name);
+        Char.Name = name;
+    }
+
+    public void CreateSkin(CreateSkinRequest request)
+    {
+        request.RoundColor(2);
+        var gender = request.Gender;
+        var skins = request.Skins;
+        var colors = request.Colors;
+        var newSkins = new Dictionary<string, string>();
+        var newColors = new Dictionary<string, Color>();
+        var resources = GameConfig.SkinResources;
+        var skinGenderGroup = resources.GenderSkinGroups.FirstOrDefault(x => x.Gender == gender);
+        if (skinGenderGroup == null)
+        {
+            throw new Exception(ExceptionMessage.SkinGenderInvalid);
+        }
+        foreach (var skinGroup in skinGenderGroup.SkinGroups)
+        {
+            foreach (var skinGroupCategory in skinGroup.Categories)
+            {
+                var categoryId = skinGroupCategory.Id;
+                if (!skins.TryGetValue(categoryId, out var skin))
+                {
+                    throw new Exception(ExceptionMessage.SkinCategoryMissing);
+                }
+                var existed = skinGroupCategory.Skins.Any(x =>
+                    x.Name.Equals(skin, StringComparison.InvariantCultureIgnoreCase));
+                if (!existed)
+                {
+                    throw new Exception(ExceptionMessage.SkinOptionInvalid);
+                }
+                newSkins.Add(categoryId, skin);
+            }
+            foreach (var colorGroup in skinGroup.ColorGroups)
+            {
+                foreach (var colorId in colorGroup.CategoryIds)
+                {
+                    if (!colors.TryGetValue(colorId, out var color))
+                    {
+                        throw new Exception(ExceptionMessage.SkinColorMissing + $" {colorId}");
+                    }
+                    color.A = 1;
+                    newColors[colorId] = color;
+                }
+            }
+        }
+        Char.Gender = gender;
+        Char.Skins = newSkins;
+        Char.Colors = newColors;
+    }
+    private void ValidateName(string name)
+    {
+        using var db = AppDbFactory.Create();
+        ValidateName(db, name);
+    }
+
+    private void ValidateName(AppDbContext db, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new Exception(ExceptionMessage.NameInvalid);
+        }
+        name = name.Trim();
+        if (name.Length <= 5 || name.Length >= 20)
+        {
+            throw new Exception(ExceptionMessage.NameLengthInvalid);
+        }
+        if (!Regex.IsMatch(name, @"^[\p{L}\p{N}\s]+$"))
+        {
+            throw new Exception(ExceptionMessage.NameSpecialCharInvalid);
+        }
+        bool existed = db.Characters.Any(x => x.Name == name);
+        if (existed)
+        {
+            throw new Exception(ExceptionMessage.NameExisted);
+        }
     }
     private List<SelectionModel> Clean(List<SelectionModel> models)
     {
@@ -150,14 +236,13 @@ public class CreateCharacterService
         }
         Char.Stats = stats;
     }
-
     private void Apply(CharacterStats stats, StatModifier modifier, ref int money)
     {
         var newMoney = money - modifier.Cost;
         stats.Apply(modifier);
         money = newMoney;
     }
-    public object Test(List<SelectionModel> selectionModels)
+    public object GetSelection(List<SelectionModel> selectionModels)
     {
         var stepConfig = GameConfig.StepConfig;
         var res = new List<object>();
@@ -226,10 +311,56 @@ public class CreateCharacterService
 
         return res;
     }
+
+    public void Completed()
+    {
+        using var db = AppDbFactory.Create();
+        Completed(db);
+    }
+
+    private void Completed(AppDbContext db)
+    {
+        ValidateName(db, Char.Name);
+        if (Char.IsSkinEmpty())
+        {
+            throw new Exception(ExceptionMessage.SkinCategoryMissing);
+        }
+    }
+
+    public UserData Create(int userId, string name, CreateSkinRequest request, List<SelectionModel> selectionModels)
+    {
+        using var db = AppDbFactory.Create();
+        Char.Name = name.Trim();
+        CreateSkin(request);
+        ApplyStats(selectionModels);
+        var charCount = db.Characters.Count(x => x.UserId == userId);
+        if (charCount >= 3)
+        {
+            throw new Exception(ExceptionMessage.CharacterLimitExceeded);
+        }
+        Char.UserId = userId;
+        db.Characters.Add(Char);
+        db.SaveChanges();
+        db.Entry(Char)
+            .Reference(x => x.Stats)
+            .Load();
+        db.Entry(Char)
+            .Reference(x => x.User)
+            .Load();
+        return Char.User;
+    }
 }
 
 public static class ExceptionMessage
 {
+    public const string SkinGenderInvalid = "Giới tính ngoại hình không hợp lệ!";
+    public const string SkinCategoryMissing = "Chưa chọn đầy đủ các bộ phận ngoại hình!";
+    public const string SkinOptionInvalid = "Tùy chọn ngoại hình không tồn tại!";
+    public const string SkinColorMissing = "Chưa chọn đầy đủ màu sắc ngoại hình!";
+    public const string NameInvalid = "Tên nhân vật không hợp lệ!";
+    public const string NameLengthInvalid = "Tên nhân vật phải lớn hơn 5 và nhỏ hơn 20 ký tự!";
+    public const string NameSpecialCharInvalid = "Tên nhân vật không được chứa ký tự đặc biệt!";
+    public const string NameExisted = "Tên nhân vật đã tồn tại!";
     public const string StepInvalid = "Bước tạo nhân vật không tồn tại hoặc không hợp lệ!";
     public const string GroupInvalid = "Nhóm lựa chọn không hợp lệ!";
     public const string GroupExclusiveViolation = "Phát hiện các nhóm lựa chọn xung đột lẫn nhau!";
@@ -242,4 +373,5 @@ public static class ExceptionMessage
     public const string StatOptionInvalid = "Tùy chọn chỉ số không tồn tại!";
     public const string NotEnoughMoney = "Điểm thiên phú không đủ để thực hiện thao tác này!";
     public const string IsIncomplete = "Chưa thực hiện đầy đủ các bước tiến trình tạo nhân vật!";
+    public const string CharacterLimitExceeded = "Không thể tạo thêm nhân vật, đã đạt giới hạn!";
 }

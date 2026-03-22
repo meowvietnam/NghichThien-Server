@@ -77,4 +77,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Skins = DictionaryUtils.CreateDictionary(reader.ReadArray(), reader.ReadArray());
         value.Colors = DictionaryUtils.CreateDictionary(reader.ReadArray(), reader.ReadArray<Color>());
     }
+    public bool IsSkinEmpty()
+    {
+        return Skins.Count == 0 || Colors.Count == 0;
+    }
 }

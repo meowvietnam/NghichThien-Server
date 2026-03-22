@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260321110552_Initial")]
+    [Migration("20260322125512_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -133,6 +133,32 @@ namespace MTS.Migrations
                     b.ToTable("CharacterStats");
                 });
 
+            modelBuilder.Entity("MTS.Models.DeveloperAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
+                    b.ToTable("DeveloperAccounts");
+                });
+
             modelBuilder.Entity("MTS.Models.UserData", b =>
                 {
                     b.Property<int>("Id")
@@ -166,6 +192,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharacterData");
+                });
+
+            modelBuilder.Entity("MTS.Models.DeveloperAccount", b =>
+                {
+                    b.HasOne("MTS.Models.UserData", "UserData")
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.DeveloperAccount", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserData");
                 });
 
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
