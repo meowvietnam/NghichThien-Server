@@ -1,0 +1,243 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using MTS.Game.CreateCharacter;
+using Network;
+using Network.Extensions;
+using Action = MTS.Game.CreateCharacter.Action;
+
+namespace MTS.Models;
+
+public class CharacterStats : IMemorySerializable<CharacterStats>
+{
+    public float Kim { get; private set; }
+    public float Moc { get; private set; }
+    public float Thuy { get; private set; }
+    public float Hoa { get; private set; }
+    public float Tho { get; private set; }
+    public float Ma { get; private set; }
+    public int TuChat { get; private set; }
+    public int NgoTinh { get; private set; }
+    public int ThanThuc { get; private set; }
+    public int TocDoBay { get; private set; }
+    public int LinhThach { get; private set; }
+    public int SinhMenh { get; private set; }
+    public int ThoNguyen { get; private set; }
+    public int TamCanh { get; private set; }
+    public LinhCan LinhCan { get; private set; }
+    public Ability Ability { get; private set; }
+    public int NgoDao { get; private set; }
+    public int DanDoc { get; private set; }
+    public int TuoiTac { get; private set; }
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public int CharId { get; set; }
+    [ForeignKey(nameof(CharId)), Key] 
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public CharacterData CharacterData { get; set; }
+
+    public CharacterStats()
+    {
+        
+    }
+    public CharacterStats(CharacterStats stats)
+    {
+        CopyFrom(stats);
+    }
+    public void CopyFrom(CharacterStats stats)
+    {
+        Kim = stats.Kim;
+        Moc = stats.Moc;
+        Thuy = stats.Thuy;
+        Hoa = stats.Hoa;
+        Tho = stats.Tho;
+        Ma = stats.Ma;
+        TuChat = stats.TuChat;
+        NgoTinh = stats.NgoTinh;
+        ThanThuc = stats.ThanThuc;
+        TocDoBay = stats.TocDoBay;
+        LinhThach = stats.LinhThach;
+        SinhMenh = stats.SinhMenh;
+        ThoNguyen = stats.ThoNguyen;
+        TamCanh = stats.TamCanh;
+        LinhCan = stats.LinhCan;
+        Ability = stats.Ability;
+        NgoDao = stats.NgoDao;
+        DanDoc = stats.DanDoc;
+        TuoiTac = stats.TuoiTac;
+    }
+
+    public void Apply(StatModifier modifier)
+    {
+        Apply(modifier.Type, modifier.Action, modifier.Value);
+    }
+
+    public void Apply(StatType type, Action action, float value)
+    {
+        if (type == StatType.None) return;
+        if (action == Action.Set)
+        {
+            SetValue(type, value);
+        }
+        else if (action == Action.Add)
+        {
+            var t = GetValue(type);
+            SetValue(type, Convert.ToSingle(t) + value);
+        }
+        else if (action == Action.Or)
+        {
+            var t = GetValue(type);
+            var i = Convert.ToInt32(t);
+            var newValue = i | (int)(value);
+            SetValue(type, newValue);
+        }
+    }
+
+    public object GetValue(StatType type)
+    {
+        switch (type)
+        {
+            case StatType.Kim: return Kim;
+            case StatType.Moc: return Moc;
+            case StatType.Thuy: return Thuy;
+            case StatType.Hoa: return Hoa;
+            case StatType.Tho: return Tho;
+            case StatType.Ma: return Ma;
+            case StatType.TuChat: return TuChat;
+            case StatType.NgoTinh: return NgoTinh;
+            case StatType.ThanThuc: return ThanThuc;
+            case StatType.TocDoBay: return TocDoBay;
+            case StatType.LinhThach: return LinhThach;
+            case StatType.SinhMenh: return SinhMenh;
+            case StatType.ThoNguyen: return ThoNguyen;
+            case StatType.TamCanh: return TamCanh;
+            case StatType.LinhCan: return LinhCan;
+            case StatType.Ability: return Ability;
+            case StatType.NgoDao: return NgoDao;
+            case StatType.DanDoc: return DanDoc;
+            case StatType.TuoiTac: return TuoiTac;
+            default: return null;
+        }
+    }
+
+    private void SetFloat(StatType type, float value)
+    {
+        switch (type)
+        {
+            case StatType.Kim: Kim = value; break;
+            case StatType.Moc: Moc = value; break;
+            case StatType.Thuy: Thuy = value; break;
+            case StatType.Hoa: Hoa = value; break;
+            case StatType.Tho: Tho = value; break;
+            case StatType.Ma: Ma = value; break;
+        }
+    }
+
+    private void SetInt(StatType type, int value)
+    {
+        switch (type)
+        {
+            case StatType.TuChat: TuChat = value; break;
+            case StatType.NgoTinh: NgoTinh = value; break;
+            case StatType.ThanThuc: ThanThuc = value; break;
+            case StatType.TocDoBay: TocDoBay = value; break;
+            case StatType.LinhThach: LinhThach = value; break;
+            case StatType.SinhMenh: SinhMenh = value; break;
+            case StatType.ThoNguyen: ThoNguyen = value; break;
+            case StatType.TamCanh: TamCanh = value; break;
+            case StatType.NgoDao: NgoDao = value; break;
+            case StatType.DanDoc: DanDoc = value; break;
+            case StatType.TuoiTac: TuoiTac = value; break;
+        }
+    }
+
+    public void SetValue(StatType type, float value)
+    {
+        switch (type)
+        {
+            case StatType.Kim:
+            case StatType.Moc:
+            case StatType.Thuy:
+            case StatType.Hoa:
+            case StatType.Tho:
+            case StatType.Ma:
+                SetFloat(type, value);
+                break;
+            case StatType.TuChat:
+            case StatType.NgoTinh:
+            case StatType.ThanThuc:
+            case StatType.TocDoBay:
+            case StatType.LinhThach:
+            case StatType.SinhMenh:
+            case StatType.ThoNguyen:
+            case StatType.TamCanh:
+            case StatType.NgoDao:
+            case StatType.DanDoc:
+            case StatType.TuoiTac:
+                SetInt(type, (int)value);
+                break;
+            case StatType.LinhCan:
+                LinhCan = (LinhCan)(int)value;
+                break;
+            case StatType.Ability:
+                Ability = (Ability)(int)value;
+                break;
+        }
+    }
+
+    public int ByteSize()
+    {
+        return Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize()
+               + Tho.ByteSize() + Ma.ByteSize() + TuChat.ByteSize() + NgoTinh.ByteSize()
+               + ThanThuc.ByteSize() + TocDoBay.ByteSize() + LinhThach.ByteSize() + SinhMenh.ByteSize()
+               + ThoNguyen.ByteSize() + TamCanh.ByteSize() + LinhCan.ByteSize() + Ability.ByteSize()
+               + NgoDao.ByteSize() + DanDoc.ByteSize() + TuoiTac.ByteSize();
+    }
+
+    public void Serialize(IWriter writer)
+    {
+        writer.Write(Kim);
+        writer.Write(Moc);
+        writer.Write(Thuy);
+        writer.Write(Hoa);
+        writer.Write(Tho);
+        writer.Write(Ma);
+        writer.Write(TuChat);
+        writer.Write(NgoTinh);
+        writer.Write(ThanThuc);
+        writer.Write(TocDoBay);
+        writer.Write(LinhThach);
+        writer.Write(SinhMenh);
+        writer.Write(ThoNguyen);
+        writer.Write(TamCanh);
+        writer.Write(LinhCan);
+        writer.Write(Ability);
+        writer.Write(NgoDao);
+        writer.Write(DanDoc);
+        writer.Write(TuoiTac);
+    }
+
+    public void Deserialize(IReader reader, ref CharacterStats value)
+    {
+        value.Kim = reader.Read<float>();
+        value.Moc = reader.Read<float>();
+        value.Thuy = reader.Read<float>();
+        value.Hoa = reader.Read<float>();
+        value.Tho = reader.Read<float>();
+        value.Ma = reader.Read<float>();
+        value.TuChat = reader.Read<int>();
+        value.NgoTinh = reader.Read<int>();
+        value.ThanThuc = reader.Read<int>();
+        value.TocDoBay = reader.Read<int>();
+        value.LinhThach = reader.Read<int>();
+        value.SinhMenh = reader.Read<int>();
+        value.ThoNguyen = reader.Read<int>();
+        value.TamCanh = reader.Read<int>();
+        value.LinhCan = reader.Read<LinhCan>();
+        value.Ability = reader.Read<Ability>();
+        value.NgoDao = reader.Read<int>();
+        value.DanDoc = reader.Read<int>();
+        value.TuoiTac = reader.Read<int>();
+    }
+}

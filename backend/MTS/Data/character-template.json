@@ -1,0 +1,30 @@
+{
+  "Id": 0,
+  "Gender": 0,
+  "Name": "",
+  "Level": 1,
+  "CurrentExp": 0,
+  "Stats": {
+    "Kim": 20.0,
+    "Moc": 20.0,
+    "Thuy": 20.0,
+    "Hoa": 20.0,
+    "Tho": 20.0,
+    "Ma": 0.0,
+    "TuChat": 15,
+    "NgoTinh": 15,
+    "ThanThuc": 4,
+    "TocDoBay": 4,
+    "LinhThach": 100,
+    "SinhMenh": 30,
+    "ThoNguyen": 100,
+    "TamCanh": 0,
+    "LinhCan": 0,
+    "Ability": 0,
+    "NgoDao": 0,
+    "DanDoc": 0,
+    "TuoiTac": 0
+  },
+  "Skins": {},
+  "Colors": {}
+}

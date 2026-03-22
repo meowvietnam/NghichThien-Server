@@ -5,6 +5,8 @@ using Microsoft.OpenApi.Models;
 using MTS.Data;
 using NetworkServer;
 using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace MTS;
 
@@ -35,7 +37,14 @@ public class HttpServer : IServer
                     sqlOptions.CommandTimeout(30);
                     sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
                 }));
-
+        builder.Services
+            .AddControllers()
+            .AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.Converters.Add(
+                    new StringEnumConverter()
+                );
+            });
         builder.Services.AddControllers();
         var jwtKey = builder.Configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
@@ -111,7 +120,7 @@ public class HttpServer : IServer
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "MTS API v1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "MTS API");
                 c.RoutePrefix = string.Empty;
             });
         }
