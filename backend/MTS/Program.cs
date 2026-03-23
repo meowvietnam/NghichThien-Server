@@ -18,12 +18,19 @@ namespace MTS;
 public static class Program
 {
     public static WebApplication App { get; private set; }
+    public static IDbContextFactory<AppDbContext> Db { get; private set; }
+    public static async Task<AppDbContext> CreateDbAsync()
+    {
+        return await Db.CreateDbContextAsync();
+    }
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls("https://*:9481");
+        var webPort = builder.Configuration.GetValue<int>("ServerPorts:WebPort", 9481);
+        builder.WebHost.UseUrls($"https://*:{webPort}");
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        builder.Services.AddDbContext<AppDbContext>(options =>
+        builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Error);
+        builder.Services.AddDbContextFactory<AppDbContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                 sqlOptions =>
                 {
@@ -32,13 +39,10 @@ public static class Program
                 }));
         builder.Services
             .AddControllers()
-            .AddNewtonsoftJson(options =>
-            {
-                options.SerializerSettings.Converters.Add(new StringEnumConverter());
-            });
+            .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });
 
         var jwtKey = builder.Configuration["Jwt:Key"]
-            ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
+                     ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -86,7 +90,7 @@ public static class Program
                 }
             });
         });
-        
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
@@ -96,21 +100,8 @@ public static class Program
         builder.Services.AddHostedService<TcpHostedService>();
         builder.Services.AddSingleton<AppLifetimeService>();
         App = builder.Build();
-        using (var scope = App.Services.CreateScope())
-        {
-            var dbOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<AppDbContext>>();
-            AppDbFactory.Initialize(dbOptions);
-            GameConfig.Init();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            try
-            {
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database Migration Failed: {ex.Message}");
-            }
-        }
-
+        Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        GameConfig.Init();
         if (App.Environment.IsDevelopment())
         {
             App.UseSwagger();
@@ -120,6 +111,7 @@ public static class Program
                 c.RoutePrefix = string.Empty;
             });
         }
+
         App.UseCors("AllowAll");
         App.UseAuthentication();
         App.UseHttpsRedirection();

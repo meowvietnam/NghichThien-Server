@@ -1,10 +1,13 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Game;
+using MTS.Game.CreateCharacter;
 using MTS.Models;
-using Network;
+using MTS.Network.Models;
+using Action = MTS.Game.CreateCharacter.Action;
 
-namespace MTS.Game.CreateCharacter;
+namespace MTS.Services;
 
 public class CreateCharacterService
 {
@@ -15,13 +18,13 @@ public class CreateCharacterService
         Char = new CharacterData(GameConfig.CharacterTemplate);
     }
 
-    public void SetName(string name)
+    public async Task SetName(string name)
     {
-        ValidateName(name);
+        await ValidateName(name);
         Char.Name = name;
     }
 
-    public void CreateSkin(CreateSkinRequest request)
+    public void SetSkin(SetSkinRequest request)
     {
         request.RoundColor(2);
         var gender = request.Gender;
@@ -69,13 +72,8 @@ public class CreateCharacterService
         Char.Skins = newSkins;
         Char.Colors = newColors;
     }
-    private void ValidateName(string name)
-    {
-        using var db = AppDbFactory.Create();
-        ValidateName(db, name);
-    }
 
-    private void ValidateName(AppDbContext db, string name)
+    private async Task ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -90,7 +88,9 @@ public class CreateCharacterService
         {
             throw new Exception(ExceptionMessage.NameSpecialCharInvalid);
         }
-        bool existed = db.Characters.Any(x => x.Name == name);
+
+        await using var db = await Program.CreateDbAsync();
+        bool existed = await db.Characters.AnyAsync(x => x.Name == name);
         if (existed)
         {
             throw new Exception(ExceptionMessage.NameExisted);
@@ -311,43 +311,22 @@ public class CreateCharacterService
 
         return res;
     }
-
-    public void Completed()
+    public async Task<CharacterData> Completed(UserData user)
     {
-        using var db = AppDbFactory.Create();
-        Completed(db);
-    }
-
-    private void Completed(AppDbContext db)
-    {
-        ValidateName(db, Char.Name);
-        if (Char.IsSkinEmpty())
-        {
-            throw new Exception(ExceptionMessage.SkinCategoryMissing);
-        }
-    }
-
-    public UserData Create(int userId, string name, CreateSkinRequest request, List<SelectionModel> selectionModels)
-    {
-        using var db = AppDbFactory.Create();
-        Char.Name = name.Trim();
-        CreateSkin(request);
-        ApplyStats(selectionModels);
-        var charCount = db.Characters.Count(x => x.UserId == userId);
+        var charCount = user.CharacterDatas.Count;
         if (charCount >= 3)
         {
             throw new Exception(ExceptionMessage.CharacterLimitExceeded);
         }
+        var userId = user.Id;
+        await using var db = await Program.CreateDbAsync();
+        await ValidateName(Char.Name);
         Char.UserId = userId;
-        db.Characters.Add(Char);
-        db.SaveChanges();
-        db.Entry(Char)
-            .Reference(x => x.Stats)
-            .Load();
-        db.Entry(Char)
-            .Reference(x => x.User)
-            .Load();
-        return Char.User;
+        var newChar = db.Characters.Add(Char);
+        await db.SaveChangesAsync();
+        Char = newChar.Entity;
+        user.CharacterDatas.Add(Char);
+        return Char;
     }
 }
 

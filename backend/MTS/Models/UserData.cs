@@ -7,7 +7,7 @@ namespace MTS.Models;
 public class UserData : IMemorySerializable<UserData>
 {
     [Key] public int Id { get; set; }
-    public List<CharacterData> CharacterDatas { get; private set; }
+    public List<CharacterData> CharacterDatas { get; set; }
     public UserData()
     {
         CharacterDatas = new List<CharacterData>();

@@ -1,0 +1,24 @@
+namespace MTS.Network;
+public enum MessageTag
+{
+    Connect = 21,
+    ConnectResult = 22,
+    CheckVersion = 28,
+    CheckVersionResult = 29,
+    Reconnect = 30,
+    ReconnectResult = 32,
+    LoginDeveloper = 35,
+    LoginDeveloperResult = 38,
+    GetCharacters = 39,
+    GetCharactersResult = 40,
+    CanCreateCharacter = 41,
+    CanCreateCharacterResult = 42,
+    BackToSelectChar = 48,
+    BackToSelectCharOk = 49,
+    SetCharName = 56,
+    SetCharNameResult = 58,
+    SetSkins = 61,
+    SetSkinsResult = 68,
+    ApplyStats = 89,
+    ApplyStatsResult = 90,
+}

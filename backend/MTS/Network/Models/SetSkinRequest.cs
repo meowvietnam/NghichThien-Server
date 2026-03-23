@@ -1,16 +1,17 @@
+using MTS.Game;
 using MTS.Models;
 using Network;
 using Network.Extensions;
 
-namespace MTS.Game;
+namespace MTS.Network.Models;
 
-public class CreateSkinRequest : IMemorySerializable<CreateSkinRequest>
+public class SetSkinRequest : IMemorySerializable<SetSkinRequest>
 {
     public Gender Gender { get; set; }
     public Dictionary<string, string> Skins { get; set; } = new();
     public Dictionary<string, Color> Colors { get; set; } = new();
 
-    public void Deserialize(IReader reader, ref CreateSkinRequest value)
+    public void Deserialize(IReader reader, ref SetSkinRequest value)
     {
         value.Gender = reader.Read<Gender>();
         value.Skins = DictionaryUtils.CreateDictionary(reader.ReadArray(),reader.ReadArray());

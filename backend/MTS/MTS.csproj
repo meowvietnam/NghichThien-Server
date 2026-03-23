@@ -39,7 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\" />
+      <Folder Include="Game\Auth\" />
     </ItemGroup>
 
     <ItemGroup>

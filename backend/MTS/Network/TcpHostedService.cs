@@ -1,16 +1,13 @@
-using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace MTS.Network;
 
 public class TcpHostedService : IHostedService
 {
     private readonly TcpServer tcpServer;
 
-    public TcpHostedService()
+    public TcpHostedService(IConfiguration config)
     {
-        tcpServer = new TcpServer(6785);
+        var port = config.GetValue("ServerPorts:TcpPort", 6785);
+        tcpServer = new TcpServer(port);
     }
     public Task StartAsync(CancellationToken cancellationToken)
     {
