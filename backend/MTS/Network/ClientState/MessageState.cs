@@ -5,5 +5,6 @@ namespace MTS.Network.ClientState
         AuthState,
         SelectCharacter,
         CreateCharacter,
+        AllMaps
     }
 }

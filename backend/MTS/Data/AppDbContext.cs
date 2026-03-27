@@ -14,6 +14,25 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+    private static string SerializeObject<T>(T value)
+    {
+        return JsonConvert.SerializeObject(value);
+    }
+
+    private static T DeserializeObject<T>(string json) where T : new()
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new T();
+
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(json) ?? new T();
+        }
+        catch
+        {
+            return new T();
+        }
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DeveloperAccount>(e =>
@@ -36,51 +55,51 @@ public class AppDbContext : DbContext
             e.Property(x => x.Skins)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<Dictionary<string, string>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<Dictionary<string, string>>(v)
                 );
 
             e.Property(x => x.Colors)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<Dictionary<string, Color>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<Dictionary<string, Color>>(v)
                 );
             e.Property(x => x.NgoDaoSaves)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<List<int>>(v)
                 );
             e.Property(x => x.CamNgoSaves)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<Dictionary<int, int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<Dictionary<int, int>>(v)
                 );
             e.Property(x => x.ThanThongOwner)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<List<int>>(v)
                 );
             e.Property(x => x.ThanThongEquip)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<List<int>>(v)
                 );
             e.Property(x => x.CongPhapOwner)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<Dictionary<int, int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<Dictionary<int, int>>(v)
                 );
             e.Property(x => x.DanCombatUsed)
                 .HasColumnType("json")
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                    v => SerializeObject(v),
+                    v => DeserializeObject<List<int>>(v)
                 );
             e.HasOne(x => x.User)
                 .WithMany(x => x.CharacterDatas)

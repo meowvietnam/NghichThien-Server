@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MTS.Models;
 using MTS.Network.ClientState;
 using Network;
@@ -10,6 +11,7 @@ public class Client : ClientConnection, ISender<MessageTag>
     public string Key { get; private set; }
     private MessageStateHandler<MessageTag,MessageState> stateModule;
     public UserData UserData { get; private set; }
+    public CharacterData CharacterData { get; private set; }
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
@@ -40,9 +42,18 @@ public class Client : ClientConnection, ISender<MessageTag>
         Console.WriteLine($"Client {Id} has been disconnected.");
         TcpServer.Instance.Remove(this);
     }
-
     public void Send(Span<byte> data)
     {
         TcpClient.Send(data);
+    }
+    public async Task<CharacterData> Select(CharacterData characterData)
+    {
+        await using var db = await Program.CreateDbAsync();
+        var id = characterData.Id;
+        var stats = await db.CharacterStats
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.CharId == id);
+        characterData.Stats = stats;
+        return characterData;
     }
 }

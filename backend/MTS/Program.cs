@@ -28,7 +28,7 @@ public static class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        var webPort = builder.Configuration.GetValue<int>("ServerPorts:WebPort", 9481);
+        var webPort = builder.Configuration.GetValue("ServerPorts:WebPort", 9481);
         builder.WebHost.UseUrls($"https://*:{webPort}");
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Error);

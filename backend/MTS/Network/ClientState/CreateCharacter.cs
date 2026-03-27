@@ -92,7 +92,6 @@ public class CreateCharacter : IClientState
                     Success = false,
                     Message = ex.Message
                 };
-                Console.WriteLine(message);
                 client.Send(MessageTag.ApplyStatsResult,result);
             }
         }
