@@ -21,6 +21,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public int ThanThuc { get; private set; }
     public int TocDoBay { get; private set; }
     public int LinhThach { get; private set; }
+    public int Hp { get; private set; }
     public int SinhMenh { get; private set; }
     public int ThoNguyen { get; private set; }
     public int TamCanh { get; private set; }
@@ -29,22 +30,25 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public int NgoDao { get; private set; }
     public int DanDoc { get; private set; }
     public int TuoiTac { get; private set; }
+
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int CharId { get; set; }
-    [ForeignKey(nameof(CharId)), Key] 
+
+    [ForeignKey(nameof(CharId)), Key]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public CharacterData CharacterData { get; set; }
 
     public CharacterStats()
     {
-        
     }
+
     public CharacterStats(CharacterStats stats)
     {
         CopyFrom(stats);
     }
+
     public void CopyFrom(CharacterStats stats)
     {
         Kim = stats.Kim;
@@ -58,6 +62,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         ThanThuc = stats.ThanThuc;
         TocDoBay = stats.TocDoBay;
         LinhThach = stats.LinhThach;
+        Hp = stats.Hp;
         SinhMenh = stats.SinhMenh;
         ThoNguyen = stats.ThoNguyen;
         TamCanh = stats.TamCanh;
@@ -109,6 +114,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.ThanThuc: return ThanThuc;
             case StatType.TocDoBay: return TocDoBay;
             case StatType.LinhThach: return LinhThach;
+            case StatType.Hp: return Hp;
             case StatType.SinhMenh: return SinhMenh;
             case StatType.ThoNguyen: return ThoNguyen;
             case StatType.TamCanh: return TamCanh;
@@ -143,6 +149,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.ThanThuc: ThanThuc = value; break;
             case StatType.TocDoBay: TocDoBay = value; break;
             case StatType.LinhThach: LinhThach = value; break;
+            case StatType.Hp: Hp = value; break;
             case StatType.SinhMenh: SinhMenh = value; break;
             case StatType.ThoNguyen: ThoNguyen = value; break;
             case StatType.TamCanh: TamCanh = value; break;
@@ -169,6 +176,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.ThanThuc:
             case StatType.TocDoBay:
             case StatType.LinhThach:
+            case StatType.Hp:
             case StatType.SinhMenh:
             case StatType.ThoNguyen:
             case StatType.TamCanh:
@@ -185,16 +193,16 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 break;
         }
     }
-
     public int ByteSize()
     {
         return Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize()
                + Tho.ByteSize() + Ma.ByteSize() + TuChat.ByteSize() + NgoTinh.ByteSize()
-               + ThanThuc.ByteSize() + TocDoBay.ByteSize() + LinhThach.ByteSize() + SinhMenh.ByteSize()
+               + ThanThuc.ByteSize() + TocDoBay.ByteSize() + LinhThach.ByteSize()
+               + Hp.ByteSize()
+               + SinhMenh.ByteSize()
                + ThoNguyen.ByteSize() + TamCanh.ByteSize() + LinhCan.ByteSize() + Ability.ByteSize()
                + NgoDao.ByteSize() + DanDoc.ByteSize() + TuoiTac.ByteSize();
     }
-
     public void Serialize(IWriter writer)
     {
         writer.Write(Kim);
@@ -208,6 +216,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         writer.Write(ThanThuc);
         writer.Write(TocDoBay);
         writer.Write(LinhThach);
+        writer.Write(Hp);
         writer.Write(SinhMenh);
         writer.Write(ThoNguyen);
         writer.Write(TamCanh);
@@ -217,7 +226,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         writer.Write(DanDoc);
         writer.Write(TuoiTac);
     }
-
     public void Deserialize(IReader reader, ref CharacterStats value)
     {
         value.Kim = reader.Read<float>();
@@ -231,6 +239,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         value.ThanThuc = reader.Read<int>();
         value.TocDoBay = reader.Read<int>();
         value.LinhThach = reader.Read<int>();
+        value.Hp = reader.Read<int>();
         value.SinhMenh = reader.Read<int>();
         value.ThoNguyen = reader.Read<int>();
         value.TamCanh = reader.Read<int>();

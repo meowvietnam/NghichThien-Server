@@ -27,7 +27,7 @@ namespace MTS.Network.ClientState
             else if (tag == MessageTag.CanCreateCharacter)
             {
                 var charCount = client.UserData.CharacterDatas.Count;
-                if (charCount >= 3)
+                if (charCount >= 1)
                 {
                     var result = new CanCreateChar()
                     {

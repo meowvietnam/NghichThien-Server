@@ -16,6 +16,7 @@
     "ThanThuc": 4,
     "TocDoBay": 4,
     "LinhThach": 100,
+    "Hp": 0,
     "SinhMenh": 30,
     "ThoNguyen": 100,
     "TamCanh": 0,
@@ -26,5 +27,20 @@
     "TuoiTac": 0
   },
   "Skins": {},
-  "Colors": {}
+  "Colors": {},
+  "MonPhai": 0,
+  "NgoDaoSaves": [],
+  "CamNgoSaves": {},
+  "NgoDaoDiem": 0,
+  "ThanThongOwner": [],
+  "ThanThongEquip": [],
+  "CongPhapOwner": {},
+  "DonThuatUsed": 0,
+  "PhuTu1Used": 0,
+  "PhuTu2Used": 0,
+  "PhuTu3Used": 0,
+  "PhuTu4Used": 0,
+  "ChuTu1Used": 0,
+  "ChuTu2Used": 0,
+  "DanCombatUsed": []
 }

@@ -14,7 +14,6 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DeveloperAccount>(e =>
@@ -47,7 +46,42 @@ public class AppDbContext : DbContext
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<Dictionary<string, Color>>(v)
                 );
-            
+            e.Property(x => x.NgoDaoSaves)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                );
+            e.Property(x => x.CamNgoSaves)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<Dictionary<int, int>>(v)
+                );
+            e.Property(x => x.ThanThongOwner)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                );
+            e.Property(x => x.ThanThongEquip)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                );
+            e.Property(x => x.CongPhapOwner)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<Dictionary<int, int>>(v)
+                );
+            e.Property(x => x.DanCombatUsed)
+                .HasColumnType("json")
+                .HasConversion(
+                    v => JsonConvert.SerializeObject(v),
+                    v => JsonConvert.DeserializeObject<List<int>>(v)
+                );
             e.HasOne(x => x.User)
                 .WithMany(x => x.CharacterDatas)
                 .HasForeignKey(x => x.UserId)

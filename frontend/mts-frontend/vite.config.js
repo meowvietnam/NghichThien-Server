@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: false,
+    allowedHosts: ["test.carrotcoder.fun"],
   },
   preview: {
     port: 8080,

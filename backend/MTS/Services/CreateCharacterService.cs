@@ -314,7 +314,7 @@ public class CreateCharacterService
     public async Task<CharacterData> Completed(UserData user)
     {
         var charCount = user.CharacterDatas.Count;
-        if (charCount >= 3)
+        if (charCount >= 1)
         {
             throw new Exception(ExceptionMessage.CharacterLimitExceeded);
         }

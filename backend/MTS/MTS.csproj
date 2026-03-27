@@ -47,9 +47,6 @@
       <Content Include="Data\step-config.bin">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
-      <Content Update="Data\character-template.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
       <None Remove="Data\skin-resources.bin" />
       <Content Include="Data\skin-resources.bin">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
