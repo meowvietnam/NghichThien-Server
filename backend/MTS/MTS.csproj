@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>MTS</RootNamespace>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <SatelliteResourceLanguages></SatelliteResourceLanguages>
     </PropertyGroup>
 
     <ItemGroup>
@@ -50,6 +51,10 @@
       <None Remove="Data\skin-resources.bin" />
       <Content Include="Data\skin-resources.bin">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Data\maps.bin" />
+      <Content Include="Data\maps.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
 

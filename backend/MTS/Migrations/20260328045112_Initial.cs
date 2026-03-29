@@ -19,7 +19,8 @@ namespace MTS.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    IsInfiniteEnergy = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -42,6 +43,29 @@ namespace MTS.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Colors = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    MonPhai = table.Column<int>(type: "int", nullable: false),
+                    NgoDaoSaves = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CamNgoSaves = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NgoDaoDiem = table.Column<int>(type: "int", nullable: false),
+                    ThanThongOwner = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ThanThongEquip = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CongPhapOwner = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DonThuatUsed = table.Column<int>(type: "int", nullable: false),
+                    PhuTu1Used = table.Column<int>(type: "int", nullable: false),
+                    PhuTu2Used = table.Column<int>(type: "int", nullable: false),
+                    PhuTu3Used = table.Column<int>(type: "int", nullable: false),
+                    PhuTu4Used = table.Column<int>(type: "int", nullable: false),
+                    ChuTu1Used = table.Column<int>(type: "int", nullable: false),
+                    ChuTu2Used = table.Column<int>(type: "int", nullable: false),
+                    DanCombatUsed = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IdCurrentNode = table.Column<int>(type: "int", nullable: false),
+                    CurrentEnergy = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -94,12 +118,12 @@ namespace MTS.Migrations
                     ThanThuc = table.Column<int>(type: "int", nullable: false),
                     TocDoBay = table.Column<int>(type: "int", nullable: false),
                     LinhThach = table.Column<int>(type: "int", nullable: false),
+                    Hp = table.Column<int>(type: "int", nullable: false),
                     SinhMenh = table.Column<int>(type: "int", nullable: false),
                     ThoNguyen = table.Column<int>(type: "int", nullable: false),
                     TamCanh = table.Column<int>(type: "int", nullable: false),
                     LinhCan = table.Column<int>(type: "int", nullable: false),
                     Ability = table.Column<int>(type: "int", nullable: false),
-                    NgoDao = table.Column<int>(type: "int", nullable: false),
                     DanDoc = table.Column<int>(type: "int", nullable: false),
                     TuoiTac = table.Column<int>(type: "int", nullable: false)
                 },
@@ -108,6 +132,30 @@ namespace MTS.Migrations
                     table.PrimaryKey("PK_CharacterStats", x => x.CharId);
                     table.ForeignKey(
                         name: "FK_CharacterStats_Characters_CharId",
+                        column: x => x.CharId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "InventoryManagers",
+                columns: table => new
+                {
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    Furnaces = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Recipes = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Herbs = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryManagers", x => x.CharId);
+                    table.ForeignKey(
+                        name: "FK_InventoryManagers_Characters_CharId",
                         column: x => x.CharId,
                         principalTable: "Characters",
                         principalColumn: "Id",
@@ -147,6 +195,9 @@ namespace MTS.Migrations
 
             migrationBuilder.DropTable(
                 name: "DeveloperAccounts");
+
+            migrationBuilder.DropTable(
+                name: "InventoryManagers");
 
             migrationBuilder.DropTable(
                 name: "Characters");

@@ -229,11 +229,13 @@ public class CreateCharacterService
                 }
             }
         }
-
         if (money < 0)
         {
             throw new Exception($"{ExceptionMessage.NotEnoughMoney}: {money}");
         }
+        stats.SetValue(StatType.Hp, stats.SinhMenh);
+        Char.CurrentEnergy = 100;
+        Char.IdCurrentNode = GameConfig.MapManager.EntryMapId;
         Char.Stats = stats;
     }
     private void Apply(CharacterStats stats, StatModifier modifier, ref int money)

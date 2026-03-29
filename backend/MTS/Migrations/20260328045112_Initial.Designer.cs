@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260323110739_Initial")]
+    [Migration("20260328045112_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -32,24 +32,81 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CamNgoSaves")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<int>("ChuTu1Used")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ChuTu2Used")
+                        .HasColumnType("int");
+
                     b.Property<string>("Colors")
                         .IsRequired()
                         .HasColumnType("json");
 
+                    b.Property<string>("CongPhapOwner")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<int>("CurrentEnergy")
+                        .HasColumnType("int");
+
                     b.Property<int>("CurrentExp")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DanCombatUsed")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<int>("DonThuatUsed")
                         .HasColumnType("int");
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
+                    b.Property<int>("IdCurrentNode")
+                        .HasColumnType("int");
+
                     b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MonPhai")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<int>("NgoDaoDiem")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NgoDaoSaves")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<int>("PhuTu1Used")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PhuTu2Used")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PhuTu3Used")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PhuTu4Used")
+                        .HasColumnType("int");
+
                     b.Property<string>("Skins")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("ThanThongEquip")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("ThanThongOwner")
                         .IsRequired()
                         .HasColumnType("json");
 
@@ -80,6 +137,9 @@ namespace MTS.Migrations
                     b.Property<float>("Hoa")
                         .HasColumnType("float");
 
+                    b.Property<int>("Hp")
+                        .HasColumnType("int");
+
                     b.Property<float>("Kim")
                         .HasColumnType("float");
 
@@ -94,9 +154,6 @@ namespace MTS.Migrations
 
                     b.Property<float>("Moc")
                         .HasColumnType("float");
-
-                    b.Property<int>("NgoDao")
-                        .HasColumnType("int");
 
                     b.Property<int>("NgoTinh")
                         .HasColumnType("int");
@@ -159,6 +216,28 @@ namespace MTS.Migrations
                     b.ToTable("DeveloperAccounts");
                 });
 
+            modelBuilder.Entity("MTS.Models.InventoryManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Furnaces")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("Herbs")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("Recipes")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("InventoryManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.UserData", b =>
                 {
                     b.Property<int>("Id")
@@ -166,6 +245,9 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsInfiniteEnergy")
+                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 
@@ -205,8 +287,22 @@ namespace MTS.Migrations
                     b.Navigation("UserData");
                 });
 
+            modelBuilder.Entity("MTS.Models.InventoryManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharacterData")
+                        .WithOne("InventoryManager")
+                        .HasForeignKey("MTS.Models.InventoryManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharacterData");
+                });
+
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
                 {
+                    b.Navigation("InventoryManager")
+                        .IsRequired();
+
                     b.Navigation("Stats")
                         .IsRequired();
                 });

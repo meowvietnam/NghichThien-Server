@@ -22,7 +22,6 @@
     "TamCanh": 0,
     "LinhCan": 0,
     "Ability": 0,
-    "NgoDao": 0,
     "DanDoc": 0,
     "TuoiTac": 0
   },
@@ -42,5 +41,7 @@
   "PhuTu4Used": 0,
   "ChuTu1Used": 0,
   "ChuTu2Used": 0,
-  "DanCombatUsed": []
+  "DanCombatUsed": [],
+  "IdCurrentNode": 0,
+  "CurrentEnergy": 0
 }

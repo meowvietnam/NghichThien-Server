@@ -23,4 +23,10 @@ public enum MessageTag
     ApplyStatsResult = 90,
     SelectCharacter = 91,
     SelectCharacterResult = 92,
+    MoveToMap = 93,
+    MoveToMapResult = 94,
+    GetPlayerOnlineThisNode = 101,
+    GetPlayerOnlineThisNodeResult = 102,
+    GetInventory = 195,
+    GetInventoryResult = 196,
 }

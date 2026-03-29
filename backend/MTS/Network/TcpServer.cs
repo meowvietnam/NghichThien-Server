@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.CompilerServices;
 using MTS.Game;
+using MTS.Models;
 using MTS.Network.ClientState;
 using NetworkServer;
 
@@ -56,5 +57,14 @@ public class TcpServer : BaseTcpServer
         var newClient = new Client(client);
         clients.TryAdd(client.Id, newClient);
         newClient.ChangeState(new AuthState(newClient));
+    }
+
+    public CharacterData[] GetCharsOnline(int limit = 5)
+    {
+        return clients.Values
+            .Where(x => x.IsCharacterSelected())
+            .Select(x => x.CharacterData)
+            .Take(limit)
+            .ToArray();
     }
 }

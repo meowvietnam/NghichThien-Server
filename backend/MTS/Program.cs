@@ -21,24 +21,29 @@ public static class Program
 {
     public static WebApplication App { get; private set; }
     public static IDbContextFactory<AppDbContext> Db { get; private set; }
+
     public static async Task<AppDbContext> CreateDbAsync()
     {
         return await Db.CreateDbContextAsync();
     }
+
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var webPort = builder.Configuration.GetValue("ServerPorts:WebPort", 9481);
-        builder.WebHost.UseUrls($"https://*:{webPort}");
+        builder.WebHost.UseUrls($"http://*:{webPort}");
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Error);
         builder.Services.AddDbContextFactory<AppDbContext>(options =>
+        {
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                 sqlOptions =>
                 {
                     sqlOptions.CommandTimeout(30);
                     sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
-                }));
+                });
+            options.AddInterceptors(new InventoryMaterializationInterceptor());
+        });
         builder.Services
             .AddControllers()
             .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });

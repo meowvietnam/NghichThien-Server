@@ -1,0 +1,1 @@
+dotnet publish -p:NoWarn="*" -c Release -r linux-x64 --no-self-contained -o ./bin/Build

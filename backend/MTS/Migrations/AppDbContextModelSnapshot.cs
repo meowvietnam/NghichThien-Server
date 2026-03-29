@@ -47,6 +47,9 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasColumnType("json");
 
+                    b.Property<int>("CurrentEnergy")
+                        .HasColumnType("int");
+
                     b.Property<int>("CurrentExp")
                         .HasColumnType("int");
 
@@ -58,6 +61,18 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdCurrentNode")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPhongCu")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdTrangSuc")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdVuKhi")
                         .HasColumnType("int");
 
                     b.Property<int>("Level")
@@ -88,6 +103,10 @@ namespace MTS.Migrations
 
                     b.Property<int>("PhuTu4Used")
                         .HasColumnType("int");
+
+                    b.Property<string>("RelationShip")
+                        .IsRequired()
+                        .HasColumnType("json");
 
                     b.Property<string>("Skins")
                         .IsRequired()
@@ -145,9 +164,6 @@ namespace MTS.Migrations
 
                     b.Property<float>("Moc")
                         .HasColumnType("float");
-
-                    b.Property<int>("NgoDao")
-                        .HasColumnType("int");
 
                     b.Property<int>("NgoTinh")
                         .HasColumnType("int");
@@ -210,6 +226,28 @@ namespace MTS.Migrations
                     b.ToTable("DeveloperAccounts");
                 });
 
+            modelBuilder.Entity("MTS.Models.InventoryManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Furnaces")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("Herbs")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("Recipes")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("InventoryManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.UserData", b =>
                 {
                     b.Property<int>("Id")
@@ -217,6 +255,9 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsInfiniteEnergy")
+                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 
@@ -256,8 +297,22 @@ namespace MTS.Migrations
                     b.Navigation("UserData");
                 });
 
+            modelBuilder.Entity("MTS.Models.InventoryManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharacterData")
+                        .WithOne("InventoryManager")
+                        .HasForeignKey("MTS.Models.InventoryManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharacterData");
+                });
+
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
                 {
+                    b.Navigation("InventoryManager")
+                        .IsRequired();
+
                     b.Navigation("Stats")
                         .IsRequired();
                 });

@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using MTS.Data;
 using MTS.Game.CreateCharacter;
 using Network;
 using Network.Extensions;
@@ -27,7 +29,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public int TamCanh { get; private set; }
     public LinhCan LinhCan { get; private set; }
     public Ability Ability { get; private set; }
-    public int NgoDao { get; private set; }
     public int DanDoc { get; private set; }
     public int TuoiTac { get; private set; }
 
@@ -68,7 +69,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         TamCanh = stats.TamCanh;
         LinhCan = stats.LinhCan;
         Ability = stats.Ability;
-        NgoDao = stats.NgoDao;
         DanDoc = stats.DanDoc;
         TuoiTac = stats.TuoiTac;
     }
@@ -120,7 +120,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.TamCanh: return TamCanh;
             case StatType.LinhCan: return LinhCan;
             case StatType.Ability: return Ability;
-            case StatType.NgoDao: return NgoDao;
             case StatType.DanDoc: return DanDoc;
             case StatType.TuoiTac: return TuoiTac;
             default: return null;
@@ -153,7 +152,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.SinhMenh: SinhMenh = value; break;
             case StatType.ThoNguyen: ThoNguyen = value; break;
             case StatType.TamCanh: TamCanh = value; break;
-            case StatType.NgoDao: NgoDao = value; break;
             case StatType.DanDoc: DanDoc = value; break;
             case StatType.TuoiTac: TuoiTac = value; break;
         }
@@ -201,7 +199,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                + Hp.ByteSize()
                + SinhMenh.ByteSize()
                + ThoNguyen.ByteSize() + TamCanh.ByteSize() + LinhCan.ByteSize() + Ability.ByteSize()
-               + NgoDao.ByteSize() + DanDoc.ByteSize() + TuoiTac.ByteSize();
+               + DanDoc.ByteSize() + TuoiTac.ByteSize();
     }
     public void Serialize(IWriter writer)
     {
@@ -222,7 +220,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         writer.Write(TamCanh);
         writer.Write(LinhCan);
         writer.Write(Ability);
-        writer.Write(NgoDao);
         writer.Write(DanDoc);
         writer.Write(TuoiTac);
     }
@@ -245,8 +242,18 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         value.TamCanh = reader.Read<int>();
         value.LinhCan = reader.Read<LinhCan>();
         value.Ability = reader.Read<Ability>();
-        value.NgoDao = reader.Read<int>();
         value.DanDoc = reader.Read<int>();
         value.TuoiTac = reader.Read<int>();
+    }
+
+    public bool IsDefault()
+    {
+        return CharId == 0;
+    }
+
+    public async Task SaveChanges(AppDbContext db)
+    {
+        var stats = await db.CharacterStats.FirstAsync(x => x.CharId == CharId);
+        stats.CopyFrom(this);
     }
 }

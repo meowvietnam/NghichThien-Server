@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using MTS.Data;
 using MTS.Game;
 using Network;
 using Network.Extensions;
@@ -9,13 +11,12 @@ namespace MTS.Models;
 
 public class CharacterData : IMemorySerializable<CharacterData>
 {
-    [Key] 
-    public int Id { get; set; }
+    [Key] public int Id { get; set; }
     public Gender Gender { get; set; }
     public string Name { get; set; }
     public int Level { get; set; } = 1;
     public int CurrentExp { get; set; }
-    public CharacterStats Stats { get; set; } = new CharacterStats();
+    public CharacterStats Stats { get; set; } = new();
     public Dictionary<string, string> Skins { get; set; } = new();
     public Dictionary<string, Color> Colors { get; set; } = new();
     public EMonPhai MonPhai { get; set; }
@@ -33,15 +34,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public int ChuTu1Used { get; set; }
     public int ChuTu2Used { get; set; }
     public List<int> DanCombatUsed { get; set; } = new();
-
+    public int IdCurrentNode { get; set; }
+    public int CurrentEnergy { get; set; }
+    public int IdVuKhi { get; set; }
+    public int IdPhongCu { get; set; }
+    public int IdTrangSuc { get; set; }
+    public Dictionary<int, int> RelationShip { get; set; } = new();
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int UserId { get; set; }
-
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
+
+    public InventoryManager InventoryManager { get; set; } = new();
 
     public CharacterData()
     {
@@ -49,14 +56,46 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     public CharacterData(CharacterData clone)
     {
+        Clone1(clone);
+    }
+
+    private void Clone0(CharacterData clone)
+    {
+        Level = clone.Level;
+        CurrentExp = clone.CurrentExp;
+        MonPhai = clone.MonPhai;
+        NgoDaoSaves = new(clone.NgoDaoSaves);
+        CamNgoSaves = new(clone.CamNgoSaves);
+        NgoDaoDiem = clone.NgoDaoDiem;
+        ThanThongOwner = new(clone.ThanThongOwner);
+        ThanThongEquip = new(clone.ThanThongEquip);
+        CongPhapOwner = new(clone.CongPhapOwner);
+        DonThuatUsed = clone.DonThuatUsed;
+        PhuTu1Used = clone.PhuTu1Used;
+        PhuTu2Used = clone.PhuTu2Used;
+        PhuTu3Used = clone.PhuTu3Used;
+        PhuTu4Used = clone.PhuTu4Used;
+        ChuTu1Used = clone.ChuTu1Used;
+        ChuTu2Used = clone.ChuTu2Used;
+        DanCombatUsed = new(clone.DanCombatUsed);
+        IdCurrentNode = clone.IdCurrentNode;
+        CurrentEnergy = clone.CurrentEnergy;
+        IdVuKhi = clone.IdVuKhi;
+        IdPhongCu = clone.IdPhongCu;
+        IdTrangSuc = clone.IdTrangSuc;
+        RelationShip = new(clone.RelationShip);
+    }
+
+    private void Clone1(CharacterData clone)
+    {
         Id = clone.Id;
         Gender = clone.Gender;
         Name = clone.Name;
-        Level = clone.Level;
-        CurrentExp = clone.CurrentExp;
-        Stats.CopyFrom(clone.Stats);
         Skins = new(clone.Skins);
         Colors = new(clone.Colors);
+        Stats.CopyFrom(clone.Stats);
+        InventoryManager.Clone(clone.InventoryManager);
+        Clone0(clone);
     }
 
     public int ByteSize()
@@ -69,14 +108,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + Skins.Keys.ByteSize() + Skins.Values.ByteSize()
                + Colors.Keys.ByteSize() + Colors.Values.ByteSize()
                + MonPhai.ByteSize() + NgoDaoSaves.ByteSize()
-               + CamNgoSaves.Keys.ByteSize() + CamNgoSaves.Values.ByteSize()
+               + CamNgoSaves.ByteSize()
                + NgoDaoDiem.ByteSize() + ThanThongOwner.ByteSize() + ThanThongEquip.ByteSize()
-               + CongPhapOwner.Keys.ByteSize() + CongPhapOwner.Values.ByteSize()
+               + CongPhapOwner.ByteSize()
                + DonThuatUsed.ByteSize()
                + PhuTu1Used.ByteSize() + PhuTu2Used.ByteSize()
                + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
                + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
-               + DanCombatUsed.ByteSize();
+               + DanCombatUsed.ByteSize()
+               + IdCurrentNode.ByteSize()
+               + CurrentEnergy.ByteSize()
+               + InventoryManager.ByteSize()
+               + IdVuKhi.ByteSize()
+               + IdPhongCu.ByteSize()
+               + IdTrangSuc.ByteSize()
+               + RelationShip.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -93,13 +139,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.WriteArray(Colors.Values);
         writer.Write(MonPhai);
         writer.WriteArray(NgoDaoSaves);
-        writer.WriteArray(CamNgoSaves.Keys);
-        writer.WriteArray(CamNgoSaves.Values);
+        writer.WriteArray(CamNgoSaves);
         writer.Write(NgoDaoDiem);
         writer.WriteArray(ThanThongOwner);
         writer.WriteArray(ThanThongEquip);
-        writer.WriteArray(CongPhapOwner.Keys);
-        writer.WriteArray(CongPhapOwner.Values);
+        writer.WriteArray(CongPhapOwner);
         writer.Write(DonThuatUsed);
         writer.Write(PhuTu1Used);
         writer.Write(PhuTu2Used);
@@ -108,6 +152,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(ChuTu1Used);
         writer.Write(ChuTu2Used);
         writer.WriteArray(DanCombatUsed);
+        writer.Write(IdCurrentNode);
+        writer.Write(CurrentEnergy);
+        writer.Write(InventoryManager);
+        writer.Write(IdVuKhi);
+        writer.Write(IdPhongCu);
+        writer.Write(IdTrangSuc);
+        writer.WriteArray(RelationShip);
     }
 
     public void Deserialize(IReader reader, ref CharacterData value)
@@ -122,11 +173,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Colors = DictionaryUtils.CreateDictionary(reader.ReadArray(), reader.ReadArray<Color>());
         value.MonPhai = reader.Read<EMonPhai>();
         value.NgoDaoSaves = reader.ReadArray<int>().ToList();
-        value.CamNgoSaves = DictionaryUtils.CreateDictionary(reader.ReadArray<int>(), reader.ReadArray<int>());
+        value.CamNgoSaves = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
         value.NgoDaoDiem = reader.Read<int>();
         value.ThanThongOwner = reader.ReadArray<int>().ToList();
         value.ThanThongEquip = reader.ReadArray<int>().ToList();
-        value.CongPhapOwner = DictionaryUtils.CreateDictionary(reader.ReadArray<int>(), reader.ReadArray<int>());
+        value.CongPhapOwner = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
         value.DonThuatUsed = reader.Read<int>();
         value.PhuTu1Used = reader.Read<int>();
         value.PhuTu2Used = reader.Read<int>();
@@ -135,10 +186,38 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.ChuTu1Used = reader.Read<int>();
         value.ChuTu2Used = reader.Read<int>();
         value.DanCombatUsed = reader.ReadArray<int>().ToList();
+        value.IdCurrentNode = reader.Read<int>();
+        value.CurrentEnergy = reader.Read<int>();
+        value.InventoryManager = reader.Read<InventoryManager>();
+        value.IdVuKhi = reader.Read<int>();
+        value.IdPhongCu = reader.Read<int>();
+        value.IdTrangSuc = reader.Read<int>();
+        value.RelationShip = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
     }
-
     public bool IsSkinEmpty()
     {
         return Skins.Count == 0 || Colors.Count == 0;
+    }
+
+    public bool IsInventoryDefault()
+    {
+        return InventoryManager.IsDefault();
+    }
+
+    public async Task SaveChanges(AppDbContext db)
+    {
+        var charData = await db.Characters
+            .FirstAsync(x => x.Id == Id);
+
+        charData.Clone0(this);
+        if (!Stats.IsDefault())
+        {
+            await Stats.SaveChanges(db);
+        }
+
+        if (!InventoryManager.IsDefault())
+        {
+            await InventoryManager.SaveChanges(db);
+        }
     }
 }
