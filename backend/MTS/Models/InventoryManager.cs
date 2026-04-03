@@ -9,18 +9,25 @@ namespace MTS.Models;
 
 public class InventoryManager : IMemorySerializable<InventoryManager>
 {
-    public HashSet<FurnaceData> Furnaces { get; set; } = new();
-    public HashSet<int> Recipes { get; set; } = new();
-    public HashSet<ItemRef> Herbs { get; set; } = new();
-    [NotMapped]
-    private int furnaceId = 0;
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
+    public HashSet<FurnaceData> Furnaces { get; set; } = new();
+    public HashSet<ItemRef> Recipes { get; set; } = new();
+    public HashSet<ItemRef> Herbs { get; set; } = new();
+    public HashSet<ItemRef> ThanThongs { get; set; } = new();
+    public HashSet<ItemRef> CongPhaps { get; set; } = new();
+    public HashSet<ItemRef> VuKhis { get; set; } = new();
+    public HashSet<ItemRef> PhongCus { get; set; } = new();
+    public HashSet<ItemRef> TrangSucs { get; set; } = new();
+    public HashSet<ItemRef> LinhDans { get; set; } = new();
+    [NotMapped] private int furnaceId = 0;
+
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
+
     public void Init()
     {
         furnaceId = Furnaces.Any() ? Furnaces.MaxBy(x => x.SelfId).SelfId : 0;
@@ -32,28 +39,50 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         furnace.SelfId = furnaceId;
         Furnaces.Add(furnace);
     }
-    public int ByteSize()
-    {
-        return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize();
-    }
-    public void Serialize(IWriter writer)
-    {
-        writer.WriteArray(Furnaces);
-        writer.WriteArray(Recipes);
-        writer.WriteArray(Herbs);
-    }
-    public void Deserialize(IReader reader, ref InventoryManager value)
-    {
-        value.Furnaces = reader.ReadArray<FurnaceData>().ToHashSet();
-        value.Recipes = reader.ReadArray<int>().ToHashSet();
-        value.Herbs =reader.ReadArray<ItemRef>().ToHashSet();
-    }
-    public void Clone(InventoryManager other)
-    {
-        Furnaces = new HashSet<FurnaceData>(other.Furnaces);
-        Recipes = new HashSet<int>(other.Recipes);
-        Herbs = new HashSet<ItemRef>(other.Herbs);
-    }
+
+        public int ByteSize()
+        {
+            return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() + CongPhaps.ByteSize() + VuKhis.ByteSize() + PhongCus.ByteSize() + TrangSucs.ByteSize() + LinhDans.ByteSize();
+        }
+        public void Serialize(IWriter writer)
+        {
+            writer.WriteArray(Furnaces);
+            writer.WriteArray(Recipes);
+            writer.WriteArray(Herbs);
+            writer.WriteArray(ThanThongs);
+            writer.WriteArray(CongPhaps);
+            writer.WriteArray(VuKhis);
+            writer.WriteArray(PhongCus);
+            writer.WriteArray(TrangSucs);
+            writer.WriteArray(LinhDans);
+
+        }
+        public void Deserialize(IReader reader, ref InventoryManager value)
+        {
+            value.Furnaces = reader.ReadArray<FurnaceData>().ToHashSet();
+            value.Recipes = reader.ReadArray<ItemRef>().ToHashSet();
+            value.Herbs = reader.ReadArray<ItemRef>().ToHashSet();
+            value.ThanThongs = reader.ReadArray<ItemRef>().ToHashSet();
+            value.CongPhaps = reader.ReadArray<ItemRef>().ToHashSet();
+            value.VuKhis = reader.ReadArray<ItemRef>().ToHashSet();
+            value.PhongCus = reader.ReadArray<ItemRef>().ToHashSet();
+            value.TrangSucs = reader.ReadArray<ItemRef>().ToHashSet();
+            value.LinhDans = reader.ReadArray<ItemRef>().ToHashSet();
+
+        }
+
+        public void Clone(InventoryManager other)
+        {
+            Furnaces = new HashSet<FurnaceData>(other.Furnaces);
+            Recipes = new HashSet<ItemRef>(other.Recipes);
+            Herbs = new HashSet<ItemRef>(other.Herbs);
+            ThanThongs = new HashSet<ItemRef>(other.ThanThongs);
+            CongPhaps = new HashSet<ItemRef>(other.CongPhaps);
+            VuKhis = new HashSet<ItemRef>(other.VuKhis);
+            PhongCus = new HashSet<ItemRef>(other.PhongCus);
+            TrangSucs = new HashSet<ItemRef>(other.TrangSucs);
+            LinhDans = new HashSet<ItemRef>(other.LinhDans);
+        }
 
     public bool IsDefault()
     {

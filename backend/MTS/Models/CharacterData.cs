@@ -40,25 +40,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public int IdPhongCu { get; set; }
     public int IdTrangSuc { get; set; }
     public Dictionary<int, int> RelationShip { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public List<Mail> Mails { get; set; } = new();
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int UserId { get; set; }
+
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
-
     public InventoryManager InventoryManager { get; set; } = new();
-
     public CharacterData()
     {
     }
-
     public CharacterData(CharacterData clone)
     {
         Clone1(clone);
     }
-
     private void Clone0(CharacterData clone)
     {
         Level = clone.Level;
@@ -85,7 +84,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         IdTrangSuc = clone.IdTrangSuc;
         RelationShip = new(clone.RelationShip);
     }
-
     private void Clone1(CharacterData clone)
     {
         Id = clone.Id;
@@ -95,9 +93,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
         Colors = new(clone.Colors);
         Stats.CopyFrom(clone.Stats);
         InventoryManager.Clone(clone.InventoryManager);
+        CreatedAt = clone.CreatedAt;
+        Mails = new(clone.Mails);
         Clone0(clone);
     }
-
     public int ByteSize()
     {
         return Id.ByteSize()
@@ -122,9 +121,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + IdVuKhi.ByteSize()
                + IdPhongCu.ByteSize()
                + IdTrangSuc.ByteSize()
-               + RelationShip.ByteSize();
+               + RelationShip.ByteSize()
+               + CreatedAt.ByteSize()
+               + Mails.ByteSize();
     }
-
     public void Serialize(IWriter writer)
     {
         writer.Write(Id);
@@ -159,8 +159,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(IdPhongCu);
         writer.Write(IdTrangSuc);
         writer.WriteArray(RelationShip);
+        writer.Write(CreatedAt);
+        writer.WriteArray(Mails);
     }
-
     public void Deserialize(IReader reader, ref CharacterData value)
     {
         value.Id = reader.Read<int>();
@@ -173,11 +174,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Colors = DictionaryUtils.CreateDictionary(reader.ReadArray(), reader.ReadArray<Color>());
         value.MonPhai = reader.Read<EMonPhai>();
         value.NgoDaoSaves = reader.ReadArray<int>().ToList();
-        value.CamNgoSaves = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
+        value.CamNgoSaves = reader.ReadArray<KeyValuePair<int, int>>().ToDictionary(x => x.Key, x => x.Value);
         value.NgoDaoDiem = reader.Read<int>();
         value.ThanThongOwner = reader.ReadArray<int>().ToList();
         value.ThanThongEquip = reader.ReadArray<int>().ToList();
-        value.CongPhapOwner = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
+        value.CongPhapOwner = reader.ReadArray<KeyValuePair<int, int>>().ToDictionary(x => x.Key, x => x.Value);
         value.DonThuatUsed = reader.Read<int>();
         value.PhuTu1Used = reader.Read<int>();
         value.PhuTu2Used = reader.Read<int>();
@@ -192,13 +193,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.IdVuKhi = reader.Read<int>();
         value.IdPhongCu = reader.Read<int>();
         value.IdTrangSuc = reader.Read<int>();
-        value.RelationShip = reader.ReadArray<KeyValuePair<int,int>>().ToDictionary(x => x.Key, x => x.Value);
+        value.RelationShip = reader.ReadArray<KeyValuePair<int, int>>().ToDictionary(x => x.Key, x => x.Value);
+        value.CreatedAt = reader.Read<DateTime>();
+        value.Mails = reader.ReadArray<Mail>().ToList();
     }
     public bool IsSkinEmpty()
     {
         return Skins.Count == 0 || Colors.Count == 0;
     }
-
     public bool IsInventoryDefault()
     {
         return InventoryManager.IsDefault();
@@ -208,13 +210,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         var charData = await db.Characters
             .FirstAsync(x => x.Id == Id);
-
         charData.Clone0(this);
         if (!Stats.IsDefault())
         {
             await Stats.SaveChanges(db);
         }
-
         if (!InventoryManager.IsDefault())
         {
             await InventoryManager.SaveChanges(db);

@@ -14,9 +14,12 @@ public class AppDbContext : DbContext
     public DbSet<CharacterData> Characters { get; private set; }
     public DbSet<CharacterStats> CharacterStats { get; private set; }
     public DbSet<InventoryManager> InventoryManagers { get; private set; }
+    public DbSet<Mail> Mails { get; private set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+
     private static string SerializeObject<T>(T value)
     {
         return JsonConvert.SerializeObject(value);
@@ -36,6 +39,7 @@ public class AppDbContext : DbContext
             return new T();
         }
     }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var json = "json";
@@ -48,10 +52,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey<DeveloperAccount>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        modelBuilder.Entity<UserData>((e) =>
-        {
-            e.HasKey(x => x.Id);
-        });
+        modelBuilder.Entity<UserData>((e) => { e.HasKey(x => x.Id); });
         modelBuilder.Entity<CharacterData>((e) =>
         {
             e.HasKey(x => x.Id);
@@ -62,7 +63,7 @@ public class AppDbContext : DbContext
                     v => SerializeObject(v),
                     v => DeserializeObject<Dictionary<string, string>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerDict<string,string>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerDict<string, string>.Comparer());
 
             e.Property(x => x.Colors)
                 .HasColumnType(json)
@@ -70,13 +71,13 @@ public class AppDbContext : DbContext
                     v => SerializeObject(v),
                     v => DeserializeObject<Dictionary<string, Color>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerDict<string,Color>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerDict<string, Color>.Comparer());
             e.Property(x => x.NgoDaoSaves)
                 .HasColumnType(json)
                 .HasConversion(
                     v => SerializeObject(v),
                     v => DeserializeObject<List<int>>(v)
-                ) 
+                )
                 .Metadata.SetValueComparer(ValueComparerList<int>.Comparer());
             e.Property(x => x.CamNgoSaves)
                 .HasColumnType(json)
@@ -84,7 +85,7 @@ public class AppDbContext : DbContext
                     v => SerializeObject(v),
                     v => DeserializeObject<Dictionary<int, int>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerDict<int,int>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
             e.Property(x => x.ThanThongOwner)
                 .HasColumnType(json)
                 .HasConversion(
@@ -105,7 +106,7 @@ public class AppDbContext : DbContext
                     v => SerializeObject(v),
                     v => DeserializeObject<Dictionary<int, int>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerDict<int,int>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
             e.Property(x => x.DanCombatUsed)
                 .HasColumnType(json)
                 .HasConversion(
@@ -119,7 +120,7 @@ public class AppDbContext : DbContext
                     v => SerializeObject(v),
                     v => DeserializeObject<Dictionary<int, int>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerDict<int,int>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
             e.HasOne(x => x.User)
                 .WithMany(x => x.CharacterDatas)
                 .HasForeignKey(x => x.UserId)
@@ -128,10 +129,23 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CharacterStats>(e =>
         {
             e.HasKey(x => x.CharId);
+            e.Property(x => x.TuoiTac)
+                .HasConversion(
+                    v => v.Ticks,
+                    v => new TimeSpan(v)
+                )
+                .Metadata.SetValueComparer(
+                    new ValueComparer<TimeSpan>(
+                        (a, b) => a == b,
+                        v => v.GetHashCode(),
+                        v => new TimeSpan(v.Ticks)
+                    )
+                );
             e.HasOne(x => x.CharacterData)
                 .WithOne(x => x.Stats)
                 .HasForeignKey<CharacterStats>(x => x.CharId)
-                .OnDelete(DeleteBehavior.Cascade);;
+                .OnDelete(DeleteBehavior.Cascade);
+            ;
         });
         modelBuilder.Entity<InventoryManager>(e =>
         {
@@ -147,6 +161,13 @@ public class AppDbContext : DbContext
                     v => DeserializeObject<HashSet<FurnaceData>>(v)
                 )
                 .Metadata.SetValueComparer(ValueComparerSet<FurnaceData>.Comparer());
+            e.Property(x => x.Recipes)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
             e.Property(x => x.Herbs)
                 .HasColumnType(json)
                 .HasConversion(
@@ -154,13 +175,64 @@ public class AppDbContext : DbContext
                     v => DeserializeObject<HashSet<ItemRef>>(v)
                 )
                 .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.Recipes)
+            e.Property(x => x.ThanThongs)
                 .HasColumnType(json)
                 .HasConversion(
                     v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<int>>(v)
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
                 )
-                .Metadata.SetValueComparer(ValueComparerSet<int>.Comparer());
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+            e.Property(x => x.CongPhaps)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+            e.Property(x => x.VuKhis)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+            e.Property(x => x.PhongCus)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+            e.Property(x => x.TrangSucs)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+            e.Property(x => x.LinhDans)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeObject<HashSet<ItemRef>>(v)
+                )
+                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
         });
+        modelBuilder.Entity<Mail>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Rewards)
+                    .HasColumnType(json)
+                    .HasConversion(
+                        v => SerializeObject(v),
+                        v => DeserializeObject<List<ItemRef>>(v)
+                    )
+                    .Metadata.SetValueComparer(ValueComparerList<ItemRef>.Comparer());
+                e.HasOne(x => x.CharacterData)
+                    .WithMany(x => x.Mails)
+                    .HasForeignKey(x => x.CharId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            }
+        );
     }
 }

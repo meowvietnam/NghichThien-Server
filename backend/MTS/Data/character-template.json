@@ -23,7 +23,7 @@
     "LinhCan": 0,
     "Ability": 0,
     "DanDoc": 0,
-    "TuoiTac": 0
+    "TuoiTac": "5475.00:00:00"
   },
   "Skins": {},
   "Colors": {},
@@ -43,5 +43,5 @@
   "ChuTu2Used": 0,
   "DanCombatUsed": [],
   "IdCurrentNode": 0,
-  "CurrentEnergy": 0
+  "CurrentEnergy": 100
 }

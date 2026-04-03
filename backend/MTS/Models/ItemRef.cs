@@ -1,8 +1,10 @@
+using MTS.Converter;
 using Network;
 using Network.Extensions;
+using Newtonsoft.Json;
 
 namespace MTS.Models;
-
+[JsonConverter(typeof(ItemRefConverter))]
 public class ItemRef : IMemorySerializable<ItemRef>
 {
     public int Id { get; set; }
@@ -41,7 +43,6 @@ public class ItemRef : IMemorySerializable<ItemRef>
         writer.Write(Count);
         writer.Write(Durability);
     }
-
     public void Deserialize(IReader reader, ref ItemRef value)
     {
         value.Id = reader.Read<int>();
@@ -49,7 +50,6 @@ public class ItemRef : IMemorySerializable<ItemRef>
         value.Count = reader.Read<int>();
         value.Durability = reader.Read<int>();
     }
-
     public override int GetHashCode()
     {
         return HashCode.Combine(Id, Type);

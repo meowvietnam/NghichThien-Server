@@ -38,6 +38,7 @@ public class CreateCharacterService
         {
             throw new Exception(ExceptionMessage.SkinGenderInvalid);
         }
+
         foreach (var skinGroup in skinGenderGroup.SkinGroups)
         {
             foreach (var skinGroupCategory in skinGroup.Categories)
@@ -47,14 +48,17 @@ public class CreateCharacterService
                 {
                     throw new Exception(ExceptionMessage.SkinCategoryMissing);
                 }
+
                 var existed = skinGroupCategory.Skins.Any(x =>
                     x.Name.Equals(skin, StringComparison.InvariantCultureIgnoreCase));
                 if (!existed)
                 {
                     throw new Exception(ExceptionMessage.SkinOptionInvalid);
                 }
+
                 newSkins.Add(categoryId, skin);
             }
+
             foreach (var colorGroup in skinGroup.ColorGroups)
             {
                 foreach (var colorId in colorGroup.CategoryIds)
@@ -63,11 +67,13 @@ public class CreateCharacterService
                     {
                         throw new Exception(ExceptionMessage.SkinColorMissing + $" {colorId}");
                     }
+
                     color.A = 1;
                     newColors[colorId] = color;
                 }
             }
         }
+
         Char.Gender = gender;
         Char.Skins = newSkins;
         Char.Colors = newColors;
@@ -79,11 +85,13 @@ public class CreateCharacterService
         {
             throw new Exception(ExceptionMessage.NameInvalid);
         }
+
         name = name.Trim();
         if (name.Length <= 5 || name.Length >= 20)
         {
             throw new Exception(ExceptionMessage.NameLengthInvalid);
         }
+
         if (!Regex.IsMatch(name, @"^[\p{L}\p{N}\s]+$"))
         {
             throw new Exception(ExceptionMessage.NameSpecialCharInvalid);
@@ -96,6 +104,7 @@ public class CreateCharacterService
             throw new Exception(ExceptionMessage.NameExisted);
         }
     }
+
     private List<SelectionModel> Clean(List<SelectionModel> models)
     {
         models = models
@@ -115,6 +124,7 @@ public class CreateCharacterService
                     .ToList();
             }
         }
+
         return models;
     }
 
@@ -131,6 +141,7 @@ public class CreateCharacterService
         {
             throw new Exception(ExceptionMessage.IsIncomplete);
         }
+
         foreach (var model in models)
         {
             var stepId = model.Id;
@@ -174,7 +185,6 @@ public class CreateCharacterService
                     foreach (var statModifier in modifiers)
                     {
                         Apply(stats, statModifier, ref money);
-                        
                     }
                 }
             }
@@ -229,21 +239,25 @@ public class CreateCharacterService
                 }
             }
         }
+
         if (money < 0)
         {
             throw new Exception($"{ExceptionMessage.NotEnoughMoney}: {money}");
         }
+
         stats.SetValue(StatType.Hp, stats.SinhMenh);
         Char.CurrentEnergy = 100;
         Char.IdCurrentNode = GameConfig.MapManager.EntryMapId;
         Char.Stats = stats;
     }
+
     private void Apply(CharacterStats stats, StatModifier modifier, ref int money)
     {
         var newMoney = money - modifier.Cost;
         stats.Apply(modifier);
         money = newMoney;
     }
+
     public object GetSelection(List<SelectionModel> selectionModels)
     {
         var stepConfig = GameConfig.StepConfig;
@@ -313,6 +327,7 @@ public class CreateCharacterService
 
         return res;
     }
+
     public async Task<CharacterData> Completed(UserData user)
     {
         var charCount = user.CharacterDatas.Count;
@@ -324,6 +339,7 @@ public class CreateCharacterService
         await using var db = await Program.CreateDbAsync();
         await ValidateName(Char.Name);
         Char.UserId = userId;
+        Char.CreatedAt = DateTime.UtcNow;
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
@@ -346,7 +362,10 @@ public static class ExceptionMessage
     public const string GroupInvalid = "Nhóm lựa chọn không hợp lệ!";
     public const string GroupExclusiveViolation = "Phát hiện các nhóm lựa chọn xung đột lẫn nhau!";
     public const string ElementalInvalid = "Lựa chọn nguyên tố linh căn không hợp lệ!";
-    public const string ElementalCountInvalid = "Số lượng linh căn được chọn không khớp với yêu cầu của chỉ số Linh Căn!";
+
+    public const string ElementalCountInvalid =
+        "Số lượng linh căn được chọn không khớp với yêu cầu của chỉ số Linh Căn!";
+
     public const string ElementalOptionInvalid = "Tùy chọn nguyên tố linh căn không tồn tại!";
     public const string ElementalStatInvalid = "Chỉ số nguyên tố linh căn không hợp lệ!";
     public const string SelectionInvalid = "Lựa chọn không hợp lệ!";

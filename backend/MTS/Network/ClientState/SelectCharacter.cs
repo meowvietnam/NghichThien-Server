@@ -1,3 +1,4 @@
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -64,6 +65,11 @@ namespace MTS.Network.ClientState
                         CharacterData = character,
                     };
                     client.Send(MessageTag.SelectCharacterResult, result);
+                    await client.SendMail(new Mail()
+                    {
+                        Title = "Test mail",
+                        Content = "Test mail Content",
+                    });
                     client.ChangeState(new AllMaps(client));
                 }
                 catch (Exception e)

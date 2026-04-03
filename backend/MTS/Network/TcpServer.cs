@@ -47,7 +47,6 @@ public class TcpServer : BaseTcpServer
     {
         unauthenticatedClients.TryRemove(unauthenticatedClient.Id, out _);
     }
-
     public void Remove(Client client)
     {
         clients.TryRemove(client.Id, out _);
@@ -59,12 +58,11 @@ public class TcpServer : BaseTcpServer
         newClient.ChangeState(new AuthState(newClient));
     }
 
-    public CharacterData[] GetCharsOnline(int limit = 5)
+    public CharacterData[] GetCharsOnline()
     {
         return clients.Values
             .Where(x => x.IsCharacterSelected())
             .Select(x => x.CharacterData)
-            .Take(limit)
             .ToArray();
     }
 }

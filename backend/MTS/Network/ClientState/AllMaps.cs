@@ -10,6 +10,7 @@ public class AllMaps : IClientState
     private Client client;
     private const string NotEnoughEnergy = "Không đủ năng lượng";
     private bool isMoving;
+    private bool isLockMail;
 
     public AllMaps(Client client)
     {
@@ -20,7 +21,19 @@ public class AllMaps : IClientState
     {
     }
 
-    public void Handle(Message<MessageTag> message)
+    private CharacterSnapshot[] GetCharsOnlineThisNode()
+    {
+        var currentNodeId = client.CharacterData.IdCurrentNode;
+        var charId = client.CharacterData.Id;
+        var charsOnline = TcpServer.Instance.GetCharsOnline()
+            .Where(x => x.IdCurrentNode == currentNodeId && x.Id != charId)
+            .Select(x => new CharacterSnapshot(x))
+            .Take(5)
+            .ToArray();
+        return charsOnline;
+    }
+
+    public async void Handle(Message<MessageTag> message)
     {
         var tag = message.Tag;
         var reader = message.Reader;
@@ -45,16 +58,21 @@ public class AllMaps : IClientState
                     throw new Exception($"{NotEnoughEnergy}: {energy}");
                 }
 
+                var stats = charData.Stats;
+                var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
+                var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
+                stats.TuoiTac = newAge;
                 charData.IdCurrentNode = id;
                 charData.CurrentEnergy = newEnergy;
-                var charsOnline = TcpServer.Instance.GetCharsOnline().Select(x => new CharacterSnapshot(x)).ToArray();
+                var charsOnline = GetCharsOnlineThisNode();
                 var pathIds = path.Select(x => x.Id).ToArray();
                 var result = new MoveToMapResult()
                 {
                     Success = true,
                     Energy = newEnergy,
                     Path = pathIds,
-                    CharactersOnline = charsOnline
+                    CharactersOnline = charsOnline,
+                    NewAge = newAge
                 };
                 client.Send(MessageTag.MoveToMapResult, result);
             }
@@ -76,7 +94,7 @@ public class AllMaps : IClientState
         {
             try
             {
-                var charsOnline = TcpServer.Instance.GetCharsOnline().Select(x => new CharacterSnapshot(x)).ToArray();
+                var charsOnline = GetCharsOnlineThisNode();
                 var result = new GetCharacterOnlineThisNodeResult()
                 {
                     Success = true,
@@ -93,6 +111,51 @@ public class AllMaps : IClientState
                 };
                 client.Send(MessageTag.GetPlayerOnlineThisNodeResult, result);
             }
+        }
+        else if (tag == MessageTag.GetMails)
+        {
+            try
+            {
+                var mails = await client.GetMails();
+                var result = new GetMailsResult()
+                {
+                    Success = true,
+                    Mails = mails
+                };
+                client.Send(MessageTag.GetMailsResult, result);
+            }
+            catch (Exception e)
+            {
+                var result = new GetMailsResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+                client.Send(MessageTag.GetMailsResult, result);
+            }
+        }
+        else if (tag == MessageTag.ReadMail)
+        {
+            var id = reader.Read<int>();
+            var result = client.ReadMail(id);
+            if (result == id)
+            {
+                client.Send(MessageTag.MarkMailRead, id);
+            }
+        }
+        else if (tag == MessageTag.RemoveMail)
+        {
+            var id = reader.Read<int>();
+            var result = client.RemoveMail(id);
+            if (result == id)
+            {
+                client.Send(MessageTag.RemoveMailId, id);
+            }
+        }
+        else if (tag == MessageTag.RemoveAllMails)
+        {
+            var result = client.RemoveAllMails();
+            client.Send(MessageTag.RemoveAllMailsResult, result);
         }
     }
 

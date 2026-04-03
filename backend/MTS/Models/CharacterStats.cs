@@ -30,7 +30,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public LinhCan LinhCan { get; private set; }
     public Ability Ability { get; private set; }
     public int DanDoc { get; private set; }
-    public int TuoiTac { get; private set; }
+    public TimeSpan TuoiTac { get; set; }
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -153,7 +153,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.ThoNguyen: ThoNguyen = value; break;
             case StatType.TamCanh: TamCanh = value; break;
             case StatType.DanDoc: DanDoc = value; break;
-            case StatType.TuoiTac: TuoiTac = value; break;
+            case StatType.TuoiTac: TuoiTac = new TimeSpan(value); break;
         }
     }
 
@@ -191,6 +191,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 break;
         }
     }
+
     public int ByteSize()
     {
         return Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize()
@@ -201,6 +202,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                + ThoNguyen.ByteSize() + TamCanh.ByteSize() + LinhCan.ByteSize() + Ability.ByteSize()
                + DanDoc.ByteSize() + TuoiTac.ByteSize();
     }
+
     public void Serialize(IWriter writer)
     {
         writer.Write(Kim);
@@ -223,6 +225,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         writer.Write(DanDoc);
         writer.Write(TuoiTac);
     }
+
     public void Deserialize(IReader reader, ref CharacterStats value)
     {
         value.Kim = reader.Read<float>();
@@ -243,7 +246,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         value.LinhCan = reader.Read<LinhCan>();
         value.Ability = reader.Read<Ability>();
         value.DanDoc = reader.Read<int>();
-        value.TuoiTac = reader.Read<int>();
+        value.TuoiTac = reader.Read<TimeSpan>();
     }
 
     public bool IsDefault()
