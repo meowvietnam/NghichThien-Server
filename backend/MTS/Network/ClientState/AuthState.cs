@@ -8,6 +8,7 @@ namespace MTS.Network.ClientState
     public class AuthState(Client client) : IClientState
     {
         private const string LoginSuccess = "Đăng nhập thành công!";
+        private const string ClientOnline = "Tài khoản đang đăng nhập nơi khác!";
         public void OnEnter()
         {
         }
@@ -22,6 +23,11 @@ namespace MTS.Network.ClientState
                 try
                 {
                     var userData = await service.CreateOrLogin(username);
+                    var isClentOnline = TcpServer.Instance.IsClientOnline(userData.Id);
+                    if (isClentOnline)
+                    {
+                        throw new Exception(ClientOnline);
+                    }
                     client.SetUserData(userData);
                     var result = new LoginResult
                     {

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -20,7 +21,8 @@ namespace MTS.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    IsInfiniteEnergy = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                    IsInfiniteEnergy = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -66,6 +68,12 @@ namespace MTS.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IdCurrentNode = table.Column<int>(type: "int", nullable: false),
                     CurrentEnergy = table.Column<int>(type: "int", nullable: false),
+                    IdVuKhi = table.Column<int>(type: "int", nullable: false),
+                    IdPhongCu = table.Column<int>(type: "int", nullable: false),
+                    IdTrangSuc = table.Column<int>(type: "int", nullable: false),
+                    RelationShip = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -125,7 +133,7 @@ namespace MTS.Migrations
                     LinhCan = table.Column<int>(type: "int", nullable: false),
                     Ability = table.Column<int>(type: "int", nullable: false),
                     DanDoc = table.Column<int>(type: "int", nullable: false),
-                    TuoiTac = table.Column<int>(type: "int", nullable: false)
+                    TuoiTac = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -149,6 +157,18 @@ namespace MTS.Migrations
                     Recipes = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Herbs = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ThanThongs = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CongPhaps = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    VuKhis = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PhongCus = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TrangSucs = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LinhDans = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -156,6 +176,35 @@ namespace MTS.Migrations
                     table.PrimaryKey("PK_InventoryManagers", x => x.CharId);
                     table.ForeignKey(
                         name: "FK_InventoryManagers_Characters_CharId",
+                        column: x => x.CharId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Mails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsRead = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsClaim = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    Rewards = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Mails_Characters_CharId",
                         column: x => x.CharId,
                         principalTable: "Characters",
                         principalColumn: "Id",
@@ -185,6 +234,11 @@ namespace MTS.Migrations
                 table: "DeveloperAccounts",
                 column: "UserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mails_CharId",
+                table: "Mails",
+                column: "CharId");
         }
 
         /// <inheritdoc />
@@ -198,6 +252,9 @@ namespace MTS.Migrations
 
             migrationBuilder.DropTable(
                 name: "InventoryManagers");
+
+            migrationBuilder.DropTable(
+                name: "Mails");
 
             migrationBuilder.DropTable(
                 name: "Characters");

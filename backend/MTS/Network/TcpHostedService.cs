@@ -3,7 +3,6 @@ namespace MTS.Network;
 public class TcpHostedService : IHostedService
 {
     private readonly TcpServer tcpServer;
-
     public TcpHostedService(IConfiguration config)
     {
         var port = config.GetValue("ServerPorts:TcpPort", 6785);
@@ -15,9 +14,9 @@ public class TcpHostedService : IHostedService
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         tcpServer.Stop();
-        return Task.CompletedTask;
+        await tcpServer.SaveClients();
     }
 }

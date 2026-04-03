@@ -12,7 +12,6 @@ public class ItemRefConverter : JsonConverter<ItemRef>
         writer.WriteValue(value.Id);
         writer.WriteValue(value.Type);
         writer.WriteValue(value.Count);
-        writer.WriteValue(value.Durability);
         writer.WriteEndArray();
     }
     public override ItemRef? ReadJson(JsonReader reader, Type objectType, ItemRef? existingValue, bool hasExistingValue,
@@ -34,9 +33,6 @@ public class ItemRefConverter : JsonConverter<ItemRef>
         var count = Convert.ToInt32(reader.Value);
 
         reader.Read();
-        var durability = Convert.ToInt32(reader.Value);
-
-        reader.Read();
         if (reader.TokenType != JsonToken.EndArray)
             throw new JsonSerializationException("Expected EndArray");
 
@@ -45,7 +41,6 @@ public class ItemRefConverter : JsonConverter<ItemRef>
             Id = id,
             Type = type,
             Count = count,
-            Durability = durability
         };
     }
 }

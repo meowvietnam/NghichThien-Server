@@ -235,7 +235,7 @@ public class Client : ClientConnection, ISender<MessageTag>
         if (mail.IsClaim) return null;
         var rewards = mail.Rewards;
         var inventory = CharacterData.InventoryManager;
-        var reuslt = AddToInventory(inventory, rewards);
+        var result = AddToInventory(inventory, rewards);
         mail.IsClaim = true;
         _ = Task.Run(async () =>
         {
@@ -248,7 +248,7 @@ public class Client : ClientConnection, ISender<MessageTag>
         return new RewardResult()
         {
             Mails = new List<int>() {id},
-            RewardItems = reuslt
+            RewardItems = result
         };
     }
 
@@ -272,6 +272,10 @@ public class Client : ClientConnection, ISender<MessageTag>
                 .ExecuteUpdateAsync(s =>
                     s.SetProperty(u => u.IsClaim, true));
         });
+        foreach (var neverClaim in neverClaims)
+        {
+            neverClaim.IsClaim = true;
+        }
         return new RewardResult()
         {
             Mails = mailIds,
@@ -296,49 +300,9 @@ public class Client : ClientConnection, ISender<MessageTag>
             else
             {
                 result.OtherItems.Add(itemRef);
-                if (type == ItemType.Herb)
-                {
-                    Add(inventory.Herbs, itemRef);
-                }
-                else if (type == ItemType.LinhDan)
-                {
-                    Add(inventory.LinhDans, itemRef);
-                }
-                else if (type == ItemType.ThanThong)
-                {
-                    Add(inventory.ThanThongs, itemRef);
-                }
-                else if (type == ItemType.CongPhap)
-                {
-                    Add(inventory.CongPhaps, itemRef);
-                }
-                else if (type == ItemType.VuKhi)
-                {
-                    Add(inventory.VuKhis, itemRef);
-                }
-                else if (type == ItemType.PhongCu)
-                {
-                    Add(inventory.PhongCus, itemRef);
-                }
-                else if (type == ItemType.TrangSuc)
-                {
-                    Add(inventory.TrangSucs, itemRef);
-                }
-                else if (type == ItemType.Recipe)
-                {
-                    Add(inventory.Recipes, itemRef);
-                }
+                inventory.Add(itemRef);
             }
         }
         return result;
-    }
-
-    private void Add(HashSet<ItemRef> inventory, ItemRef itemRef)
-    {
-        if (!inventory.Add(itemRef))
-        {
-            var item = inventory.First(x => x.Id == itemRef.Id);
-            item.Count += itemRef.Count;
-        }
     }
 }

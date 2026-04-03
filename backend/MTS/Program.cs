@@ -106,7 +106,6 @@ public static class Program
         });
 
         builder.Services.AddHostedService<TcpHostedService>();
-        builder.Services.AddSingleton<AppLifetimeService>();
         App = builder.Build();
         Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
         GameConfig.Init();
@@ -125,7 +124,6 @@ public static class Program
         App.UseHttpsRedirection();
         App.UseAuthorization();
         App.MapControllers();
-        App.Services.GetRequiredService<AppLifetimeService>();
         App.Run();
     }
 }

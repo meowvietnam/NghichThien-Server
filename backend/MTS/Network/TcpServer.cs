@@ -37,7 +37,7 @@ public class TcpServer : BaseTcpServer
 
     protected override void OnStop()
     {
-        Console.WriteLine($"TcpServer is stopped");
+        
     }
     protected override void OnRun()
     {
@@ -64,5 +64,29 @@ public class TcpServer : BaseTcpServer
             .Where(x => x.IsCharacterSelected())
             .Select(x => x.CharacterData)
             .ToArray();
+    }
+
+    public async Task SaveClients()
+    {
+        var semaphore = new SemaphoreSlim(10);
+        var tasks = clients.Values.Select(async client =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                await client.SaveChanges();
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+        await Task.WhenAll(tasks);
+        Console.WriteLine("Save changes completed!");
+    }
+
+    public bool IsClientOnline(int userDataId)
+    {
+        return clients.Values.Any(x => x.IsLoggedIn() && x.UserData.Id == userDataId);
     }
 }
