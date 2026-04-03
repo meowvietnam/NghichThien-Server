@@ -20,16 +20,26 @@ public class ItemRefConverter : JsonConverter<ItemRef>
     {
         if (reader.TokenType == JsonToken.Null)
             return null;
+
         if (reader.TokenType != JsonToken.StartArray)
             throw new JsonSerializationException("Expected StartArray");
+
         reader.Read();
         var id = Convert.ToInt32(reader.Value);
+
+        reader.Read();
         var type = (ItemType)Convert.ToInt32(reader.Value);
+
         reader.Read();
         var count = Convert.ToInt32(reader.Value);
+
         reader.Read();
         var durability = Convert.ToInt32(reader.Value);
+
         reader.Read();
+        if (reader.TokenType != JsonToken.EndArray)
+            throw new JsonSerializationException("Expected EndArray");
+
         return new ItemRef
         {
             Id = id,

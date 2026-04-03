@@ -1,4 +1,6 @@
+using MTS.Game;
 using MTS.Models;
+using MTS.Network.Core;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -65,11 +67,30 @@ namespace MTS.Network.ClientState
                         CharacterData = character,
                     };
                     client.Send(MessageTag.SelectCharacterResult, result);
+                    var herbs = GameConfig.LuyenDanResources.HerbDatas;
+                    var herb  = herbs[Random.Shared.Next(herbs.Count)];
+                    var rewards = new List<ItemRef>
+                    {
+                        new ItemRef()
+                        {
+                            Id = herb.Id,
+                            Type = ItemType.Herb,
+                            Count = 1,
+                        }
+                    };
                     await client.SendMail(new Mail()
                     {
                         Title = "Test mail",
                         Content = "Test mail Content",
+                        Rewards =  rewards,
                     });
+                    var module = client.CoreModule;
+                    module.RemoveHandler<MailHandler>();
+                    var mailHandler = new MailHandler(client);
+                    module.AddHandler(mailHandler);
+                    module.RemoveHandler<InventoryHandler>();
+                    var inventoryHandler = new InventoryHandler(client);
+                    module.AddHandler(inventoryHandler);
                     client.ChangeState(new AllMaps(client));
                 }
                 catch (Exception e)

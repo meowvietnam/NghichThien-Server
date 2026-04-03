@@ -10,7 +10,6 @@ public class AllMaps : IClientState
     private Client client;
     private const string NotEnoughEnergy = "Không đủ năng lượng";
     private bool isMoving;
-    private bool isLockMail;
 
     public AllMaps(Client client)
     {
@@ -33,7 +32,7 @@ public class AllMaps : IClientState
         return charsOnline;
     }
 
-    public async void Handle(Message<MessageTag> message)
+    public void Handle(Message<MessageTag> message)
     {
         var tag = message.Tag;
         var reader = message.Reader;
@@ -112,56 +111,9 @@ public class AllMaps : IClientState
                 client.Send(MessageTag.GetPlayerOnlineThisNodeResult, result);
             }
         }
-        else if (tag == MessageTag.GetMails)
-        {
-            try
-            {
-                var mails = await client.GetMails();
-                var result = new GetMailsResult()
-                {
-                    Success = true,
-                    Mails = mails
-                };
-                client.Send(MessageTag.GetMailsResult, result);
-            }
-            catch (Exception e)
-            {
-                var result = new GetMailsResult()
-                {
-                    Success = false,
-                    Message = e.Message
-                };
-                client.Send(MessageTag.GetMailsResult, result);
-            }
-        }
-        else if (tag == MessageTag.ReadMail)
-        {
-            var id = reader.Read<int>();
-            var result = client.ReadMail(id);
-            if (result == id)
-            {
-                client.Send(MessageTag.MarkMailRead, id);
-            }
-        }
-        else if (tag == MessageTag.RemoveMail)
-        {
-            var id = reader.Read<int>();
-            var result = client.RemoveMail(id);
-            if (result == id)
-            {
-                client.Send(MessageTag.RemoveMailId, id);
-            }
-        }
-        else if (tag == MessageTag.RemoveAllMails)
-        {
-            var result = client.RemoveAllMails();
-            client.Send(MessageTag.RemoveAllMailsResult, result);
-        }
     }
-
     public void OnLeave()
     {
     }
-
     public MessageState State => MessageState.AllMaps;
 }

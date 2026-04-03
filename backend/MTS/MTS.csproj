@@ -56,6 +56,10 @@
       <Content Include="Data\maps.bin">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <None Remove="Data\LuyenDanResources.bin" />
+      <Content Include="Data\LuyenDanResources.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

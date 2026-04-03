@@ -19,30 +19,7 @@ public class LuyenDan : IClientState
 
     public async void Handle(Message<MessageTag> message)
     {
-        var tag = message.Tag;
-        var reader = message.Reader;
-        if (tag == MessageTag.GetInventory)
-        {
-            try
-            {
-                var inventory = await client.GetInventory();
-                var result = new GetInventoryResult()
-                {
-                    Success = false,
-                    InventoryManager = inventory,
-                };
-                client.Send(MessageTag.GetInventoryResult, result);
-            }
-            catch (Exception e)
-            {
-                var result = new GetInventoryResult()
-                {
-                    Success = false,
-                    Message = e.Message
-                };
-                client.Send(MessageTag.GetInventoryResult, result);
-            }
-        }
+
     }
 
     public void OnLeave()

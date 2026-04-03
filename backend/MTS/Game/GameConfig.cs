@@ -1,6 +1,7 @@
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.CreateCharacter;
+using MTS.Game.LuyenDan;
 using MTS.Models;
 using Network;
 using Network.Extensions;
@@ -14,6 +15,7 @@ public static class GameConfig
     public static SkinResources SkinResources { get; private set; }
     public static readonly float[] UnselectPercents = { 11,12,14,16,20 };
     public static MapManager MapManager { get; private set; }
+    public static LuyenDanResources LuyenDanResources { get; private set; }
     public const int OriginalMoney = 20;
     public static void Init()
     {
@@ -24,5 +26,8 @@ public static class GameConfig
         SkinResources = reader.Read<SkinResources>();
         reader = new Reader(File.ReadAllBytes("Data/maps.bin"));
         MapManager = reader.Read<MapManager>();
+        reader = new Reader(File.ReadAllBytes("Data/LuyenDanResources.bin"));
+        LuyenDanResources = reader.Read<LuyenDanResources>();
+        Console.WriteLine();
     }
 }

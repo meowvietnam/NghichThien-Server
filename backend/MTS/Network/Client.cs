@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using MTS.Models;
 using MTS.Network.ClientState;
+using MTS.Network.Models;
 using Network;
 
 namespace MTS.Network;
@@ -11,6 +12,7 @@ public class Client : ClientConnection, ISender<MessageTag>
     public int Id { get; private set; }
     public string Key { get; private set; }
     private MessageStateHandler<MessageTag, MessageState> stateModule;
+    public CoreMessageHandler<MessageTag> CoreModule { get; private set; }
     public UserData UserData { get; private set; }
     public CharacterData CharacterData { get; private set; }
     private bool isGetMail;
@@ -22,9 +24,9 @@ public class Client : ClientConnection, ISender<MessageTag>
         var tcpClient = client.TcpClient;
         client.TransferProtocol(tcpClient, this);
         TcpClient = tcpClient;
-        var coreModule = new CoreMessageHandler<MessageTag>();
+        CoreModule = new CoreMessageHandler<MessageTag>();
         stateModule = new MessageStateHandler<MessageTag, MessageState>();
-        AddModule(coreModule);
+        AddModule(CoreModule);
         AddModule(stateModule);
         _ = Save();
     }
@@ -220,5 +222,123 @@ public class Client : ClientConnection, ISender<MessageTag>
             });
         }
         return removeIds;
+    }
+
+    public RewardResult? ClaimMail(int id)
+    {
+        var mails = CharacterData.Mails;
+        var mail = mails.FirstOrDefault(x => x.Id == id);
+        if (mail == null)
+        {
+            return null;
+        }
+        if (mail.IsClaim) return null;
+        var rewards = mail.Rewards;
+        var inventory = CharacterData.InventoryManager;
+        var reuslt = AddToInventory(inventory, rewards);
+        mail.IsClaim = true;
+        _ = Task.Run(async () =>
+        {
+            await using var db = await Program.CreateDbAsync();
+            await db.Mails
+                .Where(x => x.Id == id)
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(u => u.IsClaim, true));
+        });
+        return new RewardResult()
+        {
+            Mails = new List<int>() {id},
+            RewardItems = reuslt
+        };
+    }
+
+    public RewardResult? ClaimAllMails()
+    {
+        var mails = CharacterData.Mails;
+        var neverClaims = mails.Where(x => !x.IsClaim).ToList();
+        if (!neverClaims.Any())
+        {
+            return null;
+        }
+        var mailIds = neverClaims.Select(x => x.Id).ToList();
+        var rewards = neverClaims.SelectMany(x => x.Rewards).ToList();
+        var inventory = CharacterData.InventoryManager;
+        var result = AddToInventory(inventory, rewards);
+        _ = Task.Run(async () =>
+        {
+            await using var db = await Program.CreateDbAsync();
+            await db.Mails
+                .Where(x => mailIds.Contains(x.Id))
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(u => u.IsClaim, true));
+        });
+        return new RewardResult()
+        {
+            Mails = mailIds,
+            RewardItems = result
+        };
+    }
+    private RewardItems AddToInventory(InventoryManager inventory, List<ItemRef> rewards)
+    {
+        var result = new RewardItems();
+        foreach (var itemRef in rewards)
+        {
+            var type = itemRef.Type;
+            if (type == ItemType.Furnace)
+            {
+                var furnace = new FurnaceData()
+                {
+                    Ref = itemRef,
+                };
+                inventory.AddFurnace(furnace);
+                result.Furnaces.Add(furnace);
+            }
+            else
+            {
+                result.OtherItems.Add(itemRef);
+                if (type == ItemType.Herb)
+                {
+                    Add(inventory.Herbs, itemRef);
+                }
+                else if (type == ItemType.LinhDan)
+                {
+                    Add(inventory.LinhDans, itemRef);
+                }
+                else if (type == ItemType.ThanThong)
+                {
+                    Add(inventory.ThanThongs, itemRef);
+                }
+                else if (type == ItemType.CongPhap)
+                {
+                    Add(inventory.CongPhaps, itemRef);
+                }
+                else if (type == ItemType.VuKhi)
+                {
+                    Add(inventory.VuKhis, itemRef);
+                }
+                else if (type == ItemType.PhongCu)
+                {
+                    Add(inventory.PhongCus, itemRef);
+                }
+                else if (type == ItemType.TrangSuc)
+                {
+                    Add(inventory.TrangSucs, itemRef);
+                }
+                else if (type == ItemType.Recipe)
+                {
+                    Add(inventory.Recipes, itemRef);
+                }
+            }
+        }
+        return result;
+    }
+
+    private void Add(HashSet<ItemRef> inventory, ItemRef itemRef)
+    {
+        if (!inventory.Add(itemRef))
+        {
+            var item = inventory.First(x => x.Id == itemRef.Id);
+            item.Count += itemRef.Count;
+        }
     }
 }
