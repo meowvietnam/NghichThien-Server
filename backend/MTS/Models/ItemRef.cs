@@ -1,11 +1,13 @@
 using MTS.Converter;
+using MTS.Interfaces;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
 [JsonConverter(typeof(ItemRefConverter))]
-public class ItemRef : IMemorySerializable<ItemRef>
+public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDeepClone<ItemRef>
 {
     public int Id { get; set; }
     public ItemType Type { get; set; }
@@ -40,8 +42,28 @@ public class ItemRef : IMemorySerializable<ItemRef>
         value.Type = reader.Read<ItemType>();
         value.Count = reader.Read<int>();
     }
+
+    public bool CustomEquals(ItemRef other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id == other.Id && Type == other.Type  && Count == other.Count;
+    }
+
+    
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, Type);
+        return HashCode.Combine(Id, (int)Type);
+    }
+    public bool Equals(ItemRef? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id == other.Id && Type == other.Type;
+    }
+
+    public ItemRef DeepClone()
+    {
+        return new ItemRef(Id, Type, Count);
     }
 }

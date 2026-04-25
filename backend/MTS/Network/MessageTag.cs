@@ -1,4 +1,5 @@
 namespace MTS.Network;
+
 public enum MessageTag
 {
     Connect = 21,
@@ -39,7 +40,14 @@ public enum MessageTag
     ClaimAllMailsResult = 114,
     ClaimMail = 115,
     ClaimMailResult = 116,
-    
+    NewMail = 119,
     GetInventory = 195,
     GetInventoryResult = 196,
+    LuyenDan = 201,
+    LuyenDanResult = 202, 
+    AddItems = 209,
+    AddItemsResult = 210,
+    
+    ChangeScene = 256,
+    ChangeSceneResult = 257,
 }

@@ -36,9 +36,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public List<int> DanCombatUsed { get; set; } = new();
     public int IdCurrentNode { get; set; }
     public int CurrentEnergy { get; set; }
-    public int IdVuKhi { get; set; }
-    public int IdPhongCu { get; set; }
-    public int IdTrangSuc { get; set; }
     public Dictionary<int, int> RelationShip { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public List<Mail> Mails { get; set; } = new();
@@ -79,9 +76,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         DanCombatUsed = new(clone.DanCombatUsed);
         IdCurrentNode = clone.IdCurrentNode;
         CurrentEnergy = clone.CurrentEnergy;
-        IdVuKhi = clone.IdVuKhi;
-        IdPhongCu = clone.IdPhongCu;
-        IdTrangSuc = clone.IdTrangSuc;
         RelationShip = new(clone.RelationShip);
     }
     private void Clone1(CharacterData clone)
@@ -118,9 +112,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + IdCurrentNode.ByteSize()
                + CurrentEnergy.ByteSize()
                + InventoryManager.ByteSize()
-               + IdVuKhi.ByteSize()
-               + IdPhongCu.ByteSize()
-               + IdTrangSuc.ByteSize()
                + RelationShip.ByteSize()
                + CreatedAt.ByteSize()
                + Mails.ByteSize();
@@ -155,9 +146,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(IdCurrentNode);
         writer.Write(CurrentEnergy);
         writer.Write(InventoryManager);
-        writer.Write(IdVuKhi);
-        writer.Write(IdPhongCu);
-        writer.Write(IdTrangSuc);
         writer.WriteArray(RelationShip);
         writer.Write(CreatedAt);
         writer.WriteArray(Mails);
@@ -190,9 +178,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.IdCurrentNode = reader.Read<int>();
         value.CurrentEnergy = reader.Read<int>();
         value.InventoryManager = reader.Read<InventoryManager>();
-        value.IdVuKhi = reader.Read<int>();
-        value.IdPhongCu = reader.Read<int>();
-        value.IdTrangSuc = reader.Read<int>();
         value.RelationShip = reader.ReadArray<KeyValuePair<int, int>>().ToDictionary(x => x.Key, x => x.Value);
         value.CreatedAt = reader.Read<DateTime>();
         value.Mails = reader.ReadArray<Mail>().ToList();

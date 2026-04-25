@@ -91,6 +91,12 @@ namespace MTS.Network.ClientState
                     module.RemoveHandler<InventoryHandler>();
                     var inventoryHandler = new InventoryHandler(client);
                     module.AddHandler(inventoryHandler);
+                    module.RemoveHandler<AdminHandler>();
+                    var adminHandler = new AdminHandler(client);
+                    module.AddHandler(adminHandler);
+                    var sceneManager = new SceneManager(client);
+                    module.RemoveHandler<SceneManager>();
+                    module.AddHandler(sceneManager);
                     client.ChangeState(new AllMaps(client));
                 }
                 catch (Exception e)

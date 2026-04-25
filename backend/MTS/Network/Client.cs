@@ -4,6 +4,7 @@ using MTS.Models;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
 using Network;
+using Network.Extensions;
 
 namespace MTS.Network;
 
@@ -15,6 +16,7 @@ public class Client : ClientConnection, ISender<MessageTag>
     public CoreMessageHandler<MessageTag> CoreModule { get; private set; }
     public UserData UserData { get; private set; }
     public CharacterData CharacterData { get; private set; }
+    public IMessageState<MessageTag,MessageState> ClientState => stateModule.State;
     private bool isGetMail;
 
     public Client(UnauthenticatedClient client)
@@ -84,7 +86,10 @@ public class Client : ClientConnection, ISender<MessageTag>
     {
         TcpClient.Send(data);
     }
-
+    public void Request(MessageTag tag, Action<IReader> callback, int timeoutMilliseconds = 0)
+    {
+        AddRequest(TcpClient, tag, callback, timeoutMilliseconds);
+    }
     public async Task<CharacterData> Select(CharacterData characterData)
     {
         await using var db = await Program.CreateDbAsync();
@@ -119,7 +124,12 @@ public class Client : ClientConnection, ISender<MessageTag>
         await using var db = await Program.CreateDbAsync();
         var entity = await db.Mails.AddAsync(mail);
         await db.SaveChangesAsync();
-        return entity.Entity;
+        var newMail = entity.Entity;
+        if (IsLoggedIn())
+        {
+            this.Send(MessageTag.NewMail, newMail);
+        }
+        return newMail;
     }
 
     public async Task<InventoryManager> GetInventory()
@@ -176,7 +186,6 @@ public class Client : ClientConnection, ISender<MessageTag>
             {
                 return;
             }
-
             await CharacterData.SaveChanges(db);
         }
         catch (Exception ex)
@@ -224,7 +233,7 @@ public class Client : ClientConnection, ISender<MessageTag>
         return removeIds;
     }
 
-    public RewardResult? ClaimMail(int id)
+    public async Task<RewardResult?> ClaimMail(int id)
     {
         var mails = CharacterData.Mails;
         var mail = mails.FirstOrDefault(x => x.Id == id);
@@ -234,8 +243,8 @@ public class Client : ClientConnection, ISender<MessageTag>
         }
         if (mail.IsClaim) return null;
         var rewards = mail.Rewards;
-        var inventory = CharacterData.InventoryManager;
-        var result = AddToInventory(inventory, rewards);
+        var inventory = await GetInventory();
+        var result = inventory.AddToInventory(rewards);
         mail.IsClaim = true;
         _ = Task.Run(async () =>
         {
@@ -252,7 +261,7 @@ public class Client : ClientConnection, ISender<MessageTag>
         };
     }
 
-    public RewardResult? ClaimAllMails()
+    public async Task<RewardResult?> ClaimAllMails()
     {
         var mails = CharacterData.Mails;
         var neverClaims = mails.Where(x => !x.IsClaim).ToList();
@@ -262,8 +271,8 @@ public class Client : ClientConnection, ISender<MessageTag>
         }
         var mailIds = neverClaims.Select(x => x.Id).ToList();
         var rewards = neverClaims.SelectMany(x => x.Rewards).ToList();
-        var inventory = CharacterData.InventoryManager;
-        var result = AddToInventory(inventory, rewards);
+        var inventory = await GetInventory();
+        var result = inventory.AddToInventory(rewards);
         _ = Task.Run(async () =>
         {
             await using var db = await Program.CreateDbAsync();
@@ -281,28 +290,5 @@ public class Client : ClientConnection, ISender<MessageTag>
             Mails = mailIds,
             RewardItems = result
         };
-    }
-    private RewardItems AddToInventory(InventoryManager inventory, List<ItemRef> rewards)
-    {
-        var result = new RewardItems();
-        foreach (var itemRef in rewards)
-        {
-            var type = itemRef.Type;
-            if (type == ItemType.Furnace)
-            {
-                var furnace = new FurnaceData()
-                {
-                    Ref = itemRef,
-                };
-                inventory.AddFurnace(furnace);
-                result.Furnaces.Add(furnace);
-            }
-            else
-            {
-                result.OtherItems.Add(itemRef);
-                inventory.Add(itemRef);
-            }
-        }
-        return result;
     }
 }

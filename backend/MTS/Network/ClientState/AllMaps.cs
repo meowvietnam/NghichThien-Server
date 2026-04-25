@@ -42,7 +42,6 @@ public class AllMaps : IClientState
             {
                 return;
             }
-
             isMoving = true;
             var id = reader.Read<int>();
             try
@@ -56,7 +55,6 @@ public class AllMaps : IClientState
                 {
                     throw new Exception($"{NotEnoughEnergy}: {energy}");
                 }
-
                 var stats = charData.Stats;
                 var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
                 var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);

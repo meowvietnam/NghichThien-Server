@@ -1,10 +1,12 @@
 using MTS.Converter;
+using MTS.Interfaces;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Models;
 [Newtonsoft.Json.JsonConverter(typeof(FurnaceDataConverter))]
-public class FurnaceData : IMemorySerializable<FurnaceData>
+public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
     public int SelfId { get; set; }
     public ItemRef Ref { get; set; }
@@ -26,8 +28,31 @@ public class FurnaceData : IMemorySerializable<FurnaceData>
         value.Durability = reader.Read<int>();
     }
 
+    public FurnaceData DeepClone()
+    {
+        return new FurnaceData()
+        {
+            SelfId = SelfId,
+            Durability = Durability,
+            Ref = Ref.DeepClone(),
+        };
+    }
+
     public override int GetHashCode()
     {
         return HashCode.Combine(SelfId, Ref);
+    }
+    public bool Equals(FurnaceData? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return SelfId == other.SelfId && Ref.Equals(other.Ref);
+    }
+
+    public bool CustomEquals(FurnaceData other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return SelfId == other.SelfId && Ref.Equals(other.Ref) && Durability == other.Durability;
     }
 }

@@ -70,15 +70,6 @@ namespace MTS.Migrations
                     b.Property<int>("IdCurrentNode")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdPhongCu")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IdTrangSuc")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IdVuKhi")
-                        .HasColumnType("int");
-
                     b.Property<int>("Level")
                         .HasColumnType("int");
 

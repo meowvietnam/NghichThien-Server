@@ -68,13 +68,13 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.ClaimMail)
         {
             var id = reader.Read<int>();
-            var result = client.ClaimMail(id);
+            var result = await client.ClaimMail(id);
             if (result == null) return;
             client.Send(MessageTag.ClaimMailResult, result);
         }
         else if (tag == MessageTag.ClaimAllMails)
         {
-            var result = client.ClaimAllMails();
+            var result = await client.ClaimAllMails();
             if (result == null) return;
             client.Send(MessageTag.ClaimAllMailsResult, result);
         }

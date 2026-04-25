@@ -17,9 +17,32 @@ public class LuyenDan : IClientState
     {
     }
 
-    public async void Handle(Message<MessageTag> message)
+    public void Handle(Message<MessageTag> message)
     {
-
+        var tag = message.Tag;
+        var reader = message.Reader;
+        if (tag == MessageTag.LuyenDan)
+        {
+            var request = reader.Read<LuyenDanRequest>();
+            try
+            {
+                var charData = client.CharacterData;
+                var result = charData.InventoryManager.Refine(charData,request);
+                if (result.Success)
+                {
+                    charData.Stats.TuoiTac = result.NewTuoiTac;
+                }
+                client.Send(MessageTag.LuyenDanResult, result);
+            }
+            catch (Exception e)
+            {
+                client.Send(MessageTag.LuyenDanResult, new LuyenDanResult()
+                {
+                    Success = false,
+                    Message = e.Message,
+                });
+            }
+        }
     }
 
     public void OnLeave()

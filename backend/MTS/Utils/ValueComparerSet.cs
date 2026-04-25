@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace MTS.Utils;
-
-public class ValueComparerSet<T>
+public class ValueComparerSet<T> where T : ICustomEquals<T>
 {
     public static ValueComparer<HashSet<T>> Comparer()
     {
@@ -12,16 +11,24 @@ public class ValueComparerSet<T>
             c => Snapshot(c)
         );
     }
-    private static bool Compare(HashSet<T> a, HashSet<T> b)
-        => a == b || (a != null && b != null && a.SetEquals(b));
-
-    private static int GetHash(HashSet<T> list)
+    private static bool Compare(HashSet<T>? a, HashSet<T>? b)
     {
+        if (ReferenceEquals(a, b)) return true;
+        if (a is null || b is null) return false;
+        if (a.Count != b.Count) return false;
+        return a.All(x => b.Any(y => x.CustomEquals(y)));
+    }
+    private static int GetHash(HashSet<T>? set)
+    {
+        if (set == null) return 0;
         var hash = new HashCode();
-        foreach (var item in list)
+        foreach (var item in set.OrderBy(x => x))
+        {
             hash.Add(item);
+        }
         return hash.ToHashCode();
     }
-    private static HashSet<T> Snapshot(HashSet<T> list)
-        => list.ToHashSet();
+
+    private static HashSet<T>? Snapshot(HashSet<T>? set)
+        => set == null ? null : new HashSet<T>(set);
 }
