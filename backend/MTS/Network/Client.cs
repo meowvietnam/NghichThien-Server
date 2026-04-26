@@ -140,9 +140,9 @@ public class Client : ClientConnection, ISender<MessageTag>
             var id = CharacterData.Id;
             var inventoryManager = await db.InventoryManagers.AsNoTracking()
                 .FirstAsync(x => x.CharId == id);
+            await inventoryManager.Load();
             CharacterData.InventoryManager = inventoryManager;
         }
-
         return CharacterData.InventoryManager;
     }
 

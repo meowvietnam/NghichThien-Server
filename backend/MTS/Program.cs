@@ -43,7 +43,6 @@ public static class Program
                     sqlOptions.CommandTimeout(30);
                     sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
                 });
-            options.AddInterceptors(new InventoryMaterializationInterceptor());
         });
         builder.Services
             .AddControllers()

@@ -14,8 +14,8 @@ public class FurnaceDataConverter : JsonConverter<FurnaceData>
         }
         writer.WriteStartArray();
         writer.WriteValue(value.SelfId);
+        writer.WriteValue(value.Id);
         writer.WriteValue(value.Durability);
-        serializer.Serialize(writer, value.Ref);
         writer.WriteEndArray();
     }
 
@@ -36,18 +36,20 @@ public class FurnaceDataConverter : JsonConverter<FurnaceData>
         var selfId = Convert.ToUInt16(reader.Value);
         reader.Read();
         if (reader.TokenType != JsonToken.Integer)
+            throw new JsonSerializationException("Expected Id");
+        var id = Convert.ToUInt16(reader.Value);
+        reader.Read();
+        if (reader.TokenType != JsonToken.Integer)
             throw new JsonSerializationException("Expected Durability");
         var durability = Convert.ToSByte(reader.Value);
-        reader.Read();
-        var itemRef = serializer.Deserialize<ItemRef>(reader);
         reader.Read();
         if (reader.TokenType != JsonToken.EndArray)
             throw new JsonSerializationException("Expected EndArray");
         return new FurnaceData
         {
             SelfId = selfId,
+            Id = id,
             Durability = durability,
-            Ref = itemRef
         };
     }
 }

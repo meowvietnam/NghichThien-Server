@@ -343,6 +343,7 @@ public class CreateCharacterService
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
+        Char.InventoryManager.Init();
         user.CharacterDatas.Add(Char);
         return Char;
     }

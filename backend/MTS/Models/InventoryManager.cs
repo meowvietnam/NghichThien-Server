@@ -37,6 +37,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Init()
     {
+        Console.WriteLine("Init InventoryManager");
         furnaceIdAllocator = new IdAllocator<ushort>(0, x => (ushort)(x + 1), x => (ushort)(x - 1));
         var usedIds = Furnaces.Select(x => x.SelfId).ToArray();
         foreach (var usedId in usedIds)
@@ -44,7 +45,11 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             furnaceIdAllocator.AddUsedId(usedId);
         }
     }
-
+    public async Task Load()
+    {
+        
+        Init();
+    }
     public void AddFurnace(FurnaceData furnace)
     {
         var furnaceId = furnaceIdAllocator.GetId();
@@ -187,10 +192,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var type = itemRef.Type;
             if (type == ItemType.Furnace)
             {
-                itemRef.Count = 1;
                 var furnace = new FurnaceData()
                 {
-                    Ref = itemRef,
+                    Id = itemRef.Id,
                     Durability = 100,
                 };
                 AddFurnace(furnace);
@@ -295,7 +299,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             }
             var linhDan = dataRes.LinhDan;
             var tier = linhDan.Tier;
-            var furnaceData = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Id == furnace.Ref.Id);
+            var furnaceData = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Id == furnace.Id);
             var tierDiff = tier - furnaceData.Tier;
             var baseLossDurability = tierDiff > 0 ? tierDiff * 50 : 2;
             var loss = baseLossDurability * count;
@@ -341,6 +345,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
         };
     }
+
+
 }
 
 public static class RefineMessage

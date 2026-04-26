@@ -9,22 +9,22 @@ namespace MTS.Models;
 public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
     public ushort SelfId { get; set; }
-    public ItemRef Ref { get; set; }
+    public ushort Id { get; set; }
     public sbyte Durability { get; set; }
     public int ByteSize()
     {
-        return SelfId.ByteSize() + Ref.ByteSize()  + Durability.ByteSize();
+        return SelfId.ByteSize() + Id.ByteSize()  + Durability.ByteSize();
     }
     public void Serialize(IWriter writer)
     {
         writer.Write(SelfId);
-        writer.Write(Ref);
+        writer.Write(Id);
         writer.Write(Durability);
     }
     public void Deserialize(IReader reader, ref FurnaceData value)
     {
         value.SelfId = reader.Read<ushort>();
-        value.Ref = reader.Read<ItemRef>();
+        value.Id = reader.Read<ushort>();
         value.Durability = reader.Read<sbyte>();
     }
 
@@ -33,26 +33,26 @@ public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceD
         return new FurnaceData()
         {
             SelfId = SelfId,
+            Id = Id,
             Durability = Durability,
-            Ref = Ref.DeepClone(),
         };
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(SelfId, Ref);
+        return HashCode.Combine(SelfId, Id);
     }
     public bool Equals(FurnaceData? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return SelfId == other.SelfId && Ref.Equals(other.Ref);
+        return SelfId == other.SelfId && Id == other.Id;
     }
 
     public bool CustomEquals(FurnaceData other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return SelfId == other.SelfId && Ref.Equals(other.Ref) && Durability == other.Durability;
+        return SelfId == other.SelfId  && Id == other.Id && Durability == other.Durability;
     }
 }

@@ -68,9 +68,6 @@ namespace MTS.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IdCurrentNode = table.Column<int>(type: "int", nullable: false),
                     CurrentEnergy = table.Column<int>(type: "int", nullable: false),
-                    IdVuKhi = table.Column<int>(type: "int", nullable: false),
-                    IdPhongCu = table.Column<int>(type: "int", nullable: false),
-                    IdTrangSuc = table.Column<int>(type: "int", nullable: false),
                     RelationShip = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
