@@ -22,10 +22,11 @@ public class AllMaps : IClientState
 
     private CharacterSnapshot[] GetCharsOnlineThisNode()
     {
-        var currentNodeId = client.CharacterData.IdCurrentNode;
+        var progression = client.CharacterData.Progression;
+        var currentNodeId = progression.IdCurrentNode;
         var charId = client.CharacterData.Id;
         var charsOnline = TcpServer.Instance.GetCharsOnline()
-            .Where(x => x.IdCurrentNode == currentNodeId && x.Id != charId)
+            .Where(x => x.Progression.IdCurrentNode == currentNodeId && x.Id != charId)
             .Select(x => new CharacterSnapshot(x))
             .Take(5)
             .ToArray();
@@ -47,10 +48,10 @@ public class AllMaps : IClientState
             try
             {
                 var charData = client.CharacterData;
-                var currentMapId = charData.IdCurrentNode;
+                var currentMapId = charData.Progression.IdCurrentNode;
                 var path = GameConfig.MapManager.FindPath(currentMapId, id);
                 var energy = client.UserData.IsInfiniteEnergy ? 0 : path.Count;
-                var newEnergy = charData.CurrentEnergy - energy;
+                var newEnergy = charData.Progression.CurrentEnergy - energy;
                 if (newEnergy < 0)
                 {
                     throw new Exception($"{NotEnoughEnergy}: {energy}");
@@ -59,8 +60,8 @@ public class AllMaps : IClientState
                 var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
                 var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
                 stats.TuoiTac = newAge;
-                charData.IdCurrentNode = id;
-                charData.CurrentEnergy = newEnergy;
+                charData.Progression.SetIdCurrentNode(id);
+                charData.Progression.SetCurrentEnergy(newEnergy);
                 var charsOnline = GetCharsOnlineThisNode();
                 var pathIds = path.Select(x => x.Id).ToArray();
                 var result = new MoveToMapResult()

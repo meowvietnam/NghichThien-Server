@@ -2,8 +2,6 @@
   "Id": 0,
   "Gender": 0,
   "Name": "",
-  "Level": 1,
-  "CurrentExp": 0,
   "Stats": {
     "Kim": 20.0,
     "Moc": 20.0,
@@ -25,23 +23,9 @@
     "DanDoc": 0,
     "TuoiTac": "5475.00:00:00"
   },
-  "Skins": {},
-  "Colors": {},
-  "MonPhai": 0,
-  "NgoDaoSaves": [],
-  "CamNgoSaves": {},
-  "NgoDaoDiem": 0,
-  "ThanThongOwner": [],
-  "ThanThongEquip": [],
-  "CongPhapOwner": {},
-  "DonThuatUsed": 0,
-  "PhuTu1Used": 0,
-  "PhuTu2Used": 0,
-  "PhuTu3Used": 0,
-  "PhuTu4Used": 0,
-  "ChuTu1Used": 0,
-  "ChuTu2Used": 0,
-  "DanCombatUsed": [],
-  "IdCurrentNode": 0,
-  "CurrentEnergy": 100
+  "Progression" : {
+    "CurrentEnergy": 100,
+    "Level": 1,
+    "IdCurrentNode" : 101
+  }
 }

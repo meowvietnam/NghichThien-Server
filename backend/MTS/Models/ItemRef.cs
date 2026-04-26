@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using MTS.Converter;
 using MTS.Interfaces;
 using MTS.Utils;
@@ -9,9 +10,16 @@ namespace MTS.Models;
 [JsonConverter(typeof(ItemRefConverter))]
 public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDeepClone<ItemRef>
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public int CharId { get; set; }
     public ushort Id { get; set; }
     public ItemType Type { get; set; }
     public ushort Count { get; set; }
+    [ForeignKey(nameof(CharId))]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public InventoryManager Inventory { get; set; }
     public ItemRef()
     {
     }
@@ -53,7 +61,7 @@ public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICusto
     
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, (int)Type);
+        return HashCode.Combine(Id, (byte)Type);
     }
     public bool Equals(ItemRef? other)
     {

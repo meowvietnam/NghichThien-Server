@@ -33,13 +33,18 @@ public class AdminHandler : IClientHandler
             var rewards = inventory.AddToInventory(items);
             client.Send(MessageTag.AddItemsResult, rewards);
         }
+        else if (tag == MessageTag.SetInfinityEnergy)
+        {
+            var infinityEnergy = reader.Read<bool>();
+            client.UserData.SetInfiniteEnergy(infinityEnergy);
+        }
     }
 
     public void OnLeave()
     {
     }
 
-    private static readonly MessageTag[] handler = [MessageTag.AddItems];
+    private static readonly MessageTag[] handler = [MessageTag.AddItems, MessageTag.SetInfinityEnergy];
     public MessageTag[] HandleTag => handler;
 
     public void OnDisconnect(IProtocol<MessageTag> protocol)

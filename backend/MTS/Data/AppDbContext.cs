@@ -12,9 +12,22 @@ public class AppDbContext : DbContext
     public DbSet<DeveloperAccount> DeveloperAccounts { get; set; }
     public DbSet<UserData> Users { get; private set; }
     public DbSet<CharacterData> Characters { get; private set; }
+    public DbSet<Progression> Progressions { get; private set; }
+    public DbSet<Appearance> Appearances { get; private set; }
     public DbSet<CharacterStats> CharacterStats { get; private set; }
     public DbSet<InventoryManager> InventoryManagers { get; private set; }
+    public DbSet<ItemRef> Items { get; private set; }
+    public DbSet<FurnaceData> Furnaces { get; private set; }
     public DbSet<Mail> Mails { get; private set; }
+    public DbSet<Social> Socials { get; private set; }
+    public DbSet<Relationship> Relationships { get; private set; }
+    public DbSet<CamNgo> CamNgos { get; private set; }
+    public DbSet<CongPhap> CongPhaps { get; private set; }
+    public DbSet<NgoDao> NgoDaos { get; private set; }
+    public DbSet<ThanThong> ThanThongs { get; private set; }
+    public DbSet<Equipment> Equipments { get; private set; }
+    public DbSet<ThanThongEquip> ThanThongEquips { get; private set; }
+    public DbSet<DanCombatUsed> DanCombatUseds { get; private set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -57,6 +70,23 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Name).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany(x => x.CharacterDatas)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Progression>(e =>
+        {
+            e.HasKey(x => x.CharId);
+
+            e.HasOne(x => x.CharacterData)
+                .WithOne(x => x.Progression)
+                .HasForeignKey<Progression>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Appearance>(e =>
+        {
+            e.HasKey(x => x.CharId);
             e.Property(x => x.Skins)
                 .HasColumnType(json)
                 .HasConversion(
@@ -72,58 +102,9 @@ public class AppDbContext : DbContext
                     v => DeserializeObject<Dictionary<string, Color>>(v)
                 )
                 .Metadata.SetValueComparer(ValueComparerDict<string, Color>.Comparer());
-            e.Property(x => x.NgoDaoSaves)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<List<int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerList<int>.Comparer());
-            e.Property(x => x.CamNgoSaves)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<Dictionary<int, int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
-            e.Property(x => x.ThanThongOwner)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<List<int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerList<int>.Comparer());
-            e.Property(x => x.ThanThongEquip)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<List<int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerList<int>.Comparer());
-            e.Property(x => x.CongPhapOwner)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<Dictionary<int, int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
-            e.Property(x => x.DanCombatUsed)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<List<int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerList<int>.Comparer());
-            e.Property(x => x.RelationShip)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<Dictionary<int, int>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerDict<int, int>.Comparer());
-            e.HasOne(x => x.User)
-                .WithMany(x => x.CharacterDatas)
-                .HasForeignKey(x => x.UserId)
+            e.HasOne(x => x.CharacterData)
+                .WithOne(x => x.Appearance)
+                .HasForeignKey<Appearance>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<CharacterStats>(e =>
@@ -154,69 +135,22 @@ public class AppDbContext : DbContext
                 .WithOne(x => x.InventoryManager)
                 .HasForeignKey<InventoryManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
-            e.Property(x => x.Furnaces)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<FurnaceData>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<FurnaceData>.Comparer());
-            e.Property(x => x.Recipes)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.Herbs)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.ThanThongs)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.CongPhaps)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.VuKhis)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.PhongCus)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.TrangSucs)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
-            e.Property(x => x.LinhDans)
-                .HasColumnType(json)
-                .HasConversion(
-                    v => SerializeObject(v),
-                    v => DeserializeObject<HashSet<ItemRef>>(v)
-                )
-                .Metadata.SetValueComparer(ValueComparerSet<ItemRef>.Comparer());
+        });
+        modelBuilder.Entity<ItemRef>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id, x.Type });
+            e.HasOne(x => x.Inventory)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<FurnaceData>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasOne(x => x.Inventory)
+                .WithMany(x => x.Furnaces)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<Mail>(e =>
             {
@@ -228,11 +162,86 @@ public class AppDbContext : DbContext
                         v => DeserializeObject<List<ItemRef>>(v)
                     )
                     .Metadata.SetValueComparer(ValueComparerList<ItemRef>.Comparer());
-                e.HasOne(x => x.CharacterData)
+                e.HasOne(x => x.Social)
                     .WithMany(x => x.Mails)
                     .HasForeignKey(x => x.CharId)
                     .OnDelete(DeleteBehavior.Cascade);
             }
         );
+        modelBuilder.Entity<Social>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharacterData)
+                .WithOne(x => x.Social)
+                .HasForeignKey<Social>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Relationship>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Social)
+                .WithMany(x => x.Relationships)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<CamNgo>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Inventory)
+                .WithMany(x => x.CamNgos)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<CongPhap>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Inventory)
+                .WithMany(x => x.CongPhapOwners)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<NgoDao>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Inventory)
+                .WithMany(x => x.NgoDaos)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ThanThong>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Inventory)
+                .WithMany(x => x.ThanThongOwners)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<Equipment>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharacterData)
+                .WithOne(x => x.Equipment)
+                .HasForeignKey<Equipment>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        });
+        
+        modelBuilder.Entity<ThanThongEquip>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Equipment)
+                .WithMany(x => x.ThanThongEquips)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DanCombatUsed>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.Equipment)
+                .WithMany(x => x.DanCombatUseds)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

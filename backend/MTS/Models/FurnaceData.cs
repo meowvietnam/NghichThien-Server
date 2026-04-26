@@ -1,16 +1,25 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using MTS.Converter;
 using MTS.Interfaces;
 using MTS.Utils;
 using Network;
 using Network.Extensions;
+using Newtonsoft.Json;
 
 namespace MTS.Models;
 [Newtonsoft.Json.JsonConverter(typeof(FurnaceDataConverter))]
 public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public int CharId { get; set; }
     public ushort SelfId { get; set; }
     public ushort Id { get; set; }
     public sbyte Durability { get; set; }
+    [ForeignKey(nameof(CharId))]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public InventoryManager Inventory { get; set; }
     public int ByteSize()
     {
         return SelfId.ByteSize() + Id.ByteSize()  + Durability.ByteSize();

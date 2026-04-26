@@ -20,16 +20,21 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [JsonIgnore]
     public int CharId { get; set; }
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
-    public HashSet<ItemRef> Recipes { get; set; } = new();
-    public HashSet<ItemRef> Herbs { get; set; } = new();
-    public HashSet<ItemRef> ThanThongs { get; set; } = new();
-    public HashSet<ItemRef> CongPhaps { get; set; } = new();
-    public HashSet<ItemRef> VuKhis { get; set; } = new();
-    public HashSet<ItemRef> PhongCus { get; set; } = new();
-    public HashSet<ItemRef> TrangSucs { get; set; } = new();
-    public HashSet<ItemRef> LinhDans { get; set; } = new();
-    [NotMapped]
-    private IdAllocator<ushort> furnaceIdAllocator;
+    [NotMapped] public HashSet<ItemRef> Recipes { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> Herbs { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> ThanThongs { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> CongPhaps { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> VuKhis { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> PhongCus { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> TrangSucs { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> LinhDans { get; set; } = new();
+    public HashSet<NgoDao> NgoDaos { get; set; } = new();
+    public HashSet<CamNgo> CamNgos { get; set; } = new();
+    public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
+    public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
+    
+    [NotMapped] private IdAllocator<ushort> furnaceIdAllocator;
+    [NotMapped] private InventoryTracking tracking;
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
@@ -37,7 +42,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Init()
     {
-        Console.WriteLine("Init InventoryManager");
+        tracking = new InventoryTracking();
         furnaceIdAllocator = new IdAllocator<ushort>(0, x => (ushort)(x + 1), x => (ushort)(x - 1));
         var usedIds = Furnaces.Select(x => x.SelfId).ToArray();
         foreach (var usedId in usedIds)
@@ -45,23 +50,47 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             furnaceIdAllocator.AddUsedId(usedId);
         }
     }
-    public async Task Load()
+
+    public async Task Load(AppDbContext db)
     {
-        
+        await using var db2 = await Program.CreateDbAsync();
+        var itemsTask = db.Items
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .GroupBy(x => x.Type)
+            .ToDictionaryAsync(x => x.Key, x => x.ToHashSet());
+        var furnacesTask = db2.Furnaces
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToHashSetAsync();
+        await Task.WhenAll(itemsTask, furnacesTask);
+        Furnaces = furnacesTask.Result;
+        var items = itemsTask.Result;
+        Recipes = items.GetValueOrDefault(ItemType.Recipe, new());
+        Herbs = items.GetValueOrDefault(ItemType.Herb, new());
+        ThanThongs = items.GetValueOrDefault(ItemType.ThanThong, new());
+        CongPhaps = items.GetValueOrDefault(ItemType.CongPhap, new());
+        VuKhis = items.GetValueOrDefault(ItemType.VuKhi, new());
+        PhongCus = items.GetValueOrDefault(ItemType.PhongCu, new());
+        TrangSucs = items.GetValueOrDefault(ItemType.TrangSuc, new());
+        LinhDans = items.GetValueOrDefault(ItemType.LinhDan, new());
         Init();
     }
     public void AddFurnace(FurnaceData furnace)
     {
+        furnace.CharId = CharId;
         var furnaceId = furnaceIdAllocator.GetId();
         furnace.SelfId = furnaceId;
         Furnaces.Add(furnace);
+        tracking.Furnaces.Add(furnace);
     }
 
     public int ByteSize()
     {
         return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() +
                CongPhaps.ByteSize() + VuKhis.ByteSize() + PhongCus.ByteSize() + TrangSucs.ByteSize() +
-               LinhDans.ByteSize();
+               LinhDans.ByteSize() + NgoDaos.ByteSize() +  CamNgos.ByteSize() +  CongPhapOwners.ByteSize()
+               + ThanThongOwners.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -75,6 +104,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         writer.WriteArray(PhongCus);
         writer.WriteArray(TrangSucs);
         writer.WriteArray(LinhDans);
+        writer.WriteArray(NgoDaos);
+        writer.WriteArray(CamNgos);
+        writer.WriteArray(CongPhapOwners);
+        writer.WriteArray(ThanThongOwners);
     }
 
     public void Deserialize(IReader reader, ref InventoryManager value)
@@ -88,10 +121,16 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         value.PhongCus = reader.ReadArray<ItemRef>().ToHashSet();
         value.TrangSucs = reader.ReadArray<ItemRef>().ToHashSet();
         value.LinhDans = reader.ReadArray<ItemRef>().ToHashSet();
+        value.NgoDaos = reader.ReadArray<NgoDao>().ToHashSet();
+        value.CamNgos = reader.ReadArray<CamNgo>().ToHashSet();
+        value.CongPhapOwners = reader.ReadArray<CongPhap>().ToHashSet();
+        value.ThanThongOwners = reader.ReadArray<ThanThong>().ToHashSet();
     }
+
 
     public void Clone(InventoryManager other)
     {
+        CharId = other.CharId;
         Furnaces = new HashSet<FurnaceData>(other.Furnaces);
         Recipes = new HashSet<ItemRef>(other.Recipes);
         Herbs = new HashSet<ItemRef>(other.Herbs);
@@ -101,27 +140,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         PhongCus = new HashSet<ItemRef>(other.PhongCus);
         TrangSucs = new HashSet<ItemRef>(other.TrangSucs);
         LinhDans = new HashSet<ItemRef>(other.LinhDans);
+        NgoDaos = new HashSet<NgoDao>(other.NgoDaos);
+        CamNgos = new HashSet<CamNgo>(other.CamNgos);
+        CongPhapOwners = new HashSet<CongPhap>(other.CongPhapOwners);
+        ThanThongOwners = new HashSet<ThanThong>(other.ThanThongOwners);
         furnaceIdAllocator = other.furnaceIdAllocator;
-    }
-
-    public InventoryManager DeepClone()
-    {
-        var other = new InventoryManager();
-        other.Furnaces = DeepClone(Furnaces);
-        other.Recipes = DeepClone(Recipes);
-        other.Herbs = DeepClone(Herbs);
-        other.ThanThongs = DeepClone(ThanThongs);
-        other.CongPhaps = DeepClone(CongPhaps);
-        other.VuKhis = DeepClone(VuKhis);
-        other.PhongCus = DeepClone(PhongCus);
-        other.TrangSucs = DeepClone(TrangSucs);
-        other.LinhDans = DeepClone(LinhDans);
-        return other;
-    }
-
-    private HashSet<T> DeepClone<T>(IEnumerable<T> collection) where T : IDeepClone<T>
-    {
-        return new HashSet<T>(collection.Select(x => x.DeepClone()));
+        tracking = other.tracking;
+        CharacterData = other.CharacterData;
     }
 
     public bool IsDefault()
@@ -129,12 +154,15 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         return CharId == 0;
     }
 
-    public async Task SaveChanges(AppDbContext db)
+    public Task SaveChanges(AppDbContext db)
     {
-        var inventory = await db.InventoryManagers.FirstAsync(x => x.CharId == CharId);
-        inventory.Clone(this);
+        lock (tracking)
+        {
+            tracking.Apply(db);
+            tracking.Clear();
+        }
+        return Task.CompletedTask;
     }
-
     public void Add(ItemRef itemRef)
     {
         var type = itemRef.Type;
@@ -174,16 +202,18 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     private void Add(HashSet<ItemRef> inventory, ItemRef itemRef)
     {
+        itemRef.CharId = CharId;
         if (inventory.TryGetValue(itemRef, out var item))
         {
             item.Count += itemRef.Count;
+            tracking.Items.Update(item);
         }
         else
         {
             inventory.Add(itemRef);
+            tracking.Items.Add(itemRef);
         }
     }
-
     public RewardItems AddToInventory(List<ItemRef> rewards)
     {
         var result = new RewardItems();
@@ -206,11 +236,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Add(itemRef);
             }
         }
-
         return result;
     }
-
-    public LuyenDanResult Refine(CharacterData characterData,LuyenDanRequest request)
+    public LuyenDanResult Refine(CharacterData characterData, LuyenDanRequest request)
     {
         var main1 = request.ChuDuoc;
         var sub1 = request.PhuDuoc1;
@@ -237,6 +265,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             if (myCount - herbs.Count * count < 0) throw new Exception(RefineMessage.NotEnoughQuantity);
             return myHerb;
         }
+
         (RecipeData? dataRes, RecipeData.Recipe? recipeRes) FindResRecipe()
         {
             var recipes = GameConfig.LuyenDanResources.Recipes;
@@ -250,8 +279,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     }
                 }
             }
+
             return (null, null);
         }
+
         void Decrease(ItemRef? itemRef, LuyenDanRequest.Herbs herbs)
         {
             if (itemRef != null)
@@ -261,10 +292,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 if (itemCount <= 0)
                 {
                     Herbs.Remove(itemRef);
+                    tracking.Items.Delete(itemRef);
                 }
                 else
                 {
                     itemRef.Count = (ushort)itemCount;
+                    tracking.Items.Update(itemRef);
                 }
             }
         }
@@ -297,6 +330,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     };
                 }
             }
+
             var linhDan = dataRes.LinhDan;
             var tier = linhDan.Tier;
             var furnaceData = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Id == furnace.Id);
@@ -310,6 +344,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             {
                 Furnaces.Remove(furnace);
                 furnaceIdAllocator.ReleaseId(furnace.SelfId);
+                tracking.Furnaces.Delete(furnace);
                 return new LuyenDanResult()
                 {
                     Success = true,
@@ -320,22 +355,24 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 };
             }
             furnace.Durability = (sbyte)dur;
+            tracking.Furnaces.Update(furnace);
             var linhDanRef = new ItemRef()
             {
                 Id = (ushort)linhDan.Id,
                 Count = (ushort)count,
                 Type = ItemType.LinhDan
             };
-            LinhDans.Add(linhDanRef);
+            Add(LinhDans, linhDanRef);
             return new LuyenDanResult()
             {
                 Success = true,
                 Message = RefineMessage.Success,
-                ItemRefs = new() {linhDanRef},
+                ItemRefs = new() { linhDanRef },
                 Inventory = this,
                 NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
             };
         }
+
         return new LuyenDanResult()
         {
             Success = true,
@@ -345,8 +382,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
         };
     }
-
-
 }
 
 public static class RefineMessage

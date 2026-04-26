@@ -10,5 +10,9 @@ public enum ItemType : byte
     VuKhi,
     PhongCu,
     TrangSuc,
-    Recipe
+    Recipe,
+    NgoDao,
+    CamNgo,
+    CongPhapOwner,
+    ThanThongOwner,
 }

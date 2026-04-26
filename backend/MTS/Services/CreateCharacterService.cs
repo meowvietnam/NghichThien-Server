@@ -75,8 +75,8 @@ public class CreateCharacterService
         }
 
         Char.Gender = gender;
-        Char.Skins = newSkins;
-        Char.Colors = newColors;
+        Char.Appearance.Skins = newSkins;
+        Char.Appearance.Colors = newColors;
     }
 
     private async Task ValidateName(string name)
@@ -244,10 +244,7 @@ public class CreateCharacterService
         {
             throw new Exception($"{ExceptionMessage.NotEnoughMoney}: {money}");
         }
-
         stats.SetValue(StatType.Hp, stats.SinhMenh);
-        Char.CurrentEnergy = 100;
-        Char.IdCurrentNode = GameConfig.MapManager.EntryMapId;
         Char.Stats = stats;
     }
 
@@ -343,7 +340,9 @@ public class CreateCharacterService
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
-        Char.InventoryManager.Init();
+        var inventoryManager = Char.InventoryManager;
+        inventoryManager.CharacterData = Char;
+        inventoryManager.Init();
         user.CharacterDatas.Add(Char);
         return Char;
     }
@@ -363,10 +362,8 @@ public static class ExceptionMessage
     public const string GroupInvalid = "Nhóm lựa chọn không hợp lệ!";
     public const string GroupExclusiveViolation = "Phát hiện các nhóm lựa chọn xung đột lẫn nhau!";
     public const string ElementalInvalid = "Lựa chọn nguyên tố linh căn không hợp lệ!";
-
     public const string ElementalCountInvalid =
         "Số lượng linh căn được chọn không khớp với yêu cầu của chỉ số Linh Căn!";
-
     public const string ElementalOptionInvalid = "Tùy chọn nguyên tố linh căn không tồn tại!";
     public const string ElementalStatInvalid = "Chỉ số nguyên tố linh căn không hợp lệ!";
     public const string SelectionInvalid = "Lựa chọn không hợp lệ!";

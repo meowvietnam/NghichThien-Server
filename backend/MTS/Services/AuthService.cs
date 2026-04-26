@@ -19,6 +19,9 @@ public class AuthService
             var characterDatas =  await db.Characters
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .Include(x => x.Progression)
+                .Include(x => x.Appearance)
+                .AsSplitQuery()
                 .ToListAsync();
             account.UserData.CharacterDatas = characterDatas;
             return account.UserData;

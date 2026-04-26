@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using Network;
@@ -10,8 +11,10 @@ public class UserData : IMemorySerializable<UserData>
 {
     [Key] public int Id { get; set; }
     public List<CharacterData> CharacterDatas { get; set; }
-    public bool IsInfiniteEnergy { get; set; }
+    
+    public bool IsInfiniteEnergy { get; private set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [NotMapped] private bool isModified;
     public UserData()
     {
         CharacterDatas = new List<CharacterData>();
@@ -28,6 +31,14 @@ public class UserData : IMemorySerializable<UserData>
         writer.Write(CreatedAt);
     }
 
+    public void SetInfiniteEnergy(bool isInfiniteEnergy)
+    {
+        if (IsInfiniteEnergy != isInfiniteEnergy)
+        {
+            IsInfiniteEnergy = isInfiniteEnergy;
+            isModified = true;
+        }
+    }
     public void Deserialize(IReader reader, ref UserData value)
     {
         value.Id = reader.Read<int>();
@@ -38,7 +49,14 @@ public class UserData : IMemorySerializable<UserData>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        var user = await db.Users.FirstAsync(x => x.Id == Id);
-        user.IsInfiniteEnergy = IsInfiniteEnergy;
+        if (!isModified)
+        {
+            return;
+        }
+        await db.Users
+            .Where(x => x.Id == Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy));
+        isModified = false;
     }
 }

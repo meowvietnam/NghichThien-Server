@@ -22,7 +22,7 @@ public class Mail : IMemorySerializable<Mail>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [ForeignKey(nameof(CharId))]
-    public CharacterData CharacterData { get; set; }
+    public Social Social { get; set; }
 
     public void Deserialize(IReader reader, ref Mail value)
     {

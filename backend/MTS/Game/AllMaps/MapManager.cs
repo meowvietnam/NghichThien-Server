@@ -7,7 +7,6 @@ namespace MTS.Game.AllMaps;
 public class MapManager : IMemorySerializable<MapManager>
 {
     public Map[] Maps { get; set; }
-    public int EntryMapId { get; private set; } = 101;
     private Dictionary<Map,List<Map>> Graphs = new Dictionary<Map,List<Map>>();
     private Dictionary<int,Map> MapsDict = new Dictionary<int, Map>();
     private const string MapNotFound = "Map không tồn tại";

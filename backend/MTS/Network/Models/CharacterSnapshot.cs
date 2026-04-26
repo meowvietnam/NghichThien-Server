@@ -34,11 +34,12 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
 
     public CharacterSnapshot(CharacterData c)
     {
+        var equipment = c.Equipment;
         this.Name = c.Name;
         this.Gender = c.Gender;
-        this.Skins = c.Skins;
-        this.Colors = c.Colors;
-        this.Level = c.Level;
+        this.Skins = c.Appearance.Skins;
+        this.Colors = c.Appearance.Colors;
+        this.Level = c.Progression.Level;
         this.MonPhai = c.MonPhai;
         this.TuoiTac = c.Stats.TuoiTac;
         this.SinhMenh = c.Stats.SinhMenh;
@@ -47,13 +48,13 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
         this.NgoTinh = c.Stats.NgoTinh;
         this.TocDoBay = c.Stats.TocDoBay;
         this.ThanThuc = c.Stats.ThanThuc;
-        this.ChuTu1Used = c.ChuTu1Used;
-        this.ChuTu2Used = c.ChuTu2Used;
-        this.PhuTu1Used = c.PhuTu1Used;
-        this.PhuTu2Used = c.PhuTu2Used;
-        this.PhuTu3Used = c.PhuTu3Used;
-        this.PhuTu4Used = c.PhuTu4Used;
-        this.ThanThongEquip = c.ThanThongEquip;
+        this.ChuTu1Used = equipment.ChuTu1Used;
+        this.ChuTu2Used = equipment.ChuTu2Used;
+        this.PhuTu1Used = equipment.PhuTu1Used;
+        this.PhuTu2Used = equipment.PhuTu2Used;
+        this.PhuTu3Used = equipment.PhuTu3Used;
+        this.PhuTu4Used = equipment.PhuTu4Used;
+        this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
     }
 
 

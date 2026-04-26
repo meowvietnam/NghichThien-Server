@@ -97,7 +97,22 @@ public class Client : ClientConnection, ISender<MessageTag>
         var stats = await db.CharacterStats
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.CharId == id);
+        stats.CharacterData = characterData;
         characterData.Stats = stats;
+        var equipment = await db.Equipments
+            .AsNoTracking()
+            .Include(x => x.ThanThongEquips)
+            .Include(x => x.DanCombatUseds)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.CharId == id);
+        equipment.CharacterData = characterData;
+        characterData.Equipment = equipment;
+        var social = await db.Socials
+            .AsNoTracking()
+            .Include(x => x.Relationships)
+            .FirstOrDefaultAsync(x => x.CharId == id);
+        social.CharacterData = characterData;
+        characterData.Social = social;
         CharacterData = characterData;
         return characterData;
     }
@@ -108,17 +123,18 @@ public class Client : ClientConnection, ISender<MessageTag>
         {
             await using var db = await Program.CreateDbAsync();
             var id = CharacterData.Id;
-            var mails = await db.Mails.AsNoTracking()
+            var mails = await db.Mails
+                .AsNoTracking()
                 .Where(x => x.CharId == id)
                 .ToListAsync();
-            CharacterData.Mails = mails;
+            CharacterData.Social.Mails = mails;
             isGetMail = true;
         }
 
-        return CharacterData.Mails;
+        return CharacterData.Social.Mails;
     }
 
-    public async Task<Mail> SendMail(Mail mail)
+    public async Task SendMail(Mail mail)
     {
         mail.CharId = CharacterData.Id;
         await using var db = await Program.CreateDbAsync();
@@ -129,7 +145,6 @@ public class Client : ClientConnection, ISender<MessageTag>
         {
             this.Send(MessageTag.NewMail, newMail);
         }
-        return newMail;
     }
 
     public async Task<InventoryManager> GetInventory()
@@ -138,9 +153,11 @@ public class Client : ClientConnection, ISender<MessageTag>
         {
             await using var db = await Program.CreateDbAsync();
             var id = CharacterData.Id;
-            var inventoryManager = await db.InventoryManagers.AsNoTracking()
+            var inventoryManager = await db.InventoryManagers
+                .AsNoTracking()
                 .FirstAsync(x => x.CharId == id);
-            await inventoryManager.Load();
+            inventoryManager.CharacterData = CharacterData;
+            await inventoryManager.Load(db);
             CharacterData.InventoryManager = inventoryManager;
         }
         return CharacterData.InventoryManager;
@@ -150,7 +167,7 @@ public class Client : ClientConnection, ISender<MessageTag>
     {
         try
         {
-            var mail = CharacterData.Mails.FirstOrDefault(x => x.Id == id);
+            var mail = CharacterData.Social.Mails.FirstOrDefault(x => x.Id == id);
             if (mail == null) return -1;
             if (mail.IsRead) return -1;
             mail.IsRead = true;
@@ -177,7 +194,6 @@ public class Client : ClientConnection, ISender<MessageTag>
         {
             return;
         }
-
         await using var db = await Program.CreateDbAsync();
         try
         {
@@ -200,7 +216,7 @@ public class Client : ClientConnection, ISender<MessageTag>
 
     public int RemoveMail(int id)
     {
-        var mails = CharacterData.Mails;
+        var mails = CharacterData.Social.Mails;
         var mail = mails.FirstOrDefault(x => x.Id == id);
         if (mail == null) return -1;
         _ = Task.Run(async () =>
@@ -216,7 +232,7 @@ public class Client : ClientConnection, ISender<MessageTag>
 
     public List<int> RemoveAllMails()
     {
-        var mails = CharacterData.Mails;
+        var mails = CharacterData.Social.Mails;
         var removes = mails.Where(x => x.IsRead && (x.Rewards.Count == 0 || x.IsClaim)).ToList();
         var removeIds = removes.Select(x => x.Id).ToList();
         if (removes.Any())
@@ -235,7 +251,7 @@ public class Client : ClientConnection, ISender<MessageTag>
 
     public async Task<RewardResult?> ClaimMail(int id)
     {
-        var mails = CharacterData.Mails;
+        var mails = CharacterData.Social.Mails;
         var mail = mails.FirstOrDefault(x => x.Id == id);
         if (mail == null)
         {
@@ -263,7 +279,7 @@ public class Client : ClientConnection, ISender<MessageTag>
 
     public async Task<RewardResult?> ClaimAllMails()
     {
-        var mails = CharacterData.Mails;
+        var mails = CharacterData.Social.Mails;
         var neverClaims = mails.Where(x => !x.IsClaim).ToList();
         if (!neverClaims.Any())
         {
