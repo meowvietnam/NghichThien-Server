@@ -24,13 +24,13 @@ public class ItemRefConverter : JsonConverter<ItemRef>
             throw new JsonSerializationException("Expected StartArray");
 
         reader.Read();
-        var id = Convert.ToInt32(reader.Value);
+        var id = Convert.ToUInt16(reader.Value);
 
         reader.Read();
-        var type = (ItemType)Convert.ToInt32(reader.Value);
+        var type = (ItemType)Convert.ToByte(reader.Value);
 
         reader.Read();
-        var count = Convert.ToInt32(reader.Value);
+        var count = Convert.ToUInt16(reader.Value);
 
         reader.Read();
         if (reader.TokenType != JsonToken.EndArray)

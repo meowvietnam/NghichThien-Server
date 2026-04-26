@@ -9,17 +9,17 @@ namespace MTS.Models;
 [JsonConverter(typeof(ItemRefConverter))]
 public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDeepClone<ItemRef>
 {
-    public int Id { get; set; }
+    public ushort Id { get; set; }
     public ItemType Type { get; set; }
-    public int Count { get; set; }
+    public ushort Count { get; set; }
     public ItemRef()
     {
     }
-    public ItemRef(int id, ItemType type, int count)
+    public ItemRef(ushort id, ItemType type, int count)
     {
         Id = id;
         Type = type;
-        Count = count;
+        Count = (ushort)count;
     }
 
     public bool IsFurnace()
@@ -38,9 +38,9 @@ public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICusto
     }
     public void Deserialize(IReader reader, ref ItemRef value)
     {
-        value.Id = reader.Read<int>();
+        value.Id = reader.Read<ushort>();
         value.Type = reader.Read<ItemType>();
-        value.Count = reader.Read<int>();
+        value.Count = reader.Read<ushort>();
     }
 
     public bool CustomEquals(ItemRef other)

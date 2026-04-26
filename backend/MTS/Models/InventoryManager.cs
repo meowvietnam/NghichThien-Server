@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using MTS.Game;
 using MTS.Game.LuyenDan;
 using MTS.Interfaces;
 using MTS.Network.Models;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
@@ -17,7 +19,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
-
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
     public HashSet<ItemRef> Recipes { get; set; } = new();
     public HashSet<ItemRef> Herbs { get; set; } = new();
@@ -27,8 +28,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     public HashSet<ItemRef> PhongCus { get; set; } = new();
     public HashSet<ItemRef> TrangSucs { get; set; } = new();
     public HashSet<ItemRef> LinhDans { get; set; } = new();
-    [NotMapped] private int furnaceId = 0;
-
+    [NotMapped]
+    private IdAllocator<ushort> furnaceIdAllocator;
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
@@ -36,12 +37,17 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Init()
     {
-        furnaceId = Furnaces.Any() ? Furnaces.MaxBy(x => x.SelfId).SelfId : 0;
+        furnaceIdAllocator = new IdAllocator<ushort>(0, x => (ushort)(x + 1), x => (ushort)(x - 1));
+        var usedIds = Furnaces.Select(x => x.SelfId).ToArray();
+        foreach (var usedId in usedIds)
+        {
+            furnaceIdAllocator.AddUsedId(usedId);
+        }
     }
 
     public void AddFurnace(FurnaceData furnace)
     {
-        Interlocked.Increment(ref furnaceId);
+        var furnaceId = furnaceIdAllocator.GetId();
         furnace.SelfId = furnaceId;
         Furnaces.Add(furnace);
     }
@@ -90,6 +96,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         PhongCus = new HashSet<ItemRef>(other.PhongCus);
         TrangSucs = new HashSet<ItemRef>(other.TrangSucs);
         LinhDans = new HashSet<ItemRef>(other.LinhDans);
+        furnaceIdAllocator = other.furnaceIdAllocator;
     }
 
     public InventoryManager DeepClone()
@@ -245,10 +252,15 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (itemRef != null)
             {
-                itemRef.Count -= herbs.Count * count;
-                if (itemRef.Count <= 0)
+                int itemCount = itemRef.Count;
+                itemCount -= herbs.Count * count;
+                if (itemCount <= 0)
                 {
                     Herbs.Remove(itemRef);
+                }
+                else
+                {
+                    itemRef.Count = (ushort)itemCount;
                 }
             }
         }
@@ -288,24 +300,26 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var baseLossDurability = tierDiff > 0 ? tierDiff * 50 : 2;
             var loss = baseLossDurability * count;
             baseTime = (int)tier + 3;
-            furnace.Durability -= loss;
-            if (furnace.Durability <= 0)
+            int dur = furnace.Durability;
+            dur -= loss;
+            if (dur <= 0)
             {
                 Furnaces.Remove(furnace);
+                furnaceIdAllocator.ReleaseId(furnace.SelfId);
                 return new LuyenDanResult()
                 {
                     Success = true,
-                    Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {furnace.Durability} độ bền dẫn đến nổ lò",
+                    Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
                     ItemRefs = new(),
                     Inventory = this,
                     NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
                 };
             }
-
+            furnace.Durability = (sbyte)dur;
             var linhDanRef = new ItemRef()
             {
-                Id = linhDan.Id,
-                Count = count,
+                Id = (ushort)linhDan.Id,
+                Count = (ushort)count,
                 Type = ItemType.LinhDan
             };
             LinhDans.Add(linhDanRef);

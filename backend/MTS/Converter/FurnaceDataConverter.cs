@@ -33,11 +33,11 @@ public class FurnaceDataConverter : JsonConverter<FurnaceData>
         reader.Read();
         if (reader.TokenType != JsonToken.Integer)
             throw new JsonSerializationException("Expected SelfId");
-        int selfId = Convert.ToInt32(reader.Value);
+        var selfId = Convert.ToUInt16(reader.Value);
         reader.Read();
         if (reader.TokenType != JsonToken.Integer)
             throw new JsonSerializationException("Expected Durability");
-        int durability = Convert.ToInt32(reader.Value);
+        var durability = Convert.ToSByte(reader.Value);
         reader.Read();
         var itemRef = serializer.Deserialize<ItemRef>(reader);
         reader.Read();

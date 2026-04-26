@@ -8,9 +8,9 @@ namespace MTS.Models;
 [Newtonsoft.Json.JsonConverter(typeof(FurnaceDataConverter))]
 public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
-    public int SelfId { get; set; }
+    public ushort SelfId { get; set; }
     public ItemRef Ref { get; set; }
-    public int Durability { get; set; }
+    public sbyte Durability { get; set; }
     public int ByteSize()
     {
         return SelfId.ByteSize() + Ref.ByteSize()  + Durability.ByteSize();
@@ -23,9 +23,9 @@ public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceD
     }
     public void Deserialize(IReader reader, ref FurnaceData value)
     {
-        value.SelfId = reader.Read<int>();
+        value.SelfId = reader.Read<ushort>();
         value.Ref = reader.Read<ItemRef>();
-        value.Durability = reader.Read<int>();
+        value.Durability = reader.Read<sbyte>();
     }
 
     public FurnaceData DeepClone()

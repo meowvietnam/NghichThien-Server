@@ -71,9 +71,9 @@ namespace MTS.Network.ClientState
                     var herb  = herbs[Random.Shared.Next(herbs.Count)];
                     var rewards = new List<ItemRef>
                     {
-                        new ItemRef()
+                        new()
                         {
-                            Id = herb.Id,
+                            Id = (ushort)herb.Id,
                             Type = ItemType.Herb,
                             Count = 1,
                         }
