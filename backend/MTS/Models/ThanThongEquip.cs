@@ -14,7 +14,7 @@ public class ThanThongEquip : IMemorySerializable<ThanThongEquip>, IEquatable<Th
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
-    public Equipment Equipment { get; set; }
+    public EquipmentManager EquipmentManager { get; set; }
     public void Deserialize(IReader reader, ref ThanThongEquip value)
     {
         value.Id = reader.Read<ushort>();

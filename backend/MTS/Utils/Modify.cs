@@ -4,58 +4,70 @@ namespace MTS.Utils;
 
 public class Modify<T> where T : class
 {
-    private readonly HashSet<T> _adds = new();
-    private readonly HashSet<T> _updates = new();
-    private readonly HashSet<T> _deletes = new();
-
-    public IReadOnlyCollection<T> Adds => _adds;
-    public IReadOnlyCollection<T> Updates => _updates;
-    public IReadOnlyCollection<T> Deletes => _deletes;
+    public HashSet<T> Adds { get; set; } = new();
+    public HashSet<T> Updates { get; set; }  = new();
+    public HashSet<T> Deletes { get; set; }  = new();
 
     public void Add(T value)
     {
-        if (_deletes.Remove(value))
+        if (Deletes.Remove(value))
         {
-            _updates.Add(value);
+            Updates.Add(value);
             return;
         }
-        _adds.Add(value);
+        Adds.Add(value);
     }
     public void Update(T value)
     {
-        if (_adds.Contains(value))
+        if (Adds.Contains(value))
             return;
 
-        if (_deletes.Contains(value))
+        if (Deletes.Contains(value))
             return;
-        _updates.Add(value);
+        Updates.Add(value);
     }
 
     public void Delete(T value)
     {
-        if (_adds.Remove(value))
+        if (Adds.Remove(value))
             return;
 
-        _updates.Remove(value);
-        _deletes.Add(value);
+        Updates.Remove(value);
+        Deletes.Add(value);
     }
     public bool IsModified()
     {
-        return _adds.Count > 0 || _updates.Count > 0 || _deletes.Count > 0;
+        return Adds.Count > 0 || Updates.Count > 0 || Deletes.Count > 0;
     }
     public void Clear()
     {
-        _adds.Clear();
-        _updates.Clear();
-        _deletes.Clear();
+        Adds.Clear();
+        Updates.Clear();
+        Deletes.Clear();
     }
     public void Apply(DbSet<T> context)
     {
-        if (_updates.Count > 0)
-            context.UpdateRange(_updates);
-        if (_deletes.Count > 0)
-            context.RemoveRange(_deletes);
-        if (_adds.Count > 0)
-            context.AddRange(_adds);
+        if (Updates.Count > 0)
+            context.UpdateRange(Updates);
+        if (Deletes.Count > 0)
+            context.RemoveRange(Deletes);
+        if (Adds.Count > 0)
+            context.AddRange(Adds);
+    }
+    public void Apply(HashSet<T> set)
+    {
+        if (Deletes.Count > 0) 
+        {
+            set.ExceptWith(Deletes);
+        }
+        if (Updates.Count > 0)
+        {
+            set.ExceptWith(Updates);
+            set.UnionWith(Updates);
+        }
+        if (Adds.Count > 0)
+        {
+            set.UnionWith(Adds);
+        }
     }
 }

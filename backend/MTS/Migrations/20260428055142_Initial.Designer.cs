@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260426113243_Initial")]
+    [Migration("20260428055142_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -220,6 +220,30 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<ushort>("SelfId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<ushort>("Id")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<string>("Effects")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("CharId", "SelfId", "Id");
+
+                    b.ToTable("Equipments");
+                });
+
+            modelBuilder.Entity("MTS.Models.EquipmentManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
                     b.Property<ushort>("ChuTu1Used")
                         .HasColumnType("smallint unsigned");
 
@@ -243,7 +267,7 @@ namespace MTS.Migrations
 
                     b.HasKey("CharId");
 
-                    b.ToTable("Equipments");
+                    b.ToTable("EquipmentManagers");
                 });
 
             modelBuilder.Entity("MTS.Models.FurnaceData", b =>
@@ -499,13 +523,13 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.DanCombatUsed", b =>
                 {
-                    b.HasOne("MTS.Models.Equipment", "Equipment")
+                    b.HasOne("MTS.Models.EquipmentManager", "EquipmentManager")
                         .WithMany("DanCombatUseds")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Equipment");
+                    b.Navigation("EquipmentManager");
                 });
 
             modelBuilder.Entity("MTS.Models.DeveloperAccount", b =>
@@ -521,9 +545,20 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.Equipment", b =>
                 {
+                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Inventory");
+                });
+
+            modelBuilder.Entity("MTS.Models.EquipmentManager", b =>
+                {
                     b.HasOne("MTS.Models.CharacterData", "CharacterData")
-                        .WithOne("Equipment")
-                        .HasForeignKey("MTS.Models.Equipment", "CharId")
+                        .WithOne("EquipmentManager")
+                        .HasForeignKey("MTS.Models.EquipmentManager", "CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -631,13 +666,13 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.ThanThongEquip", b =>
                 {
-                    b.HasOne("MTS.Models.Equipment", "Equipment")
+                    b.HasOne("MTS.Models.EquipmentManager", "EquipmentManager")
                         .WithMany("ThanThongEquips")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Equipment");
+                    b.Navigation("EquipmentManager");
                 });
 
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
@@ -645,7 +680,7 @@ namespace MTS.Migrations
                     b.Navigation("Appearance")
                         .IsRequired();
 
-                    b.Navigation("Equipment")
+                    b.Navigation("EquipmentManager")
                         .IsRequired();
 
                     b.Navigation("InventoryManager")
@@ -661,7 +696,7 @@ namespace MTS.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MTS.Models.Equipment", b =>
+            modelBuilder.Entity("MTS.Models.EquipmentManager", b =>
                 {
                     b.Navigation("DanCombatUseds");
 

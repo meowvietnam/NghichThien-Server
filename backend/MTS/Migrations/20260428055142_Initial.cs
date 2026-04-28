@@ -137,7 +137,7 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Equipments",
+                name: "EquipmentManagers",
                 columns: table => new
                 {
                     CharId = table.Column<int>(type: "int", nullable: false),
@@ -151,9 +151,9 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Equipments", x => x.CharId);
+                    table.PrimaryKey("PK_EquipmentManagers", x => x.CharId);
                     table.ForeignKey(
-                        name: "FK_Equipments_Characters_CharId",
+                        name: "FK_EquipmentManagers_Characters_CharId",
                         column: x => x.CharId,
                         principalTable: "Characters",
                         principalColumn: "Id",
@@ -231,9 +231,9 @@ namespace MTS.Migrations
                 {
                     table.PrimaryKey("PK_DanCombatUseds", x => x.CharId);
                     table.ForeignKey(
-                        name: "FK_DanCombatUseds_Equipments_CharId",
+                        name: "FK_DanCombatUseds_EquipmentManagers_CharId",
                         column: x => x.CharId,
-                        principalTable: "Equipments",
+                        principalTable: "EquipmentManagers",
                         principalColumn: "CharId",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -250,9 +250,9 @@ namespace MTS.Migrations
                 {
                     table.PrimaryKey("PK_ThanThongEquips", x => x.CharId);
                     table.ForeignKey(
-                        name: "FK_ThanThongEquips_Equipments_CharId",
+                        name: "FK_ThanThongEquips_EquipmentManagers_CharId",
                         column: x => x.CharId,
-                        principalTable: "Equipments",
+                        principalTable: "EquipmentManagers",
                         principalColumn: "CharId",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -291,6 +291,30 @@ namespace MTS.Migrations
                     table.PrimaryKey("PK_CongPhaps", x => x.CharId);
                     table.ForeignKey(
                         name: "FK_CongPhaps_InventoryManagers_CharId",
+                        column: x => x.CharId,
+                        principalTable: "InventoryManagers",
+                        principalColumn: "CharId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Equipments",
+                columns: table => new
+                {
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    SelfId = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Effects = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Equipments", x => new { x.CharId, x.SelfId, x.Id });
+                    table.ForeignKey(
+                        name: "FK_Equipments_InventoryManagers_CharId",
                         column: x => x.CharId,
                         principalTable: "InventoryManagers",
                         principalColumn: "CharId",
@@ -478,6 +502,9 @@ namespace MTS.Migrations
                 name: "DeveloperAccounts");
 
             migrationBuilder.DropTable(
+                name: "Equipments");
+
+            migrationBuilder.DropTable(
                 name: "Furnaces");
 
             migrationBuilder.DropTable(
@@ -505,7 +532,7 @@ namespace MTS.Migrations
                 name: "Socials");
 
             migrationBuilder.DropTable(
-                name: "Equipments");
+                name: "EquipmentManagers");
 
             migrationBuilder.DropTable(
                 name: "InventoryManagers");

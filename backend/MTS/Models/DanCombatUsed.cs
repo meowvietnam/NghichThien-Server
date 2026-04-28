@@ -12,7 +12,7 @@ public class DanCombatUsed : IMemorySerializable<DanCombatUsed>, IEquatable<DanC
     public ushort Id { get; set; }
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
-    public Equipment Equipment { get; set; }
+    public EquipmentManager EquipmentManager { get; set; }
     public void Deserialize(IReader reader, ref DanCombatUsed value)
     {
         value.Id = reader.Read<ushort>();

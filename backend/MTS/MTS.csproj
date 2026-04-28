@@ -60,6 +60,10 @@
       <Content Include="Data\LuyenDanResources.bin">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <None Remove="Data\LuyenKhiResources.bin" />
+      <Content Include="Data\LuyenKhiResources.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

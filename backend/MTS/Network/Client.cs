@@ -99,14 +99,14 @@ public class Client : ClientConnection, ISender<MessageTag>
             .FirstOrDefaultAsync(x => x.CharId == id);
         stats.CharacterData = characterData;
         characterData.Stats = stats;
-        var equipment = await db.Equipments
+        var equipment = await db.EquipmentManagers
             .AsNoTracking()
             .Include(x => x.ThanThongEquips)
             .Include(x => x.DanCombatUseds)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.CharId == id);
         equipment.CharacterData = characterData;
-        characterData.Equipment = equipment;
+        characterData.EquipmentManager = equipment;
         var social = await db.Socials
             .AsNoTracking()
             .Include(x => x.Relationships)

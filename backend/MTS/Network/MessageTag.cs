@@ -1,6 +1,6 @@
 namespace MTS.Network;
 
-public enum MessageTag
+public enum MessageTag 
 {
     Connect = 21,
     ConnectResult = 22,
@@ -50,4 +50,8 @@ public enum MessageTag
     SetInfinityEnergy = 220,
     ChangeScene = 256,
     ChangeSceneResult = 257,
+    LuyenKhi = 310,
+    LuyenKhiResult = 311,
+    SetEquipmentName = 320,
+    SetEquipmentNameResult = 321,
 }

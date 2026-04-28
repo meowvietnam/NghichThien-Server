@@ -17,13 +17,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [Key] public int Id { get; set; }
     public Gender Gender { get; set; }
     public string Name { get; set; }
-
     public EMonPhai MonPhai { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
     public Appearance Appearance { get; set; } = new();
-    public Equipment Equipment { get; set; } = new();
+    public EquipmentManager EquipmentManager { get; set; } = new();
     public Social Social { get; set; } = new();
     public InventoryManager InventoryManager { get; set; } = new();
 
@@ -32,22 +31,17 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
 
-
     public CharacterData()
     {
     }
-
     public CharacterData(CharacterData clone)
     {
         Clone1(clone);
     }
-
     private void Clone0(CharacterData clone)
     {
         MonPhai = clone.MonPhai;
-       
     }
-
     private void Clone1(CharacterData clone)
     {
         Id = clone.Id;
@@ -59,7 +53,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         Progression.CopyFrom(clone.Progression);
         Appearance.CopyFrom(clone.Appearance);
         Social.CopyFrom(clone.Social);
-        Equipment.CopyFrom(clone.Equipment);
+        EquipmentManager.CopyFrom(clone.EquipmentManager);
         Clone0(clone);
     }
 
@@ -71,7 +65,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + Stats.ByteSize()
                + Progression.ByteSize()
                + Appearance.ByteSize()
-               + Equipment.ByteSize()
+               + EquipmentManager.ByteSize()
                + MonPhai.ByteSize() 
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
@@ -86,7 +80,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(Stats);
         writer.Write(Progression);
         writer.Write(Appearance);
-        writer.Write(Equipment);
+        writer.Write(EquipmentManager);
         writer.Write(MonPhai);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
@@ -101,7 +95,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Stats = reader.Read<CharacterStats>();
         value.Progression = reader.Read<Progression>();
         value.Appearance = reader.Read<Appearance>();
-        value.Equipment = reader.Read<Equipment>();
+        value.EquipmentManager = reader.Read<EquipmentManager>();
         value.MonPhai = reader.Read<EMonPhai>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
@@ -125,9 +119,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
             await Progression.SaveChanges(db);
         }
 
-        if (!Equipment.IsDefault())
+        if (!EquipmentManager.IsDefault())
         {
-            await Equipment.SaveChanges(db);
+            await EquipmentManager.SaveChanges(db);
         }
 
         if (!Social.IsDefault())

@@ -15,4 +15,5 @@ public enum ItemType : byte
     CamNgo,
     CongPhapOwner,
     ThanThongOwner,
+    Material,
 }

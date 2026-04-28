@@ -6,6 +6,7 @@ namespace MTS.Network.ClientState
         SelectCharacter,
         CreateCharacter,
         AllMaps,
-        LuyenDan
+        LuyenDan,
+        LuyenKhi
     }
 }

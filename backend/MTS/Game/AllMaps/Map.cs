@@ -28,7 +28,7 @@ public class Map : IMemorySerializable<Map>
 
     public override string ToString()
     {
-        return $"Id: {Id}, MapType: {MapType}, NextMapIds: [{string.Join(", ", NextMapIds)}]";
+        return $"SelfId: {Id}, MapType: {MapType}, NextMapIds: [{string.Join(", ", NextMapIds)}]";
     }
 
     public override int GetHashCode()

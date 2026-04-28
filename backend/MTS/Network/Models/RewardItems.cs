@@ -6,8 +6,8 @@ namespace MTS.Network.Models;
 
 public class RewardItems : IMemorySerializable<RewardItems>
 {
-    public List<FurnaceData> Furnaces { get; set; } = new List<FurnaceData>();
-    public List<ItemRef> OtherItems { get; set; } = new List<ItemRef>();
+    public List<FurnaceData> Furnaces { get; set; } = new();
+    public List<ItemRef> OtherItems { get; set; } = new();
     public void Deserialize(IReader reader, ref RewardItems value)
     {
         value.Furnaces = reader.ReadArray<FurnaceData>().ToList();

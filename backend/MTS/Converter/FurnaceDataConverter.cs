@@ -36,7 +36,7 @@ public class FurnaceDataConverter : JsonConverter<FurnaceData>
         var selfId = Convert.ToUInt16(reader.Value);
         reader.Read();
         if (reader.TokenType != JsonToken.Integer)
-            throw new JsonSerializationException("Expected Id");
+            throw new JsonSerializationException("Expected SelfId");
         var id = Convert.ToUInt16(reader.Value);
         reader.Read();
         if (reader.TokenType != JsonToken.Integer)

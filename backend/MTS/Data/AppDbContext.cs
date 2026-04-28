@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MTS.Game;
+using MTS.Game.LuyenKhi;
 using MTS.Models;
 using MTS.Utils;
 using Newtonsoft.Json;
@@ -25,9 +26,10 @@ public class AppDbContext : DbContext
     public DbSet<CongPhap> CongPhaps { get; private set; }
     public DbSet<NgoDao> NgoDaos { get; private set; }
     public DbSet<ThanThong> ThanThongs { get; private set; }
-    public DbSet<Equipment> Equipments { get; private set; }
+    public DbSet<EquipmentManager> EquipmentManagers { get; private set; }
     public DbSet<ThanThongEquip> ThanThongEquips { get; private set; }
     public DbSet<DanCombatUsed> DanCombatUseds { get; private set; }
+    public DbSet<Equipment> Equipments { get; private set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -50,6 +52,19 @@ public class AppDbContext : DbContext
         catch
         {
             return new T();
+        }
+    }
+
+    private static T[] DeserializeArray<T>(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return Array.Empty<T>();
+        try
+        {
+            return JsonConvert.DeserializeObject<T[]>(json);
+        }
+        catch
+        {
+            return Array.Empty<T>();
         }
     }
 
@@ -216,21 +231,20 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        
-        modelBuilder.Entity<Equipment>(e =>
+
+        modelBuilder.Entity<EquipmentManager>(e =>
         {
             e.HasKey(x => x.CharId);
             e.HasOne(x => x.CharacterData)
-                .WithOne(x => x.Equipment)
-                .HasForeignKey<Equipment>(x => x.CharId)
+                .WithOne(x => x.EquipmentManager)
+                .HasForeignKey<EquipmentManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
-
         });
-        
+
         modelBuilder.Entity<ThanThongEquip>(e =>
         {
             e.HasKey(x => x.CharId);
-            e.HasOne(x => x.Equipment)
+            e.HasOne(x => x.EquipmentManager)
                 .WithMany(x => x.ThanThongEquips)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -238,10 +252,24 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<DanCombatUsed>(e =>
         {
             e.HasKey(x => x.CharId);
-            e.HasOne(x => x.Equipment)
+            e.HasOne(x => x.EquipmentManager)
                 .WithMany(x => x.DanCombatUseds)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Equipment>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.SelfId, x.Id });
+            e.HasOne(x => x.Inventory)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.Effects)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeArray<Effect>(v)
+                );
         });
     }
 }

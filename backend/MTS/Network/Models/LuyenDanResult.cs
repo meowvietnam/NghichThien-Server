@@ -10,19 +10,7 @@ public class LuyenDanResult : IMemorySerializable<LuyenDanResult>
     public string Message { get;  set; }
     public List<ItemRef> ItemRefs { get; set; }
     public TimeSpan NewTuoiTac { get; set; }
-    public InventoryManager Inventory { get; set; }
-    public LuyenDanResult(bool success, string message, List<ItemRef> itemRefs, TimeSpan newTuoiTac, InventoryManager inventory)
-    {
-        Success = success;
-        Message = message;
-        ItemRefs = itemRefs;
-        NewTuoiTac = newTuoiTac;
-        Inventory = inventory;
-    }
-
-    public LuyenDanResult()
-    {
-    }
+    public InventoryModify Modify { get; set; }
 
 
     public int ByteSize()
@@ -32,7 +20,7 @@ public class LuyenDanResult : IMemorySerializable<LuyenDanResult>
         {
             return baseSize;
         }
-        return baseSize + ItemRefs.ByteSize() + NewTuoiTac.ByteSize() + Inventory.ByteSize();
+        return baseSize + ItemRefs.ByteSize() + NewTuoiTac.ByteSize() + Modify.ByteSize();
     }
     public void Serialize(IWriter writer)
     {
@@ -42,7 +30,7 @@ public class LuyenDanResult : IMemorySerializable<LuyenDanResult>
         {
             writer.WriteArray(ItemRefs);
             writer.Write(NewTuoiTac);
-            writer.Write(Inventory);
+            writer.Write(Modify);
         }
     }
     public void Deserialize(IReader reader, ref LuyenDanResult value)
@@ -53,7 +41,7 @@ public class LuyenDanResult : IMemorySerializable<LuyenDanResult>
         {
             value.ItemRefs = reader.ReadArray<ItemRef>().ToList();
             value.NewTuoiTac = reader.Read<TimeSpan>();
-            value.Inventory = reader.Read<InventoryManager>();
+            value.Modify = reader.Read<InventoryModify>();
         }
     }
 }

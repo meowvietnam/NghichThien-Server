@@ -8,7 +8,7 @@ public class AuthService
 {
     public async Task<UserData> CreateOrLogin(string username)
     {
-        using var db = await Program.Db.CreateDbContextAsync();
+        using var db = await Program.CreateDbAsync();
         var account = await db.DeveloperAccounts
             .AsNoTracking()
             .Include(x => x.UserData)
