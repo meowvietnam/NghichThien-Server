@@ -147,7 +147,10 @@ namespace MTS.Migrations
                     PhuTu3Used = table.Column<ushort>(type: "smallint unsigned", nullable: false),
                     PhuTu4Used = table.Column<ushort>(type: "smallint unsigned", nullable: false),
                     ChuTu1Used = table.Column<ushort>(type: "smallint unsigned", nullable: false),
-                    ChuTu2Used = table.Column<ushort>(type: "smallint unsigned", nullable: false)
+                    ChuTu2Used = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    VuKhi = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    PhongCu = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    TrangSuc = table.Column<ushort>(type: "smallint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -308,6 +311,8 @@ namespace MTS.Migrations
                     Name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Effects = table.Column<string>(type: "json", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MaterialIds = table.Column<string>(type: "json", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -327,13 +332,13 @@ namespace MTS.Migrations
                 columns: table => new
                 {
                     CharId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
                     SelfId = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
                     Durability = table.Column<sbyte>(type: "tinyint", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Furnaces", x => new { x.CharId, x.Id });
+                    table.PrimaryKey("PK_Furnaces", x => new { x.CharId, x.SelfId, x.Id });
                     table.ForeignKey(
                         name: "FK_Furnaces_InventoryManagers_CharId",
                         column: x => x.CharId,

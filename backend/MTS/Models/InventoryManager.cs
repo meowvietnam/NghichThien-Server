@@ -659,7 +659,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             Id = (ushort)item.Id,
             Effects = effects,
-            Name = CharacterData.Name
+            Name = CharacterData.Name,
+            MaterialIds = ids
         };
         foreach (var i in itemRefs)
         {

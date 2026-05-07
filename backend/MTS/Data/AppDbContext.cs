@@ -161,7 +161,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<FurnaceData>(e =>
         {
-            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasKey(x => new { x.CharId, x.SelfId,x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.Furnaces)
                 .HasForeignKey(x => x.CharId)
@@ -269,6 +269,12 @@ public class AppDbContext : DbContext
                 .HasConversion(
                     v => SerializeObject(v),
                     v => DeserializeArray<Effect>(v)
+                );
+            e.Property(x => x.MaterialIds)
+                .HasColumnType(json)
+                .HasConversion(
+                    v => SerializeObject(v),
+                    v => DeserializeArray<ushort>(v)
                 );
         });
     }

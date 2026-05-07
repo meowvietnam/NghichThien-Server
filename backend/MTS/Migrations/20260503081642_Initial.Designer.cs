@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260428055142_Initial")]
+    [Migration("20260503081642_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -230,6 +230,10 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasColumnType("json");
 
+                    b.Property<string>("MaterialIds")
+                        .IsRequired()
+                        .HasColumnType("json");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -253,6 +257,9 @@ namespace MTS.Migrations
                     b.Property<ushort>("DonThuatUsed")
                         .HasColumnType("smallint unsigned");
 
+                    b.Property<ushort>("PhongCu")
+                        .HasColumnType("smallint unsigned");
+
                     b.Property<ushort>("PhuTu1Used")
                         .HasColumnType("smallint unsigned");
 
@@ -265,6 +272,12 @@ namespace MTS.Migrations
                     b.Property<ushort>("PhuTu4Used")
                         .HasColumnType("smallint unsigned");
 
+                    b.Property<ushort>("TrangSuc")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<ushort>("VuKhi")
+                        .HasColumnType("smallint unsigned");
+
                     b.HasKey("CharId");
 
                     b.ToTable("EquipmentManagers");
@@ -275,16 +288,16 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<ushort>("SelfId")
+                        .HasColumnType("smallint unsigned");
+
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
                     b.Property<sbyte>("Durability")
                         .HasColumnType("tinyint");
 
-                    b.Property<ushort>("SelfId")
-                        .HasColumnType("smallint unsigned");
-
-                    b.HasKey("CharId", "Id");
+                    b.HasKey("CharId", "SelfId", "Id");
 
                     b.ToTable("Furnaces");
                 });

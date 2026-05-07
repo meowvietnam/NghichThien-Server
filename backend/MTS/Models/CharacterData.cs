@@ -133,4 +133,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
             await InventoryManager.SaveChanges(db);
         }
     }
+
+    public void LearnNgoDao(int idNgoDao)
+    {
+        
+    }
 }

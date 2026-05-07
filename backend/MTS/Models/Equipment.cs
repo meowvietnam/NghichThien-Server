@@ -7,30 +7,39 @@ using Newtonsoft.Json;
 
 namespace MTS.Models;
 
-public class Equipment : IMemorySerializable<Equipment> , IEquatable<Equipment>
+public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
+
     public ushort SelfId { get; set; }
     public ushort Id { get; set; }
     public string Name { get; set; }
     public Effect[] Effects { get; set; }
+    public ushort[] MaterialIds { get; set; }
+
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [ForeignKey(nameof(CharId))]
     public InventoryManager Inventory { get; set; }
-    [NotMapped] public LuyenKhiRewardItem Item => LuyenKhiResources.Instance.RewardItems.FirstOrDefault(x => x.Id == Id);
+
+    [NotMapped]
+    public LuyenKhiRewardItem Item => LuyenKhiResources.Instance.RewardItems.FirstOrDefault(x => x.Id == Id);
+    [NotMapped]
+    public Material[] Materials => LuyenKhiResources.Instance.Materials.Where(x => MaterialIds.Contains((ushort)x.Id)).ToArray();
     public void Deserialize(IReader reader, ref Equipment value)
     {
         value.SelfId = reader.Read<ushort>();
         value.Id = reader.Read<ushort>();
         value.Name = reader.Read();
         value.Effects = reader.ReadArray<Effect>();
+        value.MaterialIds = reader.ReadArray<ushort>();
     }
+
     public int ByteSize()
     {
-        return SelfId.ByteSize() + Id.ByteSize() + Name.ByteSize() + Effects.ByteSize();
+        return SelfId.ByteSize() + Id.ByteSize() + Name.ByteSize() + Effects.ByteSize() +  MaterialIds.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -39,6 +48,22 @@ public class Equipment : IMemorySerializable<Equipment> , IEquatable<Equipment>
         writer.Write(Id);
         writer.Write(Name);
         writer.WriteArray(Effects);
+        writer.WriteArray(MaterialIds);
+    }
+
+    public EquipmentGrade GetGrade()
+    {
+        var materials = Materials;
+        var res = LuyenKhiResources.Instance;
+        var matConfigs = res.MaterialGradeConfigs;
+        var grade = 0;
+        foreach (var material in materials)
+        {
+            var matConfig = matConfigs.First(x => x.Tier == material.Tier);
+            grade += matConfig.Grade;
+        }
+        var equipmentGradeConfig = res.EquipmentGrades.Last(x => x.MinGrade <= grade);
+        return equipmentGradeConfig.Grade;
     }
     public EquipmentType GetEquipmentType()
     {
@@ -58,7 +83,7 @@ public class Equipment : IMemorySerializable<Equipment> , IEquatable<Equipment>
                 return EquipmentType.Jewelry;
         }
     }
-
+    
     public bool Equals(Equipment? other)
     {
         if (other is null) return false;

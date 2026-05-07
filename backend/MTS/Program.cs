@@ -34,6 +34,7 @@ public static class Program
         var webPort = builder.Configuration.GetValue("ServerPorts:WebPort", 9481);
         builder.WebHost.UseUrls($"http://*:{webPort}");
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        Console.WriteLine(connectionString?.Split(';').First());
         builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Error);
         builder.Services.AddDbContextFactory<AppDbContext>(options =>
         {

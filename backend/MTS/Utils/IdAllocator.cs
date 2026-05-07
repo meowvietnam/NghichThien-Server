@@ -14,7 +14,7 @@ public class IdAllocator<T> where T : struct, IComparable<T>
                        Func<T, T> decrement,
                        IComparer<(T, T)>? comparer = null)
     {
-        this.nextId = start;
+        nextId = start;
         this.increment = increment;
         this.decrement = decrement;
 
@@ -49,16 +49,15 @@ public class IdAllocator<T> where T : struct, IComparable<T>
     {
         var newRange = (id, id);
 
-        // tìm range bên trái và phải để merge
         (T start, T end)? left = null;
         (T start, T end)? right = null;
 
         foreach (var r in freeRanges)
         {
-            if (increment(r.end).Equals(id))
+            if (Comparer<T>.Default.Compare(increment(r.end), id) == 0)
                 left = r;
 
-            if (decrement(r.start).Equals(id))
+            if (Comparer<T>.Default.Compare(decrement(r.start), id) == 0)
                 right = r;
         }
 
