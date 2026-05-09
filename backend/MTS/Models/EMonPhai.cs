@@ -1,4 +1,4 @@
-namespace MTS.Game;
+namespace MTS.Models;
 
 public enum EMonPhai
 {

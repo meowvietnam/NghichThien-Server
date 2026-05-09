@@ -1,7 +1,7 @@
 using MTS.Converter;
 using Newtonsoft.Json;
 
-namespace MTS.Game;
+namespace MTS.Models;
 
 [JsonConverter(typeof(ColorArrayConverter))]
 public struct Color : IEquatable<Color>

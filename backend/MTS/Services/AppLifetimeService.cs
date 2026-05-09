@@ -1,4 +1,4 @@
-namespace MTS.Network;
+namespace MTS.Services;
 
 public class AppLifetimeService
 {

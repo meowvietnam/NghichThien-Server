@@ -40,10 +40,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Game\Auth\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Remove="Data\StepConfig.bin" />
       <Content Include="Data\step-config.bin">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>

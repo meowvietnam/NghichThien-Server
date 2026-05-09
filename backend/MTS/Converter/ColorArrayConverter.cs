@@ -1,4 +1,4 @@
-using MTS.Game;
+using MTS.Models;
 using Newtonsoft.Json;
 namespace MTS.Converter;
 

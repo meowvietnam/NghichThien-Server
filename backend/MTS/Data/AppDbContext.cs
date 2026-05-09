@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using MTS.Game;
 using MTS.Game.LuyenKhi;
 using MTS.Models;
 using MTS.Utils;

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using MTS.Game;
 using Network;
 using Network.Extensions;
 
