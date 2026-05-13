@@ -178,6 +178,9 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<ushort>("Count")
+                        .HasColumnType("smallint unsigned");
+
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 

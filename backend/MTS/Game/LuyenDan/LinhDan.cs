@@ -21,6 +21,8 @@ public class LinhDan : IItemData, IMemorySerializable<LinhDan>
     public int ProfitDanThanhPerDay { get; private set; }
     public float IncomeDanThanh { get; private set; }
     public ETypeDan ETypeDan { get; private set; }
+    public int BuffValue { get; private set; }
+    public EDanBuffType EBuffType { get; private set; }
 
     public int ByteSize()
     {
@@ -28,7 +30,8 @@ public class LinhDan : IItemData, IMemorySerializable<LinhDan>
                + DanDoc.ByteSize() + NhinThuoc.ByteSize() + PriceV104.ByteSize() + PriceV130.ByteSize()
                + Price.ByteSize() + Profit.ByteSize() + Income.ByteSize()
                + ProfitPerDay.ByteSize() + ProfitDanThanh.ByteSize() + ProfitDanThanhPerDay.ByteSize()
-               + IncomeDanThanh.ByteSize() + ETypeDan.ByteSize();
+               + IncomeDanThanh.ByteSize() + ETypeDan.ByteSize()
+               + BuffValue.ByteSize() + EBuffType.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -49,6 +52,8 @@ public class LinhDan : IItemData, IMemorySerializable<LinhDan>
         writer.Write(ProfitDanThanhPerDay);
         writer.Write(IncomeDanThanh);
         writer.Write(ETypeDan);
+        writer.Write(BuffValue);
+        writer.Write(EBuffType);
     }
 
     public void Deserialize(IReader reader, ref LinhDan value)
@@ -69,5 +74,7 @@ public class LinhDan : IItemData, IMemorySerializable<LinhDan>
         value.ProfitDanThanhPerDay = reader.Read<int>();
         value.IncomeDanThanh = reader.Read<float>();
         value.ETypeDan = reader.Read<ETypeDan>();
+        value.BuffValue = reader.Read<int>();
+        value.EBuffType = reader.Read<EDanBuffType>();
     }
 }

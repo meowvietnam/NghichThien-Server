@@ -27,7 +27,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [NotMapped] public HashSet<ItemRef> Herbs { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> ThanThongs { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> CongPhaps { get; set; } = new();
-
     [NotMapped] public HashSet<ItemRef> LinhDans { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Materials { get; set; } = new();
     [NotMapped] public HashSet<Equipment> VuKhis { get; set; } = new();
@@ -98,7 +97,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         Materials = items.GetValueOrDefault(ItemType.Material, new());
         VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
         PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
-        TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
+        TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
         Init();
     }
 
