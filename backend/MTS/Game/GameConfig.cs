@@ -17,20 +17,25 @@ public static class GameConfig
     public static MapManager MapManager { get; private set; }
     public static LuyenDanResources LuyenDanResources { get; private set; }
     public static LuyenKhiResources LuyenKhiResources { get; private set; }
+    public static NDCPTTManager NDCPTTManager { get; private set; }
+    public static NgoDaoManager NgoDaoManager { get; private set; }
     public static readonly float[] UnselectPercents = { 11,12,14,16,20 };
     public const int OriginalMoney = 20;
+
+    private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
+    {
+        var reader = new Reader(File.ReadAllBytes(filePath));
+        return reader.Read<T>();
+    }
     public static void Init()
     {
         CharacterTemplate = Json.Deserialize<CharacterData>(File.ReadAllText("Data/character-template.json"));
-        var reader = new Reader(File.ReadAllBytes("Data/step-config.bin"));
-        StepConfig = reader.Read<StepConfig>();
-        reader = new Reader(File.ReadAllBytes("Data/skin-resources.bin"));
-        SkinResources = reader.Read<SkinResources>();
-        reader = new Reader(File.ReadAllBytes("Data/maps.bin"));
-        MapManager = reader.Read<MapManager>();
-        reader = new Reader(File.ReadAllBytes("Data/LuyenDanResources.bin"));
-        LuyenDanResources = reader.Read<LuyenDanResources>();
-        reader = new Reader(File.ReadAllBytes("Data/LuyenKhiResources.bin"));
-        LuyenKhiResources = reader.Read<LuyenKhiResources>();
+        StepConfig = Read<StepConfig>("Data/step-config.bin");
+        SkinResources = Read<SkinResources>("Data/skin-resources.bin");
+        MapManager = Read<MapManager>("Data/maps.bin");
+        LuyenDanResources = Read<LuyenDanResources>("Data/LuyenDanResources.bin");
+        LuyenKhiResources = Read<LuyenKhiResources>("Data/LuyenKhiResources.bin");
+        NDCPTTManager = Read<NDCPTTManager>("Data/NDCPTTManager.bin");
+        NgoDaoManager = Read<NgoDaoManager>("Data/NgoDaoManager.bin");
     }
 }
