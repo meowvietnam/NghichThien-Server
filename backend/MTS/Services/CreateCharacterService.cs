@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.CreateCharacter;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
 using Action = MTS.Game.CreateCharacter.Action;
@@ -36,7 +37,7 @@ public class CreateCharacterService
         var skinGenderGroup = resources.GenderSkinGroups.FirstOrDefault(x => x.Gender == gender);
         if (skinGenderGroup == null)
         {
-            throw new Exception(ExceptionMessage.SkinGenderInvalid);
+            throw new Exception(Strings.SkinGenderInvalid);
         }
 
         foreach (var skinGroup in skinGenderGroup.SkinGroups)
@@ -46,14 +47,14 @@ public class CreateCharacterService
                 var categoryId = skinGroupCategory.Id;
                 if (!skins.TryGetValue(categoryId, out var skin))
                 {
-                    throw new Exception(ExceptionMessage.SkinCategoryMissing);
+                    throw new Exception(Strings.SkinCategoryMissing);
                 }
 
                 var existed = skinGroupCategory.Skins.Any(x =>
                     x.Name.Equals(skin, StringComparison.InvariantCultureIgnoreCase));
                 if (!existed)
                 {
-                    throw new Exception(ExceptionMessage.SkinOptionInvalid);
+                    throw new Exception(Strings.SkinOptionInvalid);
                 }
 
                 newSkins.Add(categoryId, skin);
@@ -65,7 +66,7 @@ public class CreateCharacterService
                 {
                     if (!colors.TryGetValue(colorId, out var color))
                     {
-                        throw new Exception(ExceptionMessage.SkinColorMissing + $" {colorId}");
+                        throw new Exception(Strings.SkinColorMissing + $" {colorId}");
                     }
 
                     color.A = 1;
@@ -83,25 +84,25 @@ public class CreateCharacterService
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new Exception(ExceptionMessage.NameInvalid);
+            throw new Exception(Strings.NameInvalid);
         }
 
         name = name.Trim();
         if (name.Length <= 5 || name.Length >= 20)
         {
-            throw new Exception(ExceptionMessage.NameLengthInvalid);
+            throw new Exception(Strings.NameLengthInvalid);
         }
 
         if (!Regex.IsMatch(name, @"^[\p{L}\p{N}\s]+$"))
         {
-            throw new Exception(ExceptionMessage.NameSpecialCharInvalid);
+            throw new Exception(Strings.NameSpecialCharInvalid);
         }
 
         await using var db = await Program.CreateDbAsync();
         bool existed = await db.Characters.AnyAsync(x => x.Name == name);
         if (existed)
         {
-            throw new Exception(ExceptionMessage.NameExisted);
+            throw new Exception(Strings.NameExisted);
         }
     }
 
@@ -139,7 +140,7 @@ public class CreateCharacterService
         var set2 = models.Select(x => x.Id).ToHashSet();
         if (!set1.SetEquals(set2))
         {
-            throw new Exception(ExceptionMessage.IsIncomplete);
+            throw new Exception(Strings.IsIncomplete);
         }
 
         foreach (var model in models)
@@ -148,7 +149,7 @@ public class CreateCharacterService
             var step = steps.FirstOrDefault(s => s.Id == stepId);
             if (step == null)
             {
-                throw new Exception(ExceptionMessage.StepInvalid);
+                throw new Exception(Strings.StepInvalid);
             }
 
             if (step is SelectionStepData s)
@@ -158,27 +159,27 @@ public class CreateCharacterService
                     var group = s.Groups.FirstOrDefault(g => g.Id == selectionGroup.Id);
                     if (group == null)
                     {
-                        throw new Exception(ExceptionMessage.GroupInvalid);
+                        throw new Exception(Strings.GroupInvalid);
                     }
 
                     var exclusives = group.Exclusives;
                     var isViolation = model.Groups.Any(g => exclusives.Contains(g.Id));
                     if (isViolation)
                     {
-                        throw new Exception(ExceptionMessage.GroupExclusiveViolation);
+                        throw new Exception(Strings.GroupExclusiveViolation);
                     }
 
                     var items = selectionGroup.Items;
                     if (items.Count != 1)
                     {
-                        throw new Exception(ExceptionMessage.ItemCountInvalid);
+                        throw new Exception(Strings.ItemCountInvalid);
                     }
 
                     var item = items[0];
                     var statOption = group.StatOptions.FirstOrDefault(x => x.Id == item);
                     if (statOption == null)
                     {
-                        throw new Exception(ExceptionMessage.StatOptionInvalid);
+                        throw new Exception(Strings.StatOptionInvalid);
                     }
 
                     var modifiers = statOption.Modifiers;
@@ -197,14 +198,14 @@ public class CreateCharacterService
                         .ToList();
                     if (e.GroupId != selectionGroup.Id)
                     {
-                        throw new Exception(ExceptionMessage.GroupInvalid);
+                        throw new Exception(Strings.GroupInvalid);
                     }
 
                     var count = (int)stats.LinhCan + 1;
                     var items = selectionGroup.Items;
                     if (items.Count != count)
                     {
-                        throw new Exception(ExceptionMessage.ElementalCountInvalid);
+                        throw new Exception(Strings.ElementalCountInvalid);
                     }
 
                     var unselectedCount = modifiers.Count - count;
@@ -220,13 +221,13 @@ public class CreateCharacterService
                         var elemental = e.Elementals.FirstOrDefault(x => x.Id == item);
                         if (elemental == null)
                         {
-                            throw new Exception(ExceptionMessage.ElementalOptionInvalid);
+                            throw new Exception(Strings.ElementalOptionInvalid);
                         }
 
                         var modifier = modifiers.FirstOrDefault(x => x.Type == elemental.StatType);
                         if (modifier == null)
                         {
-                            throw new Exception(ExceptionMessage.ElementalStatInvalid);
+                            throw new Exception(Strings.ElementalStatInvalid);
                         }
 
                         modifier.Value = selectPercent;
@@ -242,7 +243,7 @@ public class CreateCharacterService
 
         if (money < 0)
         {
-            throw new Exception($"{ExceptionMessage.NotEnoughMoney}: {money}");
+            throw new Exception($"{Strings.NotEnoughMoney}: {money}");
         }
         stats.SetValue(StatType.Hp, stats.SinhMenh);
         Char.Stats = stats;
@@ -330,7 +331,7 @@ public class CreateCharacterService
         var charCount = user.CharacterDatas.Count;
         if (charCount >= 1)
         {
-            throw new Exception(ExceptionMessage.CharacterLimitExceeded);
+            throw new Exception(Strings.CharacterLimitExceeded);
         }
         var userId = user.Id;
         await using var db = await Program.CreateDbAsync();
@@ -346,30 +347,4 @@ public class CreateCharacterService
         user.CharacterDatas.Add(Char);
         return Char;
     }
-}
-
-public static class ExceptionMessage
-{
-    public const string SkinGenderInvalid = "Giới tính ngoại hình không hợp lệ!";
-    public const string SkinCategoryMissing = "Chưa chọn đầy đủ các bộ phận ngoại hình!";
-    public const string SkinOptionInvalid = "Tùy chọn ngoại hình không tồn tại!";
-    public const string SkinColorMissing = "Chưa chọn đầy đủ màu sắc ngoại hình!";
-    public const string NameInvalid = "Tên nhân vật không hợp lệ!";
-    public const string NameLengthInvalid = "Tên nhân vật phải lớn hơn 5 và nhỏ hơn 20 ký tự!";
-    public const string NameSpecialCharInvalid = "Tên nhân vật không được chứa ký tự đặc biệt!";
-    public const string NameExisted = "Tên nhân vật đã tồn tại!";
-    public const string StepInvalid = "Bước tạo nhân vật không tồn tại hoặc không hợp lệ!";
-    public const string GroupInvalid = "Nhóm lựa chọn không hợp lệ!";
-    public const string GroupExclusiveViolation = "Phát hiện các nhóm lựa chọn xung đột lẫn nhau!";
-    public const string ElementalInvalid = "Lựa chọn nguyên tố linh căn không hợp lệ!";
-    public const string ElementalCountInvalid =
-        "Số lượng linh căn được chọn không khớp với yêu cầu của chỉ số Linh Căn!";
-    public const string ElementalOptionInvalid = "Tùy chọn nguyên tố linh căn không tồn tại!";
-    public const string ElementalStatInvalid = "Chỉ số nguyên tố linh căn không hợp lệ!";
-    public const string SelectionInvalid = "Lựa chọn không hợp lệ!";
-    public const string ItemCountInvalid = "Số lượng mục lựa chọn không hợp lệ (yêu cầu chọn duy nhất 1 mục)!";
-    public const string StatOptionInvalid = "Tùy chọn chỉ số không tồn tại!";
-    public const string NotEnoughMoney = "Điểm thiên phú không đủ để thực hiện thao tác này!";
-    public const string IsIncomplete = "Chưa thực hiện đầy đủ các bước tiến trình tạo nhân vật!";
-    public const string CharacterLimitExceeded = "Không thể tạo thêm nhân vật, đã đạt giới hạn!";
 }

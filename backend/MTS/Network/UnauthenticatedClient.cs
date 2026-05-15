@@ -1,3 +1,4 @@
+using MTS.Localization;
 using MTS.Network.Models;
 using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
@@ -41,7 +42,6 @@ public class UnauthenticatedClient : ClientConnection
     {
         public MessageState State => MessageState.ConnectState;
         private bool isAuthenticated;
-        private const string ConnectSuccess = "Kết nối tới máy chủ thành công!";
         public void OnEnter()
         {
             _ = CheckAuthentication();
@@ -65,7 +65,7 @@ public class UnauthenticatedClient : ClientConnection
                 var result = new ConnectResult()
                 {
                     Success = true,
-                    Message = ConnectSuccess,
+                    Message = Strings.ConnectSuccess,
                     Id = client.Id,
                     Key = client.Key
                 };

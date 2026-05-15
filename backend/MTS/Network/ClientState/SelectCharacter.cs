@@ -1,4 +1,5 @@
 using MTS.Game;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Core;
 using MTS.Network.Models;
@@ -9,8 +10,6 @@ namespace MTS.Network.ClientState
     public class SelectCharacter : IClientState
     {
         private Client client;
-        private const string LimitCharacter = "Số lượng nhân vật đã đạt giới hạn!";
-        private const string CharacterNotFound = "Nhân vật không tồn tại!";
         public SelectCharacter(Client client)
         {
             this.client = client;
@@ -36,7 +35,7 @@ namespace MTS.Network.ClientState
                     var result = new CanCreateChar()
                     {
                         CanCreate = false,
-                        Message = LimitCharacter,
+                        Message = Strings.LimitCharacter,
                     };
                     client.Send(MessageTag.CanCreateCharacterResult, result);
                 }
@@ -58,7 +57,7 @@ namespace MTS.Network.ClientState
                     var character = client.UserData.CharacterDatas.FirstOrDefault(x => x.Id == id);
                     if (character == null)
                     {
-                        throw new(CharacterNotFound);
+                        throw new(Strings.CharacterNotFound);
                     }
                     character = await client.Select(character);
                     var result = new SelectCharacterResult()
@@ -78,7 +77,7 @@ namespace MTS.Network.ClientState
                             Count = 1,
                         }
                     };
-                    await client.SendMail(new Mail()
+                    await client.MailManager.SendMail(new Mail()
                     {
                         Title = "Test mail",
                         Content = "Test mail Content",

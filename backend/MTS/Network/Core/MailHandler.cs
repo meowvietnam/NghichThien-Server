@@ -24,7 +24,7 @@ public class MailHandler : IClientHandler
         {
             try
             {
-                var mails = await client.GetMails();
+                var mails = await client.MailManager.GetMails();
                 var result = new GetMailsResult()
                 {
                     Success = true,
@@ -45,7 +45,7 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.ReadMail)
         {
             var id = reader.Read<int>();
-            var result = client.ReadMail(id);
+            var result = client.MailManager.ReadMail(id);
             if (result == id)
             {
                 client.Send(MessageTag.MarkMailRead, id);
@@ -54,7 +54,7 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.RemoveMail)
         {
             var id = reader.Read<int>();
-            var result = client.RemoveMail(id);
+            var result = client.MailManager.RemoveMail(id);
             if (result == id)
             {
                 client.Send(MessageTag.RemoveMailId, id);
@@ -62,7 +62,7 @@ public class MailHandler : IClientHandler
         }
         else if (tag == MessageTag.RemoveAllMails)
         {
-            var result = client.RemoveAllMails();
+            var result = client.MailManager.RemoveAllMails();
             client.Send(MessageTag.RemoveAllMailsResult, result);
         }
         else if (tag == MessageTag.ClaimMail)

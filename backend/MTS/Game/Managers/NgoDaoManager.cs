@@ -1,7 +1,8 @@
+using MTS.Game.Resources;
 using Network;
 using Network.Extensions;
 
-namespace MTS;
+namespace MTS.Game.Managers;
 
 public class NgoDaoManager : IMemorySerializable<NgoDaoManager>
 {

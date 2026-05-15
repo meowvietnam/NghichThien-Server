@@ -1,7 +1,7 @@
 using Network;
 using Network.Extensions;
 
-namespace MTS;
+namespace MTS.Game.Resources;
 
 public class BaseData : IMemorySerializable<BaseData>
 {

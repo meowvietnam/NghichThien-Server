@@ -4,7 +4,7 @@ using MTS.TT;
 using Network;
 using Network.Extensions;
 
-namespace MTS;
+namespace MTS.Game.Managers;
 
 public class NDCPTTManager : IMemorySerializable<NDCPTTManager>
 {

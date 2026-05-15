@@ -1,3 +1,4 @@
+using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Services;
 using Network;
@@ -7,8 +8,6 @@ namespace MTS.Network.ClientState
 {
     public class AuthState(Client client) : IClientState
     {
-        private const string LoginSuccess = "Đăng nhập thành công!";
-        private const string ClientOnline = "Tài khoản đang đăng nhập nơi khác!";
         public void OnEnter()
         {
         }
@@ -26,13 +25,13 @@ namespace MTS.Network.ClientState
                     var isClentOnline = TcpServer.Instance.IsClientOnline(userData.Id);
                     if (isClentOnline)
                     {
-                        throw new Exception(ClientOnline);
+                        throw new Exception(Strings.ClientOnline);
                     }
                     client.SetUserData(userData);
                     var result = new LoginResult
                     {
                         Success = true,
-                        Message = LoginSuccess,
+                        Message = Strings.LoginSuccess,
                         UserData = userData
                     };
                     client.Send(MessageTag.LoginDeveloperResult, result);

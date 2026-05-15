@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.CompilerServices;
 using MTS.Game;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.ClientState;
 using NetworkServer;
@@ -82,7 +83,7 @@ public class TcpServer : BaseTcpServer
             }
         });
         await Task.WhenAll(tasks);
-        Console.WriteLine("Save changes completed!");
+        Console.WriteLine(Strings.SaveChangesCompleted);
     }
 
     public bool IsClientOnline(int userDataId)
