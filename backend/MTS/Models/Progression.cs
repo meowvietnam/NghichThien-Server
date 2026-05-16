@@ -75,6 +75,7 @@ public class Progression : IMemorySerializable<Progression>
                 .SetProperty(x => x.Level, Level)
                 .SetProperty(x => x.CurrentExp, CurrentExp)
                 .SetProperty(x => x.IdCurrentNode, IdCurrentNode)
+                .SetProperty(x => x.NgoDaoDiem, NgoDaoDiem)
                 .SetProperty(x => x.CurrentEnergy, CurrentEnergy));
         isModified = false;
     }
@@ -86,6 +87,12 @@ public class Progression : IMemorySerializable<Progression>
     public void SetCurrentEnergy(int newEnergy)
     {
         CurrentEnergy = newEnergy;
+        isModified = true;
+    }
+
+    public void SetNgoDaoDiem(int newNgoDaoDiem)
+    {
+        NgoDaoDiem = newNgoDaoDiem;
         isModified = true;
     }
 }

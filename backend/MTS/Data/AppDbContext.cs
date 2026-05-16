@@ -160,7 +160,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<FurnaceData>(e =>
         {
-            e.HasKey(x => new { x.CharId, x.SelfId,x.Id });
+            e.HasKey(x => new { x.CharId, x.SelfId, x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.Furnaces)
                 .HasForeignKey(x => x.CharId)
@@ -192,7 +192,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<Relationship>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Npc });
             e.HasOne(x => x.Social)
                 .WithMany(x => x.Relationships)
                 .HasForeignKey(x => x.CharId)
@@ -200,7 +200,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<CamNgo>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.CamNgos)
                 .HasForeignKey(x => x.CharId)
@@ -208,7 +208,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<CongPhap>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.CongPhapOwners)
                 .HasForeignKey(x => x.CharId)
@@ -216,7 +216,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<NgoDao>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.NgoDaos)
                 .HasForeignKey(x => x.CharId)
@@ -224,7 +224,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<ThanThong>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.Inventory)
                 .WithMany(x => x.ThanThongOwners)
                 .HasForeignKey(x => x.CharId)
@@ -242,7 +242,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ThanThongEquip>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.EquipmentManager)
                 .WithMany(x => x.ThanThongEquips)
                 .HasForeignKey(x => x.CharId)
@@ -250,7 +250,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<DanCombatUsed>(e =>
         {
-            e.HasKey(x => x.CharId);
+            e.HasKey(x => new { x.CharId, x.Id });
             e.HasOne(x => x.EquipmentManager)
                 .WithMany(x => x.DanCombatUseds)
                 .HasForeignKey(x => x.CharId)

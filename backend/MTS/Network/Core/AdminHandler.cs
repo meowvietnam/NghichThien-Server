@@ -38,13 +38,25 @@ public class AdminHandler : IClientHandler
             var infinityEnergy = reader.Read<bool>();
             client.UserData.SetInfiniteEnergy(infinityEnergy);
         }
+        else if (tag == MessageTag.SetNgoDaoDiem)
+        {
+            var ngoDaoDiem = reader.Read<int>();
+            client.CharacterData.Progression.SetNgoDaoDiem(ngoDaoDiem);
+            client.Send(MessageTag.SetNgoDaoDiemResult, ngoDaoDiem);
+        }
+        else if (tag == MessageTag.SetCamNgo)
+        {
+            var camNgo = reader.Read<CamNgo>();
+            client.CharacterData.InventoryManager.AddOrUpdate(camNgo);
+            client.Send(MessageTag.SetCamNgoResult, camNgo);
+        }
     }
 
     public void OnLeave()
     {
     }
 
-    private static readonly MessageTag[] handler = [MessageTag.AddItems, MessageTag.SetInfinityEnergy];
+    private static readonly MessageTag[] handler = [MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo];
     public MessageTag[] HandleTag => handler;
 
     public void OnDisconnect(IProtocol<MessageTag> protocol)

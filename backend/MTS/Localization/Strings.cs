@@ -38,4 +38,10 @@ public static class Strings
     public static string IsIncomplete => _current.IsIncomplete;
     public static string ItemCountInvalid => _current.ItemCountInvalid;
     public static string CharacterLimitExceeded => _current.CharacterLimitExceeded;
+    public static string NgoDaoNotExist { get; set; }
+    public static string NgoDaoResourceNotExist { get; set; }
+    public static string HasLearnedNgoDao { get; set; }
+    public static string NotEnoughNgoDaoPoints { get; set; }
+    public static string PreviousBranchRequiresAtLeastOneNgoDao { get; set; }
+    public static string NotEnoughCamNgoPoints { get; set; }
 }

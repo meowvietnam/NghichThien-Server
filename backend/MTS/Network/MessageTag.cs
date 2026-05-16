@@ -1,6 +1,6 @@
 namespace MTS.Network;
 
-public enum MessageTag 
+public enum MessageTag
 {
     Connect = 21,
     ConnectResult = 22,
@@ -44,14 +44,24 @@ public enum MessageTag
     GetInventory = 195,
     GetInventoryResult = 196,
     LuyenDan = 201,
-    LuyenDanResult = 202, 
+    LuyenDanResult = 202,
+    
+    
     AddItems = 209,
     AddItemsResult = 210,
     SetInfinityEnergy = 220,
+    SetNgoDaoDiem = 230,
+    SetNgoDaoDiemResult = 231,
+    SetCamNgo = 232,
+    SetCamNgoResult = 233,
+    
     ChangeScene = 256,
     ChangeSceneResult = 257,
     LuyenKhi = 310,
     LuyenKhiResult = 311,
     SetEquipmentName = 320,
     SetEquipmentNameResult = 321,
+
+    LearnNgoDao = 332,
+    LearnNgoDaoResult = 333,
 }

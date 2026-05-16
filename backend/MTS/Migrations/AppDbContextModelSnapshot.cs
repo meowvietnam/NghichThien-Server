@@ -48,10 +48,10 @@ namespace MTS.Migrations
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
-                    b.Property<ushort>("Value")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Value")
+                        .HasColumnType("int");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("CamNgos");
                 });
@@ -168,7 +168,7 @@ namespace MTS.Migrations
                     b.Property<ushort>("Level")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("CongPhaps");
                 });
@@ -178,13 +178,13 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
-                    b.Property<ushort>("Count")
-                        .HasColumnType("smallint unsigned");
-
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.Property<ushort>("Count")
+                        .HasColumnType("smallint unsigned");
+
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("DanCombatUseds");
                 });
@@ -378,7 +378,7 @@ namespace MTS.Migrations
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("NgoDaos");
                 });
@@ -419,7 +419,7 @@ namespace MTS.Migrations
                     b.Property<ushort>("Points")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Npc");
 
                     b.ToTable("Relationships");
                 });
@@ -442,7 +442,7 @@ namespace MTS.Migrations
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("ThanThongs");
                 });
@@ -455,7 +455,7 @@ namespace MTS.Migrations
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
-                    b.HasKey("CharId");
+                    b.HasKey("CharId", "Id");
 
                     b.ToTable("ThanThongEquips");
                 });

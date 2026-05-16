@@ -228,11 +228,12 @@ namespace MTS.Migrations
                 columns: table => new
                 {
                     CharId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false)
+                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    Count = table.Column<ushort>(type: "smallint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DanCombatUseds", x => x.CharId);
+                    table.PrimaryKey("PK_DanCombatUseds", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_DanCombatUseds_EquipmentManagers_CharId",
                         column: x => x.CharId,
@@ -251,7 +252,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ThanThongEquips", x => x.CharId);
+                    table.PrimaryKey("PK_ThanThongEquips", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_ThanThongEquips_EquipmentManagers_CharId",
                         column: x => x.CharId,
@@ -267,11 +268,11 @@ namespace MTS.Migrations
                 {
                     CharId = table.Column<int>(type: "int", nullable: false),
                     Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
-                    Value = table.Column<ushort>(type: "smallint unsigned", nullable: false)
+                    Value = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CamNgos", x => x.CharId);
+                    table.PrimaryKey("PK_CamNgos", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_CamNgos_InventoryManagers_CharId",
                         column: x => x.CharId,
@@ -291,7 +292,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CongPhaps", x => x.CharId);
+                    table.PrimaryKey("PK_CongPhaps", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_CongPhaps_InventoryManagers_CharId",
                         column: x => x.CharId,
@@ -378,7 +379,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NgoDaos", x => x.CharId);
+                    table.PrimaryKey("PK_NgoDaos", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_NgoDaos_InventoryManagers_CharId",
                         column: x => x.CharId,
@@ -397,7 +398,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ThanThongs", x => x.CharId);
+                    table.PrimaryKey("PK_ThanThongs", x => new { x.CharId, x.Id });
                     table.ForeignKey(
                         name: "FK_ThanThongs_InventoryManagers_CharId",
                         column: x => x.CharId,
@@ -446,7 +447,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Relationships", x => x.CharId);
+                    table.PrimaryKey("PK_Relationships", x => new { x.CharId, x.Npc });
                     table.ForeignKey(
                         name: "FK_Relationships_Socials_CharId",
                         column: x => x.CharId,

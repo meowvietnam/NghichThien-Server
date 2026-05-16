@@ -1,4 +1,6 @@
 using System;
+using MTS.Models;
+using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
@@ -28,6 +30,29 @@ namespace MTS.ND
             baseValue.Deserialize(reader, ref baseValue);
             value.currentEBuffStat = reader.Read<EBuffStats>();
             value.buff = reader.Read<Int32>();
+        }
+
+        public override NgoDaoBuff Buff(CharacterData charData)
+        {
+            var stats = charData.Stats;
+            switch (currentEBuffStat)
+            {
+                case EBuffStats.ThanThuc:
+                    stats.ThanThuc += buff;
+                    break;
+                case EBuffStats.HP:
+                    stats.SinhMenh += buff;
+                    break;
+                case EBuffStats.DonToc:
+                    stats.TocDoBay += buff;
+                    break;
+            }
+
+            return new NgoDaoBuff()
+            {
+                BuffStat = currentEBuffStat,
+                BuffValue = buff
+            };
         }
 
         public override void Serialize(IWriter writer)

@@ -1,4 +1,6 @@
 using MTS.Game.Resources;
+using MTS.Models;
+using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
@@ -14,6 +16,10 @@ public class NgoDao : BaseData, IMemorySerializable<NgoDao>
         return byteSize + Require.ByteSize() + ETypeRequires.ByteSize(); 
     }
 
+    public virtual NgoDaoBuff Buff(CharacterData charData)
+    {
+        return new NgoDaoBuff();
+    }
     public void Deserialize(IReader reader, ref NgoDao value)
     {
         BaseData baseValue = value;

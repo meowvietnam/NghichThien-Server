@@ -39,7 +39,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     [NotMapped] private IdAllocator<ushort> furnaceIdAllocator;
     [NotMapped] private IdAllocator<ushort> equipmentIdAllocator;
-    [NotMapped] private InventoryTracking tracking;
+    [NotMapped] public InventoryTracking Tracking { get; private set; }
 
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
@@ -48,7 +48,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Init()
     {
-        tracking = new InventoryTracking();
+        Tracking = new InventoryTracking();
         furnaceIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
         equipmentIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
         var equipments = VuKhis.Union(PhongCus).Union(TrangSucs).ToHashSet();
@@ -98,6 +98,22 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
         PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
         TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
+        NgoDaos = await db.NgoDaos
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToHashSetAsync();
+        CamNgos = await db.CamNgos
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToHashSetAsync();
+        CongPhapOwners = await db.CongPhaps
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToHashSetAsync();
+        ThanThongOwners = await db.ThanThongs
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToHashSetAsync();
         Init();
     }
 
@@ -107,7 +123,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         var furnaceId = furnaceIdAllocator.GetId();
         furnace.SelfId = furnaceId;
         Furnaces.Add(furnace);
-        tracking.Furnaces.Add(furnace);
+        Tracking.Furnaces.Add(furnace);
     }
 
     public int ByteSize()
@@ -171,7 +187,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         CongPhapOwners = new HashSet<CongPhap>(other.CongPhapOwners);
         ThanThongOwners = new HashSet<ThanThong>(other.ThanThongOwners);
         furnaceIdAllocator = other.furnaceIdAllocator;
-        tracking = other.tracking;
+        Tracking = other.Tracking;
         CharacterData = other.CharacterData;
     }
 
@@ -182,10 +198,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public Task SaveChanges(AppDbContext db)
     {
-        lock (tracking)
+        lock (Tracking)
         {
-            tracking.Apply(db);
-            tracking.Clear();
+            Tracking.Apply(db);
+            Tracking.Clear();
         }
 
         return Task.CompletedTask;
@@ -278,13 +294,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 if (itemCount <= 0)
                 {
                     Herbs.Remove(itemRef);
-                    tracking.Items.Delete(itemRef);
+                    Tracking.Items.Delete(itemRef);
                     modify.Items.Delete(itemRef);
                 }
                 else
                 {
                     itemRef.Count = (ushort)itemCount;
-                    tracking.Items.Update(itemRef);
+                    Tracking.Items.Update(itemRef);
                     modify.Items.Update(itemRef);
                 }
             }
@@ -329,7 +345,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             {
                 Furnaces.Remove(furnace);
                 furnaceIdAllocator.ReleaseId(furnace.SelfId);
-                tracking.Furnaces.Delete(furnace);
+                Tracking.Furnaces.Delete(furnace);
                 modify.Furnaces.Delete(furnace);
                 return new LuyenDanResult()
                 {
@@ -342,7 +358,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             }
 
             furnace.Durability = (sbyte)dur;
-            tracking.Furnaces.Update(furnace);
+            Tracking.Furnaces.Update(furnace);
             modify.Furnaces.Update(furnace);
             var linhDanRef = new ItemRef()
             {
@@ -410,7 +426,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             if (x.TryGetValue(itemRef, out var item))
             {
                 item.Count = itemRef.Count;
-                tracking.Items.Update(item);
+                Tracking.Items.Update(item);
                 return true;
             }
 
@@ -425,7 +441,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (x.Remove(itemRef))
             {
-                tracking.Items.Delete(itemRef);
+                Tracking.Items.Delete(itemRef);
                 return true;
             }
 
@@ -439,12 +455,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         if (inventory.TryGetValue(itemRef, out var item))
         {
             item.Count += itemRef.Count;
-            tracking.Items.Update(item);
+            Tracking.Items.Update(item);
         }
         else
         {
             inventory.Add(itemRef);
-            tracking.Items.Add(itemRef);
+            Tracking.Items.Add(itemRef);
         }
     }
 
@@ -453,7 +469,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         equipment.CharId = CharId;
         equipment.SelfId = equipmentIdAllocator.GetId();
         inventory.Add(equipment);
-        tracking.Equipments.Add(equipment);
+        Tracking.Equipments.Add(equipment);
     }
 
     public bool Update(Equipment equipment)
@@ -464,7 +480,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             if (x.TryGetValue(equipment, out var e))
             {
                 e.Name = equipment.Name;
-                tracking.Equipments.Update(e);
+                Tracking.Equipments.Update(e);
                 return true;
             }
 
@@ -479,7 +495,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (x.Remove(equipment))
             {
-                tracking.Equipments.Delete(equipment);
+                Tracking.Equipments.Delete(equipment);
                 return true;
             }
 
@@ -504,10 +520,43 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         }
     }
 
+    public void Add(NgoDao ngoDao)
+    {
+        ngoDao.CharId = CharId;
+        NgoDaos.Add(ngoDao);
+        Tracking.NgoDaos.Add(ngoDao);
+    }
+
+    public void AddOrUpdate(CamNgo camNgo)
+    {
+        if (CamNgos.TryGetValue(camNgo, out var cam))
+        {
+            Update(cam, camNgo);
+        }
+        else
+        {
+            Add(camNgo);
+        }
+    }
+
+    public void Update(CamNgo oldValue, CamNgo newValue)
+    {
+        oldValue.Value = newValue.Value;
+        Tracking.CamNgos.Update(oldValue);
+    }
+
+    public void Add(CamNgo camNgo)
+    {
+        camNgo.CharId = CharId;
+        CamNgos.Add(camNgo);
+        Tracking.CamNgos.Add(camNgo);
+    }
+
     public void ApplyModify(InventoryModify m)
     {
-        m.Apply(this, tracking);
+        m.Apply(this, Tracking);
     }
+
     public SetEquipmentNameResult SetEquipmentName(SetEquipmentName request)
     {
         var name = request.Name;
@@ -522,6 +571,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Name = name,
             };
         }
+
         var e = new Equipment()
         {
             Id = request.Id,
@@ -539,6 +589,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Name = name,
             };
         }
+
         return new SetEquipmentNameResult()
         {
             Id = request.Id,
@@ -548,6 +599,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Name = name,
         };
     }
+
     public LuyenKhiResult LuyenKhi(LuyenKhiRequest request)
     {
         var ids = request.MaterialIds;
@@ -648,7 +700,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             .Where(x => x.Tier == tier & x.Type == selectedType)
             .OrderBy(x => random.Next())
             .First();
-           
+
         var equipmentTier = res.EquipmentTiers.First(x => x.Tier == tier);
         var dayCost = equipmentTier.DayCost;
         var stats = CharacterData.Stats;
@@ -678,6 +730,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 modify.Items.Update(itemRef);
             }
         }
+
         Add(equipment);
         modify.Equipments.Add(equipment);
         return new LuyenKhiResult()

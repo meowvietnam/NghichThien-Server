@@ -96,6 +96,9 @@ namespace MTS.Network.ClientState
                     var sceneManager = new SceneManager(client);
                     module.RemoveHandler<SceneManager>();
                     module.AddHandler(sceneManager);
+                    var skillHandler = new SkillHandler(client);
+                    module.RemoveHandler<SkillHandler>();
+                    module.AddHandler(skillHandler);
                     client.ChangeState(new AllMaps(client));
                 }
                 catch (Exception e)

@@ -1,4 +1,5 @@
 using MTS.Game.Resources;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -13,7 +14,23 @@ public class CongPhap : BaseData, IMemorySerializable<CongPhap>
         var byteSize = base.ByteSize();
         return byteSize + TocDoTuLuyenBase.ByteSize() + IsDonThuat.ByteSize(); 
     }
+    public virtual void EquipCongPhap(CharacterData statsCurrent , int daiCanhGioiCongPhap)
+    {
 
+    }
+    public virtual void UnEquipCongPhap(CharacterData statsCurrent, int daiCanhGioiCongPhap)
+    {
+
+    }
+    public virtual void UpgradeCongPhapSuccess(CharacterData statsCurrent, int daiCanhGioiCongPhap)
+    {
+        UnEquipCongPhap(statsCurrent, daiCanhGioiCongPhap);
+        EquipCongPhap(statsCurrent, daiCanhGioiCongPhap);
+    }
+    public virtual void LearnCongPhapSuccess(CharacterData statsCurrent, int daiCanhGioiCongPhap)
+    {
+        
+    }
     public void Deserialize(IReader reader, ref CongPhap value)
     {
         BaseData baseValue = value;

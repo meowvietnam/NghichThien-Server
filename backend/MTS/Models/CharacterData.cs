@@ -3,6 +3,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Game;
+using MTS.Game.Resources;
+using MTS.Localization;
+using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
@@ -13,10 +17,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int UserId { get; set; }
+
     [Key] public int Id { get; set; }
     public Gender Gender { get; set; }
     public string Name { get; set; }
-    public EMonPhai MonPhai { get; set; }
+    public EMonPhai MonPhai { get; private set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -29,18 +34,30 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
-
+    [NotMapped] private bool monPhaiDirty;
+    public void SetMonPhai(EMonPhai value)
+    {
+        if (MonPhai != value)
+        {
+            MonPhai = value;
+            monPhaiDirty = true;
+        }
+    }
     public CharacterData()
     {
     }
+
     public CharacterData(CharacterData clone)
     {
         Clone1(clone);
     }
+
     private void Clone0(CharacterData clone)
     {
         MonPhai = clone.MonPhai;
+        monPhaiDirty = false;
     }
+
     private void Clone1(CharacterData clone)
     {
         Id = clone.Id;
@@ -59,13 +76,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public int ByteSize()
     {
         return Id.ByteSize()
-               + Gender.ByteSize() 
+               + Gender.ByteSize()
                + Name.ByteSize()
                + Stats.ByteSize()
                + Progression.ByteSize()
                + Appearance.ByteSize()
                + EquipmentManager.ByteSize()
-               + MonPhai.ByteSize() 
+               + MonPhai.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
                + Social.ByteSize();
@@ -100,19 +117,27 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
     }
+
     public bool IsInventoryDefault()
     {
         return InventoryManager.IsDefault();
     }
+
     public async Task SaveChanges(AppDbContext db)
     {
-        var charData = await db.Characters
-            .FirstAsync(x => x.Id == Id);
-        charData.Clone0(this);
+        if (monPhaiDirty)
+        {
+            await db.Characters
+                .Where(x => x.Id == Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MonPhai, MonPhai));
+            monPhaiDirty = false;
+        }
+
         if (!Stats.IsDefault())
         {
             await Stats.SaveChanges(db);
         }
+
         if (!Progression.IsDefault())
         {
             await Progression.SaveChanges(db);
@@ -127,14 +152,85 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             await Social.SaveChanges(db);
         }
+
         if (!InventoryManager.IsDefault())
         {
             await InventoryManager.SaveChanges(db);
         }
     }
-
-    public void LearnNgoDao(int idNgoDao)
+    public (NgoDao, NgoDaoBuff) LearnNgoDao(int idNgoDao)
     {
+        (NgoDaoResource?, int) FindResources(ND.NgoDao nd)
+        {
+            var ndResources = GameConfig.NgoDaoManager.NgoDaoResources;
+            foreach (var ngoDaoResource in ndResources)
+            {
+                var findIndex = ngoDaoResource.NgoDaos.FindIndex(x => x.Any(y => y.Id == nd.Id));
+                if (findIndex < 0)
+                {
+                    continue;
+                }
+                return (ngoDaoResource, findIndex);
+            }
+            return (null, -1);
+        }
         
+        
+        var owners = InventoryManager.NgoDaos;
+        var camNgos = InventoryManager.CamNgos;
+        var temp = new NgoDao()
+        {
+            Id = (ushort)idNgoDao,
+        };
+        if(owners.Contains(temp))
+        {
+            throw new Exception(Strings.HasLearnedNgoDao);
+        }
+        var ndcptt = GameConfig.NDCPTTManager;
+        var ngoDao = ndcptt.NgoDaos.FirstOrDefault(x => x.Id == idNgoDao);
+        if (ngoDao == null)
+        {
+            throw new Exception(Strings.NgoDaoNotExist);
+        }
+        if (Progression.NgoDaoDiem < ngoDao.Require)
+        {
+            throw new Exception(Strings.NotEnoughNgoDaoPoints);
+        }
+        var (resource, index) = FindResources(ngoDao);
+        if (resource == null)
+        {
+            throw new Exception(Strings.NgoDaoResourceNotExist);
+        }
+        var camNgoRequire = NgoDaoResource.CamNgoRequire[index];
+        var camNgoTmp = new CamNgo()
+        {
+            Id = (ushort)idNgoDao,
+        };
+        if (!camNgos.TryGetValue(camNgoTmp, out var camNgo) || camNgo.Value < camNgoRequire)
+        {
+            throw new Exception(Strings.NotEnoughCamNgoPoints);
+        }
+        if (index > 0)
+        {
+            var any = resource.NgoDaos[index - 1].Any(x =>
+            {
+                var tmp = new NgoDao()
+                {
+                    Id = (ushort)x.Id,
+                };
+                return owners.Contains(tmp);
+            });
+            if(!any)
+            {
+                throw new Exception(Strings.PreviousBranchRequiresAtLeastOneNgoDao);
+            }
+        }
+        var ndOwner = new NgoDao()
+        {
+            Id = (ushort)idNgoDao,
+        };
+        var buffStat = ngoDao.Buff(this);
+        InventoryManager.Add(ndOwner);
+        return (ndOwner, buffStat);
     }
 }

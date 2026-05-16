@@ -11,7 +11,7 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
     [Newtonsoft.Json.JsonIgnore]
     public int CharId { get; set; }
     public ushort Id { get; set; }
-    public ushort Value { get; set; }
+    public int Value { get; set; }
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [ForeignKey(nameof(CharId))]
@@ -19,7 +19,7 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
     public void Deserialize(IReader reader, ref CamNgo value)
     {
         value.Id = reader.Read<ushort>();
-        value.Value = reader.Read<ushort>();
+        value.Value = reader.Read<int>();
     }
 
     public int ByteSize()
@@ -41,6 +41,4 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
         writer.Write(Id);
         writer.Write(Value);
     }
-
-
 }

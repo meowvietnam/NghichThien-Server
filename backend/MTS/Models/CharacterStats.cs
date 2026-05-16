@@ -20,17 +20,19 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public float Ma { get; private set; }
     public int TuChat { get; private set; }
     public int NgoTinh { get; private set; }
-    public int ThanThuc { get; private set; }
-    public int TocDoBay { get; private set; }
+    public int ThanThuc { get; set; }
+    public int TocDoBay { get; set; }
     public int LinhThach { get; private set; }
-    public int Hp { get; private set; }
-    public int SinhMenh { get; private set; }
+    public int Hp { get; set; }
+    public int SinhMenh { get; set; }
     public int ThoNguyen { get; private set; }
     public int TamCanh { get; private set; }
     public LinhCan LinhCan { get; private set; }
     public Ability Ability { get; private set; }
     public int DanDoc { get; private set; }
     public TimeSpan TuoiTac { get; set; }
+
+    [NotMapped] private bool _isModified;
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -189,7 +191,10 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case StatType.Ability:
                 Ability = (Ability)(int)value;
                 break;
+            default:
+                return;
         }
+        _isModified = true;
     }
 
     public int ByteSize()
@@ -256,7 +261,28 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        var stats = await db.CharacterStats.FirstAsync(x => x.CharId == CharId);
-        stats.CopyFrom(this);
+        if (!_isModified) return;
+        await db.CharacterStats.Where(x => x.CharId == CharId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.Kim, Kim)
+                .SetProperty(x => x.Moc, Moc)
+                .SetProperty(x => x.Thuy, Thuy)
+                .SetProperty(x => x.Hoa, Hoa)
+                .SetProperty(x => x.Tho, Tho)
+                .SetProperty(x => x.Ma, Ma)
+                .SetProperty(x => x.TuChat, TuChat)
+                .SetProperty(x => x.NgoTinh, NgoTinh)
+                .SetProperty(x => x.ThanThuc, ThanThuc)
+                .SetProperty(x => x.TocDoBay, TocDoBay)
+                .SetProperty(x => x.LinhThach, LinhThach)
+                .SetProperty(x => x.Hp, Hp)
+                .SetProperty(x => x.SinhMenh, SinhMenh)
+                .SetProperty(x => x.ThoNguyen, ThoNguyen)
+                .SetProperty(x => x.TamCanh, TamCanh)
+                .SetProperty(x => x.LinhCan, LinhCan)
+                .SetProperty(x => x.Ability, Ability)
+                .SetProperty(x => x.DanDoc, DanDoc)
+                .SetProperty(x => x.TuoiTac, TuoiTac));
+        _isModified = false;
     }
 }
