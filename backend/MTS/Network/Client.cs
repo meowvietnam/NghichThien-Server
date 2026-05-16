@@ -96,7 +96,7 @@ public class Client : ClientConnection, ISender<MessageTag>
         var id = characterData.Id;
         var stats = await db.CharacterStats
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CharId == id);
+            .FirstAsync(x => x.CharId == id);
         stats.CharacterData = characterData;
         characterData.Stats = stats;
         var equipment = await db.EquipmentManagers
@@ -104,15 +104,20 @@ public class Client : ClientConnection, ISender<MessageTag>
             .Include(x => x.ThanThongEquips)
             .Include(x => x.DanCombatUseds)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(x => x.CharId == id);
+            .FirstAsync(x => x.CharId == id);
         equipment.CharacterData = characterData;
         characterData.EquipmentManager = equipment;
         var social = await db.Socials
             .AsNoTracking()
             .Include(x => x.Relationships)
-            .FirstOrDefaultAsync(x => x.CharId == id);
+            .FirstAsync(x => x.CharId == id);
         social.CharacterData = characterData;
         characterData.Social = social;
+        var questManager = await db.QuestManagers
+            .AsNoTracking()
+            .FirstAsync(x => x.CharId == id);
+        questManager.CharData = characterData;
+        characterData.QuestManager = questManager;
         CharacterData = characterData;
         MailManager = new MailManager(characterData, this);
         return characterData;

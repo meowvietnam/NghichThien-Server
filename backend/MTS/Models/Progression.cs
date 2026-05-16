@@ -25,7 +25,7 @@ public class Progression : IMemorySerializable<Progression>
     [ForeignKey(nameof(CharId))]
     public CharacterData CharacterData { get; set; }
 
-    [NotMapped] private bool isModified;
+    [NotMapped] private bool dirty;
 
     public void Deserialize(IReader reader, ref Progression value)
     {
@@ -69,7 +69,7 @@ public class Progression : IMemorySerializable<Progression>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        if (!isModified) return;
+        if (!dirty) return;
         await db.Progressions.Where(x => x.CharId == CharId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.Level, Level)
@@ -77,22 +77,32 @@ public class Progression : IMemorySerializable<Progression>
                 .SetProperty(x => x.IdCurrentNode, IdCurrentNode)
                 .SetProperty(x => x.NgoDaoDiem, NgoDaoDiem)
                 .SetProperty(x => x.CurrentEnergy, CurrentEnergy));
-        isModified = false;
+        dirty = false;
     }
     public void SetIdCurrentNode(int id)
     {
+        if(IdCurrentNode != id) return;
         IdCurrentNode = id;
-        isModified = true;
+        dirty = true;
+    }
+
+    public void SetCurrentExp(int exp)
+    {
+        if(CurrentExp != exp) return;
+        CurrentExp = exp;
+        dirty = true;
     }
     public void SetCurrentEnergy(int newEnergy)
     {
+        if(CurrentEnergy != newEnergy) return;
         CurrentEnergy = newEnergy;
-        isModified = true;
+        dirty = true;
     }
 
     public void SetNgoDaoDiem(int newNgoDaoDiem)
     {
+        if(NgoDaoDiem != newNgoDaoDiem) return;
         NgoDaoDiem = newNgoDaoDiem;
-        isModified = true;
+        dirty = true;
     }
 }

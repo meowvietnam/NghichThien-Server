@@ -14,7 +14,7 @@ public class UserData : IMemorySerializable<UserData>
     
     public bool IsInfiniteEnergy { get; private set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [NotMapped] private bool isModified;
+    [NotMapped] private bool dirty;
     public UserData()
     {
         CharacterDatas = new List<CharacterData>();
@@ -36,7 +36,7 @@ public class UserData : IMemorySerializable<UserData>
         if (IsInfiniteEnergy != isInfiniteEnergy)
         {
             IsInfiniteEnergy = isInfiniteEnergy;
-            isModified = true;
+            dirty = true;
         }
     }
     public void Deserialize(IReader reader, ref UserData value)
@@ -49,7 +49,7 @@ public class UserData : IMemorySerializable<UserData>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        if (!isModified)
+        if (!dirty)
         {
             return;
         }
@@ -57,6 +57,6 @@ public class UserData : IMemorySerializable<UserData>
             .Where(x => x.Id == Id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy));
-        isModified = false;
+        dirty = false;
     }
 }

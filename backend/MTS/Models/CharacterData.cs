@@ -22,6 +22,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public Gender Gender { get; set; }
     public string Name { get; set; }
     public EMonPhai MonPhai { get; private set; }
+    public int MoneyVip { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -29,20 +30,32 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public EquipmentManager EquipmentManager { get; set; } = new();
     public Social Social { get; set; } = new();
     public InventoryManager InventoryManager { get; set; } = new();
-
+    public QuestManager QuestManager { get; set; } = new();
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
-    [NotMapped] private bool monPhaiDirty;
+
+    [NotMapped] private bool dirty;
+
     public void SetMonPhai(EMonPhai value)
     {
         if (MonPhai != value)
         {
             MonPhai = value;
-            monPhaiDirty = true;
+            dirty = true;
         }
     }
+
+    public void SetMoneyVip(int value)
+    {
+        if (MoneyVip != value)
+        {
+            MoneyVip = value;
+            dirty = true;
+        }
+    }
+
     public CharacterData()
     {
     }
@@ -55,7 +68,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
     private void Clone0(CharacterData clone)
     {
         MonPhai = clone.MonPhai;
-        monPhaiDirty = false;
+        MoneyVip = clone.MoneyVip;
+        dirty = false;
     }
 
     private void Clone1(CharacterData clone)
@@ -70,6 +84,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         Appearance.CopyFrom(clone.Appearance);
         Social.CopyFrom(clone.Social);
         EquipmentManager.CopyFrom(clone.EquipmentManager);
+        QuestManager.CopyFrom(clone.QuestManager);
         Clone0(clone);
     }
 
@@ -83,9 +98,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + Appearance.ByteSize()
                + EquipmentManager.ByteSize()
                + MonPhai.ByteSize()
+               + MoneyVip.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
-               + Social.ByteSize();
+               + Social.ByteSize()
+               + QuestManager.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -98,9 +115,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(Appearance);
         writer.Write(EquipmentManager);
         writer.Write(MonPhai);
+        writer.Write(MoneyVip);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
         writer.Write(Social);
+        writer.Write(QuestManager);
     }
 
     public void Deserialize(IReader reader, ref CharacterData value)
@@ -113,9 +132,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Appearance = reader.Read<Appearance>();
         value.EquipmentManager = reader.Read<EquipmentManager>();
         value.MonPhai = reader.Read<EMonPhai>();
+        value.MoneyVip = reader.Read<int>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
+        value.QuestManager = reader.Read<QuestManager>();
     }
 
     public bool IsInventoryDefault()
@@ -125,12 +146,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        if (monPhaiDirty)
+        if (dirty)
         {
             await db.Characters
                 .Where(x => x.Id == Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.MonPhai, MonPhai));
-            monPhaiDirty = false;
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(x => x.MonPhai, MonPhai)
+                        .SetProperty(x => x.MoneyVip, MoneyVip));
+            dirty = false;
         }
 
         if (!Stats.IsDefault())
@@ -157,12 +180,19 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             await InventoryManager.SaveChanges(db);
         }
+
+        if (!QuestManager.IsDefault())
+        {
+            await QuestManager.SaveChanges(db);
+        }
     }
+
     public (NgoDao, NgoDaoBuff) LearnNgoDao(int idNgoDao)
     {
-        (NgoDaoResource?, int) FindResources(ND.NgoDao nd)
+        List<(NgoDaoResource, int)> FindResources(ND.NgoDao nd)
         {
             var ndResources = GameConfig.NgoDaoManager.NgoDaoResources;
+            var result = new List<(NgoDaoResource, int)>();
             foreach (var ngoDaoResource in ndResources)
             {
                 var findIndex = ngoDaoResource.NgoDaos.FindIndex(x => x.Any(y => y.Id == nd.Id));
@@ -170,61 +200,72 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     continue;
                 }
-                return (ngoDaoResource, findIndex);
+
+                result.Add((ngoDaoResource, findIndex));
             }
-            return (null, -1);
+
+            return result;
         }
-        
-        
+
+
         var owners = InventoryManager.NgoDaos;
         var camNgos = InventoryManager.CamNgos;
         var temp = new NgoDao()
         {
             Id = (ushort)idNgoDao,
         };
-        if(owners.Contains(temp))
+        if (owners.Contains(temp))
         {
             throw new Exception(Strings.HasLearnedNgoDao);
         }
+
         var ndcptt = GameConfig.NDCPTTManager;
         var ngoDao = ndcptt.NgoDaos.FirstOrDefault(x => x.Id == idNgoDao);
         if (ngoDao == null)
         {
             throw new Exception(Strings.NgoDaoNotExist);
         }
+
         if (Progression.NgoDaoDiem < ngoDao.Require)
         {
             throw new Exception(Strings.NotEnoughNgoDaoPoints);
         }
-        var (resource, index) = FindResources(ngoDao);
-        if (resource == null)
+
+        var res = FindResources(ngoDao);
+        if (res.Count == 0)
         {
             throw new Exception(Strings.NgoDaoResourceNotExist);
         }
-        var camNgoRequire = NgoDaoResource.CamNgoRequire[index];
-        var camNgoTmp = new CamNgo()
+
+        foreach (var (resource, index) in res)
         {
-            Id = (ushort)idNgoDao,
-        };
-        if (!camNgos.TryGetValue(camNgoTmp, out var camNgo) || camNgo.Value < camNgoRequire)
-        {
-            throw new Exception(Strings.NotEnoughCamNgoPoints);
-        }
-        if (index > 0)
-        {
-            var any = resource.NgoDaos[index - 1].Any(x =>
+            var camNgoRequire = NgoDaoResource.CamNgoRequire[index];
+            var camNgoTmp = new CamNgo()
             {
-                var tmp = new NgoDao()
+                Id = resource.ETypeSkill,
+            };
+            if (!camNgos.TryGetValue(camNgoTmp, out var camNgo) || camNgo.Value < camNgoRequire)
+            {
+                throw new Exception(Strings.NotEnoughCamNgoPoints);
+            }
+
+            if (index > 0)
+            {
+                var any = resource.NgoDaos[index - 1].Any(x =>
                 {
-                    Id = (ushort)x.Id,
-                };
-                return owners.Contains(tmp);
-            });
-            if(!any)
-            {
-                throw new Exception(Strings.PreviousBranchRequiresAtLeastOneNgoDao);
+                    var tmp = new NgoDao()
+                    {
+                        Id = (ushort)x.Id,
+                    };
+                    return owners.Contains(tmp);
+                });
+                if (!any)
+                {
+                    throw new Exception(Strings.PreviousBranchRequiresAtLeastOneNgoDao);
+                }
             }
         }
+
         var ndOwner = new NgoDao()
         {
             Id = (ushort)idNgoDao,

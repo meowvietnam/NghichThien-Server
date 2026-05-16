@@ -41,6 +41,7 @@ namespace MTS.Migrations
                     Name = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     MonPhai = table.Column<int>(type: "int", nullable: false),
+                    MoneyVip = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -206,6 +207,26 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "QuestManagers",
+                columns: table => new
+                {
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    CurrentMainQuest = table.Column<int>(type: "int", nullable: false),
+                    CurrentCountSideQuest = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuestManagers", x => x.CharId);
+                    table.ForeignKey(
+                        name: "FK_QuestManagers_Characters_CharId",
+                        column: x => x.CharId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Socials",
                 columns: table => new
                 {
@@ -267,7 +288,7 @@ namespace MTS.Migrations
                 columns: table => new
                 {
                     CharId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false),
                     Value = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -524,6 +545,9 @@ namespace MTS.Migrations
 
             migrationBuilder.DropTable(
                 name: "Progressions");
+
+            migrationBuilder.DropTable(
+                name: "QuestManagers");
 
             migrationBuilder.DropTable(
                 name: "Relationships");

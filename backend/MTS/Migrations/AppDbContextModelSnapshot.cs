@@ -45,8 +45,8 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
-                    b.Property<ushort>("Id")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
 
                     b.Property<int>("Value")
                         .HasColumnType("int");
@@ -71,6 +71,9 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("MonPhai")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MoneyVip")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -408,6 +411,22 @@ namespace MTS.Migrations
                     b.ToTable("Progressions");
                 });
 
+            modelBuilder.Entity("MTS.Models.QuestManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentCountSideQuest")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentMainQuest")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("QuestManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.Relationship", b =>
                 {
                     b.Property<int>("CharId")
@@ -644,6 +663,17 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.QuestManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne("QuestManager")
+                        .HasForeignKey("MTS.Models.QuestManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.Relationship", b =>
                 {
                     b.HasOne("MTS.Models.Social", "Social")
@@ -700,6 +730,9 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("Progression")
+                        .IsRequired();
+
+                    b.Navigation("QuestManager")
                         .IsRequired();
 
                     b.Navigation("Social")

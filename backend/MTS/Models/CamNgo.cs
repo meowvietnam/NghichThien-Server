@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MTS.ND;
 using Network;
 using Network.Extensions;
 
@@ -10,7 +11,7 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int CharId { get; set; }
-    public ushort Id { get; set; }
+    public ETypeSkill Id { get; set; }
     public int Value { get; set; }
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -18,7 +19,7 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
     public InventoryManager Inventory { get; set; }
     public void Deserialize(IReader reader, ref CamNgo value)
     {
-        value.Id = reader.Read<ushort>();
+        value.Id = reader.Read<ETypeSkill>();
         value.Value = reader.Read<int>();
     }
 
@@ -28,7 +29,7 @@ public class CamNgo : IMemorySerializable<CamNgo>, IEquatable<CamNgo>
     }
     public override int GetHashCode()
     {
-        return Id;
+        return (int)Id;
     }
     public bool Equals(CamNgo? other)
     {
