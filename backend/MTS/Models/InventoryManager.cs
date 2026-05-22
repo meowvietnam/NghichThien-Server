@@ -742,6 +742,35 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Modify = modify
         };
     }
+
+    public bool EquipThanThong(ushort id)
+    {
+        var thanThong = new ThanThong()
+        {
+            Id = id,
+            CharId = CharId
+        };
+        var add = ThanThongOwners.Add(thanThong);
+        if (add)
+        {
+            Tracking.ThanThongs.Add(thanThong);
+        }
+        return add;
+    }
+    public bool UnequipThanThong(ushort id)
+    {
+        var thanThong = new ThanThong()
+        {
+            Id = id,
+            CharId = CharId
+        };
+        var remove = ThanThongOwners.Remove(thanThong);
+        if (remove)
+        {
+            Tracking.ThanThongs.Delete(thanThong);
+        }
+        return remove;
+    }
 }
 
 public static class LuyenKhiMessage

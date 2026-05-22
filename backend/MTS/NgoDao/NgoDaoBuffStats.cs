@@ -42,6 +42,7 @@ namespace MTS.ND
                     break;
                 case EBuffStats.HP:
                     stats.SinhMenh += buff;
+                    stats.Hp += buff;
                     break;
                 case EBuffStats.DonToc:
                     stats.TocDoBay += buff;

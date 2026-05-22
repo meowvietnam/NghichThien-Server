@@ -37,4 +37,13 @@ public abstract class ILanguageStrings
     public abstract string IsIncomplete { get; }
     public abstract string ItemCountInvalid { get; }
     public abstract string CharacterLimitExceeded { get; }
+
+    // Ngo Dao / Than Thong messages
+    public abstract string NgoDaoNotExist { get; }
+    public abstract string NgoDaoResourceNotExist { get; }
+    public abstract string HasLearnedNgoDao { get; }
+    public abstract string NotEnoughNgoDaoPoints { get; }
+    public abstract string PreviousBranchRequiresAtLeastOneNgoDao { get; }
+    public abstract string NotEnoughCamNgoPoints { get; }
+    public abstract string ThanThongNotOwned { get; }
 }

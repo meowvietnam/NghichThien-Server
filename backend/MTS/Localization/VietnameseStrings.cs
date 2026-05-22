@@ -30,4 +30,11 @@ public class VietnameseStrings : ILanguageStrings
     public override string IsIncomplete => "Chưa thực hiện đầy đủ các bước tiến trình tạo nhân vật!";
     public override string ItemCountInvalid => "Số lượng mục lựa chọn không hợp lệ (yêu cầu chọn duy nhất 1 mục)!";
     public override string CharacterLimitExceeded => "Không thể tạo thêm nhân vật, đã đạt giới hạn!";
+    public override string NgoDaoNotExist => "Ngộ đạo này không tồn tại!";
+    public override string NgoDaoResourceNotExist => "Tài nguyên ngộ đạo không tồn tại!";
+    public override string HasLearnedNgoDao => "Đã học ngộ đạo này rồi!";
+    public override string NotEnoughNgoDaoPoints => "Không đủ điểm ngộ đạo để học!";
+    public override string PreviousBranchRequiresAtLeastOneNgoDao => "Cần học ít nhất một ngộ đạo ở nhánh trước!";
+    public override string NotEnoughCamNgoPoints => "Không đủ điểm cảm ngộ!";
+    public override string ThanThongNotOwned => "Chưa sở hữu thần thông này!";
 }

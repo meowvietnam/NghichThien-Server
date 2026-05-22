@@ -30,4 +30,11 @@ public class EnglishStrings : ILanguageStrings
     public override string IsIncomplete => "Character creation process is incomplete!";
     public override string ItemCountInvalid => "Invalid number of items selected (must select exactly 1 item)!";
     public override string CharacterLimitExceeded => "Cannot create more characters, limit reached!";
+    public override string NgoDaoNotExist => "This Ngo Dao does not exist!";
+    public override string NgoDaoResourceNotExist => "Ngo Dao resource does not exist!";
+    public override string HasLearnedNgoDao => "This Ngo Dao has already been learned!";
+    public override string NotEnoughNgoDaoPoints => "Not enough Ngo Dao points!";
+    public override string PreviousBranchRequiresAtLeastOneNgoDao => "Must learn at least one Ngo Dao from the previous branch!";
+    public override string NotEnoughCamNgoPoints => "Not enough Cam Ngo points!";
+    public override string ThanThongNotOwned => "This Than Thong is not owned!";
 }

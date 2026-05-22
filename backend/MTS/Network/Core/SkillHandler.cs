@@ -1,18 +1,24 @@
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+#pragma warning disable CS8631 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match constraint type.
 
 namespace MTS.Network.Core;
 
 public class SkillHandler : IClientHandler
 {
     private Client client;
-    private static MessageTag[] handler = { MessageTag.LearnNgoDao };
+
+    private static MessageTag[] handler =
+        { MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong };
+
     public MessageTag[] HandleTag => handler;
+
     public SkillHandler(Client client)
     {
         this.client = client;
     }
+
     public void OnEnter()
     {
     }
@@ -27,13 +33,7 @@ public class SkillHandler : IClientHandler
             LearnNgoDaoResult result = null;
             try
             {
-                var (ngoDao,buff) = client.CharacterData.LearnNgoDao(idNgoDao);
-                result = new LearnNgoDaoResult()
-                {
-                    Success = true,
-                    Buff = buff,
-                    NgoDao = ngoDao
-                };
+                result = client.CharacterData.LearnNgoDao(idNgoDao);
             }
             catch (Exception e)
             {
@@ -46,6 +46,48 @@ public class SkillHandler : IClientHandler
             finally
             {
                 client.Send(MessageTag.LearnNgoDaoResult, result);
+            }
+        }
+        else if (tag == MessageTag.EquipThanThong)
+        {
+            var request = reader.Read<EquipThanThong>();
+            EquipThanThongResult result = null!;
+            try
+            {
+                result = client.CharacterData.EquipThanThong(request);
+            }
+            catch (Exception e)
+            {
+                result = new EquipThanThongResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.EquipThanThongResult, result);
+            }
+        }
+        else if (tag == MessageTag.UnequipThanThong)
+        {
+            var id = reader.Read<int>();
+            UnequipThanThongResult result = null!;
+            try
+            {
+                result = client.CharacterData.UnequipThanThong((ushort)id);
+            }
+            catch (Exception e)
+            {
+                result = new UnequipThanThongResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.UnequipThanThongResult, result);
             }
         }
     }

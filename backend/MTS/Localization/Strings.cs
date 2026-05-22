@@ -38,10 +38,11 @@ public static class Strings
     public static string IsIncomplete => _current.IsIncomplete;
     public static string ItemCountInvalid => _current.ItemCountInvalid;
     public static string CharacterLimitExceeded => _current.CharacterLimitExceeded;
-    public static string NgoDaoNotExist { get; set; }
-    public static string NgoDaoResourceNotExist { get; set; }
-    public static string HasLearnedNgoDao { get; set; }
-    public static string NotEnoughNgoDaoPoints { get; set; }
-    public static string PreviousBranchRequiresAtLeastOneNgoDao { get; set; }
-    public static string NotEnoughCamNgoPoints { get; set; }
+    public static string NgoDaoNotExist => _current.NgoDaoNotExist;
+    public static string NgoDaoResourceNotExist => _current.NgoDaoResourceNotExist;
+    public static string HasLearnedNgoDao => _current.HasLearnedNgoDao;
+    public static string NotEnoughNgoDaoPoints => _current.NotEnoughNgoDaoPoints;
+    public static string PreviousBranchRequiresAtLeastOneNgoDao => _current.PreviousBranchRequiresAtLeastOneNgoDao;
+    public static string NotEnoughCamNgoPoints => _current.NotEnoughCamNgoPoints;
+    public static string ThanThongNotOwned => _current.ThanThongNotOwned;
 }

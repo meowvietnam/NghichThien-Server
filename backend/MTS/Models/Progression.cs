@@ -81,27 +81,28 @@ public class Progression : IMemorySerializable<Progression>
     }
     public void SetIdCurrentNode(int id)
     {
-        if(IdCurrentNode != id) return;
+        if(IdCurrentNode == id) return;
         IdCurrentNode = id;
         dirty = true;
     }
 
     public void SetCurrentExp(int exp)
     {
-        if(CurrentExp != exp) return;
+        if(CurrentExp == exp) return;
         CurrentExp = exp;
         dirty = true;
     }
     public void SetCurrentEnergy(int newEnergy)
     {
-        if(CurrentEnergy != newEnergy) return;
+        if(CurrentEnergy == newEnergy) return;
         CurrentEnergy = newEnergy;
         dirty = true;
+        
     }
 
     public void SetNgoDaoDiem(int newNgoDaoDiem)
     {
-        if(NgoDaoDiem != newNgoDaoDiem) return;
+        if(NgoDaoDiem == newNgoDaoDiem) return;
         NgoDaoDiem = newNgoDaoDiem;
         dirty = true;
     }

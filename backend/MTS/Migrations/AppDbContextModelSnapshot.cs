@@ -474,6 +474,9 @@ namespace MTS.Migrations
                     b.Property<ushort>("Id")
                         .HasColumnType("smallint unsigned");
 
+                    b.Property<byte>("SlotIndex")
+                        .HasColumnType("tinyint unsigned");
+
                     b.HasKey("CharId", "Id");
 
                     b.ToTable("ThanThongEquips");

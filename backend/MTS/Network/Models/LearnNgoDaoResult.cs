@@ -10,7 +10,7 @@ public class LearnNgoDaoResult : IMemorySerializable<LearnNgoDaoResult>
     public string Message { get; set; }
     public NgoDaoBuff Buff { get; set; }
     public MTS.Models.NgoDao NgoDao { get; set; }
-
+    public int NewNgoDaoDiem { get; set; }
     public LearnNgoDaoResult()
     {
         
@@ -23,6 +23,7 @@ public class LearnNgoDaoResult : IMemorySerializable<LearnNgoDaoResult>
         {
             value.Buff = reader.Read<NgoDaoBuff>();
             value.NgoDao = reader.Read<MTS.Models.NgoDao>();
+            value.NewNgoDaoDiem = reader.Read<int>();
         }
         else
         {
@@ -33,7 +34,7 @@ public class LearnNgoDaoResult : IMemorySerializable<LearnNgoDaoResult>
     public int ByteSize()
     {
         var byteSize = Success.ByteSize();
-        var eByteSize = Success ? Buff.ByteSize() + NgoDao.ByteSize() : Message.ByteSize();
+        var eByteSize = Success ? Buff.ByteSize() + NgoDao.ByteSize() + NewNgoDaoDiem.ByteSize() : Message.ByteSize();
         return byteSize + eByteSize;
     }
 
@@ -44,6 +45,7 @@ public class LearnNgoDaoResult : IMemorySerializable<LearnNgoDaoResult>
         {
             writer.Write(Buff);
             writer.Write(NgoDao);
+            writer.Write(NewNgoDaoDiem);
         }
         else
         {

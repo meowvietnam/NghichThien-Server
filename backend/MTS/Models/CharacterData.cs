@@ -187,7 +187,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
-    public (NgoDao, NgoDaoBuff) LearnNgoDao(int idNgoDao)
+    public LearnNgoDaoResult LearnNgoDao(int idNgoDao)
     {
         List<(NgoDaoResource, int)> FindResources(ND.NgoDao nd)
         {
@@ -225,8 +225,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.NgoDaoNotExist);
         }
-
-        if (Progression.NgoDaoDiem < ngoDao.Require)
+        var ngoDaoDiem = Progression.NgoDaoDiem;
+        if (ngoDaoDiem < ngoDao.Require)
         {
             throw new Exception(Strings.NotEnoughNgoDaoPoints);
         }
@@ -270,8 +270,49 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Id = (ushort)idNgoDao,
         };
+        var newNgoDaoDiem = ngoDaoDiem - ngoDao.Require;
+        Progression.SetNgoDaoDiem(newNgoDaoDiem);
         var buffStat = ngoDao.Buff(this);
         InventoryManager.Add(ndOwner);
-        return (ndOwner, buffStat);
+        return new LearnNgoDaoResult()
+        {
+            Success = true,
+            Buff = buffStat,
+            NgoDao = ndOwner,
+            NewNgoDaoDiem = newNgoDaoDiem,
+        };
+    }
+    public EquipThanThongResult EquipThanThong(EquipThanThong request)
+    {
+        if(!InventoryManager.UnequipThanThong(request.Id))
+        {
+            throw new Exception(Strings.ThanThongNotOwned);
+        }
+        var (thanThongNew,thanThongOld) = EquipmentManager.EquipThanThong(request);
+        if (thanThongNew != null)
+        {
+            if (thanThongOld != null)
+            {
+                InventoryManager.EquipThanThong(thanThongOld.Id);
+            }
+        }
+        return new EquipThanThongResult()
+        {
+            Success = true,
+            ThanThong = thanThongNew,
+        };
+    }
+
+    public UnequipThanThongResult UnequipThanThong(ushort id)
+    {
+        if(!EquipmentManager.UnequipThanThong(id))
+        {
+            throw new Exception(Strings.ThanThongNotOwned);
+        }
+        InventoryManager.EquipThanThong(id);
+        return new UnequipThanThongResult()
+        {
+            Success = true,
+        };
     }
 }

@@ -11,6 +11,7 @@ public class ThanThongEquip : IMemorySerializable<ThanThongEquip>, IEquatable<Th
     [JsonIgnore]
     public int CharId { get; set; }
     public ushort Id { get; set; }
+    public byte SlotIndex { get; set; }
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
@@ -18,14 +19,16 @@ public class ThanThongEquip : IMemorySerializable<ThanThongEquip>, IEquatable<Th
     public void Deserialize(IReader reader, ref ThanThongEquip value)
     {
         value.Id = reader.Read<ushort>();
+        value.SlotIndex = reader.Read<byte>();
     }
     public int ByteSize()
     {
-        return Id.ByteSize();
+        return Id.ByteSize() + SlotIndex.ByteSize();
     }
     public void Serialize(IWriter writer)
     {
         writer.Write(Id);
+        writer.Write(SlotIndex);
     }
 
     public bool Equals(ThanThongEquip? other)
@@ -36,6 +39,6 @@ public class ThanThongEquip : IMemorySerializable<ThanThongEquip>, IEquatable<Th
     }
     public override int GetHashCode()
     {
-        return Id;
+        return HashCode.Combine(Id);
     }
 }

@@ -45,8 +45,8 @@ public enum MessageTag
     GetInventoryResult = 196,
     LuyenDan = 201,
     LuyenDanResult = 202,
-    
-    
+
+
     AddItems = 209,
     AddItemsResult = 210,
     SetInfinityEnergy = 220,
@@ -54,7 +54,7 @@ public enum MessageTag
     SetNgoDaoDiemResult = 231,
     SetCamNgo = 232,
     SetCamNgoResult = 233,
-    
+
     ChangeScene = 256,
     ChangeSceneResult = 257,
     LuyenKhi = 310,
@@ -64,4 +64,9 @@ public enum MessageTag
 
     LearnNgoDao = 332,
     LearnNgoDaoResult = 333,
+
+    EquipThanThong = 340,
+    EquipThanThongResult = 341,
+    UnequipThanThong = 342,
+    UnequipThanThongResult = 343,
 }

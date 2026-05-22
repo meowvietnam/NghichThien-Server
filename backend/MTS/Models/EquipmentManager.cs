@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MTS.Data;
+using MTS.Network.Models;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
@@ -28,6 +30,45 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
 
+    [NotMapped] private EquipmentTracking tracking = new();
+
+    public (ThanThongEquip?,ThanThongEquip?) EquipThanThong(EquipThanThong request)
+    {
+        var thanThong = new ThanThongEquip()
+        {
+            Id = request.Id,
+            CharId = CharId,
+            SlotIndex = request.Index
+        };
+        var oldSlot = ThanThongEquips.FirstOrDefault(x => x.SlotIndex == thanThong.SlotIndex);
+        if (oldSlot != null)
+        {
+            ThanThongEquips.Remove(oldSlot);
+            tracking.ThanThongEquips.Delete(thanThong);
+        }
+        var add = ThanThongEquips.Add(thanThong);
+        if (add)
+        {
+            tracking.ThanThongEquips.Add(thanThong);
+            return (thanThong, oldSlot);
+        }
+        return (null, oldSlot);
+    }
+
+    public bool UnequipThanThong(ushort id)
+    {
+        var thanThong = new ThanThongEquip()
+        {
+            Id = id,
+            CharId = CharId
+        };
+        var remove = ThanThongEquips.Remove(thanThong);
+        if (remove)
+        {
+            tracking.ThanThongEquips.Delete(thanThong);
+        }
+        return remove;
+    }
     public bool IsDefault()
     {
         return CharId == 0;
@@ -91,6 +132,8 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
 
     public Task SaveChanges(AppDbContext db)
     {
+        tracking.Apply(db);
+        tracking.Clear();
         return Task.CompletedTask;
     }
 }
