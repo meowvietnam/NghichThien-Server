@@ -38,14 +38,18 @@ namespace MTS.ND
             switch (currentEBuffStat)
             {
                 case EBuffStats.ThanThuc:
-                    stats.ThanThuc += buff;
+                    var thanThuc = stats.ThanThuc + buff;
+                    stats.SetThanThuc(thanThuc);
                     break;
                 case EBuffStats.HP:
-                    stats.SinhMenh += buff;
-                    stats.Hp += buff;
+                    var sinhMenh = stats.SinhMenh + buff;
+                    var hp = stats.Hp + buff;
+                    stats.SetSinhMenh(sinhMenh);
+                    stats.SetHp(hp);
                     break;
                 case EBuffStats.DonToc:
-                    stats.TocDoBay += buff;
+                    var dontoc = stats.TocDoBay;
+                    stats.SetTocDoBay(dontoc);
                     break;
             }
 

@@ -1,4 +1,5 @@
 using System;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -8,6 +9,19 @@ namespace MTS.CP
     {
         public Int32[] buffValues;
         public Int32[] donTocs;
+        public override void EquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var tocDoBay = stats.ThanThuc + donTocs[level - 1];
+            stats.SetTocDoBay(tocDoBay);
+        }
+
+        public override void UnEquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var tocDoBay = stats.ThanThuc - donTocs[level - 1];
+            stats.SetTocDoBay(tocDoBay);
+        }
         public override int ByteSize()
         {
             var byteSize = base.ByteSize();

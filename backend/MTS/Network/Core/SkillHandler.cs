@@ -10,7 +10,7 @@ public class SkillHandler : IClientHandler
     private Client client;
 
     private static MessageTag[] handler =
-        { MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong };
+        { MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,  MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap };
 
     public MessageTag[] HandleTag => handler;
 
@@ -88,6 +88,50 @@ public class SkillHandler : IClientHandler
             finally
             {
                 client.Send(MessageTag.UnequipThanThongResult, result);
+            }
+        }
+        else if (tag == MessageTag.EquipCongPhap)
+        {
+            var request = reader.Read<EquipCongPhap>();
+            var charData = client.CharacterData;
+            EquipCongPhapResult result = null;
+            try
+            {
+                result = charData.EquipCongPhap(request);
+            }
+            catch (Exception e)
+            {
+                result = new EquipCongPhapResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.EquipCongPhapResult, result);
+            }
+        }
+        else if (tag == MessageTag.UnequipCongPhap)
+        {
+            var slot = reader.Read<ETypeSlotCP>();
+            var charData = client.CharacterData;
+            UnequipCongPhapResult result = null;
+            try
+            {
+                result = charData.UnequipCongPhap(slot);
+            }
+            catch (Exception e)
+            {
+                result = new UnequipCongPhapResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.UnequipCongPhapResult, result);
             }
         }
     }

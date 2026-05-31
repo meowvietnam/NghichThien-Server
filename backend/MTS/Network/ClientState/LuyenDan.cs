@@ -32,9 +32,8 @@ public class LuyenDan : IClientState
                 var result = charData.InventoryManager.Refine(charData, request);
                 if (result.Success)
                 {
-                    charData.Stats.TuoiTac = result.NewTuoiTac;
+                    charData.Stats.SetTuoiTac(result.NewTuoiTac);
                 }
-
                 client.Send(MessageTag.LuyenDanResult, result);
             }
             catch (Exception e)

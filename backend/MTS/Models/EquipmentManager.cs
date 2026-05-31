@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Utils;
 using Network;
@@ -31,8 +33,9 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     public CharacterData CharacterData { get; set; }
 
     [NotMapped] private EquipmentTracking tracking = new();
-
-    public (ThanThongEquip?,ThanThongEquip?) EquipThanThong(EquipThanThong request)
+    [NotMapped] private bool isDirty1;
+    [NotMapped] private bool isDirty2;
+    public ThanThongEquip EquipThanThong(EquipThanThong request)
     {
         var thanThong = new ThanThongEquip()
         {
@@ -45,14 +48,17 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         {
             ThanThongEquips.Remove(oldSlot);
             tracking.ThanThongEquips.Delete(thanThong);
+            isDirty1 = true;
         }
         var add = ThanThongEquips.Add(thanThong);
         if (add)
         {
             tracking.ThanThongEquips.Add(thanThong);
-            return (thanThong, oldSlot);
+            isDirty1 = true;
+            return thanThong;
         }
-        return (null, oldSlot);
+
+        return null;
     }
 
     public bool UnequipThanThong(ushort id)
@@ -66,8 +72,64 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         if (remove)
         {
             tracking.ThanThongEquips.Delete(thanThong);
+            isDirty1 = true;
         }
         return remove;
+    }
+
+    public ushort GetSlotCP(ETypeSlotCP slot)
+    {
+        switch (slot)
+        {
+            case ETypeSlotCP.ChuTu1:
+                return ChuTu1Used;
+            case ETypeSlotCP.ChuTu2:
+                return ChuTu2Used;
+            case ETypeSlotCP.DonThuat:
+                return DonThuatUsed;
+            case ETypeSlotCP.PhuTu1:
+                return PhuTu1Used;
+            case ETypeSlotCP.PhuTu2:
+                return PhuTu2Used;
+            case ETypeSlotCP.PhuTu3:
+                return PhuTu3Used;
+            case ETypeSlotCP.PhuTu4:
+                return PhuTu4Used;
+            default:
+                throw new Exception(Strings.SlotCongPhapInvalid);
+        }
+    }
+
+    public void SetSlotCP(ETypeSlotCP slot, ushort value)
+    {
+        isDirty2 = true;
+        switch (slot)
+        {
+            case ETypeSlotCP.ChuTu1:
+                ChuTu1Used = value;
+                break;
+            case ETypeSlotCP.ChuTu2:
+                ChuTu2Used = value;
+                break;
+            case ETypeSlotCP.DonThuat:
+                DonThuatUsed = value;
+                break;
+            case ETypeSlotCP.PhuTu1:
+                PhuTu1Used = value;
+                break;
+            case ETypeSlotCP.PhuTu2:
+                PhuTu2Used = value;
+                break;
+            case ETypeSlotCP.PhuTu3:
+                PhuTu3Used = value;
+                break;
+            case ETypeSlotCP.PhuTu4:
+                PhuTu4Used = value;
+                break;
+            default:
+                isDirty2 = false;
+                break;
+        }
     }
     public bool IsDefault()
     {
@@ -119,21 +181,37 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         ThanThongEquips = new(other.ThanThongEquips);
         DanCombatUseds = new(other.DanCombatUseds);
         DonThuatUsed = other.DonThuatUsed;
+        ChuTu1Used = other.ChuTu1Used;
+        ChuTu2Used = other.ChuTu2Used;
         PhuTu1Used = other.PhuTu1Used;
         PhuTu2Used = other.PhuTu2Used;
         PhuTu3Used = other.PhuTu3Used;
         PhuTu4Used = other.PhuTu4Used;
-        ChuTu1Used = other.ChuTu1Used;
-        ChuTu2Used = other.ChuTu2Used;
         VuKhi = other.VuKhi;
         PhongCu = other.PhongCu;
         TrangSuc = other.TrangSuc;
     }
 
-    public Task SaveChanges(AppDbContext db)
+    public async Task SaveChanges(AppDbContext db)
     {
-        tracking.Apply(db);
-        tracking.Clear();
-        return Task.CompletedTask;
+        if (isDirty1)
+        {
+            tracking.Apply(db);
+            tracking.Clear();
+        }
+
+        if (isDirty2)
+        {
+            await db.EquipmentManagers.Where(x => x.CharId == CharId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.DonThuatUsed, DonThuatUsed)
+                    .SetProperty(x => x.ChuTu1Used, ChuTu1Used)
+                    .SetProperty(x => x.ChuTu2Used, ChuTu2Used)
+                    .SetProperty(x => x.PhuTu1Used, PhuTu1Used)
+                    .SetProperty(x => x.PhuTu2Used, PhuTu2Used)
+                    .SetProperty(x => x.PhuTu3Used, PhuTu3Used)
+                    .SetProperty(x => x.PhuTu4Used, PhuTu4Used));
+        }
     }
+
 }

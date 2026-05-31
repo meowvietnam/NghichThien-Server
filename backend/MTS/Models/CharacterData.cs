@@ -203,7 +203,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
                 result.Add((ngoDaoResource, findIndex));
             }
-
             return result;
         }
 
@@ -284,22 +283,19 @@ public class CharacterData : IMemorySerializable<CharacterData>
     }
     public EquipThanThongResult EquipThanThong(EquipThanThong request)
     {
-        if(!InventoryManager.UnequipThanThong(request.Id))
+        var thanThongOwner = new ThanThong()
+        {
+            Id = request.Id,
+        };
+        if(!InventoryManager.ThanThongOwners.Contains(thanThongOwner))
         {
             throw new Exception(Strings.ThanThongNotOwned);
         }
-        var (thanThongNew,thanThongOld) = EquipmentManager.EquipThanThong(request);
-        if (thanThongNew != null)
-        {
-            if (thanThongOld != null)
-            {
-                InventoryManager.EquipThanThong(thanThongOld.Id);
-            }
-        }
+        var thanThong = EquipmentManager.EquipThanThong(request);
         return new EquipThanThongResult()
         {
             Success = true,
-            ThanThong = thanThongNew,
+            ThanThong = thanThong,
         };
     }
 
@@ -309,10 +305,61 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.ThanThongNotOwned);
         }
-        InventoryManager.EquipThanThong(id);
         return new UnequipThanThongResult()
         {
             Success = true,
+            Id = id
+        };
+    }
+
+    public EquipCongPhapResult EquipCongPhap(EquipCongPhap request)
+    {
+        var id = request.Id;
+        var slot = request.Slot;
+        var cpRef = new CongPhap()
+        {
+            Id = id,
+        };
+        if (!InventoryManager.CongPhapOwners.TryGetValue(cpRef, out var congPhapOwner))
+        {
+            throw new Exception(Strings.CongPhapNotOwned);
+        }
+        var value = EquipmentManager.GetSlotCP(slot);
+        if (value != ushort.MaxValue)
+        {
+            throw new Exception(Strings.SlotCongPhongNotEmpty);
+        }
+        EquipmentManager.SetSlotCP(slot, id);
+        congPhapOwner.GetCongPhap().EquipCongPhap(this, congPhapOwner.Level);
+        return new EquipCongPhapResult()
+        {
+            Success = true,
+            Slot = slot,
+            Id = id,
+        };
+    }
+
+    public UnequipCongPhapResult UnequipCongPhap(ETypeSlotCP slot)
+    {
+        var value = EquipmentManager.GetSlotCP(slot);
+        if (value == ushort.MaxValue)
+        {
+            throw new Exception(Strings.SlotCongPhapEmpty);
+        }
+        EquipmentManager.SetSlotCP(slot, ushort.MaxValue);
+        var cpRef = new CongPhap()
+        {
+            Id = value,
+        };
+        if (!InventoryManager.CongPhapOwners.TryGetValue(cpRef, out var congPhapOwner))
+        {
+            throw new Exception(Strings.CongPhapNotOwned);
+        }
+        congPhapOwner.GetCongPhap().UnEquipCongPhap(this, congPhapOwner.Level);
+        return new UnequipCongPhapResult()
+        {
+            Success = true,
+            Slot = slot,
         };
     }
 }

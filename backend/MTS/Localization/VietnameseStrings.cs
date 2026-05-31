@@ -37,4 +37,8 @@ public class VietnameseStrings : ILanguageStrings
     public override string PreviousBranchRequiresAtLeastOneNgoDao => "Cần học ít nhất một ngộ đạo ở nhánh trước!";
     public override string NotEnoughCamNgoPoints => "Không đủ điểm cảm ngộ!";
     public override string ThanThongNotOwned => "Chưa sở hữu thần thông này!";
+    public override string SlotCongPhapInvalid => "Slot trang bị công pháp không hợp lệ!";
+    public override string SlotCongPhongNotEmpty => "Slot trang bị công pháp chưa được tháo ra!";
+    public override string CongPhapNotOwned => "Chưa sở hữu công pháp này!";
+    public override string SlotCongPhapEmpty => "Slot trang bị công pháp đang trống!";
 }

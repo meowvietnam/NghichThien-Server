@@ -47,8 +47,25 @@ public class AdminHandler : IClientHandler
         else if (tag == MessageTag.SetCamNgo)
         {
             var camNgo = reader.Read<CamNgo>();
-            client.CharacterData.InventoryManager.AddOrUpdate(camNgo);
+            var inventory = await client.GetInventory();
+            inventory.AddOrUpdate(camNgo);
             client.Send(MessageTag.SetCamNgoResult, camNgo);
+        }
+        else if (tag == MessageTag.AddThanThong)
+        {
+            var id = reader.Read<ushort>();
+            var inventory = await client.GetInventory();
+            if (inventory.EquipThanThong(id))
+            {
+                client.Send(MessageTag.AddThanThongResult, id);
+            }
+        }
+        else if (tag == MessageTag.AddCongPhap)
+        {
+            var congPhap = reader.Read<CongPhap>();
+            if (congPhap.Level == 0) return;
+            client.CharacterData.InventoryManager.AddOrUpdate(congPhap);
+            client.Send(MessageTag.AddCongPhapResult, congPhap);
         }
     }
 
@@ -56,7 +73,12 @@ public class AdminHandler : IClientHandler
     {
     }
 
-    private static readonly MessageTag[] handler = [MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo];
+    private static readonly MessageTag[] handler =
+    [
+        MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo,
+        MessageTag.AddThanThong, MessageTag.AddCongPhap
+    ];
+
     public MessageTag[] HandleTag => handler;
 
     public void OnDisconnect(IProtocol<MessageTag> protocol)

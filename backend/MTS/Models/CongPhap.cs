@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MTS.Game;
+using MTS.Network.ClientState;
 using Network;
 using Network.Extensions;
 
@@ -41,6 +43,9 @@ public class CongPhap : IMemorySerializable<CongPhap>, IEquatable<CongPhap>
         writer.Write(Id);
         writer.Write(Level);
     }
-
+    public CP.CongPhap GetCongPhap()
+    {
+        return GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == Id);
+    }
 
 }

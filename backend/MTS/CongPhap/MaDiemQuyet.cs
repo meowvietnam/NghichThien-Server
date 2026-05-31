@@ -1,4 +1,5 @@
 using System;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -7,6 +8,21 @@ namespace MTS.CP
     public class MaDiemQuyet : CongPhap, IMemorySerializable<MaDiemQuyet>
     {
         public Int32[] thoNguyens;
+
+        public override void EquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var thoNguyen = stats.ThoNguyen + thoNguyens[level - 1];
+            stats.SetThoNguyen(thoNguyen);
+        }
+
+        public override void UnEquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var thoNguyen = stats.ThoNguyen - thoNguyens[level - 1];
+            stats.SetThoNguyen(thoNguyen);
+        }
+
         public override int ByteSize()
         {
             var byteSize = base.ByteSize();

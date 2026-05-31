@@ -46,4 +46,10 @@ public abstract class ILanguageStrings
     public abstract string PreviousBranchRequiresAtLeastOneNgoDao { get; }
     public abstract string NotEnoughCamNgoPoints { get; }
     public abstract string ThanThongNotOwned { get; }
+
+    // Cong Phap equip messages
+    public abstract string SlotCongPhapInvalid { get; }
+    public abstract string SlotCongPhongNotEmpty { get; }
+    public abstract string CongPhapNotOwned { get; }
+    public abstract string SlotCongPhapEmpty { get; }
 }

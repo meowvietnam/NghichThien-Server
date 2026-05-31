@@ -20,19 +20,19 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public float Ma { get; private set; }
     public int TuChat { get; private set; }
     public int NgoTinh { get; private set; }
-    public int ThanThuc { get; set; }
-    public int TocDoBay { get; set; }
+    public int ThanThuc { get; private set; }
+    public int TocDoBay { get; private set; }
     public int LinhThach { get; private set; }
-    public int Hp { get; set; }
-    public int SinhMenh { get; set; }
+    public int Hp { get; private set; }
+    public int SinhMenh { get; private set; }
     public int ThoNguyen { get; private set; }
     public int TamCanh { get; private set; }
     public LinhCan LinhCan { get; private set; }
     public Ability Ability { get; private set; }
     public int DanDoc { get; private set; }
-    public TimeSpan TuoiTac { get; set; }
+    public TimeSpan TuoiTac { get; private set; }
 
-    [NotMapped] private bool _isModified;
+    [NotMapped] private bool isDirty;
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -42,7 +42,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public CharacterData CharacterData { get; set; }
-
     public CharacterStats()
     {
     }
@@ -75,6 +74,67 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         TuoiTac = stats.TuoiTac;
     }
 
+    public void SetHp(int value)
+    {
+        if (Hp != value)
+        {
+            Hp = value;
+            isDirty = true;
+        }
+    }
+
+    public void SetSinhMenh(int value)
+    {
+        if (SinhMenh != value)
+        {
+            SinhMenh = value;
+            isDirty = true;
+        }
+    }
+
+    public void SetTocDoBay(int value)
+    {
+        if (TocDoBay != value)
+        {
+            TocDoBay = value;
+            isDirty  = true;
+        }
+    }
+
+    public void SetThanThuc(int value)
+    {
+        if (ThanThuc != value)
+        {
+            ThanThuc = value;
+            isDirty = true;
+        }
+    }
+
+    public void SetTuoiTac(TimeSpan value)
+    {
+        if (TuoiTac != value)
+        {
+            TuoiTac = value;
+            isDirty = true;
+        }
+    }
+    
+    public void SetTamCanh(int tamCanh)
+    {
+        if (TamCanh != tamCanh)
+        {
+            TamCanh = tamCanh;
+            isDirty = true;
+        }
+    }
+    public void SetThoNguyen(int thoNguyen)
+    {
+        if (ThoNguyen != thoNguyen)
+        {
+            ThoNguyen = thoNguyen;
+            isDirty = true;
+        }
+    }
     public void Apply(StatModifier modifier)
     {
         Apply(modifier.Type, modifier.Action, modifier.Value);
@@ -194,7 +254,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             default:
                 return;
         }
-        _isModified = true;
+        isDirty = true;
     }
 
     public int ByteSize()
@@ -261,7 +321,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
 
     public async Task SaveChanges(AppDbContext db)
     {
-        if (!_isModified) return;
+        if (!isDirty) return;
         await db.CharacterStats.Where(x => x.CharId == CharId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.Kim, Kim)
@@ -283,6 +343,8 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 .SetProperty(x => x.Ability, Ability)
                 .SetProperty(x => x.DanDoc, DanDoc)
                 .SetProperty(x => x.TuoiTac, TuoiTac));
-        _isModified = false;
+        isDirty = false;
     }
+
+
 }

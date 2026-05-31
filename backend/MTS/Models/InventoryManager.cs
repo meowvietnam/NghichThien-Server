@@ -538,7 +538,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Add(camNgo);
         }
     }
-
     public void Update(CamNgo oldValue, CamNgo newValue)
     {
         oldValue.Value = newValue.Value;
@@ -551,7 +550,29 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         CamNgos.Add(camNgo);
         Tracking.CamNgos.Add(camNgo);
     }
+    public void AddOrUpdate(CongPhap congPhap)
+    {
+        if (CongPhapOwners.TryGetValue(congPhap, out var congPhapOwner))
+        {
+            Update(congPhapOwner, congPhap);
+        }
+        else
+        {
+            Add(congPhap);
+        }
+    }
 
+    public void Update(CongPhap oldValue, CongPhap newValue)
+    {
+        oldValue.Level = newValue.Level;
+        Tracking.CongPhaps.Update(oldValue);
+    }
+    public void Add(CongPhap congPhap)
+    {
+        congPhap.CharId = CharId;
+        CongPhapOwners.Add(congPhap);
+        Tracking.CongPhaps.Add(congPhap);
+    }
     public void ApplyModify(InventoryModify m)
     {
         m.Apply(this, Tracking);
@@ -705,7 +726,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         var dayCost = equipmentTier.DayCost;
         var stats = CharacterData.Stats;
         var newTuoiTac = stats.TuoiTac.Add(TimeSpan.FromDays(dayCost));
-        stats.TuoiTac = newTuoiTac;
+        stats.SetTuoiTac(newTuoiTac);
         var equipment = new Equipment()
         {
             Id = (ushort)item.Id,
@@ -756,20 +777,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Tracking.ThanThongs.Add(thanThong);
         }
         return add;
-    }
-    public bool UnequipThanThong(ushort id)
-    {
-        var thanThong = new ThanThong()
-        {
-            Id = id,
-            CharId = CharId
-        };
-        var remove = ThanThongOwners.Remove(thanThong);
-        if (remove)
-        {
-            Tracking.ThanThongs.Delete(thanThong);
-        }
-        return remove;
     }
 }
 

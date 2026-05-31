@@ -1,4 +1,5 @@
 using System;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -7,6 +8,25 @@ namespace MTS.CP
     public class ThoNapCongPhap : CongPhap, IMemorySerializable<ThoNapCongPhap>
     {
         public Int32[] buffValues;
+
+        public override void EquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var sinhMenh = stats.SinhMenh + buffValues[level - 1];
+            stats.SetSinhMenh(sinhMenh);
+        }
+
+        public override void UnEquipCongPhap(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var sinhMenh = stats.SinhMenh - buffValues[level - 1];
+            stats.SetSinhMenh(sinhMenh);
+            if (stats.Hp > sinhMenh)
+            {
+                stats.SetHp(sinhMenh);
+            }
+        }
+
         public override int ByteSize()
         {
             var byteSize = base.ByteSize();
