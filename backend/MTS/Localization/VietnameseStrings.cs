@@ -26,7 +26,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string ElementalStatInvalid => "Chỉ số nguyên tố linh căn không hợp lệ!";
     public override string SelectionInvalid => "Lựa chọn không hợp lệ!";
     public override string StatOptionInvalid => "Tùy chọn chỉ số không tồn tại!";
-    public override string NotEnoughMoney => "Điểm thiên phú không đủ để thực hiện thao tác này!";
+    public override string NotEnoughNatural => "Điểm thiên phú không đủ để thực hiện thao tác này!";
     public override string IsIncomplete => "Chưa thực hiện đầy đủ các bước tiến trình tạo nhân vật!";
     public override string ItemCountInvalid => "Số lượng mục lựa chọn không hợp lệ (yêu cầu chọn duy nhất 1 mục)!";
     public override string CharacterLimitExceeded => "Không thể tạo thêm nhân vật, đã đạt giới hạn!";
@@ -41,4 +41,6 @@ public class VietnameseStrings : ILanguageStrings
     public override string SlotCongPhongNotEmpty => "Slot trang bị công pháp chưa được tháo ra!";
     public override string CongPhapNotOwned => "Chưa sở hữu công pháp này!";
     public override string SlotCongPhapEmpty => "Slot trang bị công pháp đang trống!";
+    public override string NotEnoughMoney => "Không đủ linh thạch!";
+    public override string MainCultivationRequiredForRetreat => "Cần trang bị công pháp chủ tu để bế quan!";
 }

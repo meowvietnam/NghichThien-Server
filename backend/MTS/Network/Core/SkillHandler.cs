@@ -1,6 +1,7 @@
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+
 #pragma warning disable CS8631 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match constraint type.
 
 namespace MTS.Network.Core;
@@ -10,7 +11,10 @@ public class SkillHandler : IClientHandler
     private Client client;
 
     private static MessageTag[] handler =
-        { MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,  MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap };
+    [
+        MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,
+        MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen
+    ];
 
     public MessageTag[] HandleTag => handler;
 
@@ -27,13 +31,17 @@ public class SkillHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
+        var charData = client.CharacterData;
         if (tag == MessageTag.LearnNgoDao)
         {
             var idNgoDao = reader.Read<int>();
             LearnNgoDaoResult result = null;
             try
             {
-                result = client.CharacterData.LearnNgoDao(idNgoDao);
+                lock (charData)
+                {
+                    result = charData.LearnNgoDao(idNgoDao);
+                }
             }
             catch (Exception e)
             {
@@ -54,7 +62,10 @@ public class SkillHandler : IClientHandler
             EquipThanThongResult result = null!;
             try
             {
-                result = client.CharacterData.EquipThanThong(request);
+                lock (charData)
+                {
+                    result = charData.EquipThanThong(request);
+                }
             }
             catch (Exception e)
             {
@@ -75,7 +86,10 @@ public class SkillHandler : IClientHandler
             UnequipThanThongResult result = null!;
             try
             {
-                result = client.CharacterData.UnequipThanThong((ushort)id);
+                lock (charData)
+                {
+                    result = charData.UnequipThanThong((ushort)id);
+                }
             }
             catch (Exception e)
             {
@@ -93,11 +107,13 @@ public class SkillHandler : IClientHandler
         else if (tag == MessageTag.EquipCongPhap)
         {
             var request = reader.Read<EquipCongPhap>();
-            var charData = client.CharacterData;
             EquipCongPhapResult result = null;
             try
             {
-                result = charData.EquipCongPhap(request);
+                lock (charData)
+                {
+                    result = charData.EquipCongPhap(request);
+                }
             }
             catch (Exception e)
             {
@@ -115,11 +131,13 @@ public class SkillHandler : IClientHandler
         else if (tag == MessageTag.UnequipCongPhap)
         {
             var slot = reader.Read<ETypeSlotCP>();
-            var charData = client.CharacterData;
             UnequipCongPhapResult result = null;
             try
             {
-                result = charData.UnequipCongPhap(slot);
+                lock (charData)
+                {
+                    result = charData.UnequipCongPhap(slot);
+                }
             }
             catch (Exception e)
             {
@@ -132,6 +150,30 @@ public class SkillHandler : IClientHandler
             finally
             {
                 client.Send(MessageTag.UnequipCongPhapResult, result);
+            }
+        }
+        else if (tag == MessageTag.TuLuyen)
+        {
+            var time = reader.Read<TimeSpan>();
+            TuLuyenResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    result = charData.TuLuyen(time);
+                }
+            }
+            catch (Exception e)
+            {
+                result = new TuLuyenResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.TuLuyen, result);
             }
         }
     }

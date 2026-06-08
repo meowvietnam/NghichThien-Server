@@ -26,7 +26,7 @@ public class EnglishStrings : ILanguageStrings
     public override string ElementalStatInvalid => "Elemental root stat is invalid!";
     public override string SelectionInvalid => "Selection is invalid!";
     public override string StatOptionInvalid => "Stat option does not exist!";
-    public override string NotEnoughMoney => "Not enough talent points for this operation!";
+    public override string NotEnoughNatural => "Not enough talent points for this operation!";
     public override string IsIncomplete => "Character creation process is incomplete!";
     public override string ItemCountInvalid => "Invalid number of items selected (must select exactly 1 item)!";
     public override string CharacterLimitExceeded => "Cannot create more characters, limit reached!";
@@ -41,4 +41,8 @@ public class EnglishStrings : ILanguageStrings
     public override string SlotCongPhongNotEmpty => "Cong Phap equipment slot is not empty!";
     public override string CongPhapNotOwned => "This Cong Phap is not owned!";
     public override string SlotCongPhapEmpty => "Cong Phap equipment slot is empty!";
+    public override string NotEnoughMoney => "Not enough Linh Thach!";
+
+    public override string MainCultivationRequiredForRetreat =>
+        "Only the main cultivation technique can be used for closed-door cultivation!";
 }

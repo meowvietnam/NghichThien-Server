@@ -11,7 +11,7 @@ public class NDCPTTManager : IMemorySerializable<NDCPTTManager>
     public List<NgoDao> NgoDaos { get; set; }
     public List<CongPhap> CongPhaps { get; set; }
     public List<ThanThong> ThanThongs { get; set; }
-    private System.Type[] types =
+    private Type[] types =
     {
         typeof(AmDuongDong),
         typeof(AmDuongKinh),
@@ -516,7 +516,7 @@ public class NDCPTTManager : IMemorySerializable<NDCPTTManager>
         typeof(XuanThaoQuyet),
         typeof(XuanTiAn)
     };
-    private object Read(System.Type type, IReader reader)
+    private object Read(Type type, IReader reader)
     {
         var instance = Activator.CreateInstance(type);
         var method = type.GetMethod(
@@ -586,5 +586,15 @@ public class NDCPTTManager : IMemorySerializable<NDCPTTManager>
             writer.Write(typeIndex);
             x.Serialize(writer);
         });
+    }
+
+    public BaseSkill.BaseSkill GetThanThongWithId(ushort id)
+    {
+        return ThanThongs.FirstOrDefault(x => x.Id == id);
+    }
+
+    public BaseSkill.BaseSkill GetCongPhapWithId(ushort id)
+    {
+        return CongPhaps.FirstOrDefault(x => x.Id == id);
     }
 }

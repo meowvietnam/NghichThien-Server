@@ -34,7 +34,7 @@ public static class Strings
     public static string ElementalStatInvalid => _current.ElementalStatInvalid;
     public static string SelectionInvalid => _current.SelectionInvalid;
     public static string StatOptionInvalid => _current.StatOptionInvalid;
-    public static string NotEnoughMoney => _current.NotEnoughMoney;
+    public static string NotEnoughNatural => _current.NotEnoughNatural;
     public static string IsIncomplete => _current.IsIncomplete;
     public static string ItemCountInvalid => _current.ItemCountInvalid;
     public static string CharacterLimitExceeded => _current.CharacterLimitExceeded;
@@ -49,4 +49,7 @@ public static class Strings
     public static string SlotCongPhongNotEmpty => _current.SlotCongPhongNotEmpty;
     public static string CongPhapNotOwned => _current.CongPhapNotOwned;
     public static string SlotCongPhapEmpty => _current.SlotCongPhapEmpty;
+    public static string NotEnoughMoney => _current.NotEnoughMoney;
+    public static string? ExceedLimit { get; set; }
+    public static string MainCultivationRequiredForRetreat => _current.MainCultivationRequiredForRetreat;
 }

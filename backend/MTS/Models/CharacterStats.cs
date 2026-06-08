@@ -135,6 +135,15 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
+    
+    public void SetLinhThach(int linhThach)
+    {
+        if (LinhThach != linhThach)
+        {
+            LinhThach = linhThach;
+            isDirty = true;
+        }
+    }
     public void Apply(StatModifier modifier)
     {
         Apply(modifier.Type, modifier.Action, modifier.Value);

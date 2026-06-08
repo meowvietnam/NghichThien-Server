@@ -31,6 +31,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public Social Social { get; set; } = new();
     public InventoryManager InventoryManager { get; set; } = new();
     public QuestManager QuestManager { get; set; } = new();
+
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -203,6 +204,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
                 result.Add((ngoDaoResource, findIndex));
             }
+
             return result;
         }
 
@@ -224,6 +226,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.NgoDaoNotExist);
         }
+
         var ngoDaoDiem = Progression.NgoDaoDiem;
         if (ngoDaoDiem < ngoDao.Require)
         {
@@ -281,16 +284,18 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewNgoDaoDiem = newNgoDaoDiem,
         };
     }
+
     public EquipThanThongResult EquipThanThong(EquipThanThong request)
     {
         var thanThongOwner = new ThanThong()
         {
             Id = request.Id,
         };
-        if(!InventoryManager.ThanThongOwners.Contains(thanThongOwner))
+        if (!InventoryManager.ThanThongOwners.Contains(thanThongOwner))
         {
             throw new Exception(Strings.ThanThongNotOwned);
         }
+
         var thanThong = EquipmentManager.EquipThanThong(request);
         return new EquipThanThongResult()
         {
@@ -301,10 +306,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     public UnequipThanThongResult UnequipThanThong(ushort id)
     {
-        if(!EquipmentManager.UnequipThanThong(id))
+        if (!EquipmentManager.UnequipThanThong(id))
         {
             throw new Exception(Strings.ThanThongNotOwned);
         }
+
         return new UnequipThanThongResult()
         {
             Success = true,
@@ -324,11 +330,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.CongPhapNotOwned);
         }
+
         var value = EquipmentManager.GetSlotCP(slot);
         if (value != ushort.MaxValue)
         {
             throw new Exception(Strings.SlotCongPhongNotEmpty);
         }
+
         EquipmentManager.SetSlotCP(slot, id);
         congPhapOwner.GetCongPhap().EquipCongPhap(this, congPhapOwner.Level);
         return new EquipCongPhapResult()
@@ -346,6 +354,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.SlotCongPhapEmpty);
         }
+
         EquipmentManager.SetSlotCP(slot, ushort.MaxValue);
         var cpRef = new CongPhap()
         {
@@ -355,11 +364,133 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.CongPhapNotOwned);
         }
+
         congPhapOwner.GetCongPhap().UnEquipCongPhap(this, congPhapOwner.Level);
         return new UnequipCongPhapResult()
         {
             Success = true,
             Slot = slot,
+        };
+    }
+
+    private int CalculateCostTuLuyen()
+    {
+        var level = Progression.Level;
+        var r = 0.2f;
+        var baseCost = 100f;
+        var m = 5f;
+        if (level < 1) return 0;
+        var steadyGrowth = Math.Pow(1 + r, level - 1);
+        var jumpFactor = Math.Pow(m, Math.Floor((level - 1) / 3.0f));
+        var finalCost = (baseCost * steadyGrowth) * jumpFactor;
+        return (int)Math.Round(finalCost);
+    }
+
+    private (string name, int nextMilestone, int index) GetTamCanhValue()
+    {
+        var currentPoint = Stats.TamCanh;
+        var tamCanh = GameConfig.tamCanh;
+        var tamCanhRequireEnd = GameConfig.tamCanhRequireEnd;
+        if (currentPoint < 0)
+            return (tamCanh[0], 0, 0);
+
+        for (int i = 0; i < tamCanhRequireEnd.Length; i++)
+        {
+            if (currentPoint >= tamCanhRequireEnd[i] &&
+                (i == tamCanhRequireEnd.Length - 1 || currentPoint < tamCanhRequireEnd[i + 1]))
+            {
+                int nextLevel = (i + 1 < tamCanhRequireEnd.Length)
+                    ? tamCanhRequireEnd[i + 1]
+                    : currentPoint;
+                return (tamCanh[i + 1], nextLevel, i + 1);
+            }
+        }
+
+        return (tamCanh[^1], currentPoint, tamCanh.Length - 1);
+    }
+
+    private int GetPercentTuChat()
+    {
+        return Stats.TuChat;
+    }
+
+    private int GetPercentTamCanh()
+    {
+        var level = Progression.Level;
+        var getTamCanh = GetTamCanhValue();
+        var daiCanhGioi = TT.ThanThong.GetDaiCanhGioi(level);
+        var percentTamCanh = 0;
+        if (getTamCanh.index > daiCanhGioi)
+        {
+            percentTamCanh = 50;
+        }
+        else if (getTamCanh.index < daiCanhGioi)
+        {
+            percentTamCanh = -50;
+        }
+
+        return percentTamCanh;
+    }
+
+    public TuLuyenResult TuLuyen(TimeSpan time)
+    {
+        var chuTu1Id = EquipmentManager.ChuTu1Used;
+        if (chuTu1Id == ushort.MaxValue)
+        {
+            throw new Exception(Strings.MainCultivationRequiredForRetreat);
+        }
+
+        var cost = CalculateCostTuLuyen() * time.Days / 30;
+        var money = Stats.LinhThach;
+        var remaining = money - cost;
+        if (remaining < 0)
+        {
+            throw new Exception(Strings.NotEnoughMoney);
+        }
+
+        var level = Progression.Level;
+        var thoNguyen = TimeSpan.FromDays(Stats.ThoNguyen * 365);
+        var tuoiTac = Stats.TuoiTac;
+        var p1 = time.Ticks / thoNguyen.Ticks * 100;
+        var p2 = time.Ticks / tuoiTac.Ticks * 100;
+        if (p1 > 10 || p2 > 10)
+        {
+            throw new Exception(Strings.ExceedLimit);
+        }
+
+        var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
+        var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
+        var percentTuChat = GetPercentTuChat();
+        var percentTamCanh = GetPercentTamCanh();
+
+        int GetTotalValueBuffWithMultiplier(params float[] percent)
+        {
+            float total = tocDocTuLuyen;
+            foreach (var item in percent)
+            {
+                total *= (1 + item / 100f);
+            }
+
+            return (int)total;
+        }
+        var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
+        var exp = Progression.CurrentExp + buffExp;
+        var levelUpdated = Progression.SetCurrentExp(exp);
+        Stats.SetLinhThach(remaining);
+        if (levelUpdated == null)
+        {
+            exp = Progression.CurrentExp;
+            return new TuLuyenResult()
+            {
+                Success = true,
+                CurrentExp = exp,
+            };
+        }
+
+        return new TuLuyenResult()
+        {
+            Success = true,
+            LevelUpdated = levelUpdated,
         };
     }
 }

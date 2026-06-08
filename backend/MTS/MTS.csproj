@@ -42,9 +42,6 @@
     <ItemGroup>
       <Content Include="TT\.DS_Store" />
       <None Remove="Data\StepConfig.bin" />
-      <Content Include="Data\step-config.bin">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
       <None Remove="Data\skin-resources.bin" />
       <Content Include="Data\skin-resources.bin">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -62,11 +59,8 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
       <None Remove="Data\NgoDaoManager.bin" />
-      <Content Include="Data\NgoDaoManager.bin">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
       <None Remove="Data\NDCPTTManager.bin" />
-      <Content Include="Data\NDCPTTManager.bin">
+      <Content Include="Data\step-config.bin">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

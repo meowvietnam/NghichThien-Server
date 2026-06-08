@@ -33,7 +33,7 @@ public abstract class ILanguageStrings
     public abstract string ElementalStatInvalid { get; }
     public abstract string SelectionInvalid { get; }
     public abstract string StatOptionInvalid { get; }
-    public abstract string NotEnoughMoney { get; }
+    public abstract string NotEnoughNatural { get; }
     public abstract string IsIncomplete { get; }
     public abstract string ItemCountInvalid { get; }
     public abstract string CharacterLimitExceeded { get; }
@@ -52,4 +52,6 @@ public abstract class ILanguageStrings
     public abstract string SlotCongPhongNotEmpty { get; }
     public abstract string CongPhapNotOwned { get; }
     public abstract string SlotCongPhapEmpty { get; }
+    public abstract string NotEnoughMoney { get;  }
+    public abstract string MainCultivationRequiredForRetreat { get; }
 }

@@ -28,7 +28,6 @@ public class AdminHandler : IClientHandler
             {
                 return;
             }
-
             var inventory = await client.GetInventory();
             var rewards = inventory.AddToInventory(items);
             client.Send(MessageTag.AddItemsResult, rewards);

@@ -11,7 +11,7 @@ public class LuyenDanResources : IMemorySerializable<LuyenDanResources>
     public List<LinhDan> LinhDans { get; private set; }
     public List<RecipeData> Recipes { get; private set; }
     public const string EmptyDetail = "Không";
-
+    public static LuyenDanResources Instance => GameConfig.LuyenDanResources;
     public IItemData FindItem(ItemRef itemRef)
     {
         if (itemRef.Type == ItemType.Furnace)
@@ -36,7 +36,10 @@ public class LuyenDanResources : IMemorySerializable<LuyenDanResources>
 
         return null;
     }
-
+    public IItemData FindItem(FurnaceData furnace)
+    {
+        return TempFurnaceDatas.FirstOrDefault(x => x.Id == furnace.Id);
+    }
     public HerbData FindHerb(int id)
     {
         var herb = HerbDatas.FirstOrDefault(x => x.Id == id);
@@ -88,5 +91,10 @@ public class LuyenDanResources : IMemorySerializable<LuyenDanResources>
         writer.WriteArray(HerbDatas);
         writer.WriteArray(LinhDans);
         writer.WriteArray(Recipes);
+    }
+
+    public LinhDan FindLinhDan(ushort id)
+    {
+        return LinhDans.FirstOrDefault(x => x.Id == id);
     }
 }

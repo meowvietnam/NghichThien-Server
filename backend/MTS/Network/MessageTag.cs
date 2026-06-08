@@ -75,8 +75,12 @@ public enum MessageTag
     EquipThanThongResult = 341,
     UnequipThanThong = 342,
     UnequipThanThongResult = 343,
+    
     EquipCongPhap = 352,
     EquipCongPhapResult = 353,
     UnequipCongPhap = 354,
     UnequipCongPhapResult = 355,
+    
+    TuLuyen = 370,
+    TuLuyenResult = 371,
 }

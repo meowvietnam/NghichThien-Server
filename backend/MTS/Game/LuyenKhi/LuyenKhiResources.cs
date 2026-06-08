@@ -63,5 +63,10 @@ namespace MTS.Game.LuyenKhi
             writer.WriteArray(EffectTypeConfigs);
             writer.Write(Strings);
         }
+
+        public Material FindMaterial(ushort id)
+        {
+            return Materials.FirstOrDefault(x => x.Id == id);
+        }
     }
 }

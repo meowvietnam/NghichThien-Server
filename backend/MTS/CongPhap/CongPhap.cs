@@ -1,3 +1,4 @@
+using MTS.Game.BaseSkill;
 using MTS.Game.Resources;
 using MTS.Models;
 using Network;
@@ -5,7 +6,7 @@ using Network.Extensions;
 
 namespace MTS.CP;
 
-public class CongPhap : BaseData, IMemorySerializable<CongPhap>
+public class CongPhap : BaseSkill, IMemorySerializable<CongPhap>
 {
     public int TocDoTuLuyenBase { get; set; }
     public bool IsDonThuat { get; set; }
@@ -33,7 +34,7 @@ public class CongPhap : BaseData, IMemorySerializable<CongPhap>
     }
     public void Deserialize(IReader reader, ref CongPhap value)
     {
-        BaseData baseValue = value;
+        BaseSkill baseValue = value;
         baseValue.Deserialize(reader, ref baseValue);
         value.TocDoTuLuyenBase = reader.Read<int>();
         value.IsDonThuat = reader.Read<bool>();
@@ -43,5 +44,10 @@ public class CongPhap : BaseData, IMemorySerializable<CongPhap>
         base.Serialize(writer);
         writer.Write(TocDoTuLuyenBase);
         writer.Write(IsDonThuat);
+    }
+
+    public int GetTocDoTuLuyen(int level)
+    {
+        return level * TocDoTuLuyenBase;
     }
 }

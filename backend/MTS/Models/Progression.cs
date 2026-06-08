@@ -2,11 +2,60 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Game;
 using MTS.Game.CreateCharacter;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Models;
+
+public class LevelUpdated : IMemorySerializable<LevelUpdated>
+{
+    public int Level { get; set; }
+    public int CurrentExp { get; set; }
+    public int HpMax { get; set; }
+    public int ThanThuc { get; set; }
+    public int DonToc { get; set; }
+    public int ThoNguyen { get; set; }
+
+    public void Deserialize(IReader reader, ref LevelUpdated value)
+    {
+        value.Level = reader.Read<int>();
+        value.CurrentExp = reader.Read<int>();
+        value.HpMax = reader.Read<int>();
+        value.ThanThuc = reader.Read<int>();
+        value.DonToc = reader.Read<int>();
+        value.ThoNguyen = reader.Read<int>();
+    }
+
+    public int ByteSize()
+    {
+        return Level.ByteSize() + CurrentExp.ByteSize() + HpMax.ByteSize() + ThanThuc.ByteSize()
+               + DonToc.ByteSize() + ThoNguyen.ByteSize();
+    }
+
+    public void Serialize(IWriter writer)
+    {
+        writer.Write(Level);
+        writer.Write(CurrentExp);
+        writer.Write(HpMax);
+        writer.Write(ThanThuc);
+        writer.Write(DonToc);
+        writer.Write(ThoNguyen);
+    }
+
+    public void ApplyTo(CharacterData charData)
+    {
+        var progression = charData.Progression;
+        progression.SetLevel(Level);
+        progression.SetCurrentExp(CurrentExp);
+        var stats = charData.Stats;
+        stats.SetSinhMenh(HpMax);
+        stats.SetThanThuc(ThanThuc);
+        stats.SetTocDoBay(DonToc);
+        stats.SetThoNguyen(ThoNguyen);
+    }
+}
 
 public class Progression : IMemorySerializable<Progression>
 {
@@ -79,31 +128,78 @@ public class Progression : IMemorySerializable<Progression>
                 .SetProperty(x => x.CurrentEnergy, CurrentEnergy));
         dirty = false;
     }
+
     public void SetIdCurrentNode(int id)
     {
-        if(IdCurrentNode == id) return;
+        if (IdCurrentNode == id) return;
         IdCurrentNode = id;
         dirty = true;
     }
 
-    public void SetCurrentExp(int exp)
+    public LevelUpdated? SetCurrentExp(int exp)
     {
-        if(CurrentExp == exp) return;
-        CurrentExp = exp;
-        dirty = true;
+        if (CurrentExp == exp) return null;
+        var infoLevel = GameConfig.infoLevels[Level - 1];
+        var require = infoLevel.tuviRequireNextLevel;
+        if (exp < require)
+        {
+            CurrentExp = exp;
+            dirty = true;
+            return null;
+        }
+        if (Level == GameConfig.infoLevels.Length - 1)
+        {
+            CurrentExp = require;
+            dirty = true;
+            return null;
+        }
+        var nextLevelRequireItems = GameConfig.infoLevels[Level].requireItems;
+        if (nextLevelRequireItems is { Length: > 0 })
+        {
+            CurrentExp = require;
+            dirty = true;
+            return null;
+        }
+        CurrentExp = exp - require;
+        var level = Level + 1;
+        return SetLevel(level);
     }
+    
     public void SetCurrentEnergy(int newEnergy)
     {
-        if(CurrentEnergy == newEnergy) return;
+        if (CurrentEnergy == newEnergy) return;
         CurrentEnergy = newEnergy;
         dirty = true;
-        
     }
 
     public void SetNgoDaoDiem(int newNgoDaoDiem)
     {
-        if(NgoDaoDiem == newNgoDaoDiem) return;
+        if (NgoDaoDiem == newNgoDaoDiem) return;
         NgoDaoDiem = newNgoDaoDiem;
         dirty = true;
+    }
+
+    public LevelUpdated? SetLevel(int level)
+    {
+        if (Level == level) return null;
+        Level = level;
+        var newInfoLevel = GameConfig.infoLevels[level - 1];
+        var stats = CharacterData.Stats;
+        var maxHp = stats.SinhMenh + newInfoLevel.hpMaxBuff;
+        var thanThuc = stats.ThanThuc + newInfoLevel.thanThucBuff;
+        var docToc = stats.TocDoBay + newInfoLevel.donTocBuff;
+        var thoNguyen = stats.ThoNguyen + newInfoLevel.thoNguyenBuff;
+        dirty = true;
+        var levelUpdated = new LevelUpdated()
+        {
+            Level = level,
+            CurrentExp = CurrentExp,
+            HpMax =  maxHp,
+            ThanThuc = thanThuc,
+            DonToc =  docToc,
+            ThoNguyen = thoNguyen,
+        };
+        levelUpdated.ApplyTo(CharacterData);
+        return levelUpdated;
     }
 }

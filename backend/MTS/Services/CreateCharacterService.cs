@@ -243,7 +243,7 @@ public class CreateCharacterService
 
         if (money < 0)
         {
-            throw new Exception($"{Strings.NotEnoughMoney}: {money}");
+            throw new Exception($"{Strings.NotEnoughNatural}: {money}");
         }
         stats.SetValue(StatType.Hp, stats.SinhMenh);
         Char.Stats = stats;

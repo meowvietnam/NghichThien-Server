@@ -3,9 +3,9 @@ set -e
 BRANCH="main"
 COMMIT_MSG=${1:-"build: update build output"}
 echo "===> Build project"
-dotnet publish -p:NoWarn="*" -c Release -r linux-x64 --no-self-contained -o ./bin/Build
+dotnet publish -p:NoWarn="*" -c Release -r linux-x64 --no-self-contained -o ./bin/MTS-Server-Build
 echo "===> Move to build folder"
-cd ./bin/Build
+cd ./bin/MTS-Server-Build
 echo "===> Git add"
 git add .
 echo "===> Commit"

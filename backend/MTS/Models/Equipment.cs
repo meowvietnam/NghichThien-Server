@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MTS.Game.LuyenKhi;
 using MTS.Network.Models;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
@@ -28,6 +29,8 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
     public LuyenKhiRewardItem Item => LuyenKhiResources.Instance.RewardItems.FirstOrDefault(x => x.Id == Id);
     [NotMapped]
     public Material[] Materials => LuyenKhiResources.Instance.Materials.Where(x => MaterialIds.Contains((ushort)x.Id)).ToArray();
+    [NotMapped]
+    public EquipmentGradeConfig GradeConfig => LuyenKhiResources.Instance.EquipmentGrades.FirstOrDefault(x=>x.Grade == GetGrade());
     public void Deserialize(IReader reader, ref Equipment value)
     {
         value.SelfId = reader.Read<ushort>();
@@ -94,5 +97,42 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
     public override int GetHashCode()
     {
         return HashCode.Combine(SelfId, Id);
+    }
+
+    public Material[] GetMaterialsWithEffectType(EffectType effectType)
+    {
+        var artifactType = Item.Type;
+        var config = LuyenKhiResources.Instance.LianQiEffects.FirstOrDefault(c =>
+            c.Effects.Any(e => e.EffectType == effectType && e.ArtifactType == artifactType)
+        );
+        if (config == null) return Array.Empty<Material>();
+        return Materials.Where(m =>
+            m.CultivationElement == config.CultivationElement &&
+            m.YinYangType == config.YinYangType
+        ).ToArray();
+    }
+    public (int min, int max) GetMinMaxValue(EffectType effectType)
+    {
+        var artifactType = Item.Type;
+        var allConfigs = LuyenKhiResources.Instance.LianQiEffects;
+
+        var validConfigs = allConfigs.Where(c =>
+            c.Effects.Any(e => e.EffectType == effectType && e.ArtifactType == artifactType)
+        ).ToList();
+        if (validConfigs.Count == 0) return (0, 0);
+        var effectData = validConfigs[0].Effects.First(e => e.EffectType == effectType && e.ArtifactType == artifactType);
+        if (effectData.Value == 0) return (0, 0);
+        int sumGrade = 0;
+        foreach (var config in validConfigs)
+        {
+            sumGrade += Materials
+                .Where(m => m.CultivationElement == config.CultivationElement
+                            && m.YinYangType == config.YinYangType)
+                .Sum(m => LuyenKhiResources.Instance.MaterialGradeConfigs
+                    .FirstOrDefault(x => x.Tier == m.Tier)?.Grade ?? 0);
+        }
+        int maxValue = Mathf.RoundToInt(1.0f * sumGrade / effectData.Value);
+        int minValue = Mathf.RoundToInt(0.5f * maxValue);
+        return (minValue, maxValue);
     }
 }
