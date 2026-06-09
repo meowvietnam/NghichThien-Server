@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using MTS.Models;
 using MTS.Network.ClientState;
+using MTS.Network.Core;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -169,5 +170,26 @@ public class Client : ClientConnection, ISender<MessageTag>
     {
         var inventory = await GetInventory();
         return await MailManager.ClaimAllMails(inventory);
+    }
+
+    public void OnSelectedCharacter()
+    {
+        var module = CoreModule;
+        module.RemoveHandler<MailHandler>();
+        var mailHandler = new MailHandler(this);
+        module.AddHandler(mailHandler);
+        module.RemoveHandler<InventoryHandler>();
+        var inventoryHandler = new InventoryHandler(this);
+        module.AddHandler(inventoryHandler);
+        module.RemoveHandler<AdminHandler>();
+        var adminHandler = new AdminHandler(this);
+        module.AddHandler(adminHandler);
+        var sceneManager = new SceneManager(this);
+        module.RemoveHandler<SceneManager>();
+        module.AddHandler(sceneManager);
+        var skillHandler = new SkillHandler(this);
+        module.RemoveHandler<SkillHandler>();
+        module.AddHandler(skillHandler);
+        ChangeState(new AllMaps(this));
     }
 }

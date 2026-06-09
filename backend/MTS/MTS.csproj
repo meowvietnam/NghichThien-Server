@@ -44,7 +44,7 @@
       <None Remove="Data\StepConfig.bin" />
       <None Remove="Data\skin-resources.bin" />
       <Content Include="Data\skin-resources.bin">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
       <None Remove="Data\maps.bin" />
       <Content Include="Data\maps.bin">

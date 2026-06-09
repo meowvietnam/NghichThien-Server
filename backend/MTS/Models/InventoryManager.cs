@@ -573,6 +573,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         CongPhapOwners.Add(congPhap);
         Tracking.CongPhaps.Add(congPhap);
     }
+
+    public void Add(ThanThong thanThong)
+    {
+        thanThong.CharId = CharId;
+        ThanThongOwners.Add(thanThong);
+        Tracking.ThanThongs.Add(thanThong);
+    }
     public void ApplyModify(InventoryModify m)
     {
         m.Apply(this, Tracking);

@@ -134,6 +134,7 @@ public enum EKeyWord
 
 public class BaseSkill : BaseData
 {
+    public int baseTimeLearn;
     public ETierSkill eTierSkill;
     public ETypeSkill[] eTypeSkill;
 
@@ -143,7 +144,8 @@ public class BaseSkill : BaseData
     public override int ByteSize()
     {
         return base.ByteSize() + eTierSkill.ByteSize() + eTypeSkill.ByteSize()
-               + eKeywordSkillHave.ByteSize() + eKeywordBuffSkillHave.ByteSize();
+               + eKeywordSkillHave.ByteSize() + eKeywordBuffSkillHave.ByteSize()
+               + baseTimeLearn.ByteSize();
     }
 
     public void Deserialize(IReader reader, ref BaseSkill value)
@@ -154,6 +156,7 @@ public class BaseSkill : BaseData
         value.eTypeSkill = reader.ReadArray<ETypeSkill>();
         value.eKeywordSkillHave = reader.ReadArray<EKeyWord>();
         value.eKeywordBuffSkillHave = reader.ReadArray<EBuffAndDeBuff>();
+        value.baseTimeLearn = reader.Read<int>();
     }
 
     public override void Serialize(IWriter writer)
@@ -163,5 +166,6 @@ public class BaseSkill : BaseData
         writer.WriteArray(eTypeSkill);
         writer.WriteArray(eKeywordSkillHave);
         writer.WriteArray(eKeywordBuffSkillHave);
+        writer.Write(baseTimeLearn);
     }
 }

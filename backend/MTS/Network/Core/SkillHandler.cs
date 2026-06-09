@@ -13,7 +13,7 @@ public class SkillHandler : IClientHandler
     private static MessageTag[] handler =
     [
         MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,
-        MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen
+        MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen, MessageTag.LinhNgo
     ];
 
     public MessageTag[] HandleTag => handler;
@@ -173,7 +173,31 @@ public class SkillHandler : IClientHandler
             }
             finally
             {
-                client.Send(MessageTag.TuLuyen, result);
+                client.Send(MessageTag.TuLuyenResult, result);
+            }
+        }
+        else if (tag == MessageTag.LinhNgo)
+        {
+            var request = reader.Read<LinhNgo>();
+            LinhNgoResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    result = charData.LinhNgo(request);
+                }
+            }
+            catch (Exception e)
+            {
+                result = new LinhNgoResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.LinhNgoResult, result);
             }
         }
     }

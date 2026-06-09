@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.ItemProvider;
 using MTS.Game.Resources;
 using MTS.Localization;
 using MTS.Network.Models;
@@ -484,6 +485,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 Success = true,
                 CurrentExp = exp,
+                RemainingMoney = remaining,
             };
         }
 
@@ -491,6 +493,101 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Success = true,
             LevelUpdated = levelUpdated,
+            RemainingMoney = remaining,
         };
+    }
+
+    public LinhNgoResult? LinhNgo(LinhNgo request)
+    {
+        var type = request.Type;
+        var id = (ushort)request.Id;
+        if (type == ItemType.CongPhap)
+        {
+            var cpRef = new CongPhap()
+            {
+                Id = id,
+            };
+            var congPhapOwners = InventoryManager.CongPhapOwners;
+            if (congPhapOwners.Contains(cpRef))
+            {
+                throw new Exception(Strings.CongPhapOwned);
+            }
+            var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
+            if (cp == null)
+            {
+                throw new Exception(Strings.CongPhapNotFound);
+            }
+
+            var time = TimeSpan.FromDays(cp.baseTimeLearn);
+            var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
+            var price = provider.GetPriceItemBuy(id);
+            var money = Stats.LinhThach;
+            var remaining = money - price/2;
+            if (remaining < 0)
+            {
+                throw new Exception(Strings.NotEnoughMoney);
+            }
+            var congPhap = new CongPhap()
+            {
+                Id = id,
+                Level = 1
+            };
+            var newTuoiTac = Stats.TuoiTac + time;
+            InventoryManager.Add(congPhap);
+            Stats.SetLinhThach(remaining);
+            Stats.SetTuoiTac(newTuoiTac);
+            return new LinhNgoResult()
+            {
+                Success = true,
+                Id = id,
+                Type = type,
+                RemainingMoney = remaining,
+                NewTuoiTac = newTuoiTac,
+            };
+        }
+
+        if (type == ItemType.ThanThong)
+        {
+            var ttRef = new ThanThong()
+            {
+                Id = id,
+            };
+            var thanThongOwners = InventoryManager.ThanThongOwners;
+            if (thanThongOwners.Contains(ttRef))
+            {
+                throw new Exception(Strings.ThanThongOwned);
+            }
+            var tt = GameConfig.NDCPTTManager.ThanThongs.FirstOrDefault(x => x.Id == id);
+            if (tt == null)
+            {
+                throw new Exception(Strings.ThanThongNotFound);
+            }
+            var time = TimeSpan.FromDays(tt.baseTimeLearn);
+            var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
+            var price = provider.GetPriceItemBuy(id);
+            var money = Stats.LinhThach;
+            var remaining = money - price/2;
+            if (remaining < 0)
+            {
+                throw new Exception(Strings.NotEnoughMoney);
+            }
+            var thanThong = new ThanThong()
+            {
+                Id = id,
+            };
+            var newTuoiTac = Stats.TuoiTac + time;
+            InventoryManager.Add(thanThong);
+            Stats.SetLinhThach(remaining);
+            Stats.SetTuoiTac(newTuoiTac);
+            return new LinhNgoResult()
+            {
+                Success = true,
+                Id = id,
+                Type = type,
+                RemainingMoney = remaining,
+                NewTuoiTac = newTuoiTac,
+            };
+        }
+        throw new Exception(Strings.NotSupportItemType);
     }
 }

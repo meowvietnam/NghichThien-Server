@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -8,8 +9,8 @@ using Network;
 using Network.Extensions;
 
 namespace MTS.Models;
-
-public class LevelUpdated : IMemorySerializable<LevelUpdated>
+[MemoryPackable]
+public partial class LevelUpdated
 {
     public int Level { get; set; }
     public int CurrentExp { get; set; }
@@ -17,33 +18,6 @@ public class LevelUpdated : IMemorySerializable<LevelUpdated>
     public int ThanThuc { get; set; }
     public int DonToc { get; set; }
     public int ThoNguyen { get; set; }
-
-    public void Deserialize(IReader reader, ref LevelUpdated value)
-    {
-        value.Level = reader.Read<int>();
-        value.CurrentExp = reader.Read<int>();
-        value.HpMax = reader.Read<int>();
-        value.ThanThuc = reader.Read<int>();
-        value.DonToc = reader.Read<int>();
-        value.ThoNguyen = reader.Read<int>();
-    }
-
-    public int ByteSize()
-    {
-        return Level.ByteSize() + CurrentExp.ByteSize() + HpMax.ByteSize() + ThanThuc.ByteSize()
-               + DonToc.ByteSize() + ThoNguyen.ByteSize();
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Level);
-        writer.Write(CurrentExp);
-        writer.Write(HpMax);
-        writer.Write(ThanThuc);
-        writer.Write(DonToc);
-        writer.Write(ThoNguyen);
-    }
-
     public void ApplyTo(CharacterData charData)
     {
         var progression = charData.Progression;

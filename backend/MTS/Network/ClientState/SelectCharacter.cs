@@ -83,23 +83,8 @@ namespace MTS.Network.ClientState
                         Content = "Test mail Content",
                         Rewards =  rewards,
                     });
-                    var module = client.CoreModule;
-                    module.RemoveHandler<MailHandler>();
-                    var mailHandler = new MailHandler(client);
-                    module.AddHandler(mailHandler);
-                    module.RemoveHandler<InventoryHandler>();
-                    var inventoryHandler = new InventoryHandler(client);
-                    module.AddHandler(inventoryHandler);
-                    module.RemoveHandler<AdminHandler>();
-                    var adminHandler = new AdminHandler(client);
-                    module.AddHandler(adminHandler);
-                    var sceneManager = new SceneManager(client);
-                    module.RemoveHandler<SceneManager>();
-                    module.AddHandler(sceneManager);
-                    var skillHandler = new SkillHandler(client);
-                    module.RemoveHandler<SkillHandler>();
-                    module.AddHandler(skillHandler);
-                    client.ChangeState(new AllMaps(client));
+
+                    client.OnSelectedCharacter();
                 }
                 catch (Exception e)
                 {

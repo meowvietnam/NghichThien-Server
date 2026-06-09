@@ -5,36 +5,31 @@ namespace MTS.Game.ItemProvider
 {
     public abstract class SkillProvider : ItemProvider<BaseSkill.BaseSkill>
     {
-
         public override int GetPriceItemSell(ushort Id)
         {
             var data = GetDataItemById(Id);
             if (data != null)
             {
                 return GameConfig.PriceTTWithTier[data.eTierSkill];
-
             }
-            return 0;
 
+            return 0;
         }
-        
     }
+
     public class ThanThongBooProvider : SkillProvider
     {
         public override ItemType SupportedType => ItemType.ThanThong;
-
-
 
         public override BaseSkill.BaseSkill GetDataItemById(ushort Id)
         {
             return GameConfig.NDCPTTManager.GetThanThongWithId(Id);
         }
     }
-    
+
     public class CongPhapBookProvider : SkillProvider
     {
         public override ItemType SupportedType => ItemType.CongPhap;
-
 
         public override BaseSkill.BaseSkill GetDataItemById(ushort Id)
         {
