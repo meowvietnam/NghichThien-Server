@@ -41,7 +41,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="TT\.DS_Store" />
       <None Remove="Data\StepConfig.bin" />
       <None Remove="Data\skin-resources.bin" />
       <Content Include="Data\skin-resources.bin">
