@@ -501,14 +501,23 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         var type = request.Type;
         var id = (ushort)request.Id;
+        var itemRef = new ItemRef()
+        {
+            Id = id,
+            Type = type,
+        };
         if (type == ItemType.CongPhap)
         {
-            var cpRef = new CongPhap()
+            if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < 1)
+            {
+                throw new Exception(Strings.CongPhapNotOwned);
+            }
+            var cpOwnerRef = new CongPhap()
             {
                 Id = id,
             };
             var congPhapOwners = InventoryManager.CongPhapOwners;
-            if (congPhapOwners.Contains(cpRef))
+            if (congPhapOwners.Contains(cpOwnerRef))
             {
                 throw new Exception(Strings.CongPhapOwned);
             }
@@ -536,6 +545,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
             InventoryManager.Add(congPhap);
             Stats.SetLinhThach(remaining);
             Stats.SetTuoiTac(newTuoiTac);
+            cpRef.Count -= 1;
+            if (cpRef.Count < 1)
+            {
+                InventoryManager.Remove(cpRef);
+            }
+            else
+            {
+                InventoryManager.Update(cpRef);
+            }
             return new LinhNgoResult()
             {
                 Success = true,
@@ -548,12 +566,16 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         if (type == ItemType.ThanThong)
         {
-            var ttRef = new ThanThong()
+            if (!InventoryManager.ThanThongs.TryGetValue(itemRef, out var ttRef) || ttRef.Count < 1)
+            {
+                throw new Exception(Strings.CongPhapNotOwned);
+            }
+            var ttOwnerRef = new ThanThong()
             {
                 Id = id,
             };
             var thanThongOwners = InventoryManager.ThanThongOwners;
-            if (thanThongOwners.Contains(ttRef))
+            if (thanThongOwners.Contains(ttOwnerRef))
             {
                 throw new Exception(Strings.ThanThongOwned);
             }
@@ -579,6 +601,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
             InventoryManager.Add(thanThong);
             Stats.SetLinhThach(remaining);
             Stats.SetTuoiTac(newTuoiTac);
+            ttRef.Count -= 1;
+            if (ttRef.Count < 1)
+            {
+                InventoryManager.Remove(ttRef);
+            }
+            else
+            {
+                InventoryManager.Update(ttRef);
+            }
             return new LinhNgoResult()
             {
                 Success = true,
