@@ -20,6 +20,9 @@ public static class GameConfig
     public static LuyenKhiResources LuyenKhiResources { get; private set; }
     public static NDCPTTManager NDCPTTManager { get; private set; }
     public static NgoDaoManager NgoDaoManager { get; private set; }
+
+    public static MainQuestManagerModel MainQuestManagerModel { get; private set; }
+
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public const int OriginalMoney = 20;
 
@@ -154,5 +157,6 @@ public static class GameConfig
         LuyenKhiResources = Read<LuyenKhiResources>("Data/LuyenKhiResources.bin");
         NDCPTTManager = Read<NDCPTTManager>("Data/NDCPTTManager.bin");
         NgoDaoManager = Read<NgoDaoManager>("Data/NgoDaoManager.bin");
+        MainQuestManagerModel = Read<MainQuestManagerModel>("Data/MainQuestManagerModel.bin");
     }
 }

@@ -652,4 +652,35 @@ public class CharacterData : IMemorySerializable<CharacterData>
             TypeMonPhai = request,
         };
     }
+    public CompleteMainQuestResult? CompleteMainQuest(int mainQuestComplete)
+    {
+       
+        if (mainQuestComplete != this.QuestManager.CurrentMainQuest)
+        {
+            throw new Exception(Strings.Hacker);
+        }
+        int trueID = QuestManager.CurrentMainQuest + 1;
+        var questRS = GameConfig.MainQuestManagerModel.MainQuestResource.FirstOrDefault(x => x.Id == trueID);
+        if(questRS == null)
+        {
+            throw new Exception(Strings.MainQuestResourceNotExist);
+
+        }
+        else
+        {
+            if (this.Progression.Level < questRS.levelRequire)
+            {
+                throw new Exception(Strings.Hacker);
+            }
+        }
+        QuestManager.SetCurrentMainQuest(QuestManager.CurrentMainQuest + 1);
+        return new CompleteMainQuestResult()
+        {
+            Success = true,
+            CurrentMainQuest = QuestManager.CurrentMainQuest,
+        };
+
+
+
+    }
 }

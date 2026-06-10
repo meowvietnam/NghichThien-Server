@@ -92,4 +92,7 @@ public enum MessageTag
 
     JoinMonPhai = 392,
     JoinMonPhaiResult = 393,
+
+    CompleteMainQuest = 401,
+    CompleteMainQuestResult = 402,
 }

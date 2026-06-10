@@ -195,6 +195,10 @@ public class Client : ClientConnection, ISender<MessageTag>
         module.RemoveHandler<MonPhaiHandler>();
         module.AddHandler(monPhaiHandler);
 
+        var questHandler = new QuestHandler(this);
+        module.RemoveHandler<QuestHandler>();
+        module.AddHandler(questHandler);
+
         ChangeState(new AllMaps(this));
     }
 }
