@@ -57,4 +57,7 @@ public static class Strings
     public static string? CongPhapOwned { get; set; }
     public static string? ThanThongOwned { get; set; }
     public static string? NotSupportItemType { get; set; }
+    public static string? NotCompleteFirstMainQuest { get; set; }
+    public static string? MonPhaiExisted { get; set; }
+
 }

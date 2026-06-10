@@ -590,4 +590,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         throw new Exception(Strings.NotSupportItemType);
     }
+    public JoinMonPhaiResult? JoinMonPhai(EMonPhai request)
+    {
+        if(Stats.CharacterData.QuestManager.CurrentMainQuest <= 0)
+        {
+            throw new Exception(Strings.NotCompleteFirstMainQuest);
+
+        }
+        if (Stats.CharacterData.MonPhai != EMonPhai.None)
+        {
+            throw new Exception(Strings.MonPhaiExisted);
+
+        }
+        Stats.CharacterData.SetMonPhai(request);
+        return new JoinMonPhaiResult()
+        {
+            Success = true,
+            TypeMonPhai = request,
+            
+        };
+    }
 }

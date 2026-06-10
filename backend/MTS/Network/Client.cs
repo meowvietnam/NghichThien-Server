@@ -190,6 +190,11 @@ public class Client : ClientConnection, ISender<MessageTag>
         var skillHandler = new SkillHandler(this);
         module.RemoveHandler<SkillHandler>();
         module.AddHandler(skillHandler);
+
+        var monPhaiHandler = new MonPhaiHandler(this);
+        module.RemoveHandler<MonPhaiHandler>();
+        module.AddHandler(monPhaiHandler);
+
         ChangeState(new AllMaps(this));
     }
 }

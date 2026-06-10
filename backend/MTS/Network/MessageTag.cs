@@ -86,4 +86,7 @@ public enum MessageTag
     
     LinhNgo = 382,
     LinhNgoResult = 383,
+
+    JoinMonPhai = 392,
+    JoinMonPhaiResult = 393,
 }
