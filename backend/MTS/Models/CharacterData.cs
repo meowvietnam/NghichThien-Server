@@ -474,6 +474,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             return (int)total;
         }
+
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
         var exp = Progression.CurrentExp + buffExp;
         var levelUpdated = Progression.SetCurrentExp(exp);
@@ -512,6 +513,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.CongPhapNotOwned);
             }
+
             var cpOwnerRef = new CongPhap()
             {
                 Id = id,
@@ -521,6 +523,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.CongPhapOwned);
             }
+
             var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
             if (cp == null)
             {
@@ -531,11 +534,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
-            var remaining = money - price/2;
+            var remaining = money - price / 2;
             if (remaining < 0)
             {
                 throw new Exception(Strings.NotEnoughMoney);
             }
+
             var congPhap = new CongPhap()
             {
                 Id = id,
@@ -554,6 +558,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(cpRef);
             }
+
             return new LinhNgoResult()
             {
                 Success = true,
@@ -570,6 +575,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.CongPhapNotOwned);
             }
+
             var ttOwnerRef = new ThanThong()
             {
                 Id = id,
@@ -579,20 +585,23 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.ThanThongOwned);
             }
+
             var tt = GameConfig.NDCPTTManager.ThanThongs.FirstOrDefault(x => x.Id == id);
             if (tt == null)
             {
                 throw new Exception(Strings.ThanThongNotFound);
             }
+
             var time = TimeSpan.FromDays(tt.baseTimeLearn);
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
-            var remaining = money - price/2;
+            var remaining = money - price / 2;
             if (remaining < 0)
             {
                 throw new Exception(Strings.NotEnoughMoney);
             }
+
             var thanThong = new ThanThong()
             {
                 Id = id,
@@ -610,6 +619,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(ttRef);
             }
+
             return new LinhNgoResult()
             {
                 Success = true,
@@ -619,26 +629,27 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 NewTuoiTac = newTuoiTac,
             };
         }
+
         throw new Exception(Strings.NotSupportItemType);
     }
+
     public JoinMonPhaiResult? JoinMonPhai(EMonPhai request)
     {
-        if(Stats.CharacterData.QuestManager.CurrentMainQuest <= 0)
+        if (QuestManager.CurrentMainQuest <= 0)
         {
             throw new Exception(Strings.NotCompleteFirstMainQuest);
-
         }
-        if (Stats.CharacterData.MonPhai != EMonPhai.None)
+
+        if (MonPhai != EMonPhai.None)
         {
             throw new Exception(Strings.MonPhaiExisted);
-
         }
-        Stats.CharacterData.SetMonPhai(request);
+
+        SetMonPhai(request);
         return new JoinMonPhaiResult()
         {
             Success = true,
             TypeMonPhai = request,
-            
         };
     }
 }
