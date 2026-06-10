@@ -2,6 +2,7 @@
 setlocal
 
 set BRANCH=main
+set BUILD_DIR=.\bin\MTS-Server-Build
 
 if "%~1"=="" (
     set COMMIT_MSG=build: update build output
@@ -9,12 +10,24 @@ if "%~1"=="" (
     set COMMIT_MSG=%*
 )
 
+echo ===> Prepare build folder
+if not exist "%BUILD_DIR%\.git" (
+    echo Build folder is not a Git repository: %BUILD_DIR%
+    exit /b 1
+)
+git -C "%BUILD_DIR%" reset --hard
+if errorlevel 1 exit /b 1
+git -C "%BUILD_DIR%" clean -fd
+if errorlevel 1 exit /b 1
+git -C "%BUILD_DIR%" pull origin %BRANCH%
+if errorlevel 1 exit /b 1
+
 echo ===> Build project
-dotnet publish -p:NoWarn="*" -c Release -r linux-x64 --no-self-contained -o .\bin\MTS-Server-Build
+dotnet publish -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release -r linux-x64 --no-self-contained -o "%BUILD_DIR%"
 if errorlevel 1 exit /b 1
 
 echo ===> Move to build folder
-cd /d .\bin\MTS-Server-Build
+cd /d "%BUILD_DIR%"
 if errorlevel 1 exit /b 1
 
 echo ===> Git add
