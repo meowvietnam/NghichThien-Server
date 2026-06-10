@@ -58,6 +58,8 @@ public enum MessageTag
     AddThanThongResult = 235,
     AddCongPhap = 236,
     AddCongPhapResult = 237,
+    SetMoneyVip = 238,
+    SetMoneyVipResult = 239,
     
     
     
