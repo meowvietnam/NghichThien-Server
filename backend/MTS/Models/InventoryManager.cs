@@ -429,11 +429,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Tracking.Items.Update(item);
                 return true;
             }
-
             return false;
         });
     }
-
+    
     public bool Remove(ItemRef itemRef)
     {
         var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };

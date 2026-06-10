@@ -50,13 +50,14 @@ public static class Strings
     public static string CongPhapNotOwned => _current.CongPhapNotOwned;
     public static string SlotCongPhapEmpty => _current.SlotCongPhapEmpty;
     public static string NotEnoughMoney => _current.NotEnoughMoney;
-    public static string? ExceedLimit { get; set; }
-    public static string? CongPhapNotFound { get; set; }
     public static string MainCultivationRequiredForRetreat => _current.MainCultivationRequiredForRetreat;
-    public static string? ThanThongNotFound { get; set; }
-    public static string? CongPhapOwned { get; set; }
-    public static string? ThanThongOwned { get; set; }
-    public static string? NotSupportItemType { get; set; }
+    public static string ExceedLimit => _current.ExceedLimit;
+    public static string CongPhapNotFound => _current.CongPhapNotFound;
+    public static string ThanThongNotFound => _current.ThanThongNotFound;
+    public static string CongPhapOwned => _current.CongPhapOwned;
+    public static string ThanThongOwned => _current.ThanThongOwned;
+    public static string NotSupportItemType => _current.NotSupportItemType;
+
     public static string? NotCompleteFirstMainQuest { get; set; }
     public static string? MonPhaiExisted { get; set; }
 

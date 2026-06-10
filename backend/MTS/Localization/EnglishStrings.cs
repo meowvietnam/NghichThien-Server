@@ -45,4 +45,11 @@ public class EnglishStrings : ILanguageStrings
 
     public override string MainCultivationRequiredForRetreat =>
         "Only the main cultivation technique can be used for closed-door cultivation!";
+
+    public override string ExceedLimit => "Retreat duration exceeds the allowed limit!";
+    public override string CongPhapNotFound => "Cong Phap does not exist!";
+    public override string ThanThongNotFound => "Than Thong does not exist!";
+    public override string CongPhapOwned => "This Cong Phap is already owned!";
+    public override string ThanThongOwned => "This Than Thong is already owned!";
+    public override string NotSupportItemType => "Item type is not supported!";
 }
