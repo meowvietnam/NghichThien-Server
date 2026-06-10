@@ -72,6 +72,12 @@ public class AdminHandler : IClientHandler
             client.CharacterData.SetMoneyVip(moneyVip);
             client.Send(MessageTag.SetMoneyVipResult, moneyVip);
         }
+        else if (tag == MessageTag.SetMoney)
+        {
+            var money = reader.Read<int>();
+            client.CharacterData.Stats.SetLinhThach(money);
+            client.Send(MessageTag.SetMoneyResult, money);
+        }
     }
 
     public void OnLeave()
@@ -81,7 +87,7 @@ public class AdminHandler : IClientHandler
     private static readonly MessageTag[] handler =
     [
         MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo,
-        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip
+        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney
     ];
 
     public MessageTag[] HandleTag => handler;

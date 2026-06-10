@@ -60,7 +60,8 @@ public enum MessageTag
     AddCongPhapResult = 237,
     SetMoneyVip = 238,
     SetMoneyVipResult = 239,
-    
+    SetMoney = 240,
+    SetMoneyResult = 241,
     
     
     ChangeScene = 256,
