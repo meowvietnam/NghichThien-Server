@@ -498,7 +498,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         };
     }
 
-    public LinhNgoResult? LinhNgo(LinhNgo request)
+    public LinhNgoResult LinhNgo(LinhNgo request)
     {
         var type = request.Type;
         var id = (ushort)request.Id;

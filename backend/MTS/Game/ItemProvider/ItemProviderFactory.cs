@@ -9,9 +9,9 @@ namespace MTS.Game.ItemProvider
             return GetRawProvider(itemType, inventoryManager) as IItemProvider;
         }
 
-        public static ItemProvider<T>? GetProvider<T>(ItemType itemType, InventoryManager inventoryManager)
+        public static T GetProvider<T>(ItemType itemType, InventoryManager inventoryManager) where T : IItemProvider
         {
-            return GetRawProvider(itemType, inventoryManager) as ItemProvider<T>;
+            return (T)GetRawProvider(itemType, inventoryManager)!;
         }
 
         private static object? GetRawProvider(ItemType itemType, InventoryManager inventoryManager)
