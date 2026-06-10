@@ -61,7 +61,10 @@ public static class Strings
     public static string? NotCompleteFirstMainQuest { get; set; }
     public static string? MonPhaiExisted { get; set; }
 
-    public static string? Hacker { get; set; }
+    public static string? HackerMainQuest { get; set; }
     public static string? MainQuestResourceNotExist { get; set; }
+
+    public static string? HackerSideQuest { get; set; }
+
 
 }

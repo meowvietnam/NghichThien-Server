@@ -14,7 +14,7 @@ namespace MTS.Network.Core
         }
         private static MessageTag[] handler =
         [
-               MessageTag.CompleteMainQuest,
+               MessageTag.CompleteMainQuest, MessageTag.CompleteSideQuest
         ];
 
         public MessageTag[] HandleTag => handler;
@@ -47,7 +47,31 @@ namespace MTS.Network.Core
                 {
                     client.Send(MessageTag.CompleteMainQuestResult, result);
                 }
-            }    
+            }
+            else if (tag == MessageTag.CompleteSideQuest)
+            {
+                var request = reader.Read<CompleteSideQuest>();
+                CompleteSideQuestResult result = null;
+                try
+                {
+                    lock (charData)
+                    {
+                        result = charData.CompleteSideQuest(request);
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new CompleteSideQuestResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.Send(MessageTag.CompleteSideQuestResult, result);
+                }
+            }
         }
 
         public void OnDisconnect(IProtocol<MessageTag> protocol)

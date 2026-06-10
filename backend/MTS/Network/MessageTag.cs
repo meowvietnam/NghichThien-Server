@@ -95,4 +95,7 @@ public enum MessageTag
 
     CompleteMainQuest = 401,
     CompleteMainQuestResult = 402,
+
+    CompleteSideQuest = 403,
+    CompleteSideQuestResult = 404,
 }

@@ -657,7 +657,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
        
         if (mainQuestComplete != this.QuestManager.CurrentMainQuest)
         {
-            throw new Exception(Strings.Hacker);
+            throw new Exception(Strings.HackerMainQuest);
         }
         int trueID = QuestManager.CurrentMainQuest + 1;
         var questRS = GameConfig.MainQuestManagerModel.MainQuestResource.FirstOrDefault(x => x.Id == trueID);
@@ -670,7 +670,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             if (this.Progression.Level < questRS.levelRequire)
             {
-                throw new Exception(Strings.Hacker);
+                throw new Exception(Strings.HackerMainQuest);
             }
         }
         QuestManager.SetCurrentMainQuest(QuestManager.CurrentMainQuest + 1);
@@ -679,6 +679,31 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Success = true,
             CurrentMainQuest = QuestManager.CurrentMainQuest,
         };
+
+
+
+    }
+    public CompleteSideQuestResult? CompleteSideQuest(CompleteSideQuest sideQuestComplete)
+    {
+
+        
+        if (this.QuestManager.CurrentCountSideQuest >= 10)
+        {
+            throw new Exception(Strings.HackerSideQuest);
+
+        }
+        foreach (var item in sideQuestComplete.ListIdNpc)
+        {
+            // add tăng mối quan hệ với npc này thêm 10 điểm 
+            //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
+
+        }
+        return new CompleteSideQuestResult()
+        {
+            Success = true,
+            MoneyVipRandom = Random.Shared.Next(5, 20)
+        };
+
 
 
 
