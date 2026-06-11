@@ -719,7 +719,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         return new CompleteSideQuestResult()
         {
             Success = true,
-            MoneyVipRandom = moneyVip
+            MoneyVipRandom = moneyVip,
+            CurrentSideQuest = this.QuestManager.CurrentCountSideQuest,
         };
 
 

@@ -9,5 +9,7 @@ namespace MTS.Network.Models
         public bool Success { get; set; }
         public string? Message { get; set; }
         public int MoneyVipRandom { get; set; }
+        public int CurrentSideQuest { get; set; }
+
     }
 }
