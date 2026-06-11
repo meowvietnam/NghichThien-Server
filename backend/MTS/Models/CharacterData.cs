@@ -673,6 +673,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 throw new Exception(Strings.HackerMainQuest);
             }
         }
+        int linhThach = questRS.rewardRef.Money;
+        int moneyVip = questRS.rewardRef.MoneyVip;
+        var itemRefs = questRS.rewardRef.ItemRefs;
+        if(linhThach > 0)
+        {
+            Stats.SetLinhThach(Stats.LinhThach + linhThach);
+        }
+        if (moneyVip > 0)
+        {
+            SetMoneyVip(moneyVip + this.MoneyVip);
+        }
+        if(itemRefs.Count > 0)
+        {
+            InventoryManager.AddToInventory(itemRefs);
+        }    
         QuestManager.SetCurrentMainQuest(QuestManager.CurrentMainQuest + 1);
         return new CompleteMainQuestResult()
         {
@@ -692,16 +707,19 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception(Strings.HackerSideQuest);
 
         }
+        int moneyVip = Random.Shared.Next(5, 20);
         foreach (var item in sideQuestComplete.ListIdNpc)
         {
             // add tăng mối quan hệ với npc này thêm 10 điểm 
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
 
         }
+
+        SetMoneyVip(this.MoneyVip + moneyVip);
         return new CompleteSideQuestResult()
         {
             Success = true,
-            MoneyVipRandom = Random.Shared.Next(5, 20)
+            MoneyVipRandom = moneyVip
         };
 
 
