@@ -714,7 +714,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
 
         }
-
+        this.QuestManager.SetCurrentCountSideQuest(this.QuestManager.CurrentCountSideQuest + 1);
         SetMoneyVip(this.MoneyVip + moneyVip);
         return new CompleteSideQuestResult()
         {

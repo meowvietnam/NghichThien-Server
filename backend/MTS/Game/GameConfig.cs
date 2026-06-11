@@ -157,6 +157,6 @@ public static class GameConfig
         LuyenKhiResources = Read<LuyenKhiResources>("Data/LuyenKhiResources.bin");
         NDCPTTManager = Read<NDCPTTManager>("Data/NDCPTTManager.bin");
         NgoDaoManager = Read<NgoDaoManager>("Data/NgoDaoManager.bin");
-        //MainQuestManagerModel = Read<MainQuestManagerModel>("Data/MainQuestManagerModel.bin");
+        MainQuestManagerModel = Read<MainQuestManagerModel>("Data/MainQuestManagerModel.bin");
     }
 }
