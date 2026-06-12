@@ -38,7 +38,12 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
 
     public void ClearDanCombat()
     {
-
+        foreach (var danCombatUsed in DanCombatUseds)
+        {
+            tracking.DanCombatUseds.Delete(danCombatUsed);
+        }
+        DanCombatUseds.Clear();
+        isDirty1 = true;
     }
     public ThanThongEquip EquipThanThong(EquipThanThong request)
     {
