@@ -66,5 +66,8 @@ public static class Strings
 
     public static string? HackerSideQuest { get; set; }
 
+    public static string? HackerLevelEnemyCombat { get; set; }
+    public static string? HackerHP { get; set; }
+    public static string? HackerLevelBossCombat { get; set; }
 
 }

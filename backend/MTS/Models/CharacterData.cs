@@ -1,15 +1,18 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.Game.ItemProvider;
+using MTS.Game.LuyenDan;
 using MTS.Game.Resources;
 using MTS.Localization;
 using MTS.Network.Models;
+using MTS.Utils;
 using Network;
 using Network.Extensions;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace MTS.Models;
 
@@ -687,12 +690,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
         if(itemRefs.Count > 0)
         {
             InventoryManager.AddToInventory(itemRefs);
-        }    
-        QuestManager.SetCurrentMainQuest(QuestManager.CurrentMainQuest + 1);
+        }
+        int newMainQuest = QuestManager.CurrentMainQuest + 1;
+        QuestManager.SetCurrentMainQuest(newMainQuest);
         return new CompleteMainQuestResult()
         {
             Success = true,
-            CurrentMainQuest = QuestManager.CurrentMainQuest,
+            CurrentMainQuest = newMainQuest,
         };
 
 
@@ -714,17 +718,215 @@ public class CharacterData : IMemorySerializable<CharacterData>
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
 
         }
-        this.QuestManager.SetCurrentCountSideQuest(this.QuestManager.CurrentCountSideQuest + 1);
+        int newCountSideQuest = this.QuestManager.CurrentCountSideQuest + 1;
+        this.QuestManager.SetCurrentCountSideQuest(newCountSideQuest);
         SetMoneyVip(this.MoneyVip + moneyVip);
         return new CompleteSideQuestResult()
         {
             Success = true,
             MoneyVipRandom = moneyVip,
-            CurrentSideQuest = this.QuestManager.CurrentCountSideQuest,
+            CurrentSideQuest = newCountSideQuest,
         };
 
 
 
 
+    }
+    public WinCombatResult? WinCombat(WinCombat request)
+    {
+        // 1. Đếm số lần xuất hiện của từng ID trong request
+        var idCounts = request.ListIdThanThong
+            .GroupBy(id => id)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // 2. Tìm Thần Thông tương ứng và gom thành Dictionary<ThanThong, int>
+        var thanThongDict = GameConfig.NDCPTTManager.ThanThongs
+            .Where(x => idCounts.ContainsKey(x.Id))
+            .ToDictionary(
+                x => x,                  // Key là đối tượng ThanThong
+                x => idCounts[x.Id]      // Value là số lượng (count)
+            );
+        ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
+        {
+            return (ND.ETypeSkill)(int)eTypeSkill;
+        }
+        int baseAddCamNgo = 5;
+        List<CamNgo> camNgoAdd = new List<CamNgo>();
+        foreach (var item in thanThongDict)
+        {
+            foreach (var typeSkill in item.Key.eTypeSkill)
+            {
+                var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
+                var userCamNgo = this.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
+                var camNgo = new CamNgo
+                {
+                    Id = camNgoType,
+                    Value = (baseAddCamNgo * item.Value * (int)item.Key.eTierSkill) + userCamNgo.Value,
+
+                };
+                this.InventoryManager.AddOrUpdate(camNgo);
+                camNgoAdd.Add(camNgo);
+            }
+        }
+        int newHp = this.Stats.Hp;
+        RewardSnapshot newReward = new RewardSnapshot();
+        if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps || request.TypeCombat == Game.Combat.ETypeCombat.Boss)
+        {
+            if (request.CurrentHPUser > this.Stats.SinhMenh * 5)
+            {
+                throw new Exception(Strings.HackerHP);
+
+            }
+            if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps)
+            {
+                if(request.CurrentLevelEnemy > this.Progression.Level+2 )
+                {
+                    throw new Exception(Strings.HackerLevelEnemyCombat);
+
+                }
+            }
+            else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
+            {
+                // Tính toán level Boss hợp lệ dựa trên level của Player
+                int validBossLevel = ((this.Progression.Level - 1) / 3 + 1) * 3 + 1;
+
+                // Nếu level của con Boss trong trận đấu khác với level hợp lệ -> Chắc chắn hack
+                if (request.CurrentLevelEnemy != validBossLevel)
+                {
+                    throw new Exception(Strings.HackerLevelBossCombat);
+                }
+            }
+            newHp = request.CurrentHPUser;
+            this.EquipmentManager.ClearDanCombat();
+            this.Stats.SetHp(request.CurrentHPUser);
+         
+            int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
+            int monsterLevel = request.CurrentLevelEnemy;
+            var listItemRef = GenerateMonsterRewards(monsterLevel);
+            this.InventoryManager.AddToInventory(listItemRef);
+            newReward = new RewardSnapshot
+            {
+                Money = linhThach,
+                MoneyVip = 0,
+                ItemRefs = listItemRef
+            };
+        }
+        
+        
+        return new WinCombatResult()
+        {
+            Success = true,
+            NewHP = newHp,
+            NewCamNgo = camNgoAdd.ToArray(),
+            Reward = newReward,
+        };
+    }
+    public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
+    {
+        var itemRefs = new List<ItemRef>();
+
+        // 1. Xác định Cảnh giới gốc (0: Luyện Khí, 1: Trúc Cơ, 2: Kim Đan, 3: Nguyên Anh, 4: Hóa Thần, 5: Trên Hóa Thần)
+        int currentRealm = (monsterLevel - 1) / 3;
+        int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
+
+        // 2. Tính năng Bảo Hiểm / Đột Biến: Nếu ở max level của đại cảnh giới (3, 6, 9, 12, 15), có 5% ra phẩm lớn hơn 1 đại cảnh giới
+        bool isMaxLevelOfRealm = (monsterLevel % 3 == 0);
+        if (isMaxLevelOfRealm && Random.Shared.NextDouble() <= 0.05)
+        {
+            currentTierIndex++; // Nhảy vọt lên 1 phẩm cấp cao hơn
+        }
+
+        // Khống chế không vượt quá Lục Phẩm (Index 5 trong enum Tier)
+        if (currentTierIndex > 5) currentTierIndex = 5;
+
+        // 3. Tính toán phân bổ tỷ lệ động dựa trên level cụ thể
+        var tierWeights = CalculateTierWeights(monsterLevel, currentTierIndex);
+
+        // Tiến hành quay xúc xắc chọn Tier dựa trên Trọng Số (Weights)
+        Tier selectedTier = RollRandomTier(tierWeights);
+
+        // 4. Quyết định loại Item rơi ra (50% Material, 50% Herb)
+        ItemType selectedType = Random.Shared.NextDouble() < 0.5 ? ItemType.Material : ItemType.Herb;
+        int selectedId = 0;
+
+        if (selectedType == ItemType.Material)
+        {
+            var validMaterials = GameConfig.LuyenKhiResources.Materials
+                .Where(m => m.Tier == selectedTier).ToList();
+
+            // Bảo hiểm nếu database trống phẩm đó, lấy tạm danh sách tổng
+            if (validMaterials.Count > 0)
+                selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
+            else
+                selectedId = GameConfig.LuyenKhiResources.Materials[Random.Shared.Next(0, GameConfig.LuyenKhiResources.Materials.Length)].Id;
+        }
+        else
+        {
+            var validHerbs = GameConfig.LuyenDanResources.HerbDatas
+                .Where(h => h.Tier == selectedTier).ToList();
+
+            if (validHerbs.Count > 0)
+                selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
+            else
+                selectedId = GameConfig.LuyenDanResources.HerbDatas[Random.Shared.Next(0, GameConfig.LuyenDanResources.HerbDatas.Count)].Id;
+        }
+
+        // 5. Random số lượng (Count từ 1 đến 3)
+        // Server dùng Random.Shared.Next(min, maxExclusive) -> truyền 1, 4 để lấy từ 1 đến 3
+        int rewardCount = Random.Shared.Next(1, 4);
+
+        // Gán vào Design List ItemRef
+        itemRefs.Add(new ItemRef()
+        {
+            Id = (ushort)selectedId,
+            Type = selectedType,
+            Count = (ushort)rewardCount
+        });
+
+        return itemRefs;
+    }
+    /// <summary>
+    /// Hàm tính toán trọng số tỷ lệ động. Càng về sau càng mở khóa phẩm cao, nhưng tỷ lệ phẩm cao luôn thấp.
+    /// </summary>
+    private Dictionary<Tier, float> CalculateTierWeights(int level, int maxAllowedTierIndex)
+    {
+        var weights = new Dictionary<Tier, float>();
+
+        // Chạy từ Nhất Phẩm (0) đến Phẩm cấp tối đa mà Level này được phép chạm tới
+        for (int i = 0; i <= maxAllowedTierIndex; i++)
+        {
+            Tier t = (Tier)i;
+
+            // Thay Mathf.Pow bằng Math.Pow của C# thuần và ép kiểu về (float)
+            float weight = (float)Math.Pow(3.5, maxAllowedTierIndex - i);
+
+            weights.Add(t, weight);
+        }
+
+        return weights;
+    }
+
+    /// <summary>
+    /// Hàm chọn một Tier ngẫu nhiên dựa trên bảng trọng số phần trăm
+    /// </summary>
+    private Tier RollRandomTier(Dictionary<Tier, float> weights)
+    {
+        float totalWeight = weights.Values.Sum();
+
+        // Tạo số thực ngẫu nhiên từ 0.0 đến 1.0 rồi nhân với totalWeight
+        float randomValue = (float)Random.Shared.NextDouble() * totalWeight;
+
+        float currentSum = 0f;
+
+        foreach (var pair in weights)
+        {
+            currentSum += pair.Value;
+            if (randomValue <= currentSum)
+            {
+                return pair.Key;
+            }
+        }
+
+        return weights.Keys.Last(); // Phòng hờ lỗi làm tròn số thực
     }
 }

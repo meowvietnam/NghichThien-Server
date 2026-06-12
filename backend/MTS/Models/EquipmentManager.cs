@@ -35,6 +35,11 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [NotMapped] private EquipmentTracking tracking = new();
     [NotMapped] private bool isDirty1;
     [NotMapped] private bool isDirty2;
+
+    public void ClearDanCombat()
+    {
+
+    }
     public ThanThongEquip EquipThanThong(EquipThanThong request)
     {
         var thanThong = new ThanThongEquip()
