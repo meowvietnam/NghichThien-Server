@@ -12,6 +12,20 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
     public int TuChat { get; set; }
     public int ThoNguyen { get; set; }
     public int SinhMenh { get; set; }
+    public int Hp { get; set; }
+    public int DanDoc { get; set; }
+    public Ability Ability { get; set; }
+    public float Kim { get; set; }
+    public float Moc { get; set; }
+    public float Thuy { get; set; }
+    public float Hoa { get; set; }
+    public float Tho { get; set; }
+    public float Ma { get; set; }
+    public HashSet<NgoDao> NgoDaos { get; set; }
+    public HashSet<DanCombatUsed> DanCombatUseds { get; set; }
+    public Equipment VuKhi { get; set; }
+    public Equipment PhongCu { get; set; }
+    public Equipment TrangSuc { get; set; }
     public TimeSpan TuoiTac { get; set; }
     public EMonPhai MonPhai { get; set; }
     public int Level { get; set; }
@@ -54,8 +68,22 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
         this.PhuTu3Used = equipment.PhuTu3Used;
         this.PhuTu4Used = equipment.PhuTu4Used;
         this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
-    }
 
+        this.DanCombatUseds = equipment.DanCombatUseds;
+        this.NgoDaos = c.InventoryManager.NgoDaos;
+        this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x=>x.Id == c.EquipmentManager.VuKhi);
+        this.PhongCu = c.InventoryManager.PhongCus.FirstOrDefault(x => x.Id == c.EquipmentManager.PhongCu); 
+        this.TrangSuc = c.InventoryManager.TrangSucs.FirstOrDefault(x => x.Id == c.EquipmentManager.TrangSuc);
+        this.Kim = c.Stats.Kim;
+        this.Moc = c.Stats.Moc;
+        this.Thuy = c.Stats.Thuy;
+        this.Hoa = c.Stats.Hoa;
+        this.Tho = c.Stats.Tho;
+        this.Ma = c.Stats.Ma;
+        this.Ability = c.Stats.Ability;
+        this.DanDoc = c.Stats.DanDoc;
+        this.Hp = c.Stats.Hp;
+    }
 
     public void Deserialize(IReader reader, ref CharacterSnapshot value)
     {
@@ -79,19 +107,49 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
         value.PhuTu3Used = reader.Read<int>();
         value.PhuTu4Used = reader.Read<int>();
         value.ThanThongEquip = reader.ReadArray<int>().ToList();
+
+        value.DanCombatUseds = reader.ReadArray<DanCombatUsed>().ToHashSet();
+        value.NgoDaos = reader.ReadArray<NgoDao>().ToHashSet();
+        value.VuKhi = reader.Read<Equipment>();
+        value.PhongCu = reader.Read<Equipment>();
+        value.TrangSuc = reader.Read<Equipment>();
+        value.Kim = reader.Read<float>();
+        value.Moc = reader.Read<float>();
+        value.Thuy = reader.Read<float>();
+        value.Hoa = reader.Read<float>();
+        value.Tho = reader.Read<float>();
+        value.Ma = reader.Read<float>();
+        value.Ability = reader.Read<Ability>();
+        value.DanDoc = reader.Read<int>();
+        value.Hp = reader.Read<int>();
     }
 
     public int ByteSize()
     {
-        return Name.ByteSize() + Gender.ByteSize()
-                               + Skins.Keys.ByteSize() + Skins.Values.ByteSize()
-                               + Colors.Keys.ByteSize() + Colors.Values.ByteSize()
-                               + Level.ByteSize() + MonPhai.ByteSize() + TuoiTac.ByteSize()
-                               + SinhMenh.ByteSize() + ThoNguyen.ByteSize() + TuChat.ByteSize() + NgoTinh.ByteSize()
-                               + TocDoBay.ByteSize() + ThanThuc.ByteSize()
-                               + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
-                               + PhuTu1Used.ByteSize() + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize()
-                               + PhuTu4Used.ByteSize() + ThanThongEquip.ByteSize();
+        // Đã điền đầy đủ tất cả các trường ngũ hành, Ability, DanDoc, Hp vào tổng kích thước Byte
+        return Name.ByteSize()
+               + Gender.ByteSize()
+               + Skins.Keys.ByteSize() + Skins.Values.ByteSize()
+               + Colors.Keys.ByteSize() + Colors.Values.ByteSize()
+               + Level.ByteSize()
+               + MonPhai.ByteSize()
+               + TuoiTac.ByteSize()
+               + SinhMenh.ByteSize()
+               + ThoNguyen.ByteSize()
+               + TuChat.ByteSize()
+               + NgoTinh.ByteSize()
+               + TocDoBay.ByteSize()
+               + ThanThuc.ByteSize()
+               + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
+               + PhuTu1Used.ByteSize() + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
+               + ThanThongEquip.ByteSize()
+               + DanCombatUseds.ByteSize()
+               + NgoDaos.ByteSize()
+               + VuKhi.ByteSize() + PhongCu.ByteSize() + TrangSuc.ByteSize()
+               + Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize() + Tho.ByteSize() + Ma.ByteSize()
+               + Ability.ByteSize()
+               + DanDoc.ByteSize()
+               + Hp.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -118,5 +176,21 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
         writer.Write(PhuTu3Used);
         writer.Write(PhuTu4Used);
         writer.WriteArray(ThanThongEquip);
+
+        // --- ĐÃ FILL ĐỦ ĐOẠN THIẾU DƯỚI ĐÂY THEO ĐÚNG THỨ TỰ CỦA DESERIALIZE ---
+        writer.WriteArray(DanCombatUseds);
+        writer.WriteArray(NgoDaos);
+        writer.Write(VuKhi);
+        writer.Write(PhongCu);
+        writer.Write(TrangSuc);
+        writer.Write(Kim);
+        writer.Write(Moc);
+        writer.Write(Thuy);
+        writer.Write(Hoa);
+        writer.Write(Tho);
+        writer.Write(Ma);
+        writer.Write(Ability);
+        writer.Write(DanDoc);
+        writer.Write(Hp);
     }
 }

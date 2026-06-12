@@ -732,6 +732,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
 
     }
+    public LoadCharCombatResult? LoadCharCombatResult()
+    {
+        EquipmentManager.ClearDanCombat();
+        return new LoadCharCombatResult()
+        {
+            Success = true,
+            Client = new CharacterSnapshot(this)
+
+        };
+
+
+
+
+
+    }
     public WinCombatResult? WinCombat(WinCombat request)
     {
         foreach (var item in request.ListIdThanThong)

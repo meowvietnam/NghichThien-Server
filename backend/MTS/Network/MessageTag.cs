@@ -101,4 +101,7 @@ public enum MessageTag
 
     WinCombat = 413,
     WinCombatResult = 414,
+
+    LoadCharCombat = 415,
+    LoadCharCombatResult = 416,
 }

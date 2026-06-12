@@ -10,7 +10,7 @@ namespace MTS.Network.Core
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.WinCombat
+              MessageTag.WinCombat , MessageTag.LoadCharCombat
         ];
         public CombatHandler(Client client)
         {
@@ -46,7 +46,31 @@ namespace MTS.Network.Core
                     client.Send(MessageTag.WinCombatResult, result);
                 }
             }
-        }
+            else if (tag == MessageTag.LoadCharCombat)
+            {
+                LoadCharCombatResult result = null;
+                try
+                {
+                    lock (charData)
+                    {
+                        result = charData.LoadCharCombatResult();
+
+                        
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new LoadCharCombatResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.Send(MessageTag.LoadCharCombatResult, result);
+                }
+            }
 
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
