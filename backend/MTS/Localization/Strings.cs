@@ -57,18 +57,13 @@ public static class Strings
     public static string CongPhapOwned => _current.CongPhapOwned;
     public static string ThanThongOwned => _current.ThanThongOwned;
     public static string NotSupportItemType => _current.NotSupportItemType;
-
-    public static string? NotCompleteFirstMainQuest { get; set; }
-    public static string? MonPhaiExisted { get; set; }
-
-    public static string? HackerMainQuest { get; set; }
-    public static string? MainQuestResourceNotExist { get; set; }
-
-    public static string? HackerSideQuest { get; set; }
-
-    public static string? HackerLevelEnemyCombat { get; set; }
-    public static string? HackerHP { get; set; }
-    public static string? HackerLevelBossCombat { get; set; }
-    public static string? HackerSkillCombat { get; set; }
-
+    public static string NotCompleteFirstMainQuest => _current.NotCompleteFirstMainQuest;
+    public static string MonPhaiExisted => _current.MonPhaiExisted;
+    public static string HackerMainQuest => _current.HackerMainQuest;
+    public static string MainQuestResourceNotExist => _current.MainQuestResourceNotExist;
+    public static string HackerSideQuest => _current.HackerSideQuest;
+    public static string HackerLevelEnemyCombat => _current.HackerLevelEnemyCombat;
+    public static string HackerHP => _current.HackerHP;
+    public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
+    public static string HackerSkillCombat => _current.HackerSkillCombat;
 }

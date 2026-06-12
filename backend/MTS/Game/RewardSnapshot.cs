@@ -6,7 +6,7 @@ namespace MTS.Game
 {
     public class RewardSnapshot : IMemorySerializable<RewardSnapshot>
     {
-        public List<ItemRef> ItemRefs = new(); // voi count item ref la count user reward 
+        public List<ItemRef> ItemRefs = new();
         public int Money = 0;
         public int MoneyVip = 0;
 

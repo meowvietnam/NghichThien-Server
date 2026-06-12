@@ -49,4 +49,13 @@ public class VietnameseStrings : ILanguageStrings
     public override string CongPhapOwned => "Đã sở hữu công pháp này!";
     public override string ThanThongOwned => "Đã sở hữu thần thông này!";
     public override string NotSupportItemType => "Loại vật phẩm không được hỗ trợ!";
+    public override string NotCompleteFirstMainQuest => "Cần hoàn thành nhiệm vụ chính đầu tiên!";
+    public override string MonPhaiExisted => "Đã gia nhập môn phái!";
+    public override string HackerMainQuest => "Dữ liệu nhiệm vụ chính không hợp lệ!";
+    public override string MainQuestResourceNotExist => "Tài nguyên nhiệm vụ chính không tồn tại!";
+    public override string HackerSideQuest => "Dữ liệu nhiệm vụ phụ không hợp lệ!";
+    public override string HackerLevelEnemyCombat => "Cấp độ quái trong trận đấu không hợp lệ!";
+    public override string HackerHP => "Sinh mệnh sau trận đấu không hợp lệ!";
+    public override string HackerLevelBossCombat => "Cấp độ Boss trong trận đấu không hợp lệ!";
+    public override string HackerSkillCombat => "Thần thông sử dụng trong trận đấu không hợp lệ!";
 }
