@@ -55,7 +55,7 @@ namespace MTS.Network.Core
                     {
                         result = charData.LoadCharCombatResult();
 
-                        
+
                     }
                 }
                 catch (Exception e)
@@ -71,6 +71,7 @@ namespace MTS.Network.Core
                     client.Send(MessageTag.LoadCharCombatResult, result);
                 }
             }
+        }
 
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
