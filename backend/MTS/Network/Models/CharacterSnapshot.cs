@@ -110,9 +110,36 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
 
         value.DanCombatUseds = reader.ReadArray<DanCombatUsed>().ToHashSet();
         value.NgoDaos = reader.ReadArray<NgoDao>().ToHashSet();
-        value.VuKhi = reader.Read<Equipment>();
-        value.PhongCu = reader.Read<Equipment>();
-        value.TrangSuc = reader.Read<Equipment>();
+        // Thay thế 3 dòng value.VuKhi = reader.Read<Equipment>(); cũ:
+        bool hasVuKhi = reader.Read<bool>();
+        if (hasVuKhi)
+        {
+            if (value.VuKhi == null) value.VuKhi = new Equipment();
+            var equipRef = value.VuKhi;
+            equipRef.Deserialize(reader, ref equipRef);
+            value.VuKhi = equipRef;
+        }
+        else value.VuKhi = null!;
+
+        bool hasPhongCu = reader.Read<bool>();
+        if (hasPhongCu)
+        {
+            if (value.PhongCu == null) value.PhongCu = new Equipment();
+            var equipRef = value.PhongCu;
+            equipRef.Deserialize(reader, ref equipRef);
+            value.PhongCu = equipRef;
+        }
+        else value.PhongCu = null!;
+
+        bool hasTrangSuc = reader.Read<bool>();
+        if (hasTrangSuc)
+        {
+            if (value.TrangSuc == null) value.TrangSuc = new Equipment();
+            var equipRef = value.TrangSuc;
+            equipRef.Deserialize(reader, ref equipRef);
+            value.TrangSuc = equipRef;
+        }
+        else value.TrangSuc = null!;
         value.Kim = reader.Read<float>();
         value.Moc = reader.Read<float>();
         value.Thuy = reader.Read<float>();
@@ -126,40 +153,52 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
 
     public int ByteSize()
     {
-        // Đã điền đầy đủ tất cả các trường ngũ hành, Ability, DanDoc, Hp vào tổng kích thước Byte
-        return Name.ByteSize()
-               + Gender.ByteSize()
-               + Skins.Keys.ByteSize() + Skins.Values.ByteSize()
-               + Colors.Keys.ByteSize() + Colors.Values.ByteSize()
-               + Level.ByteSize()
-               + MonPhai.ByteSize()
-               + TuoiTac.ByteSize()
-               + SinhMenh.ByteSize()
-               + ThoNguyen.ByteSize()
-               + TuChat.ByteSize()
-               + NgoTinh.ByteSize()
-               + TocDoBay.ByteSize()
-               + ThanThuc.ByteSize()
-               + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
-               + PhuTu1Used.ByteSize() + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
-               + ThanThongEquip.ByteSize()
-               + DanCombatUseds.ByteSize()
-               + NgoDaos.ByteSize()
-               + VuKhi.ByteSize() + PhongCu.ByteSize() + TrangSuc.ByteSize()
-               + Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize() + Tho.ByteSize() + Ma.ByteSize()
-               + Ability.ByteSize()
-               + DanDoc.ByteSize()
-               + Hp.ByteSize();
+        int size = Name.ByteSize() + Gender.ByteSize();
+
+        // Check an toàn cho Dictionary ngoại hình
+        size += (Skins != null && Skins.Keys != null) ? (Skins.Keys.ByteSize() + Skins.Values.ByteSize()) : 0;
+        size += (Colors != null && Colors.Keys != null) ? (Colors.Keys.ByteSize() + Colors.Values.ByteSize()) : 0;
+
+        size += Level.ByteSize() + MonPhai.ByteSize() + TuoiTac.ByteSize();
+        size += SinhMenh.ByteSize() + ThoNguyen.ByteSize() + TuChat.ByteSize() + NgoTinh.ByteSize();
+        size += TocDoBay.ByteSize() + ThanThuc.ByteSize();
+        size += ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize();
+        size += PhuTu1Used.ByteSize() + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize();
+
+        // Check an toàn cho mảng danh sách thần thông / đan dược
+        size += ThanThongEquip != null ? ThanThongEquip.ByteSize() : 0;
+        size += DanCombatUseds != null ? DanCombatUseds.ByteSize() : 0;
+        size += NgoDaos != null ? NgoDaos.ByteSize() : 0;
+
+        // Thay thế đoạn tính size trang bị cũ bằng đoạn này:
+        size += sizeof(bool); // Cờ kiểm tra VuKhi
+        if (VuKhi != null) size += VuKhi.ByteSize();
+
+        size += sizeof(bool); // Cờ kiểm tra PhongCu
+        if (PhongCu != null) size += PhongCu.ByteSize();
+
+        size += sizeof(bool); // Cờ kiểm tra TrangSuc
+        if (TrangSuc != null) size += TrangSuc.ByteSize();
+
+        size += Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize() + Tho.ByteSize() + Ma.ByteSize();
+
+        // Check an toàn cho Object Ability ẩn
+        size += Ability.ByteSize();
+        size += DanDoc.ByteSize() + Hp.ByteSize();
+        return size;
     }
 
     public void Serialize(IWriter writer)
     {
         writer.Write(Name);
         writer.Write(Gender);
-        writer.WriteArray(Skins.Keys);
-        writer.WriteArray(Skins.Values);
-        writer.WriteArray(Colors.Keys);
-        writer.WriteArray(Colors.Values);
+
+        // Ghi Skins & Colors (Phòng hờ dữ liệu null bằng cách ghi mảng rỗng thay vì nổ lỗi)
+        writer.WriteArray(Skins?.Keys ?? Enumerable.Empty<string>());
+        writer.WriteArray(Skins?.Values ?? Enumerable.Empty<string>());
+        writer.WriteArray(Colors?.Keys ?? Enumerable.Empty<string>());
+        writer.WriteArray(Colors?.Values ?? Enumerable.Empty<Color>());
+
         writer.Write(Level);
         writer.Write(MonPhai);
         writer.Write(TuoiTac);
@@ -175,20 +214,33 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
         writer.Write(PhuTu2Used);
         writer.Write(PhuTu3Used);
         writer.Write(PhuTu4Used);
-        writer.WriteArray(ThanThongEquip);
 
-        // --- ĐÃ FILL ĐỦ ĐOẠN THIẾU DƯỚI ĐÂY THEO ĐÚNG THỨ TỰ CỦA DESERIALIZE ---
-        writer.WriteArray(DanCombatUseds);
-        writer.WriteArray(NgoDaos);
-        writer.Write(VuKhi);
-        writer.Write(PhongCu);
-        writer.Write(TrangSuc);
+        // Ghi các danh sách mảng an toàn
+        writer.WriteArray(ThanThongEquip ?? new List<int>());
+        writer.WriteArray(DanCombatUseds ?? Enumerable.Empty<DanCombatUsed>());
+        writer.WriteArray(NgoDaos ?? Enumerable.Empty<NgoDao>());
+
+        // Thay thế 3 dòng writer.Write(VuKhi...) cũ bằng đoạn check cờ an toàn này:
+        bool hasVuKhi = VuKhi != null;
+        writer.Write(hasVuKhi);
+        if (hasVuKhi) VuKhi.Serialize(writer);
+
+        bool hasPhongCu = PhongCu != null;
+        writer.Write(hasPhongCu);
+        if (hasPhongCu) PhongCu.Serialize(writer);
+
+        bool hasTrangSuc = TrangSuc != null;
+        writer.Write(hasTrangSuc);
+        if (hasTrangSuc) TrangSuc.Serialize(writer);
+
         writer.Write(Kim);
         writer.Write(Moc);
         writer.Write(Thuy);
         writer.Write(Hoa);
         writer.Write(Tho);
         writer.Write(Ma);
+
+        // CHÍNH XÁC LÀ DÒNG 188 CỦA BẠN: Bọc an toàn cho Object Ability ẩn
         writer.Write(Ability);
         writer.Write(DanDoc);
         writer.Write(Hp);
