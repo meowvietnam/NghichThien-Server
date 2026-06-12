@@ -838,9 +838,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
         int currentRealm = (monsterLevel - 1) / 3;
         int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
 
-        // 2. Tính năng Bảo Hiểm / Đột Biến: Nếu ở max level của đại cảnh giới (3, 6, 9, 12, 15), có 5% ra phẩm lớn hơn 1 đại cảnh giới
+        // 2. Tính năng Bảo Hiểm / Đột Biến: Nếu ở max level của đại cảnh giới (3, 6, 9, 12, 15), sửa tỷ lệ thành 1% (0.01)
         bool isMaxLevelOfRealm = (monsterLevel % 3 == 0);
-        if (isMaxLevelOfRealm && Random.Shared.NextDouble() <= 0.05)
+        if (isMaxLevelOfRealm && Random.Shared.NextDouble() <= 0.01)
         {
             currentTierIndex++; // Nhảy vọt lên 1 phẩm cấp cao hơn
         }
@@ -848,79 +848,83 @@ public class CharacterData : IMemorySerializable<CharacterData>
         // Khống chế không vượt quá Lục Phẩm (Index 5 trong enum Tier)
         if (currentTierIndex > 5) currentTierIndex = 5;
 
-        // 3. Tính toán phân bổ tỷ lệ động dựa trên level cụ thể
+        // 3. Tính toán phân bổ tỷ lệ động dựa trên level cụ thể (Tính 1 lần dùng chung cho cả 5 item)
         var tierWeights = CalculateTierWeights(monsterLevel, currentTierIndex);
 
-        // Tiến hành quay xúc xắc chọn Tier dựa trên Trọng Số (Weights)
-        Tier selectedTier = RollRandomTier(tierWeights);
-
-        // 4. Quyết định loại Item rơi ra (50% Material, 50% Herb)
-        ItemType selectedType = Random.Shared.NextDouble() < 0.5 ? ItemType.Material : ItemType.Herb;
-        int selectedId = 0;
-
-        if (selectedType == ItemType.Material)
+        // VÒNG LẶP: Sinh ra đúng 3 loại item phần thưởng độc lập
+        for (int i = 0; i < 3; i++)
         {
-            var validMaterials = GameConfig.LuyenKhiResources.Materials
-                .Where(m => m.Tier == selectedTier).ToList();
+            // Mỗi item sẽ quay xúc xắc chọn Tier riêng biệt dựa trên Trọng Số (Weights)
+            Tier selectedTier = RollRandomTier(tierWeights);
 
-            // Nếu không tìm thấy vật phẩm đúng Tier (ví dụ thiếu Nhất Phẩm)
-            if (validMaterials.Count == 0)
+            // 4. Quyết định loại Item rơi ra (50% Material, 50% Herb)
+            ItemType selectedType = Random.Shared.NextDouble() < 0.5 ? ItemType.Material : ItemType.Herb;
+            int selectedId = 0;
+
+            if (selectedType == ItemType.Material)
             {
-                // Duyệt tăng dần từ Nhất Phẩm (0) đến Lục Phẩm (5) để tìm phẩm cấp thay thế gần nhất
-                for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
-                {
-                    validMaterials = GameConfig.LuyenKhiResources.Materials
-                        .Where(m => (int)m.Tier == tierIndex).ToList();
+                var validMaterials = GameConfig.LuyenKhiResources.Materials
+                    .Where(m => m.Tier == selectedTier).ToList();
 
-                    if (validMaterials.Count > 0) break; // Tìm thấy danh sách có hàng (ví dụ: Nhị Phẩm) là dừng lại liền
+                // Nếu không tìm thấy vật phẩm đúng Tier (ví dụ thiếu Nhất Phẩm)
+                if (validMaterials.Count == 0)
+                {
+                    // Duyệt tăng dần từ Nhất Phẩm (0) đến Lục Phẩm (5) để tìm phẩm cấp thay thế gần nhất
+                    for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
+                    {
+                        validMaterials = GameConfig.LuyenKhiResources.Materials
+                            .Where(m => (int)m.Tier == tierIndex).ToList();
+
+                        if (validMaterials.Count > 0) break; // Tìm thấy danh sách có hàng là dừng lại liền
+                    }
                 }
+
+                // Tiến hành bốc item
+                if (validMaterials.Count > 0)
+                    selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
+                else
+                    selectedId = 1001; // ID bảo hiểm cuối cùng nếu cả database trống rỗng
+            }
+            else
+            {
+                var validHerbs = GameConfig.LuyenDanResources.HerbDatas
+                    .Where(h => h.Tier == selectedTier).ToList();
+
+                // Nếu không tìm thấy Thảo dược đúng Tier
+                if (validHerbs.Count == 0)
+                {
+                    // Duyệt tăng dần từ Nhất Phẩm đến Lục Phẩm để tìm danh sách có dữ liệu gần nhất
+                    for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
+                    {
+                        validHerbs = GameConfig.LuyenDanResources.HerbDatas
+                            .Where(h => (int)h.Tier == tierIndex).ToList();
+
+                        if (validHerbs.Count > 0) break;
+                    }
+                }
+
+                // Tiến hành bốc item
+                if (validHerbs.Count > 0)
+                    selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
+                else
+                    selectedId = 2001; // ID thảo dược rác bảo hiểm cuối cùng
             }
 
-            // Tiến hành bốc item
-            if (validMaterials.Count > 0)
-                selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
-            else
-                selectedId = 1001; // ID bảo hiểm cuối cùng nếu cả database rỗng tuếch không có một món gì
-        }
-        else
-        {
-            var validHerbs = GameConfig.LuyenDanResources.HerbDatas
-                .Where(h => h.Tier == selectedTier).ToList();
+            // 5. Random số lượng độc lập cho từng item (Count từ 1 đến 3)
+            int rewardCount = Random.Shared.Next(1, 4);
 
-            // Nếu không tìm thấy Thảo dược đúng Tier
-            if (validHerbs.Count == 0)
+            // Nạp item này vào danh sách kết quả
+            itemRefs.Add(new ItemRef()
             {
-                // Duyệt tăng dần từ Nhất Phẩm đến Lục Phẩm để tìm danh sách có dữ liệu gần nhất
-                for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
-                {
-                    validHerbs = GameConfig.LuyenDanResources.HerbDatas
-                        .Where(h => (int)h.Tier == tierIndex).ToList();
-
-                    if (validHerbs.Count > 0) break;
-                }
-            }
-
-            // Tiến hành bốc item
-            if (validHerbs.Count > 0)
-                selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
-            else
-                selectedId = 2001; // ID thảo dược rác bảo hiểm cuối cùng
+                Id = (ushort)selectedId,
+                Type = selectedType,
+                Count = (ushort)rewardCount
+            });
         }
-
-        // 5. Random số lượng (Count từ 1 đến 3)
-        // Server dùng Random.Shared.Next(min, maxExclusive) -> truyền 1, 4 để lấy từ 1 đến 3
-        int rewardCount = Random.Shared.Next(1, 4);
-
-        // Gán vào Design List ItemRef
-        itemRefs.Add(new ItemRef()
-        {
-            Id = (ushort)selectedId,
-            Type = selectedType,
-            Count = (ushort)rewardCount
-        });
 
         return itemRefs;
     }
+
     /// <summary>
     /// Hàm tính toán trọng số tỷ lệ động. Càng về sau càng mở khóa phẩm cao, nhưng tỷ lệ phẩm cao luôn thấp.
     /// </summary>
@@ -928,14 +932,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         var weights = new Dictionary<Tier, float>();
 
-        // Chạy từ Nhất Phẩm (0) đến Phẩm cấp tối đa mà Level này được phép chạm tới
         for (int i = 0; i <= maxAllowedTierIndex; i++)
         {
             Tier t = (Tier)i;
-
-            // Thay Mathf.Pow bằng Math.Pow của C# thuần và ép kiểu về (float)
             float weight = (float)Math.Pow(3.5, maxAllowedTierIndex - i);
-
             weights.Add(t, weight);
         }
 
@@ -948,10 +948,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     private Tier RollRandomTier(Dictionary<Tier, float> weights)
     {
         float totalWeight = weights.Values.Sum();
-
-        // Tạo số thực ngẫu nhiên từ 0.0 đến 1.0 rồi nhân với totalWeight
         float randomValue = (float)Random.Shared.NextDouble() * totalWeight;
-
         float currentSum = 0f;
 
         foreach (var pair in weights)
@@ -963,6 +960,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             }
         }
 
-        return weights.Keys.Last(); // Phòng hờ lỗi làm tròn số thực
+        return weights.Keys.Last();
     }
 }
