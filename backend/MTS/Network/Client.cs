@@ -199,6 +199,10 @@ public class Client : ClientConnection, ISender<MessageTag>
         module.RemoveHandler<QuestHandler>();
         module.AddHandler(questHandler);
 
+        var combatHandler = new CombatHandler(this);
+        module.RemoveHandler<CombatHandler>();
+        module.AddHandler(combatHandler);
+
         ChangeState(new AllMaps(this));
     }
 }

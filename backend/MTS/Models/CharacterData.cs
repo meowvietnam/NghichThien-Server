@@ -734,6 +734,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
     }
     public WinCombatResult? WinCombat(WinCombat request)
     {
+        foreach (var item in request.ListIdThanThong)
+        {
+            if (!this.EquipmentManager.ThanThongEquips.Any(x=>x.Id == item))
+            {
+                throw new Exception(Strings.HackerSkillCombat);
+
+            }
+        }
         // 1. Đếm số lần xuất hiện của từng ID trong request
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
@@ -797,7 +805,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 }
             }
             newHp = request.CurrentHPUser;
-            this.EquipmentManager.ClearDanCombat();
             this.Stats.SetHp(request.CurrentHPUser);
          
             int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
