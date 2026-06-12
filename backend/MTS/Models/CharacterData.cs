@@ -766,11 +766,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
                 var userCamNgo = this.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
+                // Sử dụng toán tử ?. và ?? 0 để phòng hờ nếu chưa có cảm ngộ này thì tính là 0
+                int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
+
                 var camNgo = new CamNgo
                 {
                     Id = camNgoType,
-                    Value = (baseAddCamNgo * item.Value * (int)item.Key.eTierSkill) + userCamNgo.Value,
-
+                    Value = (baseAddCamNgo * item.Value * (int)item.Key.eTierSkill) + currentUserCamNgoValue,
                 };
                 this.InventoryManager.AddOrUpdate(camNgo);
                 camNgoAdd.Add(camNgo);
@@ -861,21 +863,48 @@ public class CharacterData : IMemorySerializable<CharacterData>
             var validMaterials = GameConfig.LuyenKhiResources.Materials
                 .Where(m => m.Tier == selectedTier).ToList();
 
-            // Bảo hiểm nếu database trống phẩm đó, lấy tạm danh sách tổng
+            // Nếu không tìm thấy vật phẩm đúng Tier (ví dụ thiếu Nhất Phẩm)
+            if (validMaterials.Count == 0)
+            {
+                // Duyệt tăng dần từ Nhất Phẩm (0) đến Lục Phẩm (5) để tìm phẩm cấp thay thế gần nhất
+                for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
+                {
+                    validMaterials = GameConfig.LuyenKhiResources.Materials
+                        .Where(m => (int)m.Tier == tierIndex).ToList();
+
+                    if (validMaterials.Count > 0) break; // Tìm thấy danh sách có hàng (ví dụ: Nhị Phẩm) là dừng lại liền
+                }
+            }
+
+            // Tiến hành bốc item
             if (validMaterials.Count > 0)
                 selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
             else
-                selectedId = GameConfig.LuyenKhiResources.Materials[Random.Shared.Next(0, GameConfig.LuyenKhiResources.Materials.Length)].Id;
+                selectedId = 1001; // ID bảo hiểm cuối cùng nếu cả database rỗng tuếch không có một món gì
         }
         else
         {
             var validHerbs = GameConfig.LuyenDanResources.HerbDatas
                 .Where(h => h.Tier == selectedTier).ToList();
 
+            // Nếu không tìm thấy Thảo dược đúng Tier
+            if (validHerbs.Count == 0)
+            {
+                // Duyệt tăng dần từ Nhất Phẩm đến Lục Phẩm để tìm danh sách có dữ liệu gần nhất
+                for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
+                {
+                    validHerbs = GameConfig.LuyenDanResources.HerbDatas
+                        .Where(h => (int)h.Tier == tierIndex).ToList();
+
+                    if (validHerbs.Count > 0) break;
+                }
+            }
+
+            // Tiến hành bốc item
             if (validHerbs.Count > 0)
                 selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
             else
-                selectedId = GameConfig.LuyenDanResources.HerbDatas[Random.Shared.Next(0, GameConfig.LuyenDanResources.HerbDatas.Count)].Id;
+                selectedId = 2001; // ID thảo dược rác bảo hiểm cuối cùng
         }
 
         // 5. Random số lượng (Count từ 1 đến 3)
