@@ -1,6 +1,7 @@
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using static JetBrains.FormatRipper.FileExplorer.FileTypeExplorer;
 
 namespace MTS.Network.Core;
 
@@ -19,6 +20,7 @@ public class InventoryHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
+        var charData = client.CharacterData;
         if (tag == MessageTag.GetInventory)
         {
             try
@@ -41,6 +43,32 @@ public class InventoryHandler : IClientHandler
                 client.Send(MessageTag.GetInventoryResult, result);
             }
         }
+        else if (tag == MessageTag.EquipEquipment)
+        {
+            var request = reader.Read<EquipEquipment>();
+            EquipEquipmentResult result = null;
+            try
+            {
+                lock (charData)
+                {
+
+                    result = charData.EquipEquipment(request);
+
+                }
+            }
+            catch (Exception e)
+            {
+                result = new EquipEquipmentResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.EquipEquipmentResult, result);
+            }
+        }    
     }
     public void OnLeave()
     {
@@ -48,6 +76,6 @@ public class InventoryHandler : IClientHandler
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
     }
-    private static readonly MessageTag[] handlerTag = { MessageTag.GetInventory };
+    private static readonly MessageTag[] handlerTag = { MessageTag.GetInventory, MessageTag.EquipEquipment };
     public MessageTag[] HandleTag => handlerTag;
 }

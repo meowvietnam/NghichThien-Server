@@ -73,4 +73,7 @@ public abstract class ILanguageStrings
     public abstract string HackerHP { get; }
     public abstract string HackerLevelBossCombat { get; }
     public abstract string HackerSkillCombat { get; }
+    // Equipment messages
+
+
 }

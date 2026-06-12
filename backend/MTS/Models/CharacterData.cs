@@ -727,15 +727,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         };
     }
 
-    public LoadCharCombatResult? LoadCharCombatResult()
-    {
-        EquipmentManager.ClearDanCombat();
-        return new LoadCharCombatResult()
-        {
-            Success = true,
-            Client = new CharacterSnapshot(this)
-        };
-    }
+    
 
     public WinCombatResult? WinCombat(WinCombat request)
     {
@@ -971,4 +963,44 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         return weights.Keys.Last();
     }
+    public EquipEquipmentResult? EquipEquipment(EquipEquipment request)
+    {
+        bool isUnequip = request.Id == ushort.MaxValue;
+
+        switch (request.TypeEquipment)
+        {
+            case Game.LuyenKhi.EquipmentType.Weapon:
+                // Nếu không phải tháo đồ, check xem trong hòm có món này không
+                if (!isUnequip && !this.InventoryManager.VuKhis.Any(x => x.SelfId == request.Id))
+                    throw new Exception(Strings.HackerEquipment);
+
+                this.EquipmentManager.EquipVuKhi(request.Id);
+                break;
+
+            case Game.LuyenKhi.EquipmentType.Armor:
+                if (!isUnequip && !this.InventoryManager.PhongCus.Any(x => x.SelfId == request.Id))
+                    throw new Exception(Strings.HackerEquipment);
+
+                this.EquipmentManager.EquipPhongCu(request.Id);
+                break;
+
+            case Game.LuyenKhi.EquipmentType.Jewelry:
+                if (!isUnequip && !this.InventoryManager.TrangSucs.Any(x => x.SelfId == request.Id))
+                    throw new Exception(Strings.HackerEquipment);
+
+                this.EquipmentManager.EquipTrangSuc(request.Id); // Đã sửa thành EquipTrangSuc chuẩn bài!
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(request.TypeEquipment), "Loại trang bị không hợp lệ!");
+        }
+
+        return new EquipEquipmentResult()
+        {
+            Success = true,
+            Id = request.Id,
+            TypeEquipment = request.TypeEquipment,
+        };
+    }
+
 }

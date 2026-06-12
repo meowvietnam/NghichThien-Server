@@ -35,7 +35,24 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [NotMapped] private EquipmentTracking tracking = new();
     [NotMapped] private bool isDirty1;
     [NotMapped] private bool isDirty2;
+    // Hoặc nếu muốn viết tường minh, dễ gọi, tách làm 3 hàm như sau cho gọn:
+    public void EquipVuKhi(ushort id)
+    {
+        VuKhi = id;
+        isDirty2 = true;
+    }
 
+    public void EquipPhongCu(ushort id)
+    {
+        PhongCu = id;
+        isDirty2 = true;
+    }
+
+    public void EquipTrangSuc(ushort id)
+    {
+        TrangSuc = id;
+        isDirty2 = true;
+    }
     public void ClearDanCombat()
     {
         foreach (var danCombatUsed in DanCombatUseds)
@@ -208,6 +225,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         {
             tracking.Apply(db);
             tracking.Clear();
+            isDirty1 = false; // Nên reset cờ sau khi lưu thành công babe nhé
         }
 
         if (isDirty2)
@@ -220,7 +238,12 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
                     .SetProperty(x => x.PhuTu1Used, PhuTu1Used)
                     .SetProperty(x => x.PhuTu2Used, PhuTu2Used)
                     .SetProperty(x => x.PhuTu3Used, PhuTu3Used)
-                    .SetProperty(x => x.PhuTu4Used, PhuTu4Used));
+                    .SetProperty(x => x.PhuTu4Used, PhuTu4Used)
+            // --- BỔ SUNG 3 DÒNG LƯU TRANG BỊ MỚI LÊN DATABASE TẠI ĐÂY ---
+                    .SetProperty(x => x.VuKhi, VuKhi)
+                    .SetProperty(x => x.PhongCu, PhongCu)
+                    .SetProperty(x => x.TrangSuc, TrangSuc));
+            isDirty2 = false; // Reset cờ báo thay đổi về false để tránh lưu trùng lặp lần sau
         }
     }
 

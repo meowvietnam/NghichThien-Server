@@ -53,8 +53,12 @@ namespace MTS.Network.Core
                 {
                     lock (charData)
                     {
-                        result = charData.LoadCharCombatResult();
-
+                        result = new LoadCharCombatResult()
+                        {
+                            Success = true,
+                            Client = new CharacterSnapshot(charData)
+                        }; ;
+                        charData.EquipmentManager.ClearDanCombat();
 
                     }
                 }
