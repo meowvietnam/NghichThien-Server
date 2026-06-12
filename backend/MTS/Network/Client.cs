@@ -151,7 +151,10 @@ public class Client : ClientConnection, ISender<MessageTag>
         {
             await UserData.SaveChanges(db);
             if (!IsCharacterSelected()) return;
-            await CharacterData.SaveChanges(db);
+            lock (CharacterData)
+            {
+                CharacterData.SaveChanges(db).GetAwaiter().GetResult();
+            }
             await db.SaveChangesAsync();
         }
         catch (Exception ex)

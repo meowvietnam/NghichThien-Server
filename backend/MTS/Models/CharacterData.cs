@@ -655,42 +655,44 @@ public class CharacterData : IMemorySerializable<CharacterData>
             TypeMonPhai = request,
         };
     }
+
     public CompleteMainQuestResult? CompleteMainQuest(int mainQuestComplete)
     {
-       
-        if (mainQuestComplete != this.QuestManager.CurrentMainQuest)
+        if (mainQuestComplete != QuestManager.CurrentMainQuest)
         {
             throw new Exception(Strings.HackerMainQuest);
         }
+
         int trueID = QuestManager.CurrentMainQuest + 1;
         var questRS = GameConfig.MainQuestManagerModel.MainQuestResource.FirstOrDefault(x => x.Id == trueID);
-        if(questRS == null)
+        if (questRS == null)
         {
             throw new Exception(Strings.MainQuestResourceNotExist);
+        }
 
-        }
-        else
+        if (Progression.Level < questRS.levelRequire)
         {
-            if (this.Progression.Level < questRS.levelRequire)
-            {
-                throw new Exception(Strings.HackerMainQuest);
-            }
+            throw new Exception(Strings.HackerMainQuest);
         }
+
         int linhThach = questRS.rewardRef.Money;
         int moneyVip = questRS.rewardRef.MoneyVip;
         var itemRefs = questRS.rewardRef.ItemRefs;
-        if(linhThach > 0)
+        if (linhThach > 0)
         {
             Stats.SetLinhThach(Stats.LinhThach + linhThach);
         }
+
         if (moneyVip > 0)
         {
-            SetMoneyVip(moneyVip + this.MoneyVip);
+            SetMoneyVip(moneyVip + MoneyVip);
         }
-        if(itemRefs.Count > 0)
+
+        if (itemRefs.Count > 0)
         {
             InventoryManager.AddToInventory(itemRefs);
         }
+
         int newMainQuest = QuestManager.CurrentMainQuest + 1;
         QuestManager.SetCurrentMainQuest(newMainQuest);
         return new CompleteMainQuestResult()
@@ -698,40 +700,33 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Success = true,
             CurrentMainQuest = newMainQuest,
         };
-
-
-
     }
+
     public CompleteSideQuestResult? CompleteSideQuest(CompleteSideQuest sideQuestComplete)
     {
-
-        
-        if (this.QuestManager.CurrentCountSideQuest >= 10)
+        if (QuestManager.CurrentCountSideQuest >= 10)
         {
             throw new Exception(Strings.HackerSideQuest);
-
         }
+
         int moneyVip = Random.Shared.Next(5, 20);
         foreach (var item in sideQuestComplete.ListIdNpc)
         {
             // add tăng mối quan hệ với npc này thêm 10 điểm 
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
-
         }
-        int newCountSideQuest = this.QuestManager.CurrentCountSideQuest + 1;
-        this.QuestManager.SetCurrentCountSideQuest(newCountSideQuest);
-        SetMoneyVip(this.MoneyVip + moneyVip);
+
+        int newCountSideQuest = QuestManager.CurrentCountSideQuest + 1;
+        QuestManager.SetCurrentCountSideQuest(newCountSideQuest);
+        SetMoneyVip(MoneyVip + moneyVip);
         return new CompleteSideQuestResult()
         {
             Success = true,
             MoneyVipRandom = moneyVip,
             CurrentSideQuest = newCountSideQuest,
         };
-
-
-
-
     }
+
     public LoadCharCombatResult? LoadCharCombatResult()
     {
         EquipmentManager.ClearDanCombat();
@@ -739,24 +734,19 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Success = true,
             Client = new CharacterSnapshot(this)
-
         };
-
-
-
-
-
     }
+
     public WinCombatResult? WinCombat(WinCombat request)
     {
         foreach (var item in request.ListIdThanThong)
         {
-            if (!this.EquipmentManager.ThanThongEquips.Any(x=>x.Id == item))
+            if (!this.EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
             {
                 throw new Exception(Strings.HackerSkillCombat);
-
             }
         }
+
         // 1. Đếm số lần xuất hiện của từng ID trong request
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
@@ -766,13 +756,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var thanThongDict = GameConfig.NDCPTTManager.ThanThongs
             .Where(x => idCounts.ContainsKey(x.Id))
             .ToDictionary(
-                x => x,                  // Key là đối tượng ThanThong
-                x => idCounts[x.Id]      // Value là số lượng (count)
+                x => x, // Key là đối tượng ThanThong
+                x => idCounts[x.Id] // Value là số lượng (count)
             );
+
         ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
         {
             return (ND.ETypeSkill)(int)eTypeSkill;
         }
+
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
         foreach (var item in thanThongDict)
@@ -793,6 +785,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 camNgoAdd.Add(camNgo);
             }
         }
+
         int newHp = this.Stats.Hp;
         RewardSnapshot newReward = new RewardSnapshot();
         if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps || request.TypeCombat == Game.Combat.ETypeCombat.Boss)
@@ -800,14 +793,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
             if (request.CurrentHPUser > this.Stats.SinhMenh * 5)
             {
                 throw new Exception(Strings.HackerHP);
-
             }
+
             if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps)
             {
-                if(request.CurrentLevelEnemy > this.Progression.Level+2 )
+                if (request.CurrentLevelEnemy > this.Progression.Level + 2)
                 {
                     throw new Exception(Strings.HackerLevelEnemyCombat);
-
                 }
             }
             else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
@@ -821,9 +813,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
                     throw new Exception(Strings.HackerLevelBossCombat);
                 }
             }
+
             newHp = request.CurrentHPUser;
             this.Stats.SetHp(request.CurrentHPUser);
-         
+
             int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
             int monsterLevel = request.CurrentLevelEnemy;
             var listItemRef = GenerateMonsterRewards(monsterLevel);
@@ -835,8 +828,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 ItemRefs = listItemRef
             };
         }
-        
-        
+
+
         return new WinCombatResult()
         {
             Success = true,
@@ -845,6 +838,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Reward = newReward,
         };
     }
+
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {
         var itemRefs = new List<ItemRef>();

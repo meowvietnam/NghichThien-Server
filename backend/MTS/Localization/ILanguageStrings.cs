@@ -60,4 +60,17 @@ public abstract class ILanguageStrings
     public abstract string CongPhapOwned { get; }
     public abstract string ThanThongOwned { get; }
     public abstract string NotSupportItemType { get; }
+
+    // Quest / Mon Phai messages
+    public abstract string NotCompleteFirstMainQuest { get; }
+    public abstract string MonPhaiExisted { get; }
+    public abstract string HackerMainQuest { get; }
+    public abstract string MainQuestResourceNotExist { get; }
+    public abstract string HackerSideQuest { get; }
+
+    // Combat validation messages
+    public abstract string HackerLevelEnemyCombat { get; }
+    public abstract string HackerHP { get; }
+    public abstract string HackerLevelBossCombat { get; }
+    public abstract string HackerSkillCombat { get; }
 }

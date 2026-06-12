@@ -52,4 +52,13 @@ public class EnglishStrings : ILanguageStrings
     public override string CongPhapOwned => "This Cong Phap is already owned!";
     public override string ThanThongOwned => "This Than Thong is already owned!";
     public override string NotSupportItemType => "Item type is not supported!";
+    public override string NotCompleteFirstMainQuest => "The first main quest must be completed!";
+    public override string MonPhaiExisted => "A sect has already been joined!";
+    public override string HackerMainQuest => "Main quest data is invalid!";
+    public override string MainQuestResourceNotExist => "Main quest resource does not exist!";
+    public override string HackerSideQuest => "Side quest data is invalid!";
+    public override string HackerLevelEnemyCombat => "Enemy level in combat is invalid!";
+    public override string HackerHP => "Post-combat HP is invalid!";
+    public override string HackerLevelBossCombat => "Boss level in combat is invalid!";
+    public override string HackerSkillCombat => "Skill used in combat is invalid!";
 }

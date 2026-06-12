@@ -31,9 +31,9 @@ public class QuestManager : IMemorySerializable<QuestManager>
 
     public void SetCurrentMainQuest(int mainQuest)
     {
-        if (CurrentCountSideQuest != mainQuest)
+        if (CurrentMainQuest != mainQuest)
         {
-            CurrentCountSideQuest = mainQuest;
+            CurrentMainQuest = mainQuest;
             dirty = true;
         }
     }
