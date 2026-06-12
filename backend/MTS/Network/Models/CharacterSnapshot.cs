@@ -71,9 +71,9 @@ public class CharacterSnapshot : IMemorySerializable<CharacterSnapshot>
 
         this.DanCombatUseds = equipment.DanCombatUseds;
         this.NgoDaos = c.InventoryManager.NgoDaos;
-        this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x=>x.Id == c.EquipmentManager.VuKhi);
-        this.PhongCu = c.InventoryManager.PhongCus.FirstOrDefault(x => x.Id == c.EquipmentManager.PhongCu); 
-        this.TrangSuc = c.InventoryManager.TrangSucs.FirstOrDefault(x => x.Id == c.EquipmentManager.TrangSuc);
+        this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x=>x.SelfId == c.EquipmentManager.VuKhi);
+        this.PhongCu = c.InventoryManager.PhongCus.FirstOrDefault(x => x.SelfId == c.EquipmentManager.PhongCu); 
+        this.TrangSuc = c.InventoryManager.TrangSucs.FirstOrDefault(x => x.SelfId == c.EquipmentManager.TrangSuc);
         this.Kim = c.Stats.Kim;
         this.Moc = c.Stats.Moc;
         this.Thuy = c.Stats.Thuy;
