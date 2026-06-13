@@ -37,6 +37,7 @@ public class AllMaps : IClientState
     {
         var tag = message.Tag;
         var reader = message.Reader;
+        var charData = client.CharacterData;
         if (tag == MessageTag.MoveToMap)
         {
             if (isMoving)
@@ -47,7 +48,6 @@ public class AllMaps : IClientState
             var id = reader.Read<int>();
             try
             {
-                var charData = client.CharacterData;
                 var currentMapId = charData.Progression.IdCurrentNode;
                 var path = GameConfig.MapManager.FindPath(currentMapId, id);
                 var energy = client.UserData.IsInfiniteEnergy ? 0 : path.Count;
@@ -108,6 +108,34 @@ public class AllMaps : IClientState
                     Message = e.Message
                 };
                 client.Send(MessageTag.GetPlayerOnlineThisNodeResult, result);
+            }
+        }
+        else if(tag == MessageTag.WatchAdsForEnergy)
+        {
+            WatchAdsForEnergyResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    charData.Progression.SetCurrentEnergy(100);
+                    result = new WatchAdsForEnergyResult
+                    {
+                        Success = true,
+                        NewEnergy = 100
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                result = new WatchAdsForEnergyResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.WatchAdsForEnergyResult, result);
             }
         }
     }
