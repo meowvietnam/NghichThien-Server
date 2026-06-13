@@ -5,6 +5,7 @@ using System.Runtime.InteropServices.ComTypes;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Interfaces;
@@ -783,6 +784,28 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Tracking.ThanThongs.Add(thanThong);
         }
         return add;
+    }
+    public void UpdateNgoDaoWithSkill(BaseSkill skill , int baseAdd, ref List<CamNgo> camNgoAdd, int count =1)
+    {
+        ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
+        {
+            return (ND.ETypeSkill)(int)eTypeSkill;
+        }
+        foreach (var typeSkill in skill.eTypeSkill)
+        {
+            var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
+            var userCamNgo = this.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
+            // Sử dụng toán tử ?. và ?? 0 để phòng hờ nếu chưa có cảm ngộ này thì tính là 0
+            int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
+
+            var camNgo = new CamNgo
+            {
+                Id = camNgoType,
+                Value = (baseAdd * count * (int)skill.eTierSkill) + currentUserCamNgoValue,
+            };
+            this.AddOrUpdate(camNgo);
+            camNgoAdd.Add(camNgo);
+        }
     }
 }
 

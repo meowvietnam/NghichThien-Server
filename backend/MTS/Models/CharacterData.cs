@@ -376,7 +376,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Slot = slot,
         };
     }
-
+    
     private int CalculateCostTuLuyen()
     {
         var level = Progression.Level;
@@ -510,6 +510,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Id = id,
             Type = type,
         };
+        var camNgoList = new List<CamNgo>();
         if (type == ItemType.CongPhap)
         {
             if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < 1)
@@ -561,7 +562,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(cpRef);
             }
-
+            this.InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
             return new LinhNgoResult()
             {
                 Success = true,
@@ -622,6 +623,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(ttRef);
             }
+            this.InventoryManager.UpdateNgoDaoWithSkill(tt,25,ref camNgoList, 1);
 
             return new LinhNgoResult()
             {
@@ -752,30 +754,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 x => idCounts[x.Id] // Value là số lượng (count)
             );
 
-        ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
-        {
-            return (ND.ETypeSkill)(int)eTypeSkill;
-        }
+       
 
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
         foreach (var item in thanThongDict)
         {
-            foreach (var typeSkill in item.Key.eTypeSkill)
-            {
-                var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
-                var userCamNgo = this.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
-                // Sử dụng toán tử ?. và ?? 0 để phòng hờ nếu chưa có cảm ngộ này thì tính là 0
-                int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
-
-                var camNgo = new CamNgo
-                {
-                    Id = camNgoType,
-                    Value = (baseAddCamNgo * item.Value * (int)item.Key.eTierSkill) + currentUserCamNgoValue,
-                };
-                this.InventoryManager.AddOrUpdate(camNgo);
-                camNgoAdd.Add(camNgo);
-            }
+            this.InventoryManager.UpdateNgoDaoWithSkill(item.Key,baseAddCamNgo,ref camNgoAdd,item.Value);
         }
 
         int newHp = this.Stats.Hp;
