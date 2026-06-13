@@ -534,7 +534,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 throw new Exception(Strings.CongPhapNotFound);
             }
 
-            var time = TimeSpan.FromDays(cp.baseTimeLearn);
+            var time = TimeSpan.FromDays(cp.baseTimeLearn / Stats.NgoTinh);
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
@@ -596,7 +596,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 throw new Exception(Strings.ThanThongNotFound);
             }
 
-            var time = TimeSpan.FromDays(tt.baseTimeLearn);
+            var time = TimeSpan.FromDays(tt.baseTimeLearn / Stats.NgoTinh);
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
