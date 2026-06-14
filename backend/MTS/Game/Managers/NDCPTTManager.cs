@@ -263,6 +263,7 @@ public class NDCPTTManager : IMemorySerializable<NDCPTTManager>
         typeof(NguHanhKiemQuyet),
         typeof(NguHanhThienCuong),
         typeof(NguKiemCuuQuyet),
+        typeof(NguKiemPhiHanh),
         typeof(NguKiemThuat),
         typeof(NguKimMocThuyHoaTho),
         typeof(NguLinhDien),
