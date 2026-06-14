@@ -64,11 +64,20 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CanFly")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsInfiniteEnergy")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsNoAds")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("MonPhai")
                         .HasColumnType("int");
@@ -492,9 +501,6 @@ namespace MTS.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<bool>("IsInfiniteEnergy")
-                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 

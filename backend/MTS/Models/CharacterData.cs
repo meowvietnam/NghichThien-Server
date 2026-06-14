@@ -29,6 +29,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public int MoneyVip { get; private set; } = 0;
     public bool IsInfiniteEnergy { get; private set; } = false;
     public bool IsNoAds { get; private set; } = false;
+    public bool CanFly { get; private set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -72,6 +73,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void SetCanFly(bool value)
+    {
+        if (CanFly != value)
+        {
+            CanFly = value;
+            dirty = true;
+        }
+    }
+
     public CharacterData()
     {
     }
@@ -87,6 +97,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         MoneyVip = clone.MoneyVip;
         IsInfiniteEnergy = clone.IsInfiniteEnergy;
         IsNoAds = clone.IsNoAds;
+        CanFly = clone.CanFly;
+        CreatedAt = clone.CreatedAt;
         dirty = false;
     }
 
@@ -119,6 +131,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + MoneyVip.ByteSize()
                + IsInfiniteEnergy.ByteSize()
                + IsNoAds.ByteSize()
+               + CanFly.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
                + Social.ByteSize()
@@ -138,6 +151,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(MoneyVip);
         writer.Write(IsInfiniteEnergy);
         writer.Write(IsNoAds);
+        writer.Write(CanFly);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
         writer.Write(Social);
@@ -157,6 +171,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.MoneyVip = reader.Read<int>();
         value.IsInfiniteEnergy = reader.Read<bool>();
         value.IsNoAds = reader.Read<bool>();
+        value.CanFly = reader.Read<bool>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
@@ -178,7 +193,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                     s.SetProperty(x => x.MonPhai, MonPhai)
                         .SetProperty(x => x.MoneyVip, MoneyVip)
                         .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy)
-                        .SetProperty(x => x.IsNoAds, IsNoAds));
+                        .SetProperty(x => x.IsNoAds, IsNoAds)
+                        .SetProperty(x => x.CanFly, CanFly));
             dirty = false;
         }
 
@@ -226,8 +242,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     continue;
                 }
+
                 result.Add((ngoDaoResource, findIndex));
             }
+
             return result;
         }
 
@@ -589,7 +607,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 InventoryManager.Update(cpRef);
             }
 
-            this.InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
+            InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
             return new LinhNgoResult()
             {
                 Success = true,
