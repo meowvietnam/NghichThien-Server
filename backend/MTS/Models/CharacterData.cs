@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Writers;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.BaseSkill;
@@ -35,7 +36,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public Social Social { get; set; } = new();
     public InventoryManager InventoryManager { get; set; } = new();
     public QuestManager QuestManager { get; set; } = new();
-
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -987,6 +987,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Id = request.Id,
             TypeEquipment = request.TypeEquipment,
         };
+    }
+    public IAPResult? IAP(IAPModel request)
+    {
+        throw new NotImplementedException();
     }
 
 }
