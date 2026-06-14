@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -9,27 +8,6 @@ using Network;
 using Network.Extensions;
 
 namespace MTS.Models;
-[MemoryPackable]
-public partial class LevelUpdated
-{
-    public int Level { get; set; }
-    public int CurrentExp { get; set; }
-    public int HpMax { get; set; }
-    public int ThanThuc { get; set; }
-    public int DonToc { get; set; }
-    public int ThoNguyen { get; set; }
-    public void ApplyTo(CharacterData charData)
-    {
-        var progression = charData.Progression;
-        progression.SetLevel(Level);
-        progression.SetCurrentExp(CurrentExp);
-        var stats = charData.Stats;
-        stats.SetSinhMenh(HpMax);
-        stats.SetThanThuc(ThanThuc);
-        stats.SetTocDoBay(DonToc);
-        stats.SetThoNguyen(ThoNguyen);
-    }
-}
 
 public class Progression : IMemorySerializable<Progression>
 {
@@ -163,6 +141,7 @@ public class Progression : IMemorySerializable<Progression>
         var thanThuc = stats.ThanThuc + newInfoLevel.thanThucBuff;
         var docToc = stats.TocDoBay + newInfoLevel.donTocBuff;
         var thoNguyen = stats.ThoNguyen + newInfoLevel.thoNguyenBuff;
+        var ngoDaoDiem = NgoDaoDiem + 1;
         dirty = true;
         var levelUpdated = new LevelUpdated()
         {
@@ -172,6 +151,7 @@ public class Progression : IMemorySerializable<Progression>
             ThanThuc = thanThuc,
             DonToc =  docToc,
             ThoNguyen = thoNguyen,
+            NewNgoDaoDiem = ngoDaoDiem,
         };
         levelUpdated.ApplyTo(CharacterData);
         return levelUpdated;

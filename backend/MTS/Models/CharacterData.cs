@@ -26,7 +26,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public Gender Gender { get; set; }
     public string Name { get; set; }
     public EMonPhai MonPhai { get; private set; }
-    public int MoneyVip { get; set; } = 0;
+    public int MoneyVip { get; private set; } = 0;
+    public bool IsInfiniteEnergy { get; private set; } = false;
+    public bool IsNoAds { get; private set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -61,6 +63,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void SetIsInfiniteEnergy(bool value)
+    {
+        if (IsInfiniteEnergy != value)
+        {
+            IsInfiniteEnergy = value;
+            dirty = true;
+        }
+    }
+
     public CharacterData()
     {
     }
@@ -74,6 +85,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         MonPhai = clone.MonPhai;
         MoneyVip = clone.MoneyVip;
+        IsInfiniteEnergy = clone.IsInfiniteEnergy;
+        IsNoAds = clone.IsNoAds;
         dirty = false;
     }
 
@@ -104,6 +117,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + EquipmentManager.ByteSize()
                + MonPhai.ByteSize()
                + MoneyVip.ByteSize()
+               + IsInfiniteEnergy.ByteSize()
+               + IsNoAds.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
                + Social.ByteSize()
@@ -121,6 +136,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(EquipmentManager);
         writer.Write(MonPhai);
         writer.Write(MoneyVip);
+        writer.Write(IsInfiniteEnergy);
+        writer.Write(IsNoAds);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
         writer.Write(Social);
@@ -138,6 +155,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.EquipmentManager = reader.Read<EquipmentManager>();
         value.MonPhai = reader.Read<EMonPhai>();
         value.MoneyVip = reader.Read<int>();
+        value.IsInfiniteEnergy = reader.Read<bool>();
+        value.IsNoAds = reader.Read<bool>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
@@ -157,7 +176,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 .Where(x => x.Id == Id)
                 .ExecuteUpdateAsync(s =>
                     s.SetProperty(x => x.MonPhai, MonPhai)
-                        .SetProperty(x => x.MoneyVip, MoneyVip));
+                        .SetProperty(x => x.MoneyVip, MoneyVip)
+                        .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy)
+                        .SetProperty(x => x.IsNoAds, IsNoAds));
             dirty = false;
         }
 
@@ -205,10 +226,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     continue;
                 }
-
                 result.Add((ngoDaoResource, findIndex));
             }
-
             return result;
         }
 
@@ -376,7 +395,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Slot = slot,
         };
     }
-    
+
     private int CalculateCostTuLuyen()
     {
         var level = Progression.Level;
@@ -444,7 +463,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception(Strings.MainCultivationRequiredForRetreat);
         }
 
-        var cost = CalculateCostTuLuyen() * time.Days / 30;
+        var months = time.Days / 30;
+        var cost = CalculateCostTuLuyen() * months;
         var money = Stats.LinhThach;
         var remaining = money - cost;
         if (remaining < 0)
@@ -478,10 +498,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
             return (int)total;
         }
 
+        var newTamCanh = Stats.TamCanh - months * 2;
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
         var exp = Progression.CurrentExp + buffExp;
         var levelUpdated = Progression.SetCurrentExp(exp);
         Stats.SetLinhThach(remaining);
+        Stats.SetTamCanh(newTamCanh);
         if (levelUpdated == null)
         {
             exp = Progression.CurrentExp;
@@ -489,6 +511,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 Success = true,
                 CurrentExp = exp,
+                NewTamCanh = newTamCanh,
                 RemainingMoney = remaining,
             };
         }
@@ -496,7 +519,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
         return new TuLuyenResult()
         {
             Success = true,
+            HasLevelUpdated = true,
             LevelUpdated = levelUpdated,
+            NewTamCanh = newTamCanh,
             RemainingMoney = remaining,
         };
     }
@@ -533,6 +558,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.CongPhapNotFound);
             }
+
             double totalDays = (double)cp.baseTimeLearn / Stats.NgoTinh;
             var time = TimeSpan.FromDays(totalDays);
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
@@ -562,6 +588,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(cpRef);
             }
+
             this.InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
             return new LinhNgoResult()
             {
@@ -595,6 +622,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.ThanThongNotFound);
             }
+
             double totalDays = (double)tt.baseTimeLearn / Stats.NgoTinh;
 
             var time = TimeSpan.FromDays(totalDays);
@@ -624,7 +652,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 InventoryManager.Update(ttRef);
             }
-            this.InventoryManager.UpdateNgoDaoWithSkill(tt,25,ref camNgoList, 1);
+
+            this.InventoryManager.UpdateNgoDaoWithSkill(tt, 25, ref camNgoList, 1);
 
             return new LinhNgoResult()
             {
@@ -730,7 +759,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         };
     }
 
-    
 
     public WinCombatResult? WinCombat(WinCombat request)
     {
@@ -755,13 +783,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 x => idCounts[x.Id] // Value là số lượng (count)
             );
 
-       
 
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
         foreach (var item in thanThongDict)
         {
-            this.InventoryManager.UpdateNgoDaoWithSkill(item.Key,baseAddCamNgo,ref camNgoAdd,item.Value);
+            this.InventoryManager.UpdateNgoDaoWithSkill(item.Key, baseAddCamNgo, ref camNgoAdd, item.Value);
         }
 
         int newHp = this.Stats.Hp;
@@ -949,6 +976,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         return weights.Keys.Last();
     }
+
     public EquipEquipmentResult? EquipEquipment(EquipEquipment request)
     {
         bool isUnequip = request.Id == ushort.MaxValue;
@@ -988,5 +1016,4 @@ public class CharacterData : IMemorySerializable<CharacterData>
             TypeEquipment = request.TypeEquipment,
         };
     }
-
 }

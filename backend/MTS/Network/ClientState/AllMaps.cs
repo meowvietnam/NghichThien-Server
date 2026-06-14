@@ -50,7 +50,7 @@ public class AllMaps : IClientState
             {
                 var currentMapId = charData.Progression.IdCurrentNode;
                 var path = GameConfig.MapManager.FindPath(currentMapId, id);
-                var energy = client.UserData.IsInfiniteEnergy ? 0 : path.Count;
+                var energy = charData.IsInfiniteEnergy ? 0 : path.Count;
                 var newEnergy = charData.Progression.CurrentEnergy - energy;
                 if (newEnergy < 0)
                 {

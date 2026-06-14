@@ -35,7 +35,7 @@ public class AdminHandler : IClientHandler
         else if (tag == MessageTag.SetInfinityEnergy)
         {
             var infinityEnergy = reader.Read<bool>();
-            client.UserData.SetInfiniteEnergy(infinityEnergy);
+            client.CharacterData.SetIsInfiniteEnergy(infinityEnergy);
         }
         else if (tag == MessageTag.SetNgoDaoDiem)
         {
