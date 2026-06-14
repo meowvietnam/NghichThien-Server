@@ -109,4 +109,7 @@ public enum MessageTag
 
     WatchAdsForEnergy = 420,
     WatchAdsForEnergyResult = 421,
+
+    IAP = 520,
+    IAPResult = 521,
 }
