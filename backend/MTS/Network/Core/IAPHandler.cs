@@ -34,18 +34,18 @@ namespace MTS.Network.Core
             var charData = client.CharacterData;
             if (tag == MessageTag.IAP)
             {
-                var request = reader.Read<WinCombat>();
-                WinCombatResult result = null;
+                var request = reader.Read<IAPModel>();
+                IAPResult result = null;
                 try
                 {
                     lock (charData)
                     {
-                        result = charData.WinCombat(request);
+                        result = charData.IAP(request);
                     }
                 }
                 catch (Exception e)
                 {
-                    result = new WinCombatResult()
+                    result = new IAPResult()
                     {
                         Success = false,
                         Message = e.Message
