@@ -14,7 +14,8 @@ git -C "$BUILD_DIR" clean -fd
 git -C "$BUILD_DIR" pull origin $BRANCH
 
 echo "===> Build project"
-dotnet publish -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release -r linux-x64 --no-self-contained -o "$BUILD_DIR"
+dotnet build MTS.sln -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release
+dotnet publish MTS.csproj -p:BuildProjectReferences=true -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release -r linux-x64 --no-self-contained -o "$BUILD_DIR"
 echo "===> Move to build folder"
 cd "$BUILD_DIR"
 echo "===> Git add"

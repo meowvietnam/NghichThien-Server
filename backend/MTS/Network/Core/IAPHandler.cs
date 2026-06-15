@@ -40,7 +40,7 @@ namespace MTS.Network.Core
                 {
                     lock (charData)
                     {
-                        result = charData.IAP(request);
+                        // result = charData.IAP(request);
                     }
                 }
                 catch (Exception e)

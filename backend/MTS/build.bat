@@ -23,7 +23,9 @@ git -C "%BUILD_DIR%" pull origin %BRANCH%
 if errorlevel 1 exit /b 1
 
 echo ===> Build project
-dotnet publish -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release -r linux-x64 --no-self-contained -o "%BUILD_DIR%"
+dotnet build MTS.sln -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release
+if errorlevel 1 exit /b 1
+dotnet publish MTS.csproj -p:BuildProjectReferences=true -p:TreatWarningsAsErrors=false -p:WarningLevel=0 -p:NoWarn="*" -clp:ErrorsOnly -c Release -r linux-x64 --no-self-contained -o "%BUILD_DIR%"
 if errorlevel 1 exit /b 1
 
 echo ===> Move to build folder
