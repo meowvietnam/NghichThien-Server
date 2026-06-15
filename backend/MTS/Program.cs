@@ -31,6 +31,7 @@ public static class Program
     }
     public static void Main(string[] args)
     {
+        Console.OutputEncoding = Encoding.UTF8;
         var builder = WebApplication.CreateBuilder(args);
         var webPort = builder.Configuration.GetValue("ServerPorts:WebPort", 9481);
         builder.WebHost.UseUrls($"http://*:{webPort}");
@@ -85,7 +86,7 @@ public static class Program
                 Scheme = "Bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Nhập JWT token: Bearer {your_token}"
+                Description = "Nh?p JWT token: Bearer {your_token}"
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement

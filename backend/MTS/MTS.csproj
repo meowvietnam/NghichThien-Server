@@ -75,6 +75,10 @@
         <Content Include="Data\step-config.bin">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <None Remove="Data\MainQuestManagerModel.bin" />
+        <Content Include="Data\MainQuestManagerModel.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

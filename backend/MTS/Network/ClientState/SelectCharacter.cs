@@ -66,24 +66,6 @@ namespace MTS.Network.ClientState
                         CharacterData = character,
                     };
                     client.Send(MessageTag.SelectCharacterResult, result);
-                    var herbs = GameConfig.LuyenDanResources.HerbDatas;
-                    var herb  = herbs[Random.Shared.Next(herbs.Count)];
-                    var rewards = new List<ItemRef>
-                    {
-                        new()
-                        {
-                            Id = (ushort)herb.Id,
-                            Type = ItemType.Herb,
-                            Count = 1,
-                        }
-                    };
-                    await client.MailManager.SendMail(new Mail()
-                    {
-                        Title = "Test mail",
-                        Content = "Test mail Content",
-                        Rewards =  rewards,
-                    });
-
                     client.OnSelectedCharacter();
                 }
                 catch (Exception e)
