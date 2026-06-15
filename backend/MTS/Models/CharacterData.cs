@@ -615,6 +615,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Type = type,
                 RemainingMoney = remaining,
                 NewTuoiTac = newTuoiTac,
+                CamNgos = camNgoList,
             };
         }
 
@@ -671,7 +672,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 InventoryManager.Update(ttRef);
             }
 
-            this.InventoryManager.UpdateNgoDaoWithSkill(tt, 25, ref camNgoList, 1);
+            InventoryManager.UpdateNgoDaoWithSkill(tt, 25, ref camNgoList, 1);
 
             return new LinhNgoResult()
             {
@@ -680,6 +681,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Type = type,
                 RemainingMoney = remaining,
                 NewTuoiTac = newTuoiTac,
+                CamNgos = camNgoList,
             };
         }
 

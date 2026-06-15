@@ -794,8 +794,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         foreach (var typeSkill in skill.eTypeSkill)
         {
             var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
-            var userCamNgo = this.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
-            // Sử dụng toán tử ?. và ?? 0 để phòng hờ nếu chưa có cảm ngộ này thì tính là 0
+            var userCamNgo = CamNgos.FirstOrDefault(x => x.Id == camNgoType);
             int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
 
             var camNgo = new CamNgo
@@ -806,6 +805,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             this.AddOrUpdate(camNgo);
             camNgoAdd.Add(camNgo);
         }
+        
     }
 }
 

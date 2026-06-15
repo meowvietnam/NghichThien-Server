@@ -11,7 +11,7 @@ namespace MTS.Network.Models
         public string? Message { get; set; }
         public RewardSnapshot Reward { get; set; } = new RewardSnapshot();
         public int NewHP { get; set; }
-        public CamNgo[]?NewCamNgo { get; set; } = Array.Empty<CamNgo>(); 
+        public CamNgo[]? NewCamNgo { get; set; } = Array.Empty<CamNgo>(); 
 
         public int ByteSize()
         {

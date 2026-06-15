@@ -11,4 +11,5 @@ public partial class LinhNgoResult
     public ushort Id { get; set; }
     public int RemainingMoney { get; set; }
     public TimeSpan NewTuoiTac { get; set; }
+    public List<CamNgo> CamNgos { get; set; }
 }

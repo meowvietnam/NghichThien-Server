@@ -12,13 +12,11 @@ public class MailManager
     private readonly CharacterData characterData;
     private readonly ISender<MessageTag> sender;
     private bool isLoaded;
-
     public MailManager(CharacterData characterData, ISender<MessageTag> sender)
     {
         this.characterData = characterData;
         this.sender = sender;
     }
-
     public async Task<List<Mail>> GetMails()
     {
         if (!isLoaded)
@@ -33,7 +31,6 @@ public class MailManager
         }
         return characterData.Social.Mails;
     }
-
     public async Task SendMail(Mail mail)
     {
         mail.CharId = characterData.Id;
