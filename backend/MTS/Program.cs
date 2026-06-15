@@ -20,6 +20,7 @@ using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS;
+
 public static class Program
 {
     public static WebApplication App { get; private set; }

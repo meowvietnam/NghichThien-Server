@@ -1,36 +1,24 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using MemoryPack;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
-
-public class ThanThongEquip : IMemorySerializable<ThanThongEquip>, IEquatable<ThanThongEquip>
+[MemoryPackable]
+public partial class ThanThongEquip :  IEquatable<ThanThongEquip>
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
     public ushort Id { get; set; }
     public byte SlotIndex { get; set; }
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public EquipmentManager EquipmentManager { get; set; }
-    public void Deserialize(IReader reader, ref ThanThongEquip value)
-    {
-        value.Id = reader.Read<ushort>();
-        value.SlotIndex = reader.Read<byte>();
-    }
-    public int ByteSize()
-    {
-        return Id.ByteSize() + SlotIndex.ByteSize();
-    }
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Id);
-        writer.Write(SlotIndex);
-    }
-
     public bool Equals(ThanThongEquip? other)
     {
         if (other is null) return false;

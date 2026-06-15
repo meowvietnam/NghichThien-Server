@@ -60,27 +60,27 @@ public class InventoryModify : InventoryTracking, IMemorySerializable<InventoryM
     {
         value.Furnaces = DeserializeModify<FurnaceData>(reader);
         value.Items = DeserializeModify<ItemRef>(reader);
-        value.NgoDaos = DeserializeModify<NgoDao>(reader);
+        value.NgoDaos = DeserializeModify2<NgoDao>(reader);
         value.CamNgos = DeserializeModify2<CamNgo>(reader);
-        value.CongPhaps = DeserializeModify<CongPhap>(reader);
-        value.ThanThongs = DeserializeModify<ThanThong>(reader);
-        value.Equipments = DeserializeModify<Equipment>(reader);
+        value.CongPhaps = DeserializeModify2<CongPhap>(reader);
+        value.ThanThongs = DeserializeModify2<ThanThong>(reader);
+        value.Equipments = DeserializeModify2<Equipment>(reader);
     }
 
     public int ByteSize()
     {
         return ByteSize(Furnaces) + ByteSize(Items)
-                                  + ByteSize(NgoDaos) + ByteSize2(CamNgos) + ByteSize(CongPhaps)
-                                  + ByteSize(ThanThongs) + ByteSize(Equipments);
+                                  + ByteSize2(NgoDaos) + ByteSize2(CamNgos) + ByteSize2(CongPhaps)
+                                  + ByteSize2(ThanThongs) + ByteSize2(Equipments);
     }
     public void Serialize(IWriter writer)
     {
         SerializeModify(writer, Furnaces);
         SerializeModify(writer, Items);
-        SerializeModify(writer, NgoDaos);
+        SerializeModify2(writer, NgoDaos);
         SerializeModify2(writer, CamNgos);
-        SerializeModify(writer, CongPhaps);
-        SerializeModify(writer, ThanThongs);
-        SerializeModify(writer, Equipments);
+        SerializeModify2(writer, CongPhaps);
+        SerializeModify2(writer, ThanThongs);
+        SerializeModify2(writer, Equipments);
     }
 }

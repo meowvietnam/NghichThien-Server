@@ -1,9 +1,11 @@
+using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.CreateCharacter;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Managers;
+using MTS.Game.Snapshot;
 using MTS.Models;
 using Network;
 using Network.Extensions;
@@ -20,8 +22,9 @@ public static class GameConfig
     public static LuyenKhiResources LuyenKhiResources { get; private set; }
     public static NDCPTTManager NDCPTTManager { get; private set; }
     public static NgoDaoManager NgoDaoManager { get; private set; }
-
     public static MainQuestManagerModel MainQuestManagerModel { get; private set; }
+    public static ComboSkillResource ComboSkillResources { get; private set; }
+    public static NpcData[] NpcDatas { get; private set; }
 
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public const int OriginalMoney = 20;
@@ -107,6 +110,7 @@ public static class GameConfig
         new InfoLevel
             { tuviRequireNextLevel = 200000000, hpMaxBuff = 0, thanThucBuff = 0, donTocBuff = 0, thoNguyenBuff = 0 }
     };
+
     public static Dictionary<BaseSkill.ETierSkill, int> PriceTTWithTier = new Dictionary<BaseSkill.ETierSkill, int>
     {
         { BaseSkill.ETierSkill.NhanGiaiHa, 25 },
@@ -119,6 +123,7 @@ public static class GameConfig
         { BaseSkill.ETierSkill.ThienGiaiTrung, 30000 },
         { BaseSkill.ETierSkill.ThienGiaiThuong, 50000 },
     };
+
     public static readonly Dictionary<Tier, int> PriceVatLieuWithTier = new()
     {
         { Tier.NhatPham, 4 },
@@ -147,6 +152,16 @@ public static class GameConfig
         return reader.Read<T>();
     }
 
+    public static T Read2<T>(string filePath) where T : IMemoryPackable<T>
+    {
+        var bytes = File.ReadAllBytes(filePath);
+        return MemoryPackSerializer.Deserialize<T>(bytes);
+    }
+    public static T[] ReadArray2<T>(string filePath) where T : IMemoryPackable<T>
+    {
+        var bytes = File.ReadAllBytes(filePath);
+        return MemoryPackSerializer.Deserialize<T[]>(bytes);
+    }
     public static void Init()
     {
         CharacterTemplate = Json.Deserialize<CharacterData>(File.ReadAllText("Data/character-template.json"));
@@ -158,5 +173,7 @@ public static class GameConfig
         NDCPTTManager = Read<NDCPTTManager>("Data/NDCPTTManager.bin");
         NgoDaoManager = Read<NgoDaoManager>("Data/NgoDaoManager.bin");
         MainQuestManagerModel = Read<MainQuestManagerModel>("Data/MainQuestManagerModel.bin");
+        ComboSkillResources = Read2<ComboSkillResource>("Data/combo-skill-resources.bin");
+        NpcDatas = ReadArray2<NpcData>("Data/npc-datas.bin");
     }
 }

@@ -79,6 +79,14 @@
         <Content Include="Data\MainQuestManagerModel.bin">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <None Remove="Data\combo-skill-resources.bin" />
+        <Content Include="Data\combo-skill-resources.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <None Remove="Data\npc-datas.bin" />
+        <Content Include="Data\npc-datas.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

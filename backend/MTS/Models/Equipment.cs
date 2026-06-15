@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using MemoryPack;
 using MTS.Game.LuyenKhi;
 using MTS.Network.Models;
 using MTS.Utils;
@@ -8,10 +9,12 @@ using Newtonsoft.Json;
 
 namespace MTS.Models;
 
-public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
+[MemoryPackable]
+public partial class Equipment : IEquatable<Equipment>
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
 
     public ushort SelfId { get; set; }
@@ -23,36 +26,22 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [ForeignKey(nameof(CharId))]
+    [MemoryPackIgnore]
     public InventoryManager Inventory { get; set; }
 
     [NotMapped]
+    [MemoryPackIgnore]
     public LuyenKhiRewardItem Item => LuyenKhiResources.Instance.RewardItems.FirstOrDefault(x => x.Id == Id);
-    [NotMapped]
-    public Material[] Materials => LuyenKhiResources.Instance.Materials.Where(x => MaterialIds.Contains((ushort)x.Id)).ToArray();
-    [NotMapped]
-    public EquipmentGradeConfig GradeConfig => LuyenKhiResources.Instance.EquipmentGrades.FirstOrDefault(x=>x.Grade == GetGrade());
-    public void Deserialize(IReader reader, ref Equipment value)
-    {
-        value.SelfId = reader.Read<ushort>();
-        value.Id = reader.Read<ushort>();
-        value.Name = reader.Read();
-        value.Effects = reader.ReadArray<Effect>();
-        value.MaterialIds = reader.ReadArray<ushort>();
-    }
 
-    public int ByteSize()
-    {
-        return SelfId.ByteSize() + Id.ByteSize() + Name.ByteSize() + Effects.ByteSize() +  MaterialIds.ByteSize();
-    }
+    [NotMapped]
+    [MemoryPackIgnore]
+    public Material[] Materials =>
+        LuyenKhiResources.Instance.Materials.Where(x => MaterialIds.Contains((ushort)x.Id)).ToArray();
 
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(SelfId);
-        writer.Write(Id);
-        writer.Write(Name);
-        writer.WriteArray(Effects);
-        writer.WriteArray(MaterialIds);
-    }
+    [NotMapped]
+    [MemoryPackIgnore]
+    public EquipmentGradeConfig GradeConfig =>
+        LuyenKhiResources.Instance.EquipmentGrades.FirstOrDefault(x => x.Grade == GetGrade());
 
     public EquipmentGrade GetGrade()
     {
@@ -65,9 +54,11 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
             var matConfig = matConfigs.First(x => x.Tier == material.Tier);
             grade += matConfig.Grade;
         }
+
         var equipmentGradeConfig = res.EquipmentGrades.Last(x => x.MinGrade <= grade);
         return equipmentGradeConfig.Grade;
     }
+
     public EquipmentType GetEquipmentType()
     {
         var artifactType = Item.Type;
@@ -86,7 +77,7 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
                 return EquipmentType.Jewelry;
         }
     }
-    
+
     public bool Equals(Equipment? other)
     {
         if (other is null) return false;
@@ -111,6 +102,7 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
             m.YinYangType == config.YinYangType
         ).ToArray();
     }
+
     public (int min, int max) GetMinMaxValue(EffectType effectType)
     {
         var artifactType = Item.Type;
@@ -120,7 +112,8 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
             c.Effects.Any(e => e.EffectType == effectType && e.ArtifactType == artifactType)
         ).ToList();
         if (validConfigs.Count == 0) return (0, 0);
-        var effectData = validConfigs[0].Effects.First(e => e.EffectType == effectType && e.ArtifactType == artifactType);
+        var effectData = validConfigs[0].Effects
+            .First(e => e.EffectType == effectType && e.ArtifactType == artifactType);
         if (effectData.Value == 0) return (0, 0);
         int sumGrade = 0;
         foreach (var config in validConfigs)
@@ -131,6 +124,7 @@ public class Equipment : IMemorySerializable<Equipment>, IEquatable<Equipment>
                 .Sum(m => LuyenKhiResources.Instance.MaterialGradeConfigs
                     .FirstOrDefault(x => x.Tier == m.Tier)?.Grade ?? 0);
         }
+
         int maxValue = Mathf.RoundToInt(1.0f * sumGrade / effectData.Value);
         int minValue = Mathf.RoundToInt(0.5f * maxValue);
         return (minValue, maxValue);
