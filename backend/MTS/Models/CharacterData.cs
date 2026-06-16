@@ -582,7 +582,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
-            var remaining = money - price / 2;
+            var remaining = money - price;
             if (remaining < 0)
             {
                 throw new Exception(Strings.NotEnoughMoney);
@@ -648,7 +648,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
             var money = Stats.LinhThach;
-            var remaining = money - price / 2;
+            var remaining = money - price;
             if (remaining < 0)
             {
                 throw new Exception(Strings.NotEnoughMoney);
@@ -687,7 +687,85 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         throw new Exception(Strings.NotSupportItemType);
     }
+    public DotPhaCongPhapResult? DotPhaCongPhap(int request)
+    {
+        var id = (ushort)request;
+        var itemRef = new ItemRef()
+        {
+            Id = id,
+            Type = ItemType.CongPhap,
+        };
+        var camNgoList = new List<CamNgo>();
+        var cpOwnerRef = new CongPhap()
+        {
+            Id = id,
+        };
+        int require = 1;
 
+        var congPhapOwners = InventoryManager.CongPhapOwners;
+        if (congPhapOwners.TryGetValue(cpOwnerRef, out var cpOwner))
+        {
+            require = cpOwner.Level + 1;
+        }
+        else
+        {
+            throw new Exception(Strings.CongPhapNotOwned);
+        }    
+
+        if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < require)
+        {
+            throw new Exception(Strings.NotEnoughCongPhap);
+        }
+
+      
+        var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
+        if (cp == null)
+        {
+            throw new Exception(Strings.CongPhapNotFound);
+        }
+
+        double totalDays = (double)(cp.baseTimeLearn * require) / Stats.NgoTinh;
+        var time = TimeSpan.FromDays(totalDays);
+        var provider = ItemProviderFactory.GetProvider<SkillProvider>(ItemType.CongPhap, InventoryManager);
+        var price = provider.GetPriceItemBuy(id) * require;
+        var money = Stats.LinhThach;
+        var remaining = money - price;
+        if (remaining < 0)
+        {
+            throw new Exception(Strings.NotEnoughMoney);
+        }
+
+        
+        var newTuoiTac = Stats.TuoiTac + time;
+        CongPhap cpOwnerNewValue = new CongPhap()
+        {
+            Id = cpOwner.Id,
+            Level = (ushort)(cpOwner.Level + 1),
+        };
+        InventoryManager.Update(cpOwner, cpOwnerNewValue);
+        Stats.SetLinhThach(remaining);
+        Stats.SetTuoiTac(newTuoiTac);
+        cpRef.Count -= (ushort)require;
+        if (cpRef.Count < 1)
+        {
+            InventoryManager.Remove(cpRef);
+        }
+        else
+        {
+            InventoryManager.Update(cpRef);
+        }
+
+        InventoryManager.UpdateNgoDaoWithSkill(cp, 50 * cpOwner.Level, ref camNgoList, 1);
+        return new DotPhaCongPhapResult()
+        {
+            Success = true,
+            Id = id,
+            RemainingMoney = remaining,
+            NewTuoiTac = newTuoiTac,
+            CamNgos = camNgoList,
+        };
+        throw new Exception(Strings.NotSupportItemType);
+    }
     public JoinMonPhaiResult? JoinMonPhai(EMonPhai request)
     {
         if (QuestManager.CurrentMainQuest <= 0)

@@ -201,6 +201,30 @@ public class SkillHandler : IClientHandler
                 client.Send(MessageTag.LinhNgoResult, result);
             }
         }
+        else if (tag == MessageTag.DotPhaCongPhap)
+        {
+            var request = reader.Read<int>();
+            DotPhaCongPhapResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    result = charData.DotPhaCongPhap(request);
+                }
+            }
+            catch (Exception e)
+            {
+                result = new DotPhaCongPhapResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.DotPhaCongPhapResult, result);
+            }
+        }    
     }
 
     public void OnLeave()
