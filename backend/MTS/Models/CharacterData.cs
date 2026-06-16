@@ -687,6 +687,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         throw new Exception(Strings.NotSupportItemType);
     }
+
     public DotPhaCongPhapResult? DotPhaCongPhap(int request)
     {
         var id = (ushort)request;
@@ -710,14 +711,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
         else
         {
             throw new Exception(Strings.CongPhapNotOwned);
-        }    
+        }
 
         if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < require)
         {
             throw new Exception(Strings.NotEnoughCongPhap);
         }
 
-      
+
         var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
         if (cp == null)
         {
@@ -735,7 +736,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception(Strings.NotEnoughMoney);
         }
 
-        
+
         var newTuoiTac = Stats.TuoiTac + time;
         CongPhap cpOwnerNewValue = new CongPhap()
         {
@@ -764,8 +765,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewTuoiTac = newTuoiTac,
             CamNgos = camNgoList,
         };
-        throw new Exception(Strings.NotSupportItemType);
     }
+
     public JoinMonPhaiResult? JoinMonPhai(EMonPhai request)
     {
         if (QuestManager.CurrentMainQuest <= 0)

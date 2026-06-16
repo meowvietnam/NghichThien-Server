@@ -14,7 +14,8 @@ public class SkillHandler : IClientHandler
     private static MessageTag[] handler =
     [
         MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,
-        MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen, MessageTag.LinhNgo
+        MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen, MessageTag.LinhNgo,
+        MessageTag.DotPhaCongPhap
     ];
 
     public MessageTag[] HandleTag => handler;
