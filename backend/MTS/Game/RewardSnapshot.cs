@@ -1,32 +1,15 @@
-﻿using MTS.Models;
+﻿using MemoryPack;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Game
 {
-    public class RewardSnapshot : IMemorySerializable<RewardSnapshot>
+    [MemoryPackable]
+    public partial class RewardSnapshot
     {
         public List<ItemRef> ItemRefs = new();
         public int Money = 0;
         public int MoneyVip = 0;
-
-        public int ByteSize()
-        {
-            return Money.ByteSize() + MoneyVip.ByteSize() + ItemRefs.ByteSize();
-        }
-
-        public void Deserialize(IReader reader, ref RewardSnapshot value)
-        {
-            value.Money = reader.Read<int>();
-            value.MoneyVip = reader.Read<int>();
-            value.ItemRefs = reader.ReadArray<ItemRef>().ToList();
-        }
-
-        public void Serialize(IWriter writer)
-        {
-            writer.Write(Money);
-            writer.Write(MoneyVip);
-            writer.WriteArray(ItemRefs);
-        }
     }
 }

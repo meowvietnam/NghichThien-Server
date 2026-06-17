@@ -1,4 +1,5 @@
 using MTS.Models;
+using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
@@ -47,8 +48,13 @@ public class AdminHandler : IClientHandler
         {
             var camNgo = reader.Read<CamNgo>();
             var inventory = await client.GetInventory();
-            inventory.AddOrUpdate(camNgo);
-            client.Send(MessageTag.SetCamNgoResult, camNgo);
+            var newNgoDaoDiem = inventory.AddOrUpdate(camNgo);
+            var result = new SetCamNgoResult()
+            {
+                CamNgo = camNgo,
+                NewNgoDaoDiem = newNgoDaoDiem
+            };
+            client.Send(MessageTag.SetCamNgoResult, result);
         }
         else if (tag == MessageTag.AddThanThong)
         {

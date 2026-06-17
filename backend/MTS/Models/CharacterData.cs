@@ -607,7 +607,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 InventoryManager.Update(cpRef);
             }
 
-            InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
+            var newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(cp, 50, ref camNgoList, 1);
             return new LinhNgoResult()
             {
                 Success = true,
@@ -616,6 +616,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 RemainingMoney = remaining,
                 NewTuoiTac = newTuoiTac,
                 CamNgos = camNgoList,
+                NewNgoDaoDiem = newNgoDaoDiem,
             };
         }
 
@@ -672,7 +673,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 InventoryManager.Update(ttRef);
             }
 
-            InventoryManager.UpdateNgoDaoWithSkill(tt, 25, ref camNgoList, 1);
+            var newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(tt, 25, ref camNgoList, 1);
 
             return new LinhNgoResult()
             {
@@ -682,6 +683,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 RemainingMoney = remaining,
                 NewTuoiTac = newTuoiTac,
                 CamNgos = camNgoList,
+                NewNgoDaoDiem = newNgoDaoDiem,
             };
         }
 
@@ -756,7 +758,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             InventoryManager.Update(cpRef);
         }
 
-        InventoryManager.UpdateNgoDaoWithSkill(cp, 50 * cpOwner.Level, ref camNgoList, 1);
+        var newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(cp, 50 * cpOwner.Level, ref camNgoList, 1);
         return new DotPhaCongPhapResult()
         {
             Success = true,
@@ -764,6 +766,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             RemainingMoney = remaining,
             NewTuoiTac = newTuoiTac,
             CamNgos = camNgoList,
+            NewNgoDaoDiem = newNgoDaoDiem,
         };
     }
 
@@ -869,39 +872,38 @@ public class CharacterData : IMemorySerializable<CharacterData>
             }
         }
 
-        // 1. Đếm số lần xuất hiện của từng ID trong request
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        // 2. Tìm Thần Thông tương ứng và gom thành Dictionary<ThanThong, int>
         var thanThongDict = GameConfig.NDCPTTManager.ThanThongs
             .Where(x => idCounts.ContainsKey(x.Id))
             .ToDictionary(
-                x => x, // Key là đối tượng ThanThong
-                x => idCounts[x.Id] // Value là số lượng (count)
+                x => x,
+                x => idCounts[x.Id]
             );
 
 
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
+        var newNgoDaoDiem = Progression.NgoDaoDiem;
         foreach (var item in thanThongDict)
         {
-            this.InventoryManager.UpdateNgoDaoWithSkill(item.Key, baseAddCamNgo, ref camNgoAdd, item.Value);
+            newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(item.Key, baseAddCamNgo, ref camNgoAdd, item.Value);
         }
 
-        int newHp = this.Stats.Hp;
+        int newHp = Stats.Hp;
         RewardSnapshot newReward = new RewardSnapshot();
         if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps || request.TypeCombat == Game.Combat.ETypeCombat.Boss)
         {
-            if (request.CurrentHPUser > this.Stats.SinhMenh * 5)
+            if (request.CurrentHPUser > Stats.SinhMenh * 5)
             {
                 throw new Exception(Strings.HackerHP);
             }
 
             if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps)
             {
-                if (request.CurrentLevelEnemy > this.Progression.Level + 2)
+                if (request.CurrentLevelEnemy > Progression.Level + 2)
                 {
                     throw new Exception(Strings.HackerLevelEnemyCombat);
                 }
@@ -909,7 +911,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
             {
                 // Tính toán level Boss hợp lệ dựa trên level của Player
-                int validBossLevel = ((this.Progression.Level - 1) / 3 + 1) * 3 + 1;
+                int validBossLevel = ((Progression.Level - 1) / 3 + 1) * 3 + 1;
 
                 // Nếu level của con Boss trong trận đấu khác với level hợp lệ -> Chắc chắn hack
                 if (request.CurrentLevelEnemy != validBossLevel)
@@ -919,12 +921,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
             }
 
             newHp = request.CurrentHPUser;
-            this.Stats.SetHp(request.CurrentHPUser);
+            Stats.SetHp(request.CurrentHPUser);
 
             int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
             int monsterLevel = request.CurrentLevelEnemy;
             var listItemRef = GenerateMonsterRewards(monsterLevel);
-            this.InventoryManager.AddToInventory(listItemRef);
+            InventoryManager.AddToInventory(listItemRef);
             newReward = new RewardSnapshot
             {
                 Money = linhThach,
@@ -940,6 +942,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewHP = newHp,
             NewCamNgo = camNgoAdd.ToArray(),
             Reward = newReward,
+            NewNgoDaoDiem = newNgoDaoDiem,
         };
     }
 

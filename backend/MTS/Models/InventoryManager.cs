@@ -527,28 +527,40 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         Tracking.NgoDaos.Add(ngoDao);
     }
 
-    public void AddOrUpdate(CamNgo camNgo)
+    public int AddOrUpdate(CamNgo camNgo)
     {
         if (CamNgos.TryGetValue(camNgo, out var cam))
         {
-            Update(cam, camNgo);
+            return Update(cam, camNgo);
         }
         else
         {
-            Add(camNgo);
+            return Add(camNgo);
         }
     }
-    public void Update(CamNgo oldValue, CamNgo newValue)
+    public int Update(CamNgo oldValue, CamNgo newValue)
     {
+        var p = CharacterData.Progression;
+        var newNgoDaoDiem = p.NgoDaoDiem;
+        if (oldValue.Value < newValue.Value)
+        {
+            newNgoDaoDiem++;
+            p.SetNgoDaoDiem(newNgoDaoDiem);
+        }
         oldValue.Value = newValue.Value;
         Tracking.CamNgos.Update(oldValue);
+        return newNgoDaoDiem;
     }
 
-    public void Add(CamNgo camNgo)
+    public int Add(CamNgo camNgo)
     {
+        var p = CharacterData.Progression;
+        var newNgoDaoDiem = p.NgoDaoDiem + 1;
+        p.SetNgoDaoDiem(newNgoDaoDiem);
         camNgo.CharId = CharId;
         CamNgos.Add(camNgo);
         Tracking.CamNgos.Add(camNgo);
+        return newNgoDaoDiem;
     }
     public void AddOrUpdate(CongPhap congPhap)
     {
@@ -785,12 +797,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         }
         return add;
     }
-    public void UpdateNgoDaoWithSkill(BaseSkill skill , int baseAdd, ref List<CamNgo> camNgoAdd, int count =1)
+    public int UpdateNgoDaoWithSkill(BaseSkill skill , int baseAdd, ref List<CamNgo> camNgoAdd, int count =1)
     {
         ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
         {
             return (ND.ETypeSkill)(int)eTypeSkill;
         }
+        var newNgoDaoDiem = CharacterData.Progression.NgoDaoDiem;
         foreach (var typeSkill in skill.eTypeSkill)
         {
             var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
@@ -802,10 +815,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Id = camNgoType,
                 Value = (baseAdd * count * (int)skill.eTierSkill) + currentUserCamNgoValue,
             };
-            this.AddOrUpdate(camNgo);
+            newNgoDaoDiem = AddOrUpdate(camNgo);
             camNgoAdd.Add(camNgo);
         }
-        
+        return newNgoDaoDiem;
     }
 }
 

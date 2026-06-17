@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using MemoryPack;
 using MTS.Converter;
 using MTS.Interfaces;
 using MTS.Utils;
@@ -7,22 +8,31 @@ using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
+
 [JsonConverter(typeof(ItemRefConverter))]
-public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDeepClone<ItemRef>
+[MemoryPackable]
+public partial class ItemRef : IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDeepClone<ItemRef>
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
+
     public ushort Id { get; set; }
     public ItemType Type { get; set; }
     public ushort Count { get; set; }
+
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public InventoryManager Inventory { get; set; }
+
+    [MemoryPackConstructor]
     public ItemRef()
     {
     }
+
     public ItemRef(ushort id, ItemType type, int count)
     {
         Id = id;
@@ -30,39 +40,18 @@ public class ItemRef : IMemorySerializable<ItemRef>, IEquatable<ItemRef>, ICusto
         Count = (ushort)count;
     }
 
-    public bool IsFurnace()
-    {
-        return Type == ItemType.Furnace;
-    }
-    public int ByteSize()
-    {
-        return Id.ByteSize() + Type.ByteSize() + Count.ByteSize();
-    }
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Id);
-        writer.Write(Type);
-        writer.Write(Count);
-    }
-    public void Deserialize(IReader reader, ref ItemRef value)
-    {
-        value.Id = reader.Read<ushort>();
-        value.Type = reader.Read<ItemType>();
-        value.Count = reader.Read<ushort>();
-    }
-
     public bool CustomEquals(ItemRef other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Id == other.Id && Type == other.Type  && Count == other.Count;
+        return Id == other.Id && Type == other.Type && Count == other.Count;
     }
 
-    
     public override int GetHashCode()
     {
         return HashCode.Combine(Id, (byte)Type);
     }
+
     public bool Equals(ItemRef? other)
     {
         if (other is null) return false;
