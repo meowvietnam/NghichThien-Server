@@ -1,10 +1,10 @@
+using MemoryPack;
 using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Network.Core;
-
 public class AdminHandler : IClientHandler
 {
     private Client client;
@@ -93,7 +93,7 @@ public class AdminHandler : IClientHandler
     private static readonly MessageTag[] handler =
     [
         MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo,
-        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney
+        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney, MessageTag.TestRequest
     ];
 
     public MessageTag[] HandleTag => handler;

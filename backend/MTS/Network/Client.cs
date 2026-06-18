@@ -9,7 +9,7 @@ using Network.Extensions;
 
 namespace MTS.Network;
 
-public class Client : ClientConnection, ISender<MessageTag>
+public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageTag>
 {
     public int Id { get; private set; }
     public string Key { get; private set; }
@@ -174,22 +174,27 @@ public class Client : ClientConnection, ISender<MessageTag>
         var inventory = await GetInventory();
         return await MailManager.ClaimAllMails(inventory);
     }
-
+    
     public void OnSelectedCharacter()
     {
         var module = CoreModule;
+        
         module.RemoveHandler<MailHandler>();
         var mailHandler = new MailHandler(this);
         module.AddHandler(mailHandler);
+        
         module.RemoveHandler<InventoryHandler>();
         var inventoryHandler = new InventoryHandler(this);
         module.AddHandler(inventoryHandler);
+        
         module.RemoveHandler<AdminHandler>();
         var adminHandler = new AdminHandler(this);
         module.AddHandler(adminHandler);
+        
         var sceneManager = new SceneManager(this);
         module.RemoveHandler<SceneManager>();
         module.AddHandler(sceneManager);
+        
         var skillHandler = new SkillHandler(this);
         module.RemoveHandler<SkillHandler>();
         module.AddHandler(skillHandler);
@@ -207,5 +212,10 @@ public class Client : ClientConnection, ISender<MessageTag>
         module.AddHandler(combatHandler);
 
         ChangeState(new AllMaps(this));
+    }
+
+    public void AddRequest(MessageTag tag, Action<IReader> response, int timeoutMilliseconds = 0, Action<Exception> onError = null)
+    {
+        AddRequest(TcpClient ,tag, response, timeoutMilliseconds, onError);
     }
 }
