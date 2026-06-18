@@ -242,6 +242,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         var primer = request.DuocDan;
         var furnaceId = request.FurnaceId;
         var count = request.Count;
+        var actualCount = count;
         var furnace = Furnaces.FirstOrDefault(x => x.SelfId == furnaceId);
         if (furnace == null)
         {
@@ -319,7 +320,11 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var myRecipe = Recipes.FirstOrDefault(x => x.Id == dataRes.Id);
             if (myRecipe == null)
             {
-                var success = new Random().NextSingle() >= 0.5f;
+                var rnd = new Random();
+                var rnds = Enumerable.Range(0,count).Where(x => rnd.NextDouble() < 0.5).ToArray();
+                actualCount = rnds.Length;
+                
+                var success = actualCount > 0;
                 if (!success)
                 {
                     return new LuyenDanResult()
@@ -364,7 +369,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var linhDanRef = new ItemRef()
             {
                 Id = (ushort)linhDan.Id,
-                Count = (ushort)count,
+                Count = (ushort)actualCount,
                 Type = ItemType.LinhDan
             };
             Add(LinhDans, linhDanRef);
