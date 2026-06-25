@@ -147,6 +147,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         var furnace = new FurnaceData()
         {
+            CharId = CharId,
             SelfId = selfId
         };
         return RemoveFurnace(furnace);
@@ -444,6 +445,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     }
     public void Add(ItemRef itemRef, int count)
     {
+        itemRef.CharId = CharId;
         var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
         foreach (var itemRefse in array)
         {
@@ -452,8 +454,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 item.Count = (ushort)(itemRef.Count + count);
                 if (item.Count == 0)
                 {
-                    itemRefse.Remove(itemRef);
-                    Tracking.Items.Delete(itemRef);
+                    itemRefse.Remove(item);
+                    Tracking.Items.Delete(item);
                 }
                 else
                 {
@@ -473,8 +475,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 item.Count = itemRef.Count;
                 if (item.Count == 0)
                 {
-                    x.Remove(itemRef);
-                    Tracking.Items.Delete(itemRef);
+                    x.Remove(item);
+                    Tracking.Items.Delete(item);
                 }
                 else
                 {
@@ -487,6 +489,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     }
     public bool Remove(ItemRef itemRef)
     {
+        itemRef.CharId = CharId;
         var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
         return array.Any(x =>
         {
@@ -556,6 +559,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public bool Remove(Equipment equipment)
     {
+        equipment.CharId = CharId;
         var array = new[] { VuKhis, PhongCus, TrangSucs };
         return array.Any(x =>
         {

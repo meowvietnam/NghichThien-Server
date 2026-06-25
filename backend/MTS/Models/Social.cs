@@ -22,17 +22,20 @@ public class Social : IMemorySerializable<Social>
     public CharacterData CharacterData { get; set; }
 
     [NotMapped] private Modify<Relationship> modifyRelationships = new();
+
     public void Deserialize(IReader reader, ref Social value)
     {
         value.Mails = reader.ReadArray<Mail>().ToList();
         value.Relationships = reader.ReadArray<Relationship>().ToHashSet();
     }
+
     public void AddRelationship(Relationship relationship)
     {
         relationship.CharId = CharId;
         Relationships.Add(relationship);
         modifyRelationships.Add(relationship);
     }
+
     public Relationship GetRelationship(ushort npcId)
     {
         var relationshipRef = new Relationship()
@@ -46,17 +49,23 @@ public class Social : IMemorySerializable<Social>
         AddRelationship(relationshipRef);
         return relationshipRef;
     }
+
     public void RemoveRelationship(Relationship relationship)
     {
-        Relationships.Remove(relationship);
-        modifyRelationships.Delete(relationship);
+        relationship.CharId = CharId;
+        if (Relationships.Remove(relationship))
+        {
+            modifyRelationships.Delete(relationship);
+        }
     }
+
     public void RelationshipAddValue(Relationship relationship, int value)
     {
         var newValue = relationship.Points + value;
         relationship.Points = (ushort)newValue;
         modifyRelationships.Update(relationship);
     }
+
     public void RelationshipAddValue(ushort npcId, int value)
     {
         var relationship = GetRelationship(npcId);
@@ -94,6 +103,7 @@ public class Social : IMemorySerializable<Social>
             modifyRelationships.Apply(db.Relationships);
             modifyRelationships.Clear();
         }
+
         return Task.CompletedTask;
     }
 }
