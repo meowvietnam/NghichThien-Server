@@ -65,6 +65,7 @@ namespace MTS.Network.Core
                 }
                 catch (Exception e)
                 {
+
                     result = new TangQuaNpcResult()
                     {
                         Success = false,

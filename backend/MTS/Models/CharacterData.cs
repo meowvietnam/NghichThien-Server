@@ -14,6 +14,7 @@ using Network.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using static MTS.Game.LuyenDan.RecipeData;
 
 namespace MTS.Models;
 
@@ -966,19 +967,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
+            Console.WriteLine("npc k tồn tại");
+
             throw new Exception(Strings.NpcNotExist);
 
         }
         var value = ItemProviderFactory.GetProvider(request.ItemRef.Type,InventoryManager).ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
         if(value<0)
         {
+            Console.WriteLine("value add âm");
+
             throw new Exception();
 
         }
+        int valueAdd = value * request.ItemRef.Count;
         bool isHasItem = false;
         if(request.ItemRef.Type == ItemType.Herb)
         {
-            if (InventoryManager.Herbs.Contains(request.ItemRef)) 
+            var Herb = InventoryManager.Herbs.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (Herb != null && Herb.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }    
@@ -986,7 +993,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         else if (request.ItemRef.Type == ItemType.Recipe)
         {
-            if (InventoryManager.Recipes.Contains(request.ItemRef))
+            var Recipe = InventoryManager.Recipes.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (Recipe != null && Recipe.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
@@ -994,7 +1002,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         else if (request.ItemRef.Type == ItemType.LinhDan)
         {
-            if (InventoryManager.LinhDans.Contains(request.ItemRef)) 
+            var LinhDan = InventoryManager.LinhDans.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (LinhDan != null && LinhDan.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
@@ -1002,7 +1011,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         else if (request.ItemRef.Type == ItemType.Material)
         {
-            if (InventoryManager.Materials.Contains(request.ItemRef))
+            var Material = InventoryManager.Materials.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (Material != null && Material.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
@@ -1010,7 +1020,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         else if (request.ItemRef.Type == ItemType.ThanThong)
         {
-            if (InventoryManager.ThanThongs.Contains(request.ItemRef)) 
+            var thanThong = InventoryManager.ThanThongs.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (thanThong != null && thanThong.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
@@ -1018,7 +1029,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         else if (request.ItemRef.Type == ItemType.CongPhap)
         {
-            if (InventoryManager.CongPhaps.Contains(request.ItemRef)) 
+            var congPhap = InventoryManager.CongPhaps.FirstOrDefault(x=>x.Id == request.ItemRef.Id);
+            if (congPhap != null && congPhap.Count >= request.ItemRef.Count) 
             {
                 isHasItem = true;
             }
@@ -1058,6 +1070,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
         if (!isHasItem)
         {
+            Console.WriteLine("HackerTangQuaNPC khi k có đủ đồ");
+
             throw new Exception(Strings.HackerTangQuaNPC);
 
         }
@@ -1077,8 +1091,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         }
 
-        int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + value;
-        Social.RelationshipAddValue((ushort)request.IdChar, value);
+        int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + valueAdd;
+        Social.RelationshipAddValue((ushort)request.IdChar, valueAdd);
         return new TangQuaNpcResult()
         {
             Success = true,
