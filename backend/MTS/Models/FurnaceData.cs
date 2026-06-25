@@ -49,13 +49,13 @@ public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceD
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(SelfId, Id);
+        return SelfId;
     }
     public bool Equals(FurnaceData? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return SelfId == other.SelfId && Id == other.Id;
+        return SelfId == other.SelfId;
     }
 
     public bool CustomEquals(FurnaceData other)
