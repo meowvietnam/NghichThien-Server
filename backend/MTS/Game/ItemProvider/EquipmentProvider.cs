@@ -7,6 +7,8 @@ namespace MTS.Game.ItemProvider;
 
 public abstract class EquipmentProvider : ItemProvider<Equipment>
 {
+    public virtual int BaseValueLevelWithTier => 6;
+
     public abstract override  ItemType SupportedType { get; }
     public abstract EquipmentType EquipemtType { get; }
     protected InventoryManager inventoryManager;
@@ -15,7 +17,7 @@ public abstract class EquipmentProvider : ItemProvider<Equipment>
     {
         this.inventoryManager = inventoryManager;
     }
-    public abstract override Equipment GetDataItemById(ushort Id);
+    public abstract override Equipment GetDataItemByIdRef(ushort Id);
     protected virtual string GetTextNameEquipment(ArtifactType artifactType)
     {
         return $" - {GetArtifactName(artifactType)}";
@@ -71,7 +73,7 @@ public abstract class EquipmentProvider : ItemProvider<Equipment>
 
     public override int GetPriceItemSell(ushort id)
     {
-        var equipmentData = GetDataItemById(id);
+        var equipmentData = GetDataItemByIdRef(id);
         if (equipmentData == null) return 0;
 
         int totalPrice = 0;

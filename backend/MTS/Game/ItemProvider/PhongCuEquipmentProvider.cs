@@ -18,7 +18,7 @@ namespace MTS.Game.ItemProvider
             return $"Phòng Cụ {base.GetTextNameEquipment(artifactType)}";
         }
 
-        public override Equipment GetDataItemById(ushort equipmentId)
+        public override Equipment GetDataItemByIdRef(ushort equipmentId)
         {
             return inventoryManager.PhongCus.FirstOrDefault(x => x.SelfId == equipmentId);
         }

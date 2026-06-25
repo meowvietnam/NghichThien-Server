@@ -18,7 +18,7 @@ namespace MTS.Game.ItemProvider
             return $"Vũ Khí {base.GetTextNameEquipment(artifactType)}";
         }
 
-        public override Equipment GetDataItemById(ushort equipmentId)
+        public override Equipment GetDataItemByIdRef(ushort equipmentId)
         {
             return inventoryManager.VuKhis.FirstOrDefault(x => x.SelfId == equipmentId);
         }

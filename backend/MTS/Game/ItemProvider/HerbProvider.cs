@@ -8,14 +8,14 @@ namespace MTS.Game.ItemProvider
         public override ItemType SupportedType => ItemType.Herb;
 
 
-        public override HerbData GetDataItemById(ushort id)
+        public override HerbData GetDataItemByIdRef(ushort id)
         {
             return LuyenDanResources.Instance.FindHerb(id);
         }
 
         public override int GetPriceItemSell(ushort id)
         {
-            return GameConfig.PriceHerbWithTier[GetDataItemById(id).Tier];
+            return GameConfig.PriceHerbWithTier[GetDataItemByIdRef(id).Tier];
         }
     }
 }

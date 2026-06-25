@@ -8,13 +8,13 @@ namespace MTS.Game.ItemProvider
         public override ItemType SupportedType => ItemType.Material;
 
 
-        public override Material GetDataItemById(ushort id)
+        public override Material GetDataItemByIdRef(ushort id)
         {
             return LuyenKhiResources.Instance.FindMaterial(id);
         }
         public override int GetPriceItemSell(ushort id)
         {
-            return GameConfig.PriceVatLieuWithTier[GetDataItemById(id).Tier];
+            return GameConfig.PriceVatLieuWithTier[GetDataItemByIdRef(id).Tier];
         }
     }
 }

@@ -6,6 +6,7 @@ using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Managers;
 using MTS.Game.Snapshot;
+using MTS.Game.Social;
 using MTS.Models;
 using Network;
 using Network.Extensions;
@@ -142,6 +143,62 @@ public static class GameConfig
         { Tier.TuPham, 1440 },
         { Tier.NguPham, 13500 },
         { Tier.LucPham, 81000 },
+    };
+    public static Dictionary<ERelationShip, int> relationShipRequireThanThong = new Dictionary<ERelationShip, int>
+    {
+        { ERelationShip.None, 1 }, // Use { key, value }
+        { ERelationShip.Quen, 100 },
+        { ERelationShip.BanBe, 500 },
+        { ERelationShip.ThanThiet, 1000 },
+
+    };
+    public static Dictionary<ERelationShip, int> relationShipRequireCongPhap = new Dictionary<ERelationShip, int>
+    {
+        { ERelationShip.None, 1 }, // Use { key, value }
+        { ERelationShip.Quen, 200 },
+        { ERelationShip.BanBe, 1000 },
+        { ERelationShip.ThanThiet, 2000 },
+
+    };
+    public static ERelationShip GetERelationShip(int myScore, bool isThanThong)
+    {
+        Dictionary<ERelationShip, int> relationRequire = isThanThong ? relationShipRequireThanThong : relationShipRequireCongPhap;
+        return relationRequire
+        .Where(pair => myScore >= pair.Value) // Lọc các mốc mà điểm của bạn đã đạt tới
+        .OrderByDescending(pair => pair.Value) // Sắp xếp từ cao xuống thấp
+        .FirstOrDefault() // Lấy mốc cao nhất
+        .Key;
+    }
+    public static Dictionary<BaseSkill.ETierSkill, int> tierSkillWithLevel = new Dictionary<BaseSkill.ETierSkill, int>
+    {
+        { BaseSkill.ETierSkill.NhanGiaiHa, 1 },
+        { BaseSkill.ETierSkill.NhanGiaiTrung, 3 },
+        { BaseSkill.ETierSkill.NhanGiaiThuong, 6 },
+        { BaseSkill.ETierSkill.DiaGiaiHa, 8 },
+        { BaseSkill.ETierSkill.DiaGiaiTrung, 10 },
+        { BaseSkill.ETierSkill.DiaGiaiThuong, 12 },
+        { BaseSkill.ETierSkill.ThienGiaiHa, 13 },
+        { BaseSkill.ETierSkill.ThienGiaiTrung, 14 },
+        { BaseSkill.ETierSkill.ThienGiaiThuong, 15 },
+    };
+
+    public static Dictionary<Tier, int> tierItemWithLevel = new Dictionary<Tier, int>
+    {
+        { Tier.NhatPham, 1 },
+        { Tier.NhiPham, 3 },
+        { Tier.TamPham, 5 },
+        { Tier.TuPham, 8 },
+        { Tier.NguPham, 11 },
+        { Tier.LucPham, 15 },
+    };
+
+    public static Dictionary<EquipmentTier, int> tierEquipmentWithLevel = new Dictionary<EquipmentTier, int>
+    {
+        { EquipmentTier.PhuKhi, 3 },
+        { EquipmentTier.PhapKhi, 6 },
+        { EquipmentTier.PhapBao, 9 },
+        { EquipmentTier.ThuanDuong, 12 },
+        { EquipmentTier.ThongThien, 15 },
     };
 
     public static Dictionary<Tier, int> PriceFurnaceWithTierPerDurability => PriceHerbWithTier;

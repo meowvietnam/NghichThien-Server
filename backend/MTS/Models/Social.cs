@@ -44,7 +44,7 @@ public class Social : IMemorySerializable<Social>
         {
             return relationship;
         }
-        return null;
+        return relationshipRef;
     }
     public void RemoveRelationship(Relationship relationship)
     {

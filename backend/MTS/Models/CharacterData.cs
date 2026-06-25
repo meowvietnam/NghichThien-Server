@@ -5,6 +5,7 @@ using MTS.Game.BaseSkill;
 using MTS.Game.ItemProvider;
 using MTS.Game.LuyenDan;
 using MTS.Game.Resources;
+using MTS.Game.Social;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Utils;
@@ -848,6 +849,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             // add tăng mối quan hệ với npc này thêm 10 điểm 
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
+            var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == item);
+            if(npcRef == null)
+            {
+                throw new Exception(Strings.NpcNotExist);
+
+            }
+            int levelMax = Progression.Level + 2;
+            int levelMin = Progression.Level - 1;
+            if (Progression.Level > levelMax || Progression.Level<levelMin)
+            {
+                throw new Exception(Strings.HackerLevelNpc);
+
+            }
+            //SetRelationShip
+            Social.RelationshipAddValue((ushort)item,10);
         }
 
         int newCountSideQuest = QuestManager.CurrentCountSideQuest + 1;
@@ -945,6 +961,219 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewNgoDaoDiem = newNgoDaoDiem,
         };
     }
+    public TangQuaNpcResult? TangQuaNpc(TangQuaNpc request)
+    {
+        var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
+        if (npcRef == null)
+        {
+            throw new Exception(Strings.NpcNotExist);
+
+        }
+        var value = ItemProviderFactory.GetProvider(request.ItemRef.Type,InventoryManager).ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
+        if(value<0)
+        {
+            throw new Exception();
+
+        }
+        bool isHasItem = false;
+        if(request.ItemRef.Type == ItemType.Herb)
+        {
+            if (InventoryManager.Herbs.Contains(request.ItemRef)) 
+            {
+                isHasItem = true;
+            }    
+
+        }
+        else if (request.ItemRef.Type == ItemType.Recipe)
+        {
+            if (InventoryManager.Recipes.Contains(request.ItemRef))
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.LinhDan)
+        {
+            if (InventoryManager.LinhDans.Contains(request.ItemRef)) 
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.Material)
+        {
+            if (InventoryManager.Materials.Contains(request.ItemRef))
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.ThanThong)
+        {
+            if (InventoryManager.ThanThongs.Contains(request.ItemRef)) 
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.CongPhap)
+        {
+            if (InventoryManager.CongPhaps.Contains(request.ItemRef)) 
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.Furnace)
+        {
+            if (InventoryManager.Furnaces.FirstOrDefault(x=>x.SelfId == request.ItemRef.Id) != null) 
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.VuKhi)
+        {
+            if (InventoryManager.VuKhis.FirstOrDefault(x => x.SelfId == request.ItemRef.Id) != null)
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.PhongCu)
+        {
+            if (InventoryManager.PhongCus.FirstOrDefault(x => x.SelfId == request.ItemRef.Id) != null)
+            {
+                isHasItem = true;
+            }
+
+        }
+        else if (request.ItemRef.Type == ItemType.TrangSuc)
+        {
+            if (InventoryManager.TrangSucs.FirstOrDefault(x => x.SelfId == request.ItemRef.Id) != null)
+            {
+                isHasItem = true;
+            }
+
+        }
+        if (!isHasItem)
+        {
+            throw new Exception(Strings.HackerTangQuaNPC);
+
+        }
+        //InventoryManager.Remove();
+        int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + value;
+        Social.RelationshipAddValue((ushort)request.IdChar, value);
+        return new TangQuaNpcResult()
+        {
+            Success = true,
+            IdChar = request.IdChar,
+            NewValueRelationship = newValueRelationship,
+        };
+    }
+    public ThinhGiaoKyNangResult? ThinhGiaoKyNang(ThinhGiaoKyNang request)
+    {
+        var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
+        if (npcRef == null)
+        {
+            throw new Exception(Strings.NpcNotExist);
+
+        }
+        int currentRelationshipValue = 0;
+        var npcCurrent = Social.Relationships.FirstOrDefault(x => x.Npc == request.IdChar);
+        var currentRelationType = ERelationShip.None;
+        (List<int>, List<int>, List<int>) currentSkillCategorize = new();
+        ItemRef itemRefSkill = new();
+        var requireRelationShip = 0;
+
+        if (npcCurrent != null)
+        {
+            currentRelationshipValue = npcCurrent.Points;
+        }
+
+        if (request.TypeSkill == ItemType.ThanThong)
+        {
+            currentRelationType = GameConfig.GetERelationShip(currentRelationshipValue, true);
+            currentSkillCategorize = npcRef.GetCategorizeThinhGiaoThanThong();
+            itemRefSkill =  new ItemRef
+                    {
+                        Type = ItemType.ThanThong,
+                        Id = (ushort)request.IdSkill,
+                        Count = 1
+                    };
+            requireRelationShip = GameConfig.relationShipRequireThanThong[currentRelationType];
+            
+        }    
+        else if(request.TypeSkill == ItemType.CongPhap)
+        {
+             currentRelationType = GameConfig.GetERelationShip(currentRelationshipValue, true);
+            currentSkillCategorize = npcRef.GetCategorizeThinhGiaoCongPhap();
+            itemRefSkill = new ItemRef
+            {
+                Type = ItemType.CongPhap,
+                Id = (ushort)request.IdSkill,
+                Count = 1
+            };
+            requireRelationShip = GameConfig.relationShipRequireCongPhap[currentRelationType];
+
+        }
+        else
+        {
+            throw new Exception(Strings.NotSupportItemType);
+        }
+        int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points - requireRelationShip;
+
+        if (currentRelationType != ERelationShip.None)
+        {
+             
+            if(currentRelationType == ERelationShip.Quen)
+            {
+                if(!currentSkillCategorize.Item1.Contains(request.IdSkill))
+                {
+                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
+
+                }
+               
+            }    
+            else if (currentRelationType == ERelationShip.BanBe)
+            {
+
+                if (!currentSkillCategorize.Item2.Contains(request.IdSkill))
+                {
+                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
+
+                }
+            }   
+            else if(currentRelationType == ERelationShip.ThanThiet)
+            {
+                if (!currentSkillCategorize.Item3.Contains(request.IdSkill))
+                {
+                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
+
+                }
+            }
+            InventoryManager.AddToInventory(new List<ItemRef> {itemRefSkill});
+            Social.RelationshipAddValue((ushort)request.IdChar,-requireRelationShip);
+            // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
+
+        }
+        else
+        {
+            throw new Exception();
+
+        }
+
+
+
+        return new ThinhGiaoKyNangResult()
+        {
+            Success = true,
+            IdChar = request.IdChar,
+            ItemRefSkill = itemRefSkill,
+            NewValueRelationship = newValueRelationship,
+        };
+    }
+
 
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {

@@ -18,7 +18,7 @@ namespace MTS.Game.ItemProvider
 
             return $"Trang Sức {base.GetTextNameEquipment(artifactType)}";
         }
-        public override Equipment GetDataItemById(ushort equipmentId)
+        public override Equipment GetDataItemByIdRef(ushort equipmentId)
         {
             return inventoryManager.TrangSucs.FirstOrDefault(x => x.SelfId == equipmentId);
         }

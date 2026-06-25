@@ -5,15 +5,17 @@ namespace MTS.Game.ItemProvider
 {
     public class LinhDanProvider : ItemProvider<LinhDan>
     {
+        public virtual int BaseValueLevelWithTier => 6;
+
         public override ItemType SupportedType => ItemType.LinhDan;
 
-        public override LinhDan GetDataItemById(ushort id)
+        public override LinhDan GetDataItemByIdRef(ushort id)
         {
             return LuyenDanResources.Instance.FindLinhDan(id);
         }
         public override int GetPriceItemSell(ushort id)
         {
-            var data = GetDataItemById(id);
+            var data = GetDataItemByIdRef(id);
             return data.PriceV130;
         }
     }

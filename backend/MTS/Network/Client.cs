@@ -211,6 +211,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         module.RemoveHandler<CombatHandler>();
         module.AddHandler(combatHandler);
 
+        var socialHandler = new SocialHandler(this);
+        module.RemoveHandler<SocialHandler>();
+        module.AddHandler(socialHandler);
+
         ChangeState(new AllMaps(this));
     }
 

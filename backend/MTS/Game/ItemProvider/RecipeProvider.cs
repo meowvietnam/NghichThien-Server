@@ -5,14 +5,16 @@ namespace MTS.Game.ItemProvider
 {
     public class RecipeProvider : ItemProvider<RecipeData>
     {
+        public virtual int BaseValueLevelWithTier => 6;
+
         public override ItemType SupportedType => ItemType.Recipe;
-        public override RecipeData GetDataItemById(ushort Id)
+        public override RecipeData GetDataItemByIdRef(ushort Id)
         {
            return LuyenDanResources.Instance.FindRecipe(Id);
         }
         public override int GetPriceItemSell(ushort Id)
         {
-            var data = GetDataItemById(Id);
+            var data = GetDataItemByIdRef(Id);
             return data.LinhDan.PriceV130 * 5;
         }
     }

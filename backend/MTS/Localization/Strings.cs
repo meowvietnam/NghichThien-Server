@@ -67,6 +67,12 @@ public static class Strings
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
     public static string HackerSkillCombat => _current.HackerSkillCombat;
     public static string HackerEquipment { get; }
+    public static string HackerLevelNpc { get; }
+
     public static string NotEnoughCongPhap { get; }
+
+    public static string NpcNotExist { get; }
+    public static string HackerSkillNotExistOnNpc { get; }
+    public static string HackerTangQuaNPC { get; }
 
 }
