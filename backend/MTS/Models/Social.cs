@@ -22,7 +22,6 @@ public class Social : IMemorySerializable<Social>
     public CharacterData CharacterData { get; set; }
 
     [NotMapped] private Modify<Relationship> modifyRelationships = new();
-
     public void Deserialize(IReader reader, ref Social value)
     {
         value.Mails = reader.ReadArray<Mail>().ToList();
@@ -89,8 +88,11 @@ public class Social : IMemorySerializable<Social>
 
     public Task SaveChanges(AppDbContext db)
     {
-        modifyRelationships.Apply(db.Relationships);
-        modifyRelationships.Clear();
+        lock (modifyRelationships)
+        {
+            modifyRelationships.Apply(db.Relationships);
+            modifyRelationships.Clear();
+        }
         return Task.CompletedTask;
     }
 }

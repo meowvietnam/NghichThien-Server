@@ -126,7 +126,31 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         Furnaces.Add(furnace);
         Tracking.Furnaces.Add(furnace);
     }
-
+    public void UpdateFurnace(FurnaceData furnaceRef)
+    {
+        if (Furnaces.TryGetValue(furnaceRef, out var furnace))
+        {
+            furnace.Durability =  furnaceRef.Durability;
+            Tracking.Furnaces.Update(furnace);
+        }
+    }
+    public bool RemoveFurnace(FurnaceData furnace)
+    {
+        if (Furnaces.Remove(furnace))
+        {
+            Tracking.Furnaces.Delete(furnace);
+            return true;
+        }
+        return false;
+    }
+    public bool RemoveFurnace(ushort selfId)
+    {
+        var furnace = new FurnaceData()
+        {
+            SelfId = selfId
+        };
+        return RemoveFurnace(furnace);
+    }
     public int ByteSize()
     {
         return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() +
@@ -170,7 +194,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         value.ThanThongOwners = reader.ReadArray<ThanThong>().ToHashSet();
         value.Materials = reader.ReadArray<ItemRef>().ToHashSet();
     }
-
     public void Clone(InventoryManager other)
     {
         CharId = other.CharId;
@@ -191,12 +214,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         Tracking = other.Tracking;
         CharacterData = other.CharacterData;
     }
-
     public bool IsDefault()
     {
         return CharId == 0;
     }
-
     public Task SaveChanges(AppDbContext db)
     {
         lock (Tracking)
@@ -207,7 +228,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
         return Task.CompletedTask;
     }
-
     public RewardItems AddToInventory(List<ItemRef> rewards)
     {
         var result = new RewardItems();
@@ -393,7 +413,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
         };
     }
-
     public void Add(ItemRef itemRef)
     {
         var type = itemRef.Type;
@@ -423,7 +442,27 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             Add(Materials, itemRef);
         }
     }
-
+    public void Add(ItemRef itemRef, int count)
+    {
+        var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
+        foreach (var itemRefse in array)
+        {
+            if (itemRefse.TryGetValue(itemRef, out var item))
+            {
+                item.Count = (ushort)(itemRef.Count + count);
+                if (item.Count == 0)
+                {
+                    itemRefse.Remove(itemRef);
+                    Tracking.Items.Delete(itemRef);
+                }
+                else
+                {
+                    Tracking.Items.Update(item);
+                }
+                return;
+            }
+        }
+    }
     public bool Update(ItemRef itemRef)
     {
         var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
@@ -432,13 +471,20 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             if (x.TryGetValue(itemRef, out var item))
             {
                 item.Count = itemRef.Count;
-                Tracking.Items.Update(item);
+                if (item.Count == 0)
+                {
+                    x.Remove(itemRef);
+                    Tracking.Items.Delete(itemRef);
+                }
+                else
+                {
+                    Tracking.Items.Update(item);
+                }
                 return true;
             }
             return false;
         });
     }
-    
     public bool Remove(ItemRef itemRef)
     {
         var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
@@ -476,7 +522,22 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         inventory.Add(equipment);
         Tracking.Equipments.Add(equipment);
     }
-
+    public void Add(Equipment equipment)
+    {
+        var type = equipment.GetEquipmentType();
+        switch (type)
+        {
+            case EquipmentType.Weapon:
+                Add(VuKhis, equipment);
+                break;
+            case EquipmentType.Armor:
+                Add(PhongCus, equipment);
+                break;
+            case EquipmentType.Jewelry:
+                Add(TrangSucs, equipment);
+                break;
+        }
+    }
     public bool Update(Equipment equipment)
     {
         var array = new[] { VuKhis, PhongCus, TrangSucs };
@@ -503,26 +564,16 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Tracking.Equipments.Delete(equipment);
                 return true;
             }
-
             return false;
         });
     }
-
-    public void Add(Equipment equipment)
+    public bool RemoveEquipment(ushort seldId)
     {
-        var type = equipment.GetEquipmentType();
-        switch (type)
+        var equipment = new Equipment()
         {
-            case EquipmentType.Weapon:
-                Add(VuKhis, equipment);
-                break;
-            case EquipmentType.Armor:
-                Add(PhongCus, equipment);
-                break;
-            case EquipmentType.Jewelry:
-                Add(TrangSucs, equipment);
-                break;
-        }
+            SelfId = seldId,
+        };
+        return Remove(equipment);
     }
 
     public void Add(NgoDao ngoDao)
