@@ -1061,7 +1061,22 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception(Strings.HackerTangQuaNPC);
 
         }
-        //InventoryManager.Remove();
+        if(request.ItemRef.Type == ItemType.Furnace)
+        {
+            InventoryManager.RemoveFurnace((ushort)request.ItemRef.Id);
+
+        }
+        else if(request.ItemRef.Type == ItemType.VuKhi || request.ItemRef.Type == ItemType.PhongCu || request.ItemRef.Type == ItemType.TrangSuc)
+        {
+            InventoryManager.RemoveEquipment((ushort)request.ItemRef.Id);
+
+        }
+        else
+        {
+            InventoryManager.Add(request.ItemRef,-request.ItemRef.Count);
+
+        }
+
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + value;
         Social.RelationshipAddValue((ushort)request.IdChar, value);
         return new TangQuaNpcResult()
