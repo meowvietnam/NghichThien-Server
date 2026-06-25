@@ -25,7 +25,7 @@ namespace MTS.Game.ItemProvider
             FurnaceData furnaceData = GetDataItemByIdRef(id);
             return furnaceData.Durability * GameConfig.PriceFurnaceWithTierPerDurability[LuyenDanResources.Instance.FindItem(furnaceData).Tier];
         }
-        public override int ValueTangQuaNPCWithItem(ushort id, int npcLevel)
+        public override (int, int) ValueTangQuaNPCWithItem(ushort id, int npcLevel)
         {
             int currentDurability = GetDataItemByIdRef(id).Durability;
             // Tính số độ bền bị mất, đảm bảo không bị âm và tối đa là 100
@@ -33,7 +33,7 @@ namespace MTS.Game.ItemProvider
             // Cứ mỗi 25 điểm mất đi thì tính là 1 điểm phạt
             int penalty = lostDurability / 25;
 
-            return base.ValueTangQuaNPCWithItem(id, npcLevel) - penalty;
+            return (base.ValueTangQuaNPCWithItem(id, npcLevel).Item1 - penalty, base.ValueTangQuaNPCWithItem(id, npcLevel).Item2);
         }
     }
 }

@@ -973,14 +973,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         }
         var value = ItemProviderFactory.GetProvider(request.ItemRef.Type,InventoryManager).ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
-        if(value<0)
+        if(value.Item1<0)
         {
             Console.WriteLine("value add âm");
 
             throw new Exception();
 
         }
-        int valueAdd = value * request.ItemRef.Count;
+        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2;
         bool isHasItem = false;
         if(request.ItemRef.Type == ItemType.Herb)
         {
