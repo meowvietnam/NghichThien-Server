@@ -314,6 +314,42 @@ namespace MTS.Migrations
                     b.ToTable("Furnaces");
                 });
 
+            modelBuilder.Entity("MTS.Models.IapProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("Price")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ProductType")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Reward")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<int>("Store")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StoreProductId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreProductId", "Store")
+                        .IsUnique();
+
+                    b.ToTable("IapProducts");
+                });
+
             modelBuilder.Entity("MTS.Models.InventoryManager", b =>
                 {
                     b.Property<int>("CharId")
@@ -505,6 +541,38 @@ namespace MTS.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("MTS.Network.Models.IapPurchase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("PurchaseTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varbinary(32)");
+
+                    b.Property<int>("Store")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Store", "PurchaseTokenHash")
+                        .IsUnique();
+
+                    b.ToTable("IapPurchases");
                 });
 
             modelBuilder.Entity("MTS.Models.Appearance", b =>
@@ -725,6 +793,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("EquipmentManager");
+                });
+
+            modelBuilder.Entity("MTS.Network.Models.IapPurchase", b =>
+                {
+                    b.HasOne("MTS.Models.IapProduct", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("MTS.Models.CharacterData", b =>

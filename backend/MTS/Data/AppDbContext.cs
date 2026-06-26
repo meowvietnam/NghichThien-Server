@@ -1,7 +1,10 @@
+using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MTS.Game.LuyenKhi;
+using MTS.IAP;
 using MTS.Models;
+using MTS.Network.Models;
 using MTS.Utils;
 using Newtonsoft.Json;
 
@@ -30,6 +33,8 @@ public class AppDbContext : DbContext
     public DbSet<DanCombatUsed> DanCombatUseds { get; private set; }
     public DbSet<Equipment> Equipments { get; private set; }
     public DbSet<QuestManager> QuestManagers { get; private set; }
+    public DbSet<IapProduct> IapProducts { get; private set; }
+    public DbSet<IapPurchase> IapPurchases { get; private set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -284,6 +289,31 @@ public class AppDbContext : DbContext
                 .WithOne(x => x.QuestManager)
                 .HasForeignKey<QuestManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IapProduct>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.StoreProductId, x.Store })
+                .IsUnique();
+            e.Property(x => x.Reward)
+                .HasColumnType("blob")
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<IIapReward>(v)
+                );
+        });
+        modelBuilder.Entity<IapPurchase>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new {x.Store, x.PurchaseTokenHash})
+                .IsUnique();
+            e.Property(x => x.PurchaseTokenHash)
+                .HasMaxLength(32);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

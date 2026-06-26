@@ -75,4 +75,5 @@ public static class Strings
     public static string HackerSkillNotExistOnNpc { get; }
     public static string HackerTangQuaNPC { get; }
 
+    public static string? IapPurchaseAlreadyProcessed { get; set; }
 }

@@ -4,17 +4,17 @@ using Network.Extensions;
 
 namespace MTS.Network.Core
 {
-    public class IAPHandler : IClientHandler
+    public class IapHandler : IClientHandler
     {
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.IAP
+              MessageTag.IapPurchase
         ];
 
-        public MessageTag[] HandleTag => throw new NotImplementedException();
+        public MessageTag[] HandleTag => handler;
 
-        public IAPHandler(Client client)
+        public IapHandler(Client client)
         {
             this.client = client;
         }
@@ -32,20 +32,20 @@ namespace MTS.Network.Core
             var tag = message.Tag;
             var reader = message.Reader;
             var charData = client.CharacterData;
-            if (tag == MessageTag.IAP)
+            if (tag == MessageTag.IapPurchase)
             {
-                var request = reader.Read<IAPModel>();
-                IAPResult result = null;
+                var request = reader.Read<IapModel>();
+                IapResult result = null;
                 try
                 {
                     lock (charData)
                     {
-                        // result = charData.IAP(request);
+                        result = charData.IapPurchase(request).GetAwaiter().GetResult();
                     }
                 }
                 catch (Exception e)
                 {
-                    result = new IAPResult()
+                    result = new IapResult()
                     {
                         Success = false,
                         Message = e.Message
@@ -53,7 +53,7 @@ namespace MTS.Network.Core
                 }
                 finally
                 {
-                    client.Send(MessageTag.IAPResult, result);
+                    client.Send(MessageTag.PurchaseIapResult, result);
                 }
             }
         }

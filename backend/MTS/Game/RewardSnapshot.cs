@@ -1,7 +1,5 @@
 ﻿using MemoryPack;
 using MTS.Models;
-using Network;
-using Network.Extensions;
 
 namespace MTS.Game
 {

@@ -14,6 +14,7 @@ using Network.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MTS.IAP;
 using static MTS.Game.LuyenDan.RecipeData;
 
 namespace MTS.Models;
@@ -851,20 +852,20 @@ public class CharacterData : IMemorySerializable<CharacterData>
             // add tăng mối quan hệ với npc này thêm 10 điểm 
             //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
             var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == item);
-            if(npcRef == null)
+            if (npcRef == null)
             {
                 throw new Exception(Strings.NpcNotExist);
-
             }
+
             int levelMax = Progression.Level + 2;
             int levelMin = Progression.Level - 1;
-            if (Progression.Level > levelMax || Progression.Level<levelMin)
+            if (Progression.Level > levelMax || Progression.Level < levelMin)
             {
                 throw new Exception(Strings.HackerLevelNpc);
-
             }
+
             //SetRelationShip
-            Social.RelationshipAddValue((ushort)item,10);
+            Social.RelationshipAddValue((ushort)item, 10);
         }
 
         int newCountSideQuest = QuestManager.CurrentCountSideQuest + 1;
@@ -962,6 +963,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewNgoDaoDiem = newNgoDaoDiem,
         };
     }
+
     public TangQuaNpcResult? TangQuaNpc(TangQuaNpc request)
     {
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
@@ -970,26 +972,26 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Console.WriteLine("npc k tồn tại");
 
             throw new Exception(Strings.NpcNotExist);
-
         }
-        var value = ItemProviderFactory.GetProvider(request.ItemRef.Type,InventoryManager).ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
-        if(value.Item1<0)
+
+        var value = ItemProviderFactory.GetProvider(request.ItemRef.Type, InventoryManager)
+            .ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
+        if (value.Item1 < 0)
         {
             Console.WriteLine("value add âm");
 
             throw new Exception();
-
         }
+
         int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2;
         bool isHasItem = false;
-        if(request.ItemRef.Type == ItemType.Herb)
+        if (request.ItemRef.Type == ItemType.Herb)
         {
             var Herb = InventoryManager.Herbs.FirstOrDefault(x => x.Id == request.ItemRef.Id);
             if (Herb != null && Herb.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
-            }    
-
+            }
         }
         else if (request.ItemRef.Type == ItemType.Recipe)
         {
@@ -998,7 +1000,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.LinhDan)
         {
@@ -1007,7 +1008,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.Material)
         {
@@ -1016,7 +1016,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.ThanThong)
         {
@@ -1025,24 +1024,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.CongPhap)
         {
-            var congPhap = InventoryManager.CongPhaps.FirstOrDefault(x=>x.Id == request.ItemRef.Id);
-            if (congPhap != null && congPhap.Count >= request.ItemRef.Count) 
+            var congPhap = InventoryManager.CongPhaps.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (congPhap != null && congPhap.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.Furnace)
         {
-            if (InventoryManager.Furnaces.FirstOrDefault(x=>x.SelfId == request.ItemRef.Id) != null) 
+            if (InventoryManager.Furnaces.FirstOrDefault(x => x.SelfId == request.ItemRef.Id) != null)
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.VuKhi)
         {
@@ -1050,7 +1046,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.PhongCu)
         {
@@ -1058,7 +1053,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
         else if (request.ItemRef.Type == ItemType.TrangSuc)
         {
@@ -1066,29 +1060,27 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 isHasItem = true;
             }
-
         }
+
         if (!isHasItem)
         {
             Console.WriteLine("HackerTangQuaNPC khi k có đủ đồ");
 
             throw new Exception(Strings.HackerTangQuaNPC);
-
         }
-        if(request.ItemRef.Type == ItemType.Furnace)
+
+        if (request.ItemRef.Type == ItemType.Furnace)
         {
             InventoryManager.RemoveFurnace((ushort)request.ItemRef.Id);
-
         }
-        else if(request.ItemRef.Type == ItemType.VuKhi || request.ItemRef.Type == ItemType.PhongCu || request.ItemRef.Type == ItemType.TrangSuc)
+        else if (request.ItemRef.Type == ItemType.VuKhi || request.ItemRef.Type == ItemType.PhongCu ||
+                 request.ItemRef.Type == ItemType.TrangSuc)
         {
             InventoryManager.RemoveEquipment((ushort)request.ItemRef.Id);
-
         }
         else
         {
-            InventoryManager.Add(request.ItemRef,-request.ItemRef.Count);
-
+            InventoryManager.Add(request.ItemRef, -request.ItemRef.Count);
         }
 
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + valueAdd;
@@ -1100,14 +1092,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewValueRelationship = newValueRelationship,
         };
     }
+
     public ThinhGiaoKyNangResult? ThinhGiaoKyNang(ThinhGiaoKyNang request)
     {
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
             throw new Exception(Strings.NpcNotExist);
-
         }
+
         int currentRelationshipValue = 0;
         var npcCurrent = Social.Relationships.FirstOrDefault(x => x.Npc == request.IdChar);
         var currentRelationType = ERelationShip.None;
@@ -1124,18 +1117,17 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             currentRelationType = GameConfig.GetERelationShip(currentRelationshipValue, true);
             currentSkillCategorize = npcRef.GetCategorizeThinhGiaoThanThong();
-            itemRefSkill =  new ItemRef
-                    {
-                        Type = ItemType.ThanThong,
-                        Id = (ushort)request.IdSkill,
-                        Count = 1
-                    };
+            itemRefSkill = new ItemRef
+            {
+                Type = ItemType.ThanThong,
+                Id = (ushort)request.IdSkill,
+                Count = 1
+            };
             requireRelationShip = GameConfig.relationShipRequireThanThong[currentRelationType];
-            
-        }    
-        else if(request.TypeSkill == ItemType.CongPhap)
+        }
+        else if (request.TypeSkill == ItemType.CongPhap)
         {
-             currentRelationType = GameConfig.GetERelationShip(currentRelationshipValue, true);
+            currentRelationType = GameConfig.GetERelationShip(currentRelationshipValue, true);
             currentSkillCategorize = npcRef.GetCategorizeThinhGiaoCongPhap();
             itemRefSkill = new ItemRef
             {
@@ -1144,54 +1136,46 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Count = 1
             };
             requireRelationShip = GameConfig.relationShipRequireCongPhap[currentRelationType];
-
         }
         else
         {
             throw new Exception(Strings.NotSupportItemType);
         }
+
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points - requireRelationShip;
 
         if (currentRelationType != ERelationShip.None)
         {
-             
-            if(currentRelationType == ERelationShip.Quen)
+            if (currentRelationType == ERelationShip.Quen)
             {
-                if(!currentSkillCategorize.Item1.Contains(request.IdSkill))
+                if (!currentSkillCategorize.Item1.Contains(request.IdSkill))
                 {
                     throw new Exception(Strings.HackerSkillNotExistOnNpc);
-
                 }
-               
-            }    
+            }
             else if (currentRelationType == ERelationShip.BanBe)
             {
-
                 if (!currentSkillCategorize.Item2.Contains(request.IdSkill))
                 {
                     throw new Exception(Strings.HackerSkillNotExistOnNpc);
-
                 }
-            }   
-            else if(currentRelationType == ERelationShip.ThanThiet)
+            }
+            else if (currentRelationType == ERelationShip.ThanThiet)
             {
                 if (!currentSkillCategorize.Item3.Contains(request.IdSkill))
                 {
                     throw new Exception(Strings.HackerSkillNotExistOnNpc);
-
                 }
             }
-            InventoryManager.AddToInventory(new List<ItemRef> {itemRefSkill});
-            Social.RelationshipAddValue((ushort)request.IdChar,-requireRelationShip);
-            // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
 
+            InventoryManager.AddToInventory(new List<ItemRef> { itemRefSkill });
+            Social.RelationshipAddValue((ushort)request.IdChar, -requireRelationShip);
+            // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
         }
         else
         {
             throw new Exception();
-
         }
-
 
 
         return new ThinhGiaoKyNangResult()
@@ -1375,5 +1359,55 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Id = request.Id,
             TypeEquipment = request.TypeEquipment,
         };
+    }
+
+    public async Task<IapResult> IapPurchase(IapModel request)
+    {
+        var store = request.Store;
+        var productId = request.ProductId;
+        var purchaseToken = request.PurchaseToken;
+        var purchaseTokenHash = Utils.Utils.HashSHA256(purchaseToken);
+        await using var db = await Program.CreateDbAsync();
+
+        var hasPurchased = await db.IapPurchases
+            .AnyAsync(x => x.Store == store
+                           && x.PurchaseTokenHash == purchaseTokenHash);
+        if (hasPurchased)
+        {
+            throw new Exception(Strings.IapPurchaseAlreadyProcessed);
+        }
+
+        var product = await db.IapProducts
+            .FirstAsync(x => x.Store == store
+                             && x.StoreProductId == productId
+                             && x.IsActive);
+        var cancelToken = CancellationToken.None;
+        if (store == Store.GooglePlay)
+        {
+            var verify = await GooglePlayIap.VerifyAsync(productId, purchaseToken, cancelToken);
+            if (!verify.IsValid)
+            {
+                throw new Exception(verify.Error);
+            }
+
+            var productType = product.ProductType;
+            if (productType == IapProductType.Consumable)
+            {
+                await GooglePlayIap.ConsumeAsync(productId, purchaseToken, cancelToken);
+            }
+            else if (productType == IapProductType.NonConsumable)
+            {
+                await GooglePlayIap.AcknowledgeAsync(productId, purchaseToken, cancelToken);
+            }
+            product.Reward.Execute(this);
+            return new IapResult()
+            {
+                Success = true,
+                Store = store,
+                ProductId = productId,
+                Reward = product.Reward,
+            };
+        }
+        throw new NotImplementedException($"Iap purchase not implemented for {store}");
     }
 }

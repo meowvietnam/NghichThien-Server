@@ -2,7 +2,7 @@ using MTS.Models;
 using Newtonsoft.Json;
 namespace MTS.Converter;
 
-public class ColorArrayConverter : Newtonsoft.Json.JsonConverter<Color>
+public class ColorArrayConverter : JsonConverter<Color>
 {
     public override void WriteJson(JsonWriter writer, Color value, JsonSerializer serializer)
     {

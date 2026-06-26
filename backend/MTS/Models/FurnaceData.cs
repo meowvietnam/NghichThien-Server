@@ -7,7 +7,7 @@ using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
-[Newtonsoft.Json.JsonConverter(typeof(FurnaceDataConverter))]
+[JsonConverter(typeof(FurnaceDataConverter))]
 public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
     [System.Text.Json.Serialization.JsonIgnore]

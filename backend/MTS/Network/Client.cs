@@ -215,6 +215,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         module.RemoveHandler<SocialHandler>();
         module.AddHandler(socialHandler);
 
+        var iapHandler = new IapHandler(this);
+        module.RemoveHandler<IapHandler>();
+        module.AddHandler(iapHandler);
+        
         ChangeState(new AllMaps(this));
     }
 

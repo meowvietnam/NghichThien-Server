@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 
 namespace MTS.Utils;
 
@@ -17,5 +18,10 @@ public class Utils
             result[i] = chars[buffer[i] % chars.Length];
         }
         return new string(result);
+    }
+
+    public static byte[] HashSHA256(string input)
+    {
+        return SHA256.HashData(Encoding.UTF8.GetBytes(input));
     }
 }
