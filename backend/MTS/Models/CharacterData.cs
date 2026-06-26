@@ -991,7 +991,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception();
         }
 
-        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2;
+        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2 * 2;
         bool isHasItem = false;
         if (request.ItemRef.Type == ItemType.Herb)
         {
@@ -1076,6 +1076,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             throw new Exception(Strings.HackerTangQuaNPC);
         }
+        ushort vuKhiEquip = EquipmentManager.VuKhi;
+        ushort phongCuEquip = EquipmentManager.PhongCu;
+        ushort trangSucEquip = EquipmentManager.TrangSuc;
+
+        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
+        else if(request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
+        else if(request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
 
         if (request.ItemRef.Type == ItemType.Furnace)
         {
@@ -1106,6 +1125,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
+            Console.WriteLine("npc k tồn tại");
             throw new Exception(Strings.NpcNotExist);
         }
 
@@ -1120,6 +1140,26 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             currentRelationshipValue = npcCurrent.Points;
         }
+        ERelationShip GetIndexSkillThinhGiao()
+        {
+            ERelationShip indexThinhGiao = ERelationShip.Quen;
+
+            if (currentSkillCategorize.Item1.Contains(request.IdSkill))
+            {
+                indexThinhGiao = ERelationShip.Quen;
+            }
+            else if (currentSkillCategorize.Item2.Contains(request.IdSkill))
+            {
+                indexThinhGiao = ERelationShip.BanBe;
+
+            }
+            else if (currentSkillCategorize.Item3.Contains(request.IdSkill))
+            {
+                indexThinhGiao = ERelationShip.ThanThiet;
+
+            }
+            return indexThinhGiao;
+        }
 
         if (request.TypeSkill == ItemType.ThanThong)
         {
@@ -1131,7 +1171,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Id = (ushort)request.IdSkill,
                 Count = 1
             };
-            requireRelationShip = GameConfig.relationShipRequireThanThong[currentRelationType];
+            requireRelationShip = GameConfig.relationShipRequireThanThong[GetIndexSkillThinhGiao()];
         }
         else if (request.TypeSkill == ItemType.CongPhap)
         {
@@ -1143,45 +1183,50 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Id = (ushort)request.IdSkill,
                 Count = 1
             };
-            requireRelationShip = GameConfig.relationShipRequireCongPhap[currentRelationType];
+            requireRelationShip = GameConfig.relationShipRequireCongPhap[GetIndexSkillThinhGiao()];
         }
         else
         {
+            Console.WriteLine("NotSupportItemType");
+
             throw new Exception(Strings.NotSupportItemType);
         }
-
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points - requireRelationShip;
 
         if (currentRelationType != ERelationShip.None)
         {
-            if (currentRelationType == ERelationShip.Quen)
+            List<int> baseSkillsCheck = new List<int>();
+            if ((int)currentRelationType >= (int)ERelationShip.Quen)
             {
-                if (!currentSkillCategorize.Item1.Contains(request.IdSkill))
-                {
-                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
-                }
+                baseSkillsCheck.AddRange(currentSkillCategorize.Item1);
+               
             }
-            else if (currentRelationType == ERelationShip.BanBe)
+            if ((int)currentRelationType >= (int)ERelationShip.BanBe)
             {
-                if (!currentSkillCategorize.Item2.Contains(request.IdSkill))
-                {
-                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
-                }
-            }
-            else if (currentRelationType == ERelationShip.ThanThiet)
-            {
-                if (!currentSkillCategorize.Item3.Contains(request.IdSkill))
-                {
-                    throw new Exception(Strings.HackerSkillNotExistOnNpc);
-                }
-            }
+                baseSkillsCheck.AddRange(currentSkillCategorize.Item2);
 
+               
+            }
+            if ((int)currentRelationType >= (int)ERelationShip.ThanThiet)
+            {
+                baseSkillsCheck.AddRange(currentSkillCategorize.Item3);
+
+               
+            }
+            if (!baseSkillsCheck.Contains(request.IdSkill))
+            {
+                Console.WriteLine("HackerSkillNotExistOnNpc");
+
+                throw new Exception(Strings.HackerSkillNotExistOnNpc);
+            }
             InventoryManager.AddToInventory(new List<ItemRef> { itemRefSkill });
             Social.RelationshipAddValue((ushort)request.IdChar, -requireRelationShip);
             // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
         }
         else
         {
+            Console.WriteLine("sai thiết kế client");
+
             throw new Exception();
         }
 
