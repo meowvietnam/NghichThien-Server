@@ -112,6 +112,7 @@ public enum MessageTag
     WatchAdsForEnergy = 420,
     WatchAdsForEnergyResult = 421,
 
+    GetProductsRequest = 511,
     IapPurchase = 520,
     PurchaseIapResult = 521,
 

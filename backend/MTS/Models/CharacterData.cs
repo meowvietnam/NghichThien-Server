@@ -1399,7 +1399,16 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 await GooglePlayIap.AcknowledgeAsync(productId, purchaseToken, cancelToken);
             }
+
             product.Reward.Execute(this);
+            var purchase = new IapPurchase()
+            {
+                CharId = Id,
+                ProductId = product.Id,
+                Store = store,
+                PurchaseTokenHash = purchaseTokenHash,
+            };
+            await db.IapPurchases.AddAsync(purchase, cancelToken);
             return new IapResult()
             {
                 Success = true,
@@ -1408,6 +1417,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Reward = product.Reward,
             };
         }
+
         throw new NotImplementedException($"Iap purchase not implemented for {store}");
+    }
+
+    public async Task<List<OwnerIapProduct>> GetProducts()
+    {
+        await using var db = await Program.CreateDbAsync();
+        var iapProducts = await db.IapProducts.ToArrayAsync();
+        var ownerProducts = iapProducts.Select(x =>
+        {
+            var hasPurchased = db.IapPurchases
+                .Any(p => p.CharId == Id && p.Store == x.Store && p.ProductId == x.Id);
+            return new OwnerIapProduct()
+            {
+                Product = x,
+                HasPurchased = hasPurchased
+            };
+        }).ToList();
+        return ownerProducts;
     }
 }

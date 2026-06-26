@@ -9,7 +9,8 @@ namespace MTS.Network.Core
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.IapPurchase
+              MessageTag.IapPurchase,
+              MessageTag.GetProductsRequest
         ];
 
         public MessageTag[] HandleTag => handler;
@@ -54,6 +55,14 @@ namespace MTS.Network.Core
                 finally
                 {
                     client.Send(MessageTag.PurchaseIapResult, result);
+                }
+            }
+            else if (tag == MessageTag.GetProductsRequest)
+            {
+                lock (charData)
+                {
+                    var ownerProducts = charData.GetProducts().GetAwaiter().GetResult();
+                    client.MemSend(MessageTag.GetProductsRequest, ownerProducts);
                 }
             }
         }

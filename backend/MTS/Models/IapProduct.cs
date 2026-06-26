@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using MemoryPack;
 using MTS.IAP;
 
 namespace MTS.Models;
-
-public class IapProduct
+[MemoryPackable]
+public partial class IapProduct
 {
     [Key]
     public int Id { get; set; }
