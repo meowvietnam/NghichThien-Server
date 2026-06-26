@@ -58,6 +58,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void SetNoAds(bool value)
+    {
+        if (IsNoAds != value)
+        {
+            IsNoAds = value;
+            dirty = true;
+        }
+    }
     public void SetMoneyVip(int value)
     {
         if (MoneyVip != value)
@@ -1424,8 +1432,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public async Task<List<OwnerIapProduct>> GetProducts()
     {
         await using var db = await Program.CreateDbAsync();
-        var iapProducts = await db.IapProducts.ToArrayAsync();
-        var ownerProducts = iapProducts.Select(x =>
+        var iapProducts = await db.IapProducts.Where(x => x.IsActive).ToArrayAsync();
+        var ownerProducts = iapProducts
+            .Select(x =>
         {
             var hasPurchased = db.IapPurchases
                 .Any(p => p.CharId == Id && p.Store == x.Store && p.ProductId == x.Id);

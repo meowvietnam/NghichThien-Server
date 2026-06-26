@@ -21,7 +21,6 @@ public partial class ItemRef : IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDee
     public ushort Id { get; set; }
     public ItemType Type { get; set; }
     public ushort Count { get; set; }
-
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]

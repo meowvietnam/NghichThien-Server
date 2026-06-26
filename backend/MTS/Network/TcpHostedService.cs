@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using MTS.IAP;
+using MTS.Models;
+
 namespace MTS.Network;
 
 public class TcpHostedService : IHostedService
@@ -8,10 +12,9 @@ public class TcpHostedService : IHostedService
         var port = config.GetValue("ServerPorts:TcpPort", 6785);
         tcpServer = new TcpServer(port);
     }
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         Task.Run(() => tcpServer.Run(), cancellationToken);
-        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

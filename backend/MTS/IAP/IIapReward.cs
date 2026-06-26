@@ -3,17 +3,8 @@ using MTS.Models;
 
 namespace MTS.IAP;
 [MemoryPackable]
-public partial class IapRewardTest : IIapReward
-{
-    public void Execute(CharacterData charData)
-    {
-    }
-    public void Refund(CharacterData charData)
-    {
-    }
-}
-[MemoryPackable]
-[MemoryPackUnion(100, typeof(IapRewardTest))]
+[MemoryPackUnion(0, typeof(StartPack))]
+[MemoryPackUnion(1, typeof(MoneyVipPack))]
 public partial interface IIapReward
 {
     void Execute(CharacterData charData);

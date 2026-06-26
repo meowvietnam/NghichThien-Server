@@ -646,6 +646,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         Tracking.CongPhaps.Add(congPhap);
     }
 
+    public void Remove(CongPhap congPhap)
+    {
+        congPhap.CharId = CharId;
+        CongPhapOwners.Remove(congPhap);
+        Tracking.CongPhaps.Delete(congPhap);
+    }
     public void Add(ThanThong thanThong)
     {
         thanThong.CharId = CharId;
