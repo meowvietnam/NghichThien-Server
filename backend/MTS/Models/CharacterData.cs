@@ -983,7 +983,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception();
         }
 
-        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2;
+        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2 * 2;
         bool isHasItem = false;
         if (request.ItemRef.Type == ItemType.Herb)
         {
@@ -1066,6 +1066,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Console.WriteLine("HackerTangQuaNPC khi k có đủ đồ");
 
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
+        ushort vuKhiEquip = EquipmentManager.VuKhi;
+        ushort phongCuEquip = EquipmentManager.PhongCu;
+        ushort trangSucEquip = EquipmentManager.TrangSuc;
+
+        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
+        else if(request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
+            throw new Exception(Strings.HackerTangQuaNPC);
+        }
+        else if(request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
+        {
+            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
             throw new Exception(Strings.HackerTangQuaNPC);
         }
 
