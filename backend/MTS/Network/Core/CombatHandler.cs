@@ -10,7 +10,7 @@ namespace MTS.Network.Core
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.WinCombat , MessageTag.LoadCharCombat
+              MessageTag.ResultCombat , MessageTag.LoadCharCombat
         ];
         public CombatHandler(Client client)
         {
@@ -22,20 +22,20 @@ namespace MTS.Network.Core
             var tag = message.Tag;
             var reader = message.Reader;
             var charData = client.CharacterData;
-            if (tag == MessageTag.WinCombat)
+            if (tag == MessageTag.ResultCombat)
             {
-                var request = reader.Read<WinCombat>();
-                WinCombatResult result = null;
+                var request = reader.Read<ResultCombat>();
+                ResultCombatResult result = null;
                 try
                 {
                     lock (charData)
                     {
-                        result = charData.WinCombat(request);
+                        result = charData.ResultCombat(request);
                     }
                 }
                 catch (Exception e)
                 {
-                    result = new WinCombatResult()
+                    result = new ResultCombatResult()
                     {
                         Success = false,
                         Message = e.Message
@@ -43,7 +43,7 @@ namespace MTS.Network.Core
                 }
                 finally
                 {
-                    client.Send(MessageTag.WinCombatResult, result);
+                    client.Send(MessageTag.ResultCombatResult, result);
                 }
             }
             else if (tag == MessageTag.LoadCharCombat)

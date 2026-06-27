@@ -16,6 +16,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MTS.IAP;
 using static MTS.Game.LuyenDan.RecipeData;
+using MTS.Game.Combat;
 
 namespace MTS.Models;
 
@@ -528,11 +529,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
 
         var newTamCanh = Stats.TamCanh - months * 2;
+        var percentAddHp = 0.1 * months;
+        percentAddHp = Math.Clamp(percentAddHp, 0,1);
+        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp); 
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
         var exp = Progression.CurrentExp + buffExp;
         var levelUpdated = Progression.SetCurrentExp(exp);
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
+        Stats.SetHp((int)newHp);
         if (levelUpdated == null)
         {
             exp = Progression.CurrentExp;
@@ -854,7 +859,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             throw new Exception(Strings.HackerSideQuest);
         }
 
-        int moneyVip = Random.Shared.Next(5, 20);
         foreach (var item in sideQuestComplete.ListIdNpc)
         {
             // add tăng mối quan hệ với npc này thêm 10 điểm 
@@ -875,20 +879,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
             //SetRelationShip
             Social.RelationshipAddValue((ushort)item, 10);
         }
+        int moneyVip = Random.Shared.Next(5, 20);
+        int linhThach = Random.Shared.Next(20*Progression.Level, 100 * Progression.Level);
 
         int newCountSideQuest = QuestManager.CurrentCountSideQuest + 1;
         QuestManager.SetCurrentCountSideQuest(newCountSideQuest);
+        int newTamCanh = Stats.TamCanh + Progression.Level;
+        Stats.SetTamCanh(newTamCanh);
         SetMoneyVip(MoneyVip + moneyVip);
         return new CompleteSideQuestResult()
         {
             Success = true,
             MoneyVipRandom = moneyVip,
             CurrentSideQuest = newCountSideQuest,
+            LinhThachRandom = linhThach,
         };
     }
 
 
-    public WinCombatResult? WinCombat(WinCombat request)
+    public ResultCombatResult? ResultCombat(ResultCombat request)
     {
         foreach (var item in request.ListIdThanThong)
         {
@@ -933,6 +942,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     throw new Exception(Strings.HackerLevelEnemyCombat);
                 }
+
             }
             else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
             {
@@ -944,31 +954,68 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     throw new Exception(Strings.HackerLevelBossCombat);
                 }
+
             }
 
             newHp = request.CurrentHPUser;
-            Stats.SetHp(request.CurrentHPUser);
 
-            int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
-            int monsterLevel = request.CurrentLevelEnemy;
-            var listItemRef = GenerateMonsterRewards(monsterLevel);
-            InventoryManager.AddToInventory(listItemRef);
-            newReward = new RewardSnapshot
+            if(request.TypeResultCombat == Game.Combat.ETypeResultCombat.Win)
             {
-                Money = linhThach,
-                MoneyVip = 0,
-                ItemRefs = listItemRef
-            };
+                int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
+                int monsterLevel = request.CurrentLevelEnemy;
+                var listItemRef = GenerateMonsterRewards(monsterLevel);
+                InventoryManager.AddToInventory(listItemRef);
+                newReward = new RewardSnapshot
+                {
+                    Money = linhThach,
+                    MoneyVip = 0,
+                    ItemRefs = listItemRef
+                };
+            }    
+            else if (request.TypeResultCombat == Game.Combat.ETypeResultCombat.LoseByRun)
+            {
+                if(request.CurrentHPUser < Stats.SinhMenh)
+                {
+                    newHp = request.CurrentHPUser / 2;
+
+                }
+                else
+                {
+                    newHp = Stats.SinhMenh / 2;
+
+                }
+
+            }
+            newHp = Math.Clamp(newHp,0,Stats.SinhMenh);
+            Stats.SetHp(newHp);
+
         }
+        else if (request.TypeCombat == ETypeCombat.DauTruong)
+        {
+            if(request.TypeResultCombat == ETypeResultCombat.Win)
+            {
+                // cộng điểm đấu trường;
+
+            }
+            else
+            {
+                // truwf điểm đấu trường;
+
+            }
 
 
-        return new WinCombatResult()
+        }    
+
+
+
+        return new ResultCombatResult()
         {
             Success = true,
             NewHP = newHp,
             NewCamNgo = camNgoAdd.ToArray(),
             Reward = newReward,
             NewNgoDaoDiem = newNgoDaoDiem,
+            TypeResultCombat = request.TypeResultCombat,
         };
     }
 
