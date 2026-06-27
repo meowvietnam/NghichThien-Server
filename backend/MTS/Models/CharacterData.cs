@@ -547,6 +547,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 CurrentExp = exp,
                 NewTamCanh = newTamCanh,
                 RemainingMoney = remaining,
+                NewHp = (int)newHp,
+
             };
         }
 
@@ -557,6 +559,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             LevelUpdated = levelUpdated,
             NewTamCanh = newTamCanh,
             RemainingMoney = remaining,
+            NewHp = (int)newHp,
         };
     }
 
