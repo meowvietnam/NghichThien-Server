@@ -10,6 +10,7 @@ namespace MTS.Network.Models
         public string? Message { get; set; }
         public int MoneyVipRandom { get; set; }
         public int CurrentSideQuest { get; set; }
+        public int LinhThachRandom { get; set; }
 
     }
 }
