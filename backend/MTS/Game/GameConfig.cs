@@ -10,6 +10,7 @@ using MTS.Game.Social;
 using MTS.Models;
 using Network;
 using Network.Extensions;
+using Newtonsoft.Json;
 
 namespace MTS.Game;
 
@@ -232,5 +233,33 @@ public static class GameConfig
         MainQuestManagerModel = Read<MainQuestManagerModel>("Data/MainQuestManagerModel.bin");
         ComboSkillResources = Read2<ComboSkillResource>("Data/combo-skill-resources.bin");
         NpcDatas = ReadArray2<NpcData>("Data/npc-datas.bin");
+        Console.WriteLine("\n=================== DANH SÁCH NHIỆM VỤ CHÍNH ===================");
+        if (MainQuestManagerModel != null && MainQuestManagerModel.MainQuestResource != null)
+        {
+            Console.WriteLine($"[Tổng số nhiệm vụ tìm thấy]: {MainQuestManagerModel.MainQuestResource.Count}\n");
+
+            foreach (var quest in MainQuestManagerModel.MainQuestResource)
+            {
+                Console.WriteLine("----------------------------------------------------------------");
+                // Vì BaseData chưa rõ có biến gì (thường có Id), bạn có thể gõ quest.Id hoặc quest.id thử nhé
+                // Ở đây tôi dùng tạm quest.ToString() hoặc nếu BaseData có thuộc tính Id thì bạn sửa thành quest.id
+                Console.WriteLine($" -> Cấp độ yêu cầu (Level Require): {quest.levelRequire}");
+
+                // Chuyển đối tượng phần thưởng (RewardSnapshot) thành chuỗi chữ trực quan
+                if (quest.rewardRef != null)
+                {
+                    string rewardJson = Newtonsoft.Json.JsonConvert.SerializeObject(quest.rewardRef, Newtonsoft.Json.Formatting.None);
+                    Console.WriteLine($" -> Phần thưởng (Reward): {rewardJson}");
+                }
+                else
+                {
+                    Console.WriteLine(" -> Phần thưởng (Reward): Không có phần thưởng (Null)");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("[LỖI]: Không thể đọc được dữ liệu MainQuestManagerModel hoặc danh sách trống!");
+        }
     }
 }
