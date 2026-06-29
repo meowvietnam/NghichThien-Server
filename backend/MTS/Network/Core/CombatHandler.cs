@@ -10,7 +10,7 @@ namespace MTS.Network.Core
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.ResultCombat , MessageTag.LoadCharCombat
+              MessageTag.ResultCombat , MessageTag.LoadCharCombat , MessageTag.LoadCharCombatArena
         ];
         public CombatHandler(Client client)
         {
@@ -73,6 +73,34 @@ namespace MTS.Network.Core
                 finally
                 {
                     client.Send(MessageTag.LoadCharCombatResult, result);
+                }
+            }
+            else if (tag == MessageTag.LoadCharCombatArena)
+            {
+                LoadCharCombatResult result = null;
+                try
+                {
+                    lock (charData)
+                    {
+                        result = new LoadCharCombatResult()
+                        {
+                            Success = true,
+                            Client = new CharacterSnapshot(charData),
+                            Enemy = new CharacterSnapshot(charData) //hiện tại test sau load tìm ra user khác có cùng hạng point nếu k tìm ra thì tìm trên nếu k ra thì tìm dưới k tìm được thì trả về null
+                        }; ;
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new LoadCharCombatResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.Send(MessageTag.LoadCharCombatArenaResult, result);
                 }
             }
         }

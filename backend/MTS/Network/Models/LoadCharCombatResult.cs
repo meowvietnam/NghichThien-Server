@@ -10,5 +10,7 @@ namespace MTS.Network.Models
         public bool Success { get; set; }
         public string? Message { get; set; }
         public CharacterSnapshot Client { get; set; }
+        public CharacterSnapshot Enemy { get; set; }
+
     }
 }
