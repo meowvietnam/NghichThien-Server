@@ -76,4 +76,5 @@ public static class Strings
     public static string HackerTangQuaNPC { get; }
 
     public static string? IapPurchaseAlreadyProcessed { get; set; }
+    public static string? MoneyVipInvalid { get; set; }
 }

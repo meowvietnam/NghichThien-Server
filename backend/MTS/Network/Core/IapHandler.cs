@@ -10,7 +10,8 @@ namespace MTS.Network.Core
         private static MessageTag[] handler =
         [
               MessageTag.IapPurchase,
-              MessageTag.GetProductsRequest
+              MessageTag.GetProductsRequest,
+              MessageTag.ExchangeMoneyVipRequest
         ];
 
         public MessageTag[] HandleTag => handler;
@@ -63,6 +64,30 @@ namespace MTS.Network.Core
                 {
                     var ownerProducts = charData.GetProducts().GetAwaiter().GetResult();
                     client.MemSend(MessageTag.GetProductsRequest, ownerProducts);
+                }
+            }
+            else if (tag == MessageTag.ExchangeMoneyVipRequest)
+            {
+                ExchangeMoneyVipResult result = null!;
+                try
+                {
+                    lock (charData)
+                    {
+                        var amount = reader.Read<int>();
+                        result = charData.ExchangeMoneyVipForLinhThach(amount);
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new ExchangeMoneyVipResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.ExchangeMoneyVipRequest, result);
                 }
             }
         }

@@ -1448,24 +1448,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             case Game.LuyenKhi.EquipmentType.Weapon:
                 // Nếu không phải tháo đồ, check xem trong hòm có món này không
-                if (!isUnequip && !this.InventoryManager.VuKhis.Any(x => x.SelfId == request.Id))
+                if (!isUnequip && !InventoryManager.VuKhis.Any(x => x.SelfId == request.Id))
                     throw new Exception(Strings.HackerEquipment);
 
-                this.EquipmentManager.EquipVuKhi(request.Id);
+                EquipmentManager.EquipVuKhi(request.Id);
                 break;
 
             case Game.LuyenKhi.EquipmentType.Armor:
-                if (!isUnequip && !this.InventoryManager.PhongCus.Any(x => x.SelfId == request.Id))
+                if (!isUnequip && !InventoryManager.PhongCus.Any(x => x.SelfId == request.Id))
                     throw new Exception(Strings.HackerEquipment);
 
-                this.EquipmentManager.EquipPhongCu(request.Id);
+                EquipmentManager.EquipPhongCu(request.Id);
                 break;
 
             case Game.LuyenKhi.EquipmentType.Jewelry:
-                if (!isUnequip && !this.InventoryManager.TrangSucs.Any(x => x.SelfId == request.Id))
+                if (!isUnequip && !InventoryManager.TrangSucs.Any(x => x.SelfId == request.Id))
                     throw new Exception(Strings.HackerEquipment);
 
-                this.EquipmentManager.EquipTrangSuc(request.Id); // Đã sửa thành EquipTrangSuc chuẩn bài!
+                EquipmentManager.EquipTrangSuc(request.Id); // Đã sửa thành EquipTrangSuc chuẩn bài!
                 break;
 
             default:
@@ -1556,5 +1556,23 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 };
             }).ToList();
         return ownerProducts;
+    }
+
+    public ExchangeMoneyVipResult ExchangeMoneyVipForLinhThach(int amount)
+    {
+        if (amount <= 0 || amount > MoneyVip)
+        {
+            throw new Exception(Strings.MoneyVipInvalid);
+        }
+        var linhThach = Stats.LinhThach + amount * 100;
+        Stats.SetLinhThach(linhThach);
+        var moneyVip = MoneyVip - amount;
+        SetMoneyVip(moneyVip);
+        return new ExchangeMoneyVipResult()
+        {
+            Success = true,
+            LinhThach = linhThach,
+            MoneyVip = moneyVip
+        };
     }
 }

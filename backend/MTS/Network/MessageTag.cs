@@ -116,6 +116,7 @@ public enum MessageTag
     GetProductsRequest = 511,
     IapPurchase = 520,
     PurchaseIapResult = 521,
+    ExchangeMoneyVipRequest = 522,
 
     ThinhGiaoKyNang = 610,
     ThinhGiaoKyNangResult = 611,
