@@ -73,7 +73,16 @@ public abstract class ILanguageStrings
     public abstract string HackerHP { get; }
     public abstract string HackerLevelBossCombat { get; }
     public abstract string HackerSkillCombat { get; }
+
     // Equipment messages
+    public abstract string HackerEquipment { get; }
+    public abstract string HackerLevelNpc { get; }
+    public abstract string NotEnoughCongPhap { get; }
+    public abstract string NpcNotExist { get; }
+    public abstract string HackerSkillNotExistOnNpc { get; }
+    public abstract string HackerTangQuaNPC { get; }
 
-
+    // IAP messages
+    public abstract string IapPurchaseAlreadyProcessed { get; }
+    public abstract string MoneyVipInvalid { get; }
 }

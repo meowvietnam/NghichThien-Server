@@ -61,4 +61,12 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerHP => "Post-combat HP is invalid!";
     public override string HackerLevelBossCombat => "Boss level in combat is invalid!";
     public override string HackerSkillCombat => "Skill used in combat is invalid!";
+    public override string HackerEquipment => "Equipment data is invalid!";
+    public override string HackerLevelNpc => "NPC level is invalid!";
+    public override string NotEnoughCongPhap => "Not enough Cong Phap!";
+    public override string NpcNotExist => "NPC does not exist!";
+    public override string HackerSkillNotExistOnNpc => "Skill does not exist on this NPC!";
+    public override string HackerTangQuaNPC => "NPC gift data is invalid!";
+    public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
+    public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
 }

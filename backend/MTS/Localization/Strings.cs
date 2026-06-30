@@ -66,15 +66,12 @@ public static class Strings
     public static string HackerHP => _current.HackerHP;
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
     public static string HackerSkillCombat => _current.HackerSkillCombat;
-    public static string HackerEquipment { get; }
-    public static string HackerLevelNpc { get; }
-
-    public static string NotEnoughCongPhap { get; }
-
-    public static string NpcNotExist { get; }
-    public static string HackerSkillNotExistOnNpc { get; }
-    public static string HackerTangQuaNPC { get; }
-
-    public static string? IapPurchaseAlreadyProcessed { get; set; }
-    public static string? MoneyVipInvalid { get; set; }
+    public static string HackerEquipment => _current.HackerEquipment;
+    public static string HackerLevelNpc => _current.HackerLevelNpc;
+    public static string NotEnoughCongPhap => _current.NotEnoughCongPhap;
+    public static string NpcNotExist => _current.NpcNotExist;
+    public static string HackerSkillNotExistOnNpc => _current.HackerSkillNotExistOnNpc;
+    public static string HackerTangQuaNPC => _current.HackerTangQuaNPC;
+    public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
+    public static string MoneyVipInvalid => _current.MoneyVipInvalid;
 }

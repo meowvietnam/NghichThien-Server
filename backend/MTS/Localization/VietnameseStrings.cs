@@ -58,4 +58,12 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerHP => "Sinh mệnh sau trận đấu không hợp lệ!";
     public override string HackerLevelBossCombat => "Cấp độ Boss trong trận đấu không hợp lệ!";
     public override string HackerSkillCombat => "Thần thông sử dụng trong trận đấu không hợp lệ!";
+    public override string HackerEquipment => "Dữ liệu trang bị không hợp lệ!";
+    public override string HackerLevelNpc => "Cấp độ NPC không hợp lệ!";
+    public override string NotEnoughCongPhap => "Không đủ công pháp!";
+    public override string NpcNotExist => "NPC không tồn tại!";
+    public override string HackerSkillNotExistOnNpc => "Kỹ năng không tồn tại trên NPC!";
+    public override string HackerTangQuaNPC => "Dữ liệu tặng quà NPC không hợp lệ!";
+    public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
+    public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
 }
