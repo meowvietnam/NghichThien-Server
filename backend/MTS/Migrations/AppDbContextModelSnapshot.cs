@@ -40,6 +40,22 @@ namespace MTS.Migrations
                     b.ToTable("Appearances");
                 });
 
+            modelBuilder.Entity("MTS.Models.ArenaManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentArenaCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("ArenaManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.CamNgo", b =>
                 {
                     b.Property<int>("CharId")
@@ -69,9 +85,6 @@ namespace MTS.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<int>("CurrentArenaCount")
-                        .HasColumnType("int");
 
                     b.Property<int>("CurrentFreeAdsMoneyVipCount")
                         .HasColumnType("int");
@@ -592,6 +605,17 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.ArenaManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne("ArenaManager")
+                        .HasForeignKey("MTS.Models.ArenaManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.CamNgo", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", "Inventory")
@@ -815,6 +839,9 @@ namespace MTS.Migrations
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
                 {
                     b.Navigation("Appearance")
+                        .IsRequired();
+
+                    b.Navigation("ArenaManager")
                         .IsRequired();
 
                     b.Navigation("EquipmentManager")

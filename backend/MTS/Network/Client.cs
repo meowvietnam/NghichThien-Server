@@ -119,6 +119,14 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
             .FirstAsync(x => x.CharId == id);
         questManager.CharData = characterData;
         characterData.QuestManager = questManager;
+        
+        var arenaManager = await db.ArenaManagers
+            .AsNoTracking()
+            .FirstAsync(x => x.CharId == id);
+        arenaManager.CharData = characterData;
+        characterData.ArenaManager = arenaManager;
+        
+        
         CharacterData = characterData;
         MailManager = new MailManager(characterData, this);
         return characterData;

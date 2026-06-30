@@ -34,7 +34,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public bool IsInfiniteEnergy { get; private set; } = false;
     public bool IsNoAds { get; private set; } = false;
     public bool CanFly { get; private set; } = false;
-    public int CurrentArenaCount { get; private set; }
     public int CurrentFreeAdsMoneyVipCount { get; private set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
@@ -44,6 +43,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public Social Social { get; set; } = new();
     public InventoryManager InventoryManager { get; set; } = new();
     public QuestManager QuestManager { get; set; } = new();
+    public ArenaManager ArenaManager { get; set; } = new();
 
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
@@ -97,15 +97,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
-    public void SetCurrentArenaCount(int value)
-    {
-        if (CurrentArenaCount != value)
-        {
-            CurrentArenaCount = value;
-            dirty = true;
-        }
-    }
-
     public void SetCurrentFreeAdsMoneyVipCount(int value)
     {
         if (CurrentFreeAdsMoneyVipCount != value)
@@ -131,7 +122,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
         IsInfiniteEnergy = clone.IsInfiniteEnergy;
         IsNoAds = clone.IsNoAds;
         CanFly = clone.CanFly;
-        CurrentArenaCount = clone.CurrentArenaCount;
         CurrentFreeAdsMoneyVipCount = clone.CurrentFreeAdsMoneyVipCount;
         CreatedAt = clone.CreatedAt;
         dirty = false;
@@ -167,12 +157,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + IsInfiniteEnergy.ByteSize()
                + IsNoAds.ByteSize()
                + CanFly.ByteSize()
-               + CurrentArenaCount.ByteSize()
                + CurrentFreeAdsMoneyVipCount.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
                + Social.ByteSize()
-               + QuestManager.ByteSize();
+               + QuestManager.ByteSize()
+               + ArenaManager.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -189,12 +179,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(IsInfiniteEnergy);
         writer.Write(IsNoAds);
         writer.Write(CanFly);
-        writer.Write(CurrentArenaCount);
         writer.Write(CurrentFreeAdsMoneyVipCount);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
         writer.Write(Social);
         writer.Write(QuestManager);
+        writer.Write(ArenaManager);
     }
 
     public void Deserialize(IReader reader, ref CharacterData value)
@@ -211,12 +201,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.IsInfiniteEnergy = reader.Read<bool>();
         value.IsNoAds = reader.Read<bool>();
         value.CanFly = reader.Read<bool>();
-        value.CurrentArenaCount = reader.Read<int>();
         value.CurrentFreeAdsMoneyVipCount = reader.Read<int>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
         value.QuestManager = reader.Read<QuestManager>();
+        value.ArenaManager = reader.Read<ArenaManager>();
     }
 
     public bool IsInventoryDefault()
@@ -236,7 +226,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy)
                         .SetProperty(x => x.IsNoAds, IsNoAds)
                         .SetProperty(x => x.CanFly, CanFly)
-                        .SetProperty(x => x.CurrentArenaCount, CurrentArenaCount)
                         .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount));
             dirty = false;
         }
@@ -269,6 +258,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         if (!QuestManager.IsDefault())
         {
             await QuestManager.SaveChanges(db);
+        }
+
+        if (!ArenaManager.IsDefault())
+        {
+            await ArenaManager.SaveChanges(db);
         }
     }
 

@@ -15,8 +15,14 @@ public class QuestManager : IMemorySerializable<QuestManager>
 
     public int CurrentMainQuest { get; private set; } = 0;
     public int CurrentCountSideQuest { get; private set; } = 0;
-    [NotMapped] private bool dirty = false;
-    [ForeignKey(nameof(CharId))] public CharacterData CharData { get; set; }
+    [NotMapped]
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    private bool dirty = false;
+    [ForeignKey(nameof(CharId))]
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public CharacterData CharData { get; set; }
 
     public void Deserialize(IReader reader, ref QuestManager value)
     {

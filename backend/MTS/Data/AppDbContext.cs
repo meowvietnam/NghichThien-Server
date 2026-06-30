@@ -35,7 +35,7 @@ public class AppDbContext : DbContext
     public DbSet<QuestManager> QuestManagers { get; private set; }
     public DbSet<IapProduct> IapProducts { get; private set; }
     public DbSet<IapPurchase> IapPurchases { get; private set; }
-
+    public DbSet<ArenaManager> ArenaManagers { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -314,6 +314,15 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ArenaManager>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharData)
+                .WithOne(x => x.ArenaManager)
+                .HasForeignKey<ArenaManager>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
