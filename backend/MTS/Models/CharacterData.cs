@@ -929,7 +929,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         foreach (var item in request.ListIdThanThong)
         {
-            if (!this.EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
+            if (!EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
             {
                 throw new Exception(Strings.HackerSkillCombat);
             }
@@ -957,26 +957,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         int newHp = Stats.Hp;
         RewardSnapshot newReward = new RewardSnapshot();
-        if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps || request.TypeCombat == Game.Combat.ETypeCombat.Boss)
+        if (request.TypeCombat == ETypeCombat.AllMaps || request.TypeCombat == ETypeCombat.Boss)
         {
             if (request.CurrentHPUser > Stats.SinhMenh * 5)
             {
                 throw new Exception(Strings.HackerHP);
             }
 
-            if (request.TypeCombat == Game.Combat.ETypeCombat.AllMaps)
+            if (request.TypeCombat == ETypeCombat.AllMaps)
             {
                 if (request.CurrentLevelEnemy > Progression.Level + 2)
                 {
                     throw new Exception(Strings.HackerLevelEnemyCombat);
                 }
             }
-            else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
+            else if (request.TypeCombat == ETypeCombat.Boss)
             {
-                // Tính toán level Boss hợp lệ dựa trên level của Player
                 int validBossLevel = ((Progression.Level - 1) / 3 + 1) * 3 + 1;
 
-                // Nếu level của con Boss trong trận đấu khác với level hợp lệ -> Chắc chắn hack
                 if (request.CurrentLevelEnemy != validBossLevel)
                 {
                     throw new Exception(Strings.HackerLevelBossCombat);
@@ -985,7 +983,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             newHp = request.CurrentHPUser;
 
-            if (request.TypeResultCombat == Game.Combat.ETypeResultCombat.Win)
+            if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
                 int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
                 int monsterLevel = request.CurrentLevelEnemy;
@@ -998,7 +996,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                     ItemRefs = listItemRef
                 };
             }
-            else if (request.TypeResultCombat == Game.Combat.ETypeResultCombat.LoseByRun)
+            else if (request.TypeResultCombat == ETypeResultCombat.LoseByRun)
             {
                 if (request.CurrentHPUser < Stats.SinhMenh)
                 {
