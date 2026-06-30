@@ -2,6 +2,7 @@ using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.CreateCharacter;
+using MTS.Game.Gacha;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Managers;
@@ -11,6 +12,7 @@ using MTS.Models;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
+using MTS.Game.Gacha;
 
 namespace MTS.Game;
 
@@ -220,6 +222,14 @@ public static class GameConfig
         var bytes = File.ReadAllBytes(filePath);
         return MemoryPackSerializer.Deserialize<T[]>(bytes);
     }
+    public static Dictionary<ETypeGacha, int> PageGachaWithRequireValue = new Dictionary<ETypeGacha, int>
+    {
+        {ETypeGacha.ThanThong,400},
+        {ETypeGacha.CongPhap,500},
+        {ETypeGacha.DanDuoc,500},
+        {ETypeGacha.DuocLieu,300},
+        {ETypeGacha.VatLieu,200},
+    };
     public static void Init()
     {
         CharacterTemplate = Json.Deserialize<CharacterData>(File.ReadAllText("Data/character-template.json"));

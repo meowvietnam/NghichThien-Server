@@ -7,7 +7,7 @@ namespace MTS.Network.Core
         private Client client;
         private static MessageTag[] handler =
         [
-              MessageTag.ThinhGiaoKyNang , MessageTag.TangQuaNpc
+              MessageTag.ThinhGiaoKyNang , MessageTag.TangQuaNpc , MessageTag.Gacha
         ];
         public SocialHandler(Client client)
         {
@@ -76,8 +76,32 @@ namespace MTS.Network.Core
                 {
                     client.Send(MessageTag.TangQuaNpcResult, result);
                 }
-            }    
-            
+            }
+            else if (tag == MessageTag.Gacha)
+            {
+                var request = reader.Read<GachaModel>();
+                GachaResult result = null;
+                try
+                {
+                    lock (charData)
+                    {
+                        result = charData.Gacha(request);
+                    }
+                }
+                catch (Exception e)
+                {
+
+                    result = new GachaResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.Send(MessageTag.GachaResult, result);
+                }
+            }
         }
 
         public void OnLeave()
