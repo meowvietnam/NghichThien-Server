@@ -70,6 +70,12 @@ namespace MTS.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("CurrentArenaCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentFreeAdsMoneyVipCount")
+                        .HasColumnType("int");
+
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 

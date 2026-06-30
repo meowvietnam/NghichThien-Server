@@ -34,6 +34,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public bool IsInfiniteEnergy { get; private set; } = false;
     public bool IsNoAds { get; private set; } = false;
     public bool CanFly { get; private set; } = false;
+    public int CurrentArenaCount { get; private set; }
+    public int CurrentFreeAdsMoneyVipCount { get; private set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -67,6 +69,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
+
     public void SetMoneyVip(int value)
     {
         if (MoneyVip != value)
@@ -94,6 +97,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void SetCurrentArenaCount(int value)
+    {
+        if (CurrentArenaCount != value)
+        {
+            CurrentArenaCount = value;
+            dirty = true;
+        }
+    }
+
+    public void SetCurrentFreeAdsMoneyVipCount(int value)
+    {
+        if (CurrentFreeAdsMoneyVipCount != value)
+        {
+            CurrentFreeAdsMoneyVipCount = value;
+            dirty = true;
+        }
+    }
+
     public CharacterData()
     {
     }
@@ -110,6 +131,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         IsInfiniteEnergy = clone.IsInfiniteEnergy;
         IsNoAds = clone.IsNoAds;
         CanFly = clone.CanFly;
+        CurrentArenaCount = clone.CurrentArenaCount;
+        CurrentFreeAdsMoneyVipCount = clone.CurrentFreeAdsMoneyVipCount;
         CreatedAt = clone.CreatedAt;
         dirty = false;
     }
@@ -144,6 +167,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + IsInfiniteEnergy.ByteSize()
                + IsNoAds.ByteSize()
                + CanFly.ByteSize()
+               + CurrentArenaCount.ByteSize()
+               + CurrentFreeAdsMoneyVipCount.ByteSize()
                + InventoryManager.ByteSize()
                + CreatedAt.ByteSize()
                + Social.ByteSize()
@@ -164,6 +189,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(IsInfiniteEnergy);
         writer.Write(IsNoAds);
         writer.Write(CanFly);
+        writer.Write(CurrentArenaCount);
+        writer.Write(CurrentFreeAdsMoneyVipCount);
         writer.Write(InventoryManager);
         writer.Write(CreatedAt);
         writer.Write(Social);
@@ -184,6 +211,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.IsInfiniteEnergy = reader.Read<bool>();
         value.IsNoAds = reader.Read<bool>();
         value.CanFly = reader.Read<bool>();
+        value.CurrentArenaCount = reader.Read<int>();
+        value.CurrentFreeAdsMoneyVipCount = reader.Read<int>();
         value.InventoryManager = reader.Read<InventoryManager>();
         value.CreatedAt = reader.Read<DateTime>();
         value.Social = reader.Read<Social>();
@@ -206,7 +235,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.MoneyVip, MoneyVip)
                         .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy)
                         .SetProperty(x => x.IsNoAds, IsNoAds)
-                        .SetProperty(x => x.CanFly, CanFly));
+                        .SetProperty(x => x.CanFly, CanFly)
+                        .SetProperty(x => x.CurrentArenaCount, CurrentArenaCount)
+                        .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount));
             dirty = false;
         }
 
@@ -530,8 +561,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         var newTamCanh = Stats.TamCanh - months * 2;
         var percentAddHp = 0.1 * months;
-        percentAddHp = Math.Clamp(percentAddHp, 0,1);
-        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp); 
+        percentAddHp = Math.Clamp(percentAddHp, 0, 1);
+        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp);
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
         var exp = Progression.CurrentExp + buffExp;
         var levelUpdated = Progression.SetCurrentExp(exp);
@@ -548,7 +579,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 NewTamCanh = newTamCanh,
                 RemainingMoney = remaining,
                 NewHp = (int)newHp,
-
             };
         }
 
@@ -882,8 +912,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
             //SetRelationShip
             Social.RelationshipAddValue((ushort)item, 10);
         }
+
         int moneyVip = Random.Shared.Next(5, 20);
-        int linhThach = Random.Shared.Next(20*Progression.Level, 100 * Progression.Level);
+        int linhThach = Random.Shared.Next(20 * Progression.Level, 100 * Progression.Level);
 
         int newCountSideQuest = QuestManager.CurrentCountSideQuest + 1;
         QuestManager.SetCurrentCountSideQuest(newCountSideQuest);
@@ -945,7 +976,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     throw new Exception(Strings.HackerLevelEnemyCombat);
                 }
-
             }
             else if (request.TypeCombat == Game.Combat.ETypeCombat.Boss)
             {
@@ -957,12 +987,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 {
                     throw new Exception(Strings.HackerLevelBossCombat);
                 }
-
             }
 
             newHp = request.CurrentHPUser;
 
-            if(request.TypeResultCombat == Game.Combat.ETypeResultCombat.Win)
+            if (request.TypeResultCombat == Game.Combat.ETypeResultCombat.Win)
             {
                 int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
                 int monsterLevel = request.CurrentLevelEnemy;
@@ -974,41 +1003,33 @@ public class CharacterData : IMemorySerializable<CharacterData>
                     MoneyVip = 0,
                     ItemRefs = listItemRef
                 };
-            }    
+            }
             else if (request.TypeResultCombat == Game.Combat.ETypeResultCombat.LoseByRun)
             {
-                if(request.CurrentHPUser < Stats.SinhMenh)
+                if (request.CurrentHPUser < Stats.SinhMenh)
                 {
                     newHp = request.CurrentHPUser / 2;
-
                 }
                 else
                 {
                     newHp = Stats.SinhMenh / 2;
-
                 }
-
             }
-            newHp = Math.Clamp(newHp,0,Stats.SinhMenh);
-            Stats.SetHp(newHp);
 
+            newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
+            Stats.SetHp(newHp);
         }
         else if (request.TypeCombat == ETypeCombat.DauTruong)
         {
-            if(request.TypeResultCombat == ETypeResultCombat.Win)
+            if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
                 // cộng điểm đấu trường;
-
             }
             else
             {
                 // truwf điểm đấu trường;
-
             }
-
-
-        }    
-
+        }
 
 
         return new ResultCombatResult()
@@ -1126,6 +1147,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             throw new Exception(Strings.HackerTangQuaNPC);
         }
+
         ushort vuKhiEquip = EquipmentManager.VuKhi;
         ushort phongCuEquip = EquipmentManager.PhongCu;
         ushort trangSucEquip = EquipmentManager.TrangSuc;
@@ -1135,12 +1157,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
             throw new Exception(Strings.HackerTangQuaNPC);
         }
-        else if(request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip)
+        else if (request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip)
         {
             Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
             throw new Exception(Strings.HackerTangQuaNPC);
         }
-        else if(request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
+        else if (request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
         {
             Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
             throw new Exception(Strings.HackerTangQuaNPC);
@@ -1190,6 +1212,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             currentRelationshipValue = npcCurrent.Points;
         }
+
         ERelationShip GetIndexSkillThinhGiao()
         {
             ERelationShip indexThinhGiao = ERelationShip.Quen;
@@ -1201,13 +1224,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
             else if (currentSkillCategorize.Item2.Contains(request.IdSkill))
             {
                 indexThinhGiao = ERelationShip.BanBe;
-
             }
             else if (currentSkillCategorize.Item3.Contains(request.IdSkill))
             {
                 indexThinhGiao = ERelationShip.ThanThiet;
-
             }
+
             return indexThinhGiao;
         }
 
@@ -1241,6 +1263,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             throw new Exception(Strings.NotSupportItemType);
         }
+
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points - requireRelationShip;
 
         if (currentRelationType != ERelationShip.None)
@@ -1249,26 +1272,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
             if ((int)currentRelationType >= (int)ERelationShip.Quen)
             {
                 baseSkillsCheck.AddRange(currentSkillCategorize.Item1);
-               
             }
+
             if ((int)currentRelationType >= (int)ERelationShip.BanBe)
             {
                 baseSkillsCheck.AddRange(currentSkillCategorize.Item2);
-
-               
             }
+
             if ((int)currentRelationType >= (int)ERelationShip.ThanThiet)
             {
                 baseSkillsCheck.AddRange(currentSkillCategorize.Item3);
-
-               
             }
+
             if (!baseSkillsCheck.Contains(request.IdSkill))
             {
                 Console.WriteLine("HackerSkillNotExistOnNpc");
 
                 throw new Exception(Strings.HackerSkillNotExistOnNpc);
             }
+
             InventoryManager.AddToInventory(new List<ItemRef> { itemRefSkill });
             Social.RelationshipAddValue((ushort)request.IdChar, -requireRelationShip);
             // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
@@ -1530,15 +1552,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var iapProducts = await db.IapProducts.Where(x => x.IsActive).ToArrayAsync();
         var ownerProducts = iapProducts
             .Select(x =>
-        {
-            var hasPurchased = db.IapPurchases
-                .Any(p => p.CharId == Id && p.Store == x.Store && p.ProductId == x.Id);
-            return new OwnerIapProduct()
             {
-                Product = x,
-                HasPurchased = hasPurchased
-            };
-        }).ToList();
+                var hasPurchased = db.IapPurchases
+                    .Any(p => p.CharId == Id && p.Store == x.Store && p.ProductId == x.Id);
+                return new OwnerIapProduct()
+                {
+                    Product = x,
+                    HasPurchased = hasPurchased
+                };
+            }).ToList();
         return ownerProducts;
     }
 }
