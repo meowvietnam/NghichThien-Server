@@ -117,12 +117,13 @@ namespace MTS.Network.Core
         {
             var point = client.CharacterData.ArenaManager.Points;
             var level = client.CharacterData.Progression.Level;
+            var charId = client.CharacterData.Id;
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
             var matchPointPlayers =
                 await db.ArenaManagers
-                    .Where(x => x.Points >= min && x.Points <= max)
+                    .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
                     .OrderBy(_ => EF.Functions.Random())
                     .Select(x => x.CharId)
                     .Take(10)
