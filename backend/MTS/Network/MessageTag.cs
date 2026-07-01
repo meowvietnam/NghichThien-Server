@@ -122,7 +122,6 @@ public enum MessageTag
     ThinhGiaoKyNangResult = 611,
     TangQuaNpc = 612,
     TangQuaNpcResult = 613,
-    
-    LoadShopRequest = 635,
-    ReloadShopRequest = 636,
+    Gacha = 614,
+    GachaResult = 615,
 }
