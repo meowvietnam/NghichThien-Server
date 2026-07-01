@@ -128,4 +128,5 @@ public enum MessageTag
     
     LoadShopRequest = 635,
     ReloadShopRequest = 636,
+    BuyAndSellRequest = 637,
 }

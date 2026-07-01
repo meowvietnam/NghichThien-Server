@@ -74,4 +74,10 @@ public static class Strings
     public static string HackerTangQuaNPC => _current.HackerTangQuaNPC;
     public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
+    public static string ShopItemNotFound => _current.ShopItemNotFound;
+    public static string ShopItemQuantityInvalid => _current.ShopItemQuantityInvalid;
+    public static string InventoryItemNotFound => _current.InventoryItemNotFound;
+    public static string InventoryItemQuantityInvalid => _current.InventoryItemQuantityInvalid;
+    public static string RetreatDurationInvalid => _current.RetreatDurationInvalid;
+    public static string GiftItemQuantityInvalid => _current.GiftItemQuantityInvalid;
 }

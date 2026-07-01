@@ -66,4 +66,10 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "Dữ liệu tặng quà NPC không hợp lệ!";
     public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
+    public override string ShopItemNotFound => "Vật phẩm không tồn tại trong cửa hàng!";
+    public override string ShopItemQuantityInvalid => "Số lượng vật phẩm trong cửa hàng không đủ!";
+    public override string InventoryItemNotFound => "Vật phẩm không tồn tại trong túi đồ!";
+    public override string InventoryItemQuantityInvalid => "Số lượng vật phẩm trong túi đồ không đủ!";
+    public override string RetreatDurationInvalid => "Thời gian tu luyện phải ít nhất 30 ngày!";
+    public override string GiftItemQuantityInvalid => "Số lượng vật phẩm tặng không hợp lệ!";
 }

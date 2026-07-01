@@ -85,4 +85,14 @@ public abstract class ILanguageStrings
     // IAP messages
     public abstract string IapPurchaseAlreadyProcessed { get; }
     public abstract string MoneyVipInvalid { get; }
+
+    // Shop messages
+    public abstract string ShopItemNotFound { get; }
+    public abstract string ShopItemQuantityInvalid { get; }
+    public abstract string InventoryItemNotFound { get; }
+    public abstract string InventoryItemQuantityInvalid { get; }
+
+    // Character action messages
+    public abstract string RetreatDurationInvalid { get; }
+    public abstract string GiftItemQuantityInvalid { get; }
 }

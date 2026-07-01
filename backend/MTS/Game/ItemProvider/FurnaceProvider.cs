@@ -17,7 +17,15 @@ namespace MTS.Game.ItemProvider
         }
         public override FurnaceData GetDataItemByIdRef(ushort id)
         {
-            return inventoryManager.Furnaces.FirstOrDefault(x => x.SelfId == id);
+            var furnaceData = new FurnaceData()
+            {
+                SelfId = id
+            };
+            if (inventoryManager.Furnaces.TryGetValue(furnaceData, out var furnace))
+            {
+                return furnace;
+            }
+            return null;
         }
 
         public override int GetPriceItemSell(ushort id)
@@ -28,11 +36,8 @@ namespace MTS.Game.ItemProvider
         public override (int, int) ValueTangQuaNPCWithItem(ushort id, int npcLevel)
         {
             int currentDurability = GetDataItemByIdRef(id).Durability;
-            // Tính số độ bền bị mất, đảm bảo không bị âm và tối đa là 100
             int lostDurability = Math.Clamp(100 - currentDurability, 0, 100);
-            // Cứ mỗi 25 điểm mất đi thì tính là 1 điểm phạt
             int penalty = lostDurability / 25;
-
             return (base.ValueTangQuaNPCWithItem(id, npcLevel).Item1 - penalty, base.ValueTangQuaNPCWithItem(id, npcLevel).Item2);
         }
     }

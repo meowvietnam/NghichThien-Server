@@ -12,6 +12,7 @@ public class InventoryTracking
     public Modify<CongPhap> CongPhaps { get; set; } = new();
     public Modify<ThanThong> ThanThongs { get; set; } = new();
     public Modify<Equipment> Equipments { get; set; } = new();
+    
     public void Clear()
     {
         Items.Clear();

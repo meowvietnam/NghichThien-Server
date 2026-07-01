@@ -1,22 +1,28 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
-using System.Runtime.InteropServices.ComTypes;
+using Google.Apis.AndroidPublisher.v3.Data;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.BaseSkill;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
-using MTS.Interfaces;
 using MTS.Network.Models;
 using MTS.Utils;
-using Network;
-using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
 
+public class ItemCollection
+{
+    
+    public object Collection { get; private set; }
+    public object Tracking { get; private set; }
+    public ItemCollection(object collection, object tracking)
+    {
+        Collection = collection;
+        Tracking = tracking;
+    }
+}
 public class InventoryManager : IMemorySerializable<InventoryManager>
 {
     [System.Text.Json.Serialization.JsonIgnore]
@@ -63,6 +69,42 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         }
     }
 
+    public ItemCollection GetItemCollection(ItemType type)
+    {
+        switch (type)
+        {
+            case ItemType.Furnace:
+                return new ItemCollection(Furnaces, Tracking.Furnaces);
+            case ItemType.Recipe:
+                return new ItemCollection(Recipes, Tracking.Items);
+            case ItemType.Herb:
+                return new ItemCollection(Herbs, Tracking.Items);
+            case ItemType.ThanThong:
+                return new ItemCollection(ThanThongs, Tracking.Items);
+            case ItemType.CongPhap:
+                return new ItemCollection(CongPhaps, Tracking.Items);
+            case ItemType.LinhDan:
+                return new ItemCollection(LinhDans, Tracking.Items);
+            case ItemType.NgoDao:
+                return new ItemCollection(NgoDaos, Tracking.NgoDaos);
+            case ItemType.CamNgo:
+                return new ItemCollection(CamNgos, Tracking.CamNgos);
+            case ItemType.CongPhapOwner:
+                return new ItemCollection(CongPhapOwners, Tracking.CongPhaps);
+            case ItemType.ThanThongOwner:
+                return new ItemCollection(ThanThongOwners, Tracking.ThanThongs);
+            case ItemType.Material:
+                return new ItemCollection(Materials, Tracking.Items);
+            case ItemType.VuKhi:
+                return new ItemCollection(VuKhis, Tracking.Equipments);
+            case ItemType.PhongCu:
+                return new ItemCollection(PhongCus, Tracking.Equipments);
+            case ItemType.TrangSuc:
+                return new ItemCollection(TrangSucs, Tracking.Equipments);
+            default:
+                return null;
+        }
+    }
     private ushort Increase(ushort x)
     {
         return (ushort)(x + 1);
@@ -72,7 +114,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         return (ushort)(x - 1);
     }
-
     public async Task Load(AppDbContext db)
     {
         var items = await db.Items
@@ -432,7 +473,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             Add(CongPhaps, itemRef);
         }
-
         else if (type == ItemType.Recipe)
         {
             Add(Recipes, itemRef);
@@ -885,6 +925,8 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         }
         return newNgoDaoDiem;
     }
+
+
 }
 
 public static class LuyenKhiMessage

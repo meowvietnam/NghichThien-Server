@@ -522,6 +522,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     public TuLuyenResult TuLuyen(TimeSpan time)
     {
+        if (time < TimeSpan.FromDays(30))
+        {
+            throw new Exception(Strings.RetreatDurationInvalid);
+        }
+
         var chuTu1Id = EquipmentManager.ChuTu1Used;
         if (chuTu1Id == ushort.MaxValue)
         {
@@ -1399,6 +1404,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
   
     public TangQuaNpcResult? TangQuaNpc(TangQuaNpc request)
     {
+        var itemRef = request.ItemRef;
+        if (itemRef.Count == 0)
+        {
+            throw new Exception(Strings.GiftItemQuantityInvalid);
+        }
+
+        var isUniqueItem = itemRef.Type is ItemType.Furnace
+            or ItemType.VuKhi
+            or ItemType.PhongCu
+            or ItemType.TrangSuc;
+        if (isUniqueItem && itemRef.Count != 1)
+        {
+            throw new Exception(Strings.GiftItemQuantityInvalid);
+        }
+
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {

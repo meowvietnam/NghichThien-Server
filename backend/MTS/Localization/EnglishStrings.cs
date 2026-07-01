@@ -69,4 +69,10 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "NPC gift data is invalid!";
     public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
+    public override string ShopItemNotFound => "Item does not exist in the shop!";
+    public override string ShopItemQuantityInvalid => "The shop does not have enough of this item!";
+    public override string InventoryItemNotFound => "Item does not exist in the inventory!";
+    public override string InventoryItemQuantityInvalid => "The inventory does not contain enough of this item!";
+    public override string RetreatDurationInvalid => "Retreat duration must be at least 30 days!";
+    public override string GiftItemQuantityInvalid => "Gift item quantity is invalid!";
 }

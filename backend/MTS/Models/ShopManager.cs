@@ -3,7 +3,9 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.ItemProvider;
 using MTS.Game.LuyenDan;
+using MTS.Localization;
 using MTS.Network.Models;
 using Newtonsoft.Json;
 using MTS.Utils;
@@ -117,5 +119,203 @@ public partial class ShopManager
     {
         var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
         return shops.First(x => x.GetTypeShop() == shopType);
+    }
+
+    public BuyAndSellResult BuyAndSell(BuyAndSell request)
+    {
+        var result = new BuyAndSellResult()
+        {
+            Success = true,
+        };
+        var inventory = CharData.InventoryManager;
+        var sellItems = request.SellItems.ToHashSet();
+        var buyItems = request.BuyItems.ToHashSet();
+        var totalSellAmount = 0;
+        var totalBuyAmount = 0;
+        var shopType = request.ShopType;
+        var shop = GetShop(shopType);
+        var items = shop.Items;
+        var providers = new Dictionary<ItemType, IItemProvider>();
+        foreach (var buyItem in buyItems)
+        {
+            if (buyItem.Count == 0)
+            {
+                throw new Exception(Strings.ShopItemQuantityInvalid);
+            }
+
+            if (!items.TryGetValue(buyItem, out var item))
+            {
+                throw new Exception(Strings.ShopItemNotFound);
+            }
+
+            var remaining = item.Count - buyItem.Count;
+            if (remaining < 0)
+            {
+                throw new Exception(Strings.ShopItemQuantityInvalid);
+            }
+
+            var type = buyItem.Type;
+            if (!providers.TryGetValue(type, out var provider))
+            {
+                provider = ItemProviderFactory.GetProvider(type, inventory)!;
+                providers[type] = provider;
+            }
+
+            var buyPrice = provider.GetPriceItemBuy(buyItem.Id) * buyItem.Count;
+            totalBuyAmount += buyPrice;
+        }
+
+        foreach (var sellItem in sellItems)
+        {
+            var id = sellItem.Id;
+            var type = sellItem.Type;
+            var count = sellItem.Count;
+            if (count == 0)
+            {
+                throw new Exception(Strings.InventoryItemQuantityInvalid);
+            }
+
+            var itemCollection = inventory.GetItemCollection(type);
+            if (itemCollection.Collection is HashSet<FurnaceData> furnaces)
+            {
+                if (count != 1)
+                {
+                    throw new Exception(Strings.InventoryItemQuantityInvalid);
+                }
+
+                var furnace = new FurnaceData()
+                {
+                    SelfId = id,
+                };
+                if (!furnaces.Contains(furnace))
+                {
+                    throw new Exception(Strings.InventoryItemNotFound);
+                }
+
+                if (!providers.TryGetValue(type, out var provider))
+                {
+                    provider = ItemProviderFactory.GetProvider(type, inventory)!;
+                    providers[type] = provider;
+                }
+
+                var sellPrice = provider.GetPriceItemSell(id);
+                totalSellAmount += sellPrice;
+            }
+            else if (itemCollection.Collection is HashSet<ItemRef> itemRefs)
+            {
+                if (!itemRefs.TryGetValue(sellItem, out var itemRef))
+                {
+                    throw new Exception(Strings.InventoryItemNotFound);
+                }
+
+                var remaining = itemRef.Count - count;
+                if (remaining < 0)
+                {
+                    throw new Exception(Strings.InventoryItemQuantityInvalid);
+                }
+
+                if (!providers.TryGetValue(type, out var provider))
+                {
+                    provider = ItemProviderFactory.GetProvider(type, inventory)!;
+                    providers[type] = provider;
+                }
+
+                var sellPrice = provider.GetPriceItemSell(id) * count;
+                totalSellAmount += sellPrice;
+            }
+        }
+        var money = CharData.Stats.LinhThach + totalSellAmount - totalBuyAmount;
+        if (money < 0)
+        {
+            throw new Exception(Strings.NotEnoughMoney);
+        }
+        foreach (var buyItem in buyItems)
+        {
+            var count = buyItem.Count;
+            var type = buyItem.Type;
+            items.TryGetValue(buyItem, out var item);
+            var remaining = item!.Count - count;
+            var itemCollection = inventory.GetItemCollection(type);
+            if (itemCollection.Collection is HashSet<FurnaceData>)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    var furnace = new FurnaceData()
+                    {
+                        Id = buyItem.Id,
+                        Durability = 100
+                    };
+                    inventory.AddFurnace(furnace);
+                    result.Furnaces.Add(furnace);
+                }
+            }
+            else if (itemCollection.Collection is HashSet<ItemRef> myItems)
+            {
+                var tracking = itemCollection.Tracking as Modify<ItemRef>;
+                if (myItems.TryGetValue(buyItem, out var myItem))
+                {
+                    myItem.Count += count;
+                    tracking.Update(myItem);
+                    result.Items.Update(myItem);
+                }
+                else
+                {
+                    myItems.Add(buyItem);
+                    tracking.Add(buyItem);
+                    result.Items.Add(buyItem);
+                }
+            }
+
+            item.Count = (ushort)remaining;
+            if (item.Count == 0)
+            {
+                items.Remove(item);
+            }
+            shop.Dirty = true;
+        }
+        foreach (var sellItem in sellItems)
+        {
+            var id = sellItem.Id;
+            var type = sellItem.Type;
+            var count = sellItem.Count;
+            var itemCollection = inventory.GetItemCollection(type);
+            if (itemCollection.Collection is HashSet<FurnaceData> furnaces)
+            {
+                var tracking = itemCollection.Tracking as Modify<FurnaceData>;
+                var furnaceRef = new FurnaceData()
+                {
+                    SelfId = id,
+                };
+                furnaces.TryGetValue(furnaceRef, out var furnace);
+                furnaces.Remove(furnace);
+                tracking.Delete(furnace);
+                result.Furnaces.Delete(furnace);
+            }
+            else if (itemCollection.Collection is HashSet<ItemRef> myItems)
+            {
+                var tracking = itemCollection.Tracking as Modify<ItemRef>;
+                if (myItems.TryGetValue(sellItem, out var myItem))
+                {
+                    myItem.Count -= count;
+                    if (myItem.Count < 0)
+                    {
+                        myItems.Remove(myItem);
+                        tracking.Delete(myItem);
+                        result.Items.Delete(myItem);
+                    }
+                    else
+                    {
+                        tracking.Update(myItem);
+                        result.Items.Update(myItem);
+                    }
+                }
+            }
+        }
+        CharData.Stats.SetLinhThach(money);
+        result.ReloadShop = shop;
+        result.TotalBuyAmount = totalBuyAmount;
+        result.TotalSellAmount = totalSellAmount;
+        result.LinhThach = money;
+        return result;
     }
 }
