@@ -11,9 +11,12 @@ using MTS.Game;
 using MTS.Network;
 using Newtonsoft.Json.Converters;
 using System.Text;
+using MemoryPack;
+using MTS.Models;
+using MTS.Network.Models;
+using MTS.Services;
 
 namespace MTS;
-
 public static class Program
 {
     public static WebApplication App { get; private set; }
@@ -102,6 +105,7 @@ public static class Program
         });
 
         builder.Services.AddHostedService<TcpHostedService>();
+        builder.Services.AddHostedService<ReloadShopService>();
         App = builder.Build();
         Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
         GameConfig.Init();

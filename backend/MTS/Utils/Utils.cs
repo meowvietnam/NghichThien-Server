@@ -3,7 +3,7 @@ using System.Text;
 
 namespace MTS.Utils;
 
-public class Utils
+public static class Utils
 {
     public static string GenerateSecureString(int length)
     {
@@ -20,6 +20,13 @@ public class Utils
         return new string(result);
     }
 
+    public static void AddRange<T>(this HashSet<T> set, IEnumerable<T> values)
+    {
+        foreach (var value in values)
+        {
+            set.Add(value);
+        }
+    }
     public static byte[] HashSHA256(string input)
     {
         return SHA256.HashData(Encoding.UTF8.GetBytes(input));

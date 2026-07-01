@@ -36,6 +36,8 @@ public class AppDbContext : DbContext
     public DbSet<IapProduct> IapProducts { get; private set; }
     public DbSet<IapPurchase> IapPurchases { get; private set; }
     public DbSet<ArenaManager> ArenaManagers { get; private set; }
+    public DbSet<ShopManager> ShopManagers { get; private set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -306,7 +308,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<IapPurchase>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => new {x.Store, x.PurchaseTokenHash})
+            e.HasIndex(x => new { x.Store, x.PurchaseTokenHash })
                 .IsUnique();
             e.Property(x => x.PurchaseTokenHash)
                 .HasMaxLength(32);
@@ -323,6 +325,32 @@ public class AppDbContext : DbContext
                 .WithOne(x => x.ArenaManager)
                 .HasForeignKey<ArenaManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ShopManager>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharData)
+                .WithOne(x => x.ShopManager)
+                .HasForeignKey<ShopManager>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.ShopDuocLieu)
+                .HasColumnType("blob")
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                );
+            e.Property(x => x.ShopVatLieu)
+                .HasColumnType("blob")
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                );
+            e.Property(x => x.ShopSkill)
+                .HasColumnType("blob")
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                );
         });
     }
 }

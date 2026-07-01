@@ -7,11 +7,13 @@ namespace MTS.Network;
 public class TcpHostedService : IHostedService
 {
     private readonly TcpServer tcpServer;
+
     public TcpHostedService(IConfiguration config)
     {
         var port = config.GetValue("ServerPorts:TcpPort", 6785);
         tcpServer = new TcpServer(port);
     }
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await Task.Run(() => tcpServer.Run(), cancellationToken);

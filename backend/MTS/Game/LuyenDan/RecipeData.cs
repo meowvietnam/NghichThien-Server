@@ -68,6 +68,19 @@ public class RecipeData : IItemData, IMemorySerializable<RecipeData>
             value.DuocDan = reader.Read<Herbs>();
         }
 
+        public List<Herbs> GetListHerbs()
+        {
+            var listHerbs = new List<Herbs>()
+                {
+                    ChuDuoc,
+                    PhuDuoc1,
+                    PhuDuoc2,
+                    DuocDan
+                }.Where(x => !x.IsDefault())
+                .ToList();
+            return listHerbs;
+        }
+
         public int ByteSize()
         {
             return Id.ByteSize() + ChuDuoc.ByteSize()
@@ -88,6 +101,7 @@ public class RecipeData : IItemData, IMemorySerializable<RecipeData>
         {
             return request.Id == herbs.Id && request.Count == herbs.Count;
         }
+
         public bool IsValid(LuyenDanRequest.Herbs chuDuoc, LuyenDanRequest.Herbs phuDuoc1,
             LuyenDanRequest.Herbs phuDuoc2, LuyenDanRequest.Herbs duocDan)
         {
@@ -100,12 +114,14 @@ public class RecipeData : IItemData, IMemorySerializable<RecipeData>
             {
                 return false;
             }
-            bool matchSub1 = IsMatch(phuDuoc1,PhuDuoc1) && IsMatch(phuDuoc2, PhuDuoc2);
-            bool matchSub2 = IsMatch(phuDuoc1,PhuDuoc2) && IsMatch(phuDuoc2, PhuDuoc1);
+
+            bool matchSub1 = IsMatch(phuDuoc1, PhuDuoc1) && IsMatch(phuDuoc2, PhuDuoc2);
+            bool matchSub2 = IsMatch(phuDuoc1, PhuDuoc2) && IsMatch(phuDuoc2, PhuDuoc1);
             if (matchSub1 || matchSub2)
             {
                 return true;
             }
+
             return false;
         }
     }

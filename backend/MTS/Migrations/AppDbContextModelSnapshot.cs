@@ -507,6 +507,28 @@ namespace MTS.Migrations
                     b.ToTable("Relationships");
                 });
 
+            modelBuilder.Entity("MTS.Models.ShopManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("ShopDuocLieu")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<byte[]>("ShopSkill")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<byte[]>("ShopVatLieu")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("ShopManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.Social", b =>
                 {
                     b.Property<int>("CharId")
@@ -792,6 +814,17 @@ namespace MTS.Migrations
                     b.Navigation("Social");
                 });
 
+            modelBuilder.Entity("MTS.Models.ShopManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne("ShopManager")
+                        .HasForeignKey("MTS.Models.ShopManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.Social", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", "CharacterData")
@@ -854,6 +887,9 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("QuestManager")
+                        .IsRequired();
+
+                    b.Navigation("ShopManager")
                         .IsRequired();
 
                     b.Navigation("Social")

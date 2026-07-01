@@ -344,6 +344,9 @@ public class CreateCharacterService
         var inventoryManager = Char.InventoryManager;
         inventoryManager.CharacterData = Char;
         inventoryManager.Init();
+        var shop = Char.ShopManager;
+        shop.CharData = Char;
+        shop.ReloadAll();
         user.CharacterDatas.Add(Char);
         return Char;
     }

@@ -44,11 +44,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public InventoryManager InventoryManager { get; set; } = new();
     public QuestManager QuestManager { get; set; } = new();
     public ArenaManager ArenaManager { get; set; } = new();
+    public ShopManager ShopManager { get; set; } = new();
 
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public UserData User { get; set; }
+
 
     [NotMapped] private bool dirty;
 
@@ -87,7 +89,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
-
     public void SetCanFly(bool value)
     {
         if (CanFly != value)
@@ -96,7 +97,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
-
     public void SetCurrentFreeAdsMoneyVipCount(int value)
     {
         if (CurrentFreeAdsMoneyVipCount != value)
@@ -140,6 +140,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
         Social.CopyFrom(clone.Social);
         EquipmentManager.CopyFrom(clone.EquipmentManager);
         QuestManager.CopyFrom(clone.QuestManager);
+        ArenaManager.CopyFrom(clone.ArenaManager);
+        ShopManager.CopyFrom(clone.ShopManager);
         Clone0(clone);
     }
 
@@ -162,7 +164,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
                + CreatedAt.ByteSize()
                + Social.ByteSize()
                + QuestManager.ByteSize()
-               + ArenaManager.ByteSize();
+               + ArenaManager.ByteSize()
+               + ShopManager.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -185,6 +188,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(Social);
         writer.Write(QuestManager);
         writer.Write(ArenaManager);
+        writer.Write(ShopManager);
     }
 
     public void Deserialize(IReader reader, ref CharacterData value)
@@ -207,6 +211,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         value.Social = reader.Read<Social>();
         value.QuestManager = reader.Read<QuestManager>();
         value.ArenaManager = reader.Read<ArenaManager>();
+        value.ShopManager = reader.Read<ShopManager>();
     }
 
     public bool IsInventoryDefault()
@@ -263,6 +268,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         if (!ArenaManager.IsDefault())
         {
             await ArenaManager.SaveChanges(db);
+        }
+
+        if (!ShopManager.IsDefault())
+        {
+            await ShopManager.SaveChanges(db);
         }
     }
 
@@ -1562,6 +1572,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.MoneyVipInvalid);
         }
+
         var linhThach = Stats.LinhThach + amount * 100;
         Stats.SetLinhThach(linhThach);
         var moneyVip = MoneyVip - amount;

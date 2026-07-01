@@ -22,7 +22,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
-
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Recipes { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Herbs { get; set; } = new();

@@ -100,12 +100,14 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
             .FirstAsync(x => x.CharId == id);
         stats.CharacterData = characterData;
         characterData.Stats = stats;
+        
         var equipment = await db.EquipmentManagers
             .AsNoTracking()
             .Include(x => x.ThanThongEquips)
             .Include(x => x.DanCombatUseds)
             .AsSplitQuery()
             .FirstAsync(x => x.CharId == id);
+        
         equipment.CharacterData = characterData;
         characterData.EquipmentManager = equipment;
         var social = await db.Socials
@@ -114,6 +116,7 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
             .FirstAsync(x => x.CharId == id);
         social.CharacterData = characterData;
         characterData.Social = social;
+        
         var questManager = await db.QuestManagers
             .AsNoTracking()
             .FirstAsync(x => x.CharId == id);
@@ -126,6 +129,11 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         arenaManager.CharData = characterData;
         characterData.ArenaManager = arenaManager;
         
+        var shopManager = await db.ShopManagers
+            .AsNoTracking()
+            .FirstAsync(x => x.CharId == id);
+        shopManager.CharData = characterData;
+        characterData.ShopManager = shopManager;
         
         CharacterData = characterData;
         MailManager = new MailManager(characterData, this);
@@ -226,6 +234,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var iapHandler = new IapHandler(this);
         module.RemoveHandler<IapHandler>();
         module.AddHandler(iapHandler);
+        
+        var shopHandler = new ShopHandler(this);
+        module.RemoveHandler<ShopHandler>();
+        module.AddHandler(shopHandler);
         
         ChangeState(new AllMaps(this));
     }

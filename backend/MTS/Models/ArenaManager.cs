@@ -55,5 +55,10 @@ public partial class ArenaManager
             dirty = false;
         }
     }
-    
+
+    public void CopyFrom(ArenaManager clone)
+    {
+        Points = clone.Points;
+        CurrentArenaCount = clone.CurrentArenaCount;
+    }
 }
