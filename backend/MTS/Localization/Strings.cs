@@ -62,6 +62,10 @@ public static class Strings
     public static string HackerMainQuest => _current.HackerMainQuest;
     public static string MainQuestResourceNotExist => _current.MainQuestResourceNotExist;
     public static string HackerSideQuest => _current.HackerSideQuest;
+    public static string MainQuestRewardAlreadyClaimed => _current.MainQuestRewardAlreadyClaimed;
+    public static string MainQuestNotCompleted => _current.MainQuestNotCompleted;
+    public static string DailyQuestRewardAlreadyClaimed => _current.DailyQuestRewardAlreadyClaimed;
+    public static string DailyQuestNotFound => _current.DailyQuestNotFound;
     public static string HackerLevelEnemyCombat => _current.HackerLevelEnemyCombat;
     public static string HackerHP => _current.HackerHP;
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;

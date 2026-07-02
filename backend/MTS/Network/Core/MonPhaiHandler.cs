@@ -11,19 +11,22 @@ namespace MTS.Network.Core
 
         private static MessageTag[] handler =
         [
-                MessageTag.JoinMonPhai
+            MessageTag.JoinMonPhai
         ];
+
         public MonPhaiHandler(Client client)
         {
             this.client = client;
         }
+
         public MessageTag[] HandleTag => handler;
+
         public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
             var reader = message.Reader;
             var charData = client.CharacterData;
-            if(tag == MessageTag.JoinMonPhai)
+            if (tag == MessageTag.JoinMonPhai)
             {
                 var request = reader.Read<EMonPhai>();
                 JoinMonPhaiResult result = null;
@@ -46,7 +49,7 @@ namespace MTS.Network.Core
                 {
                     client.Send(MessageTag.JoinMonPhaiResult, result);
                 }
-            }    
+            }
         }
 
         public void OnDisconnect(IProtocol<MessageTag> protocol)

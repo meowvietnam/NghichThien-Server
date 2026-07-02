@@ -54,6 +54,10 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerMainQuest => "Dữ liệu nhiệm vụ chính không hợp lệ!";
     public override string MainQuestResourceNotExist => "Tài nguyên nhiệm vụ chính không tồn tại!";
     public override string HackerSideQuest => "Dữ liệu nhiệm vụ phụ không hợp lệ!";
+    public override string MainQuestRewardAlreadyClaimed => "Phần thưởng nhiệm vụ chính đã được nhận!";
+    public override string MainQuestNotCompleted => "Nhiệm vụ chính chưa hoàn thành!";
+    public override string DailyQuestRewardAlreadyClaimed => "Phần thưởng nhiệm vụ hằng ngày đã được nhận!";
+    public override string DailyQuestNotFound => "Nhiệm vụ hằng ngày không tồn tại!";
     public override string HackerLevelEnemyCombat => "Cấp độ quái trong trận đấu không hợp lệ!";
     public override string HackerHP => "Sinh mệnh sau trận đấu không hợp lệ!";
     public override string HackerLevelBossCombat => "Cấp độ Boss trong trận đấu không hợp lệ!";

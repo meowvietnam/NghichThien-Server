@@ -1,14 +1,11 @@
 using MTS.Game.LuyenDan;
 using MTS.Models;
-using MTS.Network;
-using MTS.Utils;
 
 namespace MTS.Game.ItemProvider
 {
     public class FurnaceProvider : ItemProvider<FurnaceData>
     {
         public virtual int BaseValueLevelWithTier => 3;
-
         public override ItemType SupportedType => ItemType.Furnace;
         private InventoryManager inventoryManager;
         public FurnaceProvider(InventoryManager inventoryManager)

@@ -57,6 +57,10 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerMainQuest => "Main quest data is invalid!";
     public override string MainQuestResourceNotExist => "Main quest resource does not exist!";
     public override string HackerSideQuest => "Side quest data is invalid!";
+    public override string MainQuestRewardAlreadyClaimed => "The main quest reward has already been claimed!";
+    public override string MainQuestNotCompleted => "The main quest is not completed!";
+    public override string DailyQuestRewardAlreadyClaimed => "The daily quest reward has already been claimed!";
+    public override string DailyQuestNotFound => "Daily quest does not exist!";
     public override string HackerLevelEnemyCombat => "Enemy level in combat is invalid!";
     public override string HackerHP => "Post-combat HP is invalid!";
     public override string HackerLevelBossCombat => "Boss level in combat is invalid!";

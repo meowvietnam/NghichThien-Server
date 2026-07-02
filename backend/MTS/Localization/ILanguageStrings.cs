@@ -67,6 +67,10 @@ public abstract class ILanguageStrings
     public abstract string HackerMainQuest { get; }
     public abstract string MainQuestResourceNotExist { get; }
     public abstract string HackerSideQuest { get; }
+    public abstract string MainQuestRewardAlreadyClaimed { get; }
+    public abstract string MainQuestNotCompleted { get; }
+    public abstract string DailyQuestRewardAlreadyClaimed { get; }
+    public abstract string DailyQuestNotFound { get; }
 
     // Combat validation messages
     public abstract string HackerLevelEnemyCombat { get; }

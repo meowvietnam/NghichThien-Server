@@ -203,7 +203,15 @@ public static class GameConfig
         { EquipmentTier.ThuanDuong, 12 },
         { EquipmentTier.ThongThien, 15 },
     };
-
+    public static Dictionary<Tier, int> PriceTienNgocVatLieuAndHerbTask = new Dictionary<Tier, int>
+    {
+        { Tier.NhatPham, 20 },
+        { Tier.NhiPham, 30 },
+        { Tier.TamPham, 40 },
+        { Tier.TuPham, 50 },
+        { Tier.NguPham, 60 },
+        { Tier.LucPham, 70 },
+    };
     public static Dictionary<Tier, int> PriceFurnaceWithTierPerDurability => PriceHerbWithTier;
 
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()

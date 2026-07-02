@@ -204,6 +204,37 @@ namespace MTS.Migrations
                     b.ToTable("CongPhaps");
                 });
 
+            modelBuilder.Entity("MTS.Models.DailyQuest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EDailyQuest")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRewardClaimed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("LastReload")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("QuestReward")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("DailyQuests");
+                });
+
             modelBuilder.Entity("MTS.Models.DanCombatUsed", b =>
                 {
                     b.Property<int>("CharId")
@@ -680,6 +711,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("Inventory");
+                });
+
+            modelBuilder.Entity("MTS.Models.DailyQuest", b =>
+                {
+                    b.HasOne("MTS.Models.QuestManager", "QuestManager")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("QuestManager");
                 });
 
             modelBuilder.Entity("MTS.Models.DanCombatUsed", b =>

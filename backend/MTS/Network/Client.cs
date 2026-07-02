@@ -93,6 +93,7 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
     }
     public async Task<CharacterData> Select(CharacterData characterData)
     {
+        characterData.Client = this;
         await using var db = await Program.CreateDbAsync();
         var id = characterData.Id;
         var stats = await db.CharacterStats
@@ -122,6 +123,7 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
             .FirstAsync(x => x.CharId == id);
         questManager.CharData = characterData;
         characterData.QuestManager = questManager;
+        await questManager.Load(db);
         
         var arenaManager = await db.ArenaManagers
             .AsNoTracking()

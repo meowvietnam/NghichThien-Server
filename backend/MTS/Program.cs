@@ -106,6 +106,7 @@ public static class Program
 
         builder.Services.AddHostedService<TcpHostedService>();
         builder.Services.AddHostedService<ReloadShopService>();
+        builder.Services.AddHostedService<ReloadDailyQuestService>();
         App = builder.Build();
         Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
         GameConfig.Init();

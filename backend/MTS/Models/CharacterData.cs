@@ -14,9 +14,11 @@ using Network.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MemoryPack;
 using MTS.IAP;
 using static MTS.Game.LuyenDan.RecipeData;
 using MTS.Game.Combat;
+using MTS.Network;
 
 namespace MTS.Models;
 
@@ -25,7 +27,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int UserId { get; set; }
-
     [Key] public int Id { get; set; }
     public Gender Gender { get; set; }
     public string Name { get; set; }
@@ -49,11 +50,21 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public UserData User { get; set; }
 
 
-    [NotMapped] private bool dirty;
-
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    [NotMapped]
+    private bool dirty;
+    
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    [NotMapped]
+    public Client Client { get; set; }
     public void SetMonPhai(EMonPhai value)
     {
         if (MonPhai != value)

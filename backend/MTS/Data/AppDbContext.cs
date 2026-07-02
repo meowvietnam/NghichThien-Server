@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<IapPurchase> IapPurchases { get; private set; }
     public DbSet<ArenaManager> ArenaManagers { get; private set; }
     public DbSet<ShopManager> ShopManagers { get; private set; }
+    public DbSet<DailyQuest> DailyQuests { get; private set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -78,6 +79,7 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var json = "json";
+        var blob = "blob";
         modelBuilder.Entity<DeveloperAccount>(e =>
         {
             e.HasKey(x => x.Id);
@@ -299,7 +301,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.StoreProductId, x.Store })
                 .IsUnique();
             e.Property(x => x.Reward)
-                .HasColumnType("blob")
+                .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
                     v => MemoryPackSerializer.Deserialize<IIapReward>(v)
@@ -334,23 +336,37 @@ public class AppDbContext : DbContext
                 .HasForeignKey<ShopManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.Property(x => x.ShopDuocLieu)
-                .HasColumnType("blob")
+                .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
                     v => MemoryPackSerializer.Deserialize<Shop>(v)
                 );
             e.Property(x => x.ShopVatLieu)
-                .HasColumnType("blob")
+                .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
                     v => MemoryPackSerializer.Deserialize<Shop>(v)
                 );
             e.Property(x => x.ShopSkill)
-                .HasColumnType("blob")
+                .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
                     v => MemoryPackSerializer.Deserialize<Shop>(v)
                 );
+        });
+        modelBuilder.Entity<DailyQuest>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.QuestReward)
+                .HasColumnType(blob)
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<IQuestReward>(v)
+                );
+            e.HasOne(x => x.QuestManager)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

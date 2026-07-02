@@ -338,6 +338,12 @@ public class CreateCharacterService
         await ValidateName(Char.Name);
         Char.UserId = userId;
         Char.CreatedAt = DateTime.UtcNow;
+        Char.QuestManager.InitDailyQuests();
+        var quests = Char.QuestManager.DailyQuests
+            .SelectMany(x => x.Value)
+            .OrderBy(x => x.LastReload)
+            .ToList();
+        db.DailyQuests.AddRange(quests);
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
