@@ -1221,10 +1221,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     private ItemRef RollDanDuoc()
     {
-        // LinhDan: 1% Lục, 3% Ngũ, 5% Tứ
+        // LinhDan: 5% Lục, 7% Ngũ, 10% Tứ
         // Recipe: 2% Lục, 5% Ngũ, 7% Tứ
-        // Furnace: 5% Lục, 7% Ngũ, 10% Tứ
-        // Constraint: Tâm < Nhị < Nhất (always), LinhDan < Recipe < Furnace (always)
+        // Furnace: 1% Lục, 3% Ngũ, 5% Tứ
+        // Constraint: Tâm < Nhị < Nhất (always), LinhDan > Recipe > Furnace (always)
 
         double roll = Random.Shared.NextDouble() * 100;
         ItemType type;
@@ -1232,9 +1232,9 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         // First determine tier - now extends to NhatPham and NhiPham
         // Constraint: Tâm < Nhị < Nhất with ratio 4:5:6
-        if (roll < 8) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 1% + 2% + 5% = 8%
-        else if (roll < 23) tier = MTS.Game.LuyenDan.Tier.NguPham;  // 3% + 5% + 7% = 15%, cumulative 23%
-        else if (roll < 42) tier = MTS.Game.LuyenDan.Tier.TuPham;   // 5% + 7% + 10% = 22%, cumulative 42%
+        if (roll < 8) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 5% + 2% + 1% = 8%
+        else if (roll < 23) tier = MTS.Game.LuyenDan.Tier.NguPham;  // 7% + 5% + 3% = 15%, cumulative 23%
+        else if (roll < 42) tier = MTS.Game.LuyenDan.Tier.TuPham;   // 10% + 7% + 5% = 22%, cumulative 42%
         else if (roll < 56.33) tier = MTS.Game.LuyenDan.Tier.TamPham;   // 14.33% for Tam (4 out of 15)
         else if (roll < 74.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;   // 18% for Nhi (5 out of 15)
         else tier = MTS.Game.LuyenDan.Tier.NhatPham;               // 25.67% for Nhat (6 out of 15)
@@ -1242,34 +1242,34 @@ public class CharacterData : IMemorySerializable<CharacterData>
         // Now determine which type based on the tier
         if (tier == MTS.Game.LuyenDan.Tier.LucPham)
         {
-            // LinhDan: 1%, Recipe: 2%, Furnace: 5% -> LinhDan: 12.5%, Recipe: 25%, Furnace: 62.5%
+            // LinhDan: 5%, Recipe: 2%, Furnace: 1% -> LinhDan: 62.5%, Recipe: 25%, Furnace: 12.5%
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 12.5) type = ItemType.LinhDan;
-            else if (typeRoll < 37.5) type = ItemType.Recipe;
+            if (typeRoll < 62.5) type = ItemType.LinhDan;
+            else if (typeRoll < 87.5) type = ItemType.Recipe;
             else type = ItemType.Furnace;
         }
         else if (tier == MTS.Game.LuyenDan.Tier.NguPham)
         {
-            // LinhDan: 3%, Recipe: 5%, Furnace: 7% -> LinhDan: 20%, Recipe: 33.33%, Furnace: 46.67%
+            // LinhDan: 7%, Recipe: 5%, Furnace: 3% -> LinhDan: 46.67%, Recipe: 33.33%, Furnace: 20%
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 20) type = ItemType.LinhDan;
-            else if (typeRoll < 53.33) type = ItemType.Recipe;
+            if (typeRoll < 46.67) type = ItemType.LinhDan;
+            else if (typeRoll < 80) type = ItemType.Recipe;
             else type = ItemType.Furnace;
         }
         else if (tier == MTS.Game.LuyenDan.Tier.TuPham)
         {
-            // LinhDan: 5%, Recipe: 7%, Furnace: 10% -> LinhDan: 22.73%, Recipe: 31.82%, Furnace: 45.45%
+            // LinhDan: 10%, Recipe: 7%, Furnace: 5% -> LinhDan: 45.45%, Recipe: 31.82%, Furnace: 22.73%
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 22.73) type = ItemType.LinhDan;
-            else if (typeRoll < 54.55) type = ItemType.Recipe;
+            if (typeRoll < 45.45) type = ItemType.LinhDan;
+            else if (typeRoll < 77.27) type = ItemType.Recipe;
             else type = ItemType.Furnace;
         }
-        else // TamPham, NhiPham, NhatPham with constraint: Tâm < Nhị < Nhất, LinhDan < Recipe < Furnace
+        else // TamPham, NhiPham, NhatPham with constraint: Tâm < Nhị < Nhất, LinhDan > Recipe > Furnace
         {
-            // Distribute with ratio LinhDan:Recipe:Furnace = 1:2:3
+            // Distribute with ratio LinhDan:Recipe:Furnace = 3:2:1
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 16.67) type = ItemType.LinhDan;
-            else if (typeRoll < 50) type = ItemType.Recipe;
+            if (typeRoll < 50) type = ItemType.LinhDan;
+            else if (typeRoll < 83.33) type = ItemType.Recipe;
             else type = ItemType.Furnace;
         }
 
@@ -1278,53 +1278,60 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     private ItemRef RollDuocLieu()
     {
-        // Herb: 2% Lục, 5% Ngũ, 10% Tứ
-        // Recipe: 0% Lục, 1% Ngũ, 2% Tứ
-        // Furnace: 0% Lục, 2% Ngũ, 5% Tứ
-        // Constraint: Herb < Furnace < Recipe
+        // Herb: 2% Lục, 5% Ngũ, 10% Tứ, then random in Tâm, Nhị, Nhất
+        // Recipe: Only 2% Nhị and 5% Nhất (no drops in Lục, Ngũ, Tứ, Tâm)
+        // Furnace: Only 2% Nhị and 5% Nhất (no drops in Lục, Ngũ, Tứ, Tâm)
+        // Constraint: Recipe < Furnace < Herb (always)
 
         double roll = Random.Shared.NextDouble() * 100;
         ItemType type;
         MTS.Game.LuyenDan.Tier tier;
 
         // First determine tier - now extends to NhatPham and NhiPham
-        // Constraint: Herb < Furnace < Recipe for top 3 tiers, and Tâm < Nhị < Nhất with ratio 4:5:6
-        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 2% + 0% + 0% = 2%
-        else if (roll < 10) tier = MTS.Game.LuyenDan.Tier.NguPham; // 5% + 1% + 2% = 8%, cumulative 10%
-        else if (roll < 27) tier = MTS.Game.LuyenDan.Tier.TuPham;  // 10% + 2% + 5% = 17%, cumulative 27%
-        else if (roll < 41.33) tier = MTS.Game.LuyenDan.Tier.TamPham;  // 14.33% for Tam (4 out of 15)
-        else if (roll < 59.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;  // 18% for Nhi (5 out of 15)
-        else tier = MTS.Game.LuyenDan.Tier.NhatPham;               // 40.67% for Nhat (6 out of 15)
+        // Lục, Ngũ, Tứ only drop Herb. Tâm drops only Herb. Nhị and Nhất can drop Recipe and Furnace
+        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 2% Herb
+        else if (roll < 7) tier = MTS.Game.LuyenDan.Tier.NguPham;  // 5% Herb, cumulative 7%
+        else if (roll < 17) tier = MTS.Game.LuyenDan.Tier.TuPham;  // 10% Herb, cumulative 17%
+        else if (roll < 31.33) tier = MTS.Game.LuyenDan.Tier.TamPham;  // 14.33% Herb (4 out of 15)
+        else if (roll < 49.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;  // 18% for Nhi (5 out of 15) - includes Recipe 2% + Furnace 2%
+        else tier = MTS.Game.LuyenDan.Tier.NhatPham;               // 50.67% for Nhat (6 out of 15) - includes Recipe 5% + Furnace 5%
 
         // Now determine which type based on the tier
         if (tier == MTS.Game.LuyenDan.Tier.LucPham)
         {
-            // Herb: 2%, Recipe: 0%, Furnace: 0% -> All Herb
+            // Lục: 100% Herb
             type = ItemType.Herb;
         }
         else if (tier == MTS.Game.LuyenDan.Tier.NguPham)
         {
-            // Herb: 5%, Recipe: 1%, Furnace: 2% -> Herb: 62.5%, Furnace: 25%, Recipe: 12.5%
-            double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 62.5) type = ItemType.Herb;
-            else if (typeRoll < 87.5) type = ItemType.Furnace;
-            else type = ItemType.Recipe;
+            // Ngũ: 100% Herb
+            type = ItemType.Herb;
         }
         else if (tier == MTS.Game.LuyenDan.Tier.TuPham)
         {
-            // Herb: 10%, Recipe: 2%, Furnace: 5% -> Herb: 58.82%, Furnace: 29.41%, Recipe: 11.76%
-            double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 58.82) type = ItemType.Herb;
-            else if (typeRoll < 88.24) type = ItemType.Furnace;
-            else type = ItemType.Recipe;
+            // Tứ: 100% Herb
+            type = ItemType.Herb;
         }
-        else // TamPham, NhiPham, NhatPham with constraint: Herb < Furnace < Recipe
+        else if (tier == MTS.Game.LuyenDan.Tier.TamPham)
         {
-            // Distribute with ratio Herb:Furnace:Recipe = 1:2:3
+            // Tâm: 100% Herb
+            type = ItemType.Herb;
+        }
+        else if (tier == MTS.Game.LuyenDan.Tier.NhiPham)
+        {
+            // Nhị: Herb (14%), Recipe (2%), Furnace (2%) -> Herb: 77.78%, Recipe: 11.11%, Furnace: 11.11%
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 16.67) type = ItemType.Herb;
-            else if (typeRoll < 50) type = ItemType.Furnace;
-            else type = ItemType.Recipe;
+            if (typeRoll < 77.78) type = ItemType.Herb;
+            else if (typeRoll < 88.89) type = ItemType.Recipe;
+            else type = ItemType.Furnace;
+        }
+        else // NhatPham
+        {
+            // Nhất: Herb (40.67%), Recipe (5%), Furnace (5%) -> Herb: 80.26%, Recipe: 9.87%, Furnace: 9.87%
+            double typeRoll = Random.Shared.NextDouble() * 100;
+            if (typeRoll < 80.26) type = ItemType.Herb;
+            else if (typeRoll < 90.13) type = ItemType.Recipe;
+            else type = ItemType.Furnace;
         }
 
         return RollItemByTypeAndTier(type, tier);
