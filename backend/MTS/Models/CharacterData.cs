@@ -558,12 +558,10 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.ExceedLimit);
         }
-
         var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
         var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
         var percentTuChat = GetPercentTuChat();
         var percentTamCanh = GetPercentTamCanh();
-
         int GetTotalValueBuffWithMultiplier(params float[] percent)
         {
             float total = tocDocTuLuyen;
@@ -574,7 +572,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             return (int)total;
         }
-
         var newTamCanh = Stats.TamCanh - months * 2;
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
@@ -594,7 +591,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewTamCanh = newTamCanh,
             RemainingMoney = remaining,
             NewHp = newHp,
-            DeltaExp = Progression.CurrentExp - oldExp,
+            DeltaExp = buffExp,
             DeltaHp = newHp - oldExp
         };
     }
