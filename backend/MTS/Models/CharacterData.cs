@@ -579,19 +579,23 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
-        var exp = Progression.CurrentExp + buffExp;
+        var oldExp = Progression.CurrentExp;
+        var oldHp = Stats.Hp;
+        var exp = oldExp + buffExp;
         Progression.SetCurrentExp(exp);
-        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp);
+        var newHp = (int)Math.Ceiling(oldHp + Stats.SinhMenh * percentAddHp);
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
-        Stats.SetHp((int)newHp);
+        Stats.SetHp(newHp);
         return new TuLuyenResult()
         {
             Success = true,
             CurrentExp = Progression.CurrentExp,
             NewTamCanh = newTamCanh,
             RemainingMoney = remaining,
-            NewHp = (int)newHp,
+            NewHp = newHp,
+            DeltaExp = Progression.CurrentExp - oldExp,
+            DeltaHp = newHp - oldExp
         };
     }
 
