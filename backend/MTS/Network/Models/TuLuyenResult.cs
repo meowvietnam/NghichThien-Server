@@ -7,11 +7,8 @@ public partial class TuLuyenResult
 {
     public bool Success { get; set; }
     public string Message { get; set; }
-    public bool HasLevelUpdated { get; set; }
     public int CurrentExp { get; set; }
     public int RemainingMoney { get; set; }
     public int NewTamCanh { get; set; }
-    public LevelUpdated LevelUpdated { get; set; }
     public int NewHp { get; set; }
-
 }

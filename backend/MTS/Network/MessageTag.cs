@@ -93,7 +93,8 @@ public enum MessageTag
     LinhNgoResult = 383,
     DotPhaCongPhap = 384,
     DotPhaCongPhapResult = 385,
-
+    UseDanRequest = 386,
+    
     JoinMonPhai = 392,
     JoinMonPhaiResult = 393,
 
@@ -131,4 +132,7 @@ public enum MessageTag
     LoadShopRequest = 635,
     ReloadShopRequest = 636,
     BuyAndSellRequest = 637,
+    
+    
+    LevelUpdated = 783,
 }

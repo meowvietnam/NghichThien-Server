@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.CreateCharacter;
+using MTS.Network;
 using Network;
 using Network.Extensions;
 
@@ -88,35 +89,38 @@ public class Progression : IMemorySerializable<Progression>
         dirty = true;
     }
 
-    public LevelUpdated? SetCurrentExp(int exp)
+    public void SetCurrentExp(int exp)
     {
-        if (CurrentExp == exp) return null;
+        if (CurrentExp == exp) return;
         var infoLevel = GameConfig.infoLevels[Level - 1];
         var require = infoLevel.tuviRequireNextLevel;
         if (exp < require)
         {
             CurrentExp = exp;
             dirty = true;
-            return null;
+            return;
         }
+
         if (Level == GameConfig.infoLevels.Length - 1)
         {
             CurrentExp = require;
             dirty = true;
-            return null;
+            return;
         }
+
         var nextLevelRequireItems = GameConfig.infoLevels[Level].requireItems;
         if (nextLevelRequireItems is { Length: > 0 })
         {
             CurrentExp = require;
             dirty = true;
-            return null;
+            return;
         }
+
         CurrentExp = exp - require;
         var level = Level + 1;
-        return SetLevel(level);
+        SetLevel(level);
     }
-    
+
     public void SetCurrentEnergy(int newEnergy)
     {
         if (CurrentEnergy == newEnergy) return;
@@ -131,9 +135,9 @@ public class Progression : IMemorySerializable<Progression>
         dirty = true;
     }
 
-    public LevelUpdated? SetLevel(int level)
+    public void SetLevel(int level)
     {
-        if (Level == level) return null;
+        if (Level == level) return;
         Level = level;
         var newInfoLevel = GameConfig.infoLevels[level - 1];
         var stats = CharacterData.Stats;
@@ -147,13 +151,13 @@ public class Progression : IMemorySerializable<Progression>
         {
             Level = level,
             CurrentExp = CurrentExp,
-            HpMax =  maxHp,
+            HpMax = maxHp,
             ThanThuc = thanThuc,
-            DonToc =  docToc,
+            DonToc = docToc,
             ThoNguyen = thoNguyen,
             NewNgoDaoDiem = ngoDaoDiem,
         };
         levelUpdated.ApplyTo(CharacterData);
-        return levelUpdated;
+        CharacterData.Client.MemSend(MessageTag.LevelUpdated, levelUpdated);
     }
 }

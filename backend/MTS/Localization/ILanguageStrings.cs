@@ -99,4 +99,9 @@ public abstract class ILanguageStrings
     // Character action messages
     public abstract string RetreatDurationInvalid { get; }
     public abstract string GiftItemQuantityInvalid { get; }
+
+    // Linh Dan messages
+    public abstract string LinhDanQuantityInvalid { get; }
+    public abstract string LinhDanNotFound { get; }
+    public abstract string DanCombatLimitExceeded { get; }
 }

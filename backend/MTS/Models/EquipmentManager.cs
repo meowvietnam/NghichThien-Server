@@ -219,6 +219,24 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         TrangSuc = other.TrangSuc;
     }
 
+    public void Update(DanCombatUsed danCombatUsed)
+    {
+        tracking.DanCombatUseds.Update(danCombatUsed);
+    }
+
+    public void Add(DanCombatUsed danCombatUsed)
+    {
+        danCombatUsed.CharId = CharId;
+        DanCombatUseds.Add(danCombatUsed);
+        tracking.DanCombatUseds.Add(danCombatUsed);
+    }
+
+    public void Remove(DanCombatUsed danCombatUsed)
+    {
+        danCombatUsed.CharId = CharId;
+        DanCombatUseds.Remove(danCombatUsed);
+        tracking.DanCombatUseds.Delete(danCombatUsed);
+    }
     public async Task SaveChanges(AppDbContext db)
     {
         if (isDirty1)

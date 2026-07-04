@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game.CreateCharacter;
+using MTS.Game.LuyenDan;
 using Network;
 using Network.Extensions;
 using Action = MTS.Game.CreateCharacter.Action;
@@ -354,6 +355,104 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 .SetProperty(x => x.TuoiTac, TuoiTac));
         isDirty = false;
     }
-
-
+    public void Buff(LinhDan linhDan, int count)
+    {
+        var type = linhDan.EBuffType;
+        var value = linhDan.BuffValue * count;
+        var danDoc = linhDan.DanDoc * count;
+        void AddStat(StatType type)
+        {
+            var currentValue = Convert.ToSingle(GetValue(type));
+            SetValue(type, currentValue + value);
+        }
+        void AddTuVi(bool addDanDoc)
+        {
+            var progression = CharacterData.Progression;
+            progression.SetCurrentExp(progression.CurrentExp + value);
+            if (addDanDoc)
+            {
+                SetValue(StatType.DanDoc, DanDoc + danDoc);
+            }
+        }
+        switch (type)
+        {
+            case EDanBuffType.None:
+                return;
+            case EDanBuffType.KimChiDao:
+            case EDanBuffType.KimLinhCan:
+                AddStat(StatType.Kim);
+                break;
+            case EDanBuffType.MocChiDao:
+            case EDanBuffType.MocLinhCan:
+                AddStat(StatType.Moc);
+                break;
+            case EDanBuffType.ThuyChiDao:
+            case EDanBuffType.ThuyLinhCan:
+                AddStat(StatType.Thuy);
+                break;
+            case EDanBuffType.HoaChiDao:
+            case EDanBuffType.HoaLinhCan:
+                AddStat(StatType.Hoa);
+                break;
+            case EDanBuffType.ThoChiDao:
+            case EDanBuffType.ThoLinhCan:
+                AddStat(StatType.Tho);
+                break;
+            case EDanBuffType.KiemChiDao:
+                AddStat(StatType.Ma);
+                break;
+            case EDanBuffType.NgoDaoDiem:
+                var progression = CharacterData.Progression;
+                progression.SetNgoDaoDiem(progression.NgoDaoDiem + value);
+                break;
+            case EDanBuffType.DanDoc:
+                SetValue(StatType.DanDoc, DanDoc + value);
+                break;
+            case EDanBuffType.Hp:
+                SetHp(Math.Clamp(Hp + value, 0, SinhMenh));
+                break;
+            case EDanBuffType.SinhMenh:
+                SetSinhMenh(SinhMenh + value);
+                break;
+            case EDanBuffType.HoiFullHp:
+                SetHp(SinhMenh);
+                break;
+            case EDanBuffType.DonToc:
+                SetTocDoBay(TocDoBay + value);
+                break;
+            case EDanBuffType.NgoTinh:
+                AddStat(StatType.NgoTinh);
+                break;
+            case EDanBuffType.ThanThuc:
+            case EDanBuffType.ThanThucChiDao:
+                SetThanThuc(ThanThuc + value);
+                break;
+            case EDanBuffType.TuVi:
+                AddTuVi(false);
+                break;
+            case EDanBuffType.TuViVaDanDocDuoiTrucCo:
+                AddTuVi(CharacterData.Progression.Level < 4);
+                break;
+            case EDanBuffType.TuViVaDanDocDuoiKetDan:
+                AddTuVi(CharacterData.Progression.Level < 7);
+                break;
+            case EDanBuffType.TuViVaDanDocDuoiNguyenAnh:
+                AddTuVi(CharacterData.Progression.Level < 10);
+                break;
+            case EDanBuffType.TuViVaDanDocDuoiHoaThan:
+                AddTuVi(CharacterData.Progression.Level < 13);
+                break;
+            case EDanBuffType.TuChat:
+                AddStat(StatType.TuChat);
+                break;
+            case EDanBuffType.TamCanh:
+                SetTamCanh(TamCanh + value);
+                break;
+            case EDanBuffType.ThoNguyen:
+                SetThoNguyen(ThoNguyen + value);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, null);
+        }
+    }
 }

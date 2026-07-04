@@ -84,4 +84,7 @@ public static class Strings
     public static string InventoryItemQuantityInvalid => _current.InventoryItemQuantityInvalid;
     public static string RetreatDurationInvalid => _current.RetreatDurationInvalid;
     public static string GiftItemQuantityInvalid => _current.GiftItemQuantityInvalid;
+    public static string LinhDanQuantityInvalid => _current.LinhDanQuantityInvalid;
+    public static string LinhDanNotFound => _current.LinhDanNotFound;
+    public static string DanCombatLimitExceeded => _current.DanCombatLimitExceeded;
 }

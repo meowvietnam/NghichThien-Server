@@ -76,4 +76,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string InventoryItemQuantityInvalid => "Số lượng vật phẩm trong túi đồ không đủ!";
     public override string RetreatDurationInvalid => "Thời gian tu luyện phải ít nhất 30 ngày!";
     public override string GiftItemQuantityInvalid => "Số lượng vật phẩm tặng không hợp lệ!";
+    public override string LinhDanQuantityInvalid => "Số lượng đan dược sử dụng không hợp lệ!";
+    public override string LinhDanNotFound => "Đan dược không tồn tại!";
+    public override string DanCombatLimitExceeded => "Số lượng đan chiến đấu sử dụng vượt quá giới hạn cấp độ!";
 }

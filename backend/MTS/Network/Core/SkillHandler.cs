@@ -15,7 +15,7 @@ public class SkillHandler : IClientHandler
     [
         MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,
         MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen, MessageTag.LinhNgo,
-        MessageTag.DotPhaCongPhap
+        MessageTag.DotPhaCongPhap, MessageTag.UseDanRequest
     ];
 
     public MessageTag[] HandleTag => handler;
@@ -226,6 +226,30 @@ public class SkillHandler : IClientHandler
                 client.Send(MessageTag.DotPhaCongPhapResult, result);
             }
         }    
+        else if (tag == MessageTag.UseDanRequest)
+        {
+            var request = reader.MemRead<UseDanRequest>();
+            UseDanResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    charData.UseDan(request);
+                }
+            }
+            catch (Exception e)
+            {
+                result = new UseDanResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.UseDanRequest, result);
+            }
+        }
     }
 
     public void OnLeave()

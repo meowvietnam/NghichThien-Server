@@ -1,22 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
-using MTS.Game.BaseSkill;
 using MTS.Game.ItemProvider;
 using MTS.Game.LuyenDan;
 using MTS.Game.Resources;
 using MTS.Game.Social;
 using MTS.Localization;
 using MTS.Network.Models;
-using MTS.Utils;
-using Network;
-using Network.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
 using MTS.IAP;
-using static MTS.Game.LuyenDan.RecipeData;
 using MTS.Game.Combat;
 using MTS.Network;
 
@@ -27,6 +22,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public int UserId { get; set; }
+
     [Key] public int Id { get; set; }
     public Gender Gender { get; set; }
     public string Name { get; set; }
@@ -54,17 +50,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
     public UserData User { get; set; }
 
 
-    [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [MemoryPackIgnore]
-    [NotMapped]
+    [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
     private bool dirty;
-    
+
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [MemoryPackIgnore]
     [NotMapped]
     public Client Client { get; set; }
+
     public void SetMonPhai(EMonPhai value)
     {
         if (MonPhai != value)
@@ -100,6 +94,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
+
     public void SetCanFly(bool value)
     {
         if (CanFly != value)
@@ -108,6 +103,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
+
     public void SetCurrentFreeAdsMoneyVipCount(int value)
     {
         if (CurrentFreeAdsMoneyVipCount != value)
@@ -582,31 +578,17 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var newTamCanh = Stats.TamCanh - months * 2;
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
-        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp);
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
         var exp = Progression.CurrentExp + buffExp;
-        var levelUpdated = Progression.SetCurrentExp(exp);
+        Progression.SetCurrentExp(exp);
+        var newHp = Math.Ceiling(Stats.Hp + Stats.SinhMenh * percentAddHp);
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
         Stats.SetHp((int)newHp);
-        if (levelUpdated == null)
-        {
-            exp = Progression.CurrentExp;
-            return new TuLuyenResult()
-            {
-                Success = true,
-                CurrentExp = exp,
-                NewTamCanh = newTamCanh,
-                RemainingMoney = remaining,
-                NewHp = (int)newHp,
-            };
-        }
-
         return new TuLuyenResult()
         {
             Success = true,
-            HasLevelUpdated = true,
-            LevelUpdated = levelUpdated,
+            CurrentExp = Progression.CurrentExp,
             NewTamCanh = newTamCanh,
             RemainingMoney = remaining,
             NewHp = (int)newHp,
@@ -1061,6 +1043,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             TypeResultCombat = request.TypeResultCombat,
         };
     }
+
     public GachaResult? Gacha(GachaModel request)
     {
         RewardSnapshot reward = new RewardSnapshot();
@@ -1068,26 +1051,28 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         int require = GameConfig.PageGachaWithRequireValue[request.TypeGacha];
         int gachaCount = 1;
-        if(request.IsGacha10)
+        if (request.IsGacha10)
         {
             require *= 10;
             gachaCount = 10;
         }
+
         if (this.MoneyVip < require)
         {
             Console.WriteLine("chó hack moneyvip");
             throw new Exception(Strings.NotEnoughMoney);
         }
+
         int newTienNgoc = this.MoneyVip - require;
 
         for (int i = 0; i < gachaCount; i++)
         {
-            if(request.TypeGacha == Game.Gacha.ETypeGacha.ThanThong)
+            if (request.TypeGacha == Game.Gacha.ETypeGacha.ThanThong)
             {
                 var item = RollThanThong();
                 if (item != null)
                     listItemRef.Add(item);
-            }    
+            }
             else if (request.TypeGacha == Game.Gacha.ETypeGacha.CongPhap)
             {
                 var item = RollCongPhap();
@@ -1113,6 +1098,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                     listItemRef.Add(item);
             }
         }
+
         listItemRef = ConsolidateItemRefs(listItemRef);
         this.InventoryManager.AddToInventory(listItemRef);
         reward.ItemRefs = listItemRef;
@@ -1124,6 +1110,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             NewTienNgoc = newTienNgoc,
         };
     }
+
     private List<ItemRef> ConsolidateItemRefs(List<ItemRef> items)
     {
         var consolidated = new Dictionary<(ItemType Type, ushort Id), ItemRef>();
@@ -1143,6 +1130,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         return consolidated.Values.ToList();
     }
+
     private ItemRef RollThanThong()
     {
         // DiaGiaiHa: 6%, DiaGiaiTrung: 5%, DiaGiaiThuong: 4% (total 15%)
@@ -1165,7 +1153,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         else tier = Game.BaseSkill.ETierSkill.NhanGiaiThuong;
 
         // Try to get an item from the rolled tier, with fallback to higher tiers
-        var tierOrder = new[] { tier, Game.BaseSkill.ETierSkill.NhanGiaiHa, Game.BaseSkill.ETierSkill.NhanGiaiTrung, Game.BaseSkill.ETierSkill.NhanGiaiThuong };
+        var tierOrder = new[]
+        {
+            tier, Game.BaseSkill.ETierSkill.NhanGiaiHa, Game.BaseSkill.ETierSkill.NhanGiaiTrung,
+            Game.BaseSkill.ETierSkill.NhanGiaiThuong
+        };
         foreach (var checkTier in tierOrder)
         {
             var validThanThongs = GameConfig.NDCPTTManager.ThanThongs
@@ -1203,7 +1195,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
         else tier = Game.BaseSkill.ETierSkill.NhanGiaiThuong;
 
         // Try to get an item from the rolled tier, with fallback to higher tiers
-        var tierOrder = new[] { tier, Game.BaseSkill.ETierSkill.NhanGiaiHa, Game.BaseSkill.ETierSkill.NhanGiaiTrung, Game.BaseSkill.ETierSkill.NhanGiaiThuong };
+        var tierOrder = new[]
+        {
+            tier, Game.BaseSkill.ETierSkill.NhanGiaiHa, Game.BaseSkill.ETierSkill.NhanGiaiTrung,
+            Game.BaseSkill.ETierSkill.NhanGiaiThuong
+        };
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps
@@ -1232,12 +1228,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         // First determine tier - now extends to NhatPham and NhiPham
         // Constraint: Tâm < Nhị < Nhất with ratio 4:5:6
-        if (roll < 8) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 5% + 2% + 1% = 8%
-        else if (roll < 23) tier = MTS.Game.LuyenDan.Tier.NguPham;  // 7% + 5% + 3% = 15%, cumulative 23%
-        else if (roll < 42) tier = MTS.Game.LuyenDan.Tier.TuPham;   // 10% + 7% + 5% = 22%, cumulative 42%
-        else if (roll < 56.33) tier = MTS.Game.LuyenDan.Tier.TamPham;   // 14.33% for Tam (4 out of 15)
-        else if (roll < 74.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;   // 18% for Nhi (5 out of 15)
-        else tier = MTS.Game.LuyenDan.Tier.NhatPham;               // 25.67% for Nhat (6 out of 15)
+        if (roll < 8) tier = MTS.Game.LuyenDan.Tier.LucPham; // 5% + 2% + 1% = 8%
+        else if (roll < 23) tier = MTS.Game.LuyenDan.Tier.NguPham; // 7% + 5% + 3% = 15%, cumulative 23%
+        else if (roll < 42) tier = MTS.Game.LuyenDan.Tier.TuPham; // 10% + 7% + 5% = 22%, cumulative 42%
+        else if (roll < 56.33) tier = MTS.Game.LuyenDan.Tier.TamPham; // 14.33% for Tam (4 out of 15)
+        else if (roll < 74.33) tier = MTS.Game.LuyenDan.Tier.NhiPham; // 18% for Nhi (5 out of 15)
+        else tier = MTS.Game.LuyenDan.Tier.NhatPham; // 25.67% for Nhat (6 out of 15)
 
         // Now determine which type based on the tier
         if (tier == MTS.Game.LuyenDan.Tier.LucPham)
@@ -1289,12 +1285,13 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         // First determine tier - now extends to NhatPham and NhiPham
         // Lục, Ngũ, Tứ only drop Herb. Tâm drops only Herb. Nhị and Nhất can drop Recipe and Furnace
-        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham;       // 2% Herb
-        else if (roll < 7) tier = MTS.Game.LuyenDan.Tier.NguPham;  // 5% Herb, cumulative 7%
-        else if (roll < 17) tier = MTS.Game.LuyenDan.Tier.TuPham;  // 10% Herb, cumulative 17%
-        else if (roll < 31.33) tier = MTS.Game.LuyenDan.Tier.TamPham;  // 14.33% Herb (4 out of 15)
-        else if (roll < 49.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;  // 18% for Nhi (5 out of 15) - includes Recipe 2% + Furnace 2%
-        else tier = MTS.Game.LuyenDan.Tier.NhatPham;               // 50.67% for Nhat (6 out of 15) - includes Recipe 5% + Furnace 5%
+        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham; // 2% Herb
+        else if (roll < 7) tier = MTS.Game.LuyenDan.Tier.NguPham; // 5% Herb, cumulative 7%
+        else if (roll < 17) tier = MTS.Game.LuyenDan.Tier.TuPham; // 10% Herb, cumulative 17%
+        else if (roll < 31.33) tier = MTS.Game.LuyenDan.Tier.TamPham; // 14.33% Herb (4 out of 15)
+        else if (roll < 49.33)
+            tier = MTS.Game.LuyenDan.Tier.NhiPham; // 18% for Nhi (5 out of 15) - includes Recipe 2% + Furnace 2%
+        else tier = MTS.Game.LuyenDan.Tier.NhatPham; // 50.67% for Nhat (6 out of 15) - includes Recipe 5% + Furnace 5%
 
         // Now determine which type based on the tier
         if (tier == MTS.Game.LuyenDan.Tier.LucPham)
@@ -1345,21 +1342,25 @@ public class CharacterData : IMemorySerializable<CharacterData>
         double roll = Random.Shared.NextDouble() * 100;
         MTS.Game.LuyenDan.Tier tier;
 
-        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham;           // 2%
-        else if (roll < 7) tier = MTS.Game.LuyenDan.Tier.NguPham;      // 5%, cumulative 7%
-        else if (roll < 17) tier = MTS.Game.LuyenDan.Tier.TuPham;      // 10%, cumulative 17%
-        else if (roll < 31.33) tier = MTS.Game.LuyenDan.Tier.TamPham;  // 14.33% for Tam (4 out of 15)
-        else if (roll < 49.33) tier = MTS.Game.LuyenDan.Tier.NhiPham;  // 18% for Nhi (5 out of 15)
-        else tier = MTS.Game.LuyenDan.Tier.NhatPham;                   // 50.67% for Nhat (6 out of 15)
+        if (roll < 2) tier = MTS.Game.LuyenDan.Tier.LucPham; // 2%
+        else if (roll < 7) tier = MTS.Game.LuyenDan.Tier.NguPham; // 5%, cumulative 7%
+        else if (roll < 17) tier = MTS.Game.LuyenDan.Tier.TuPham; // 10%, cumulative 17%
+        else if (roll < 31.33) tier = MTS.Game.LuyenDan.Tier.TamPham; // 14.33% for Tam (4 out of 15)
+        else if (roll < 49.33) tier = MTS.Game.LuyenDan.Tier.NhiPham; // 18% for Nhi (5 out of 15)
+        else tier = MTS.Game.LuyenDan.Tier.NhatPham; // 50.67% for Nhat (6 out of 15)
 
         return RollItemByTypeAndTier(ItemType.Material, tier);
     }
-    
+
 
     private ItemRef RollItemByTypeAndTier(ItemType type, MTS.Game.LuyenDan.Tier tier)
     {
         // Fallback tier order - try higher tiers if current tier has no items
-        var allTiers = new[] { MTS.Game.LuyenDan.Tier.NhatPham, MTS.Game.LuyenDan.Tier.NhiPham, MTS.Game.LuyenDan.Tier.TamPham, MTS.Game.LuyenDan.Tier.TuPham, MTS.Game.LuyenDan.Tier.NguPham, MTS.Game.LuyenDan.Tier.LucPham };
+        var allTiers = new[]
+        {
+            MTS.Game.LuyenDan.Tier.NhatPham, MTS.Game.LuyenDan.Tier.NhiPham, MTS.Game.LuyenDan.Tier.TamPham,
+            MTS.Game.LuyenDan.Tier.TuPham, MTS.Game.LuyenDan.Tier.NguPham, MTS.Game.LuyenDan.Tier.LucPham
+        };
         var tierIndex = System.Array.IndexOf(allTiers, tier);
         var tierOrder = allTiers.Skip(tierIndex).ToArray();
 
@@ -1419,7 +1420,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         return null;
     }
-  
+
     public TangQuaNpcResult? TangQuaNpc(TangQuaNpc request)
     {
         var itemRef = request.ItemRef;
@@ -1973,5 +1974,94 @@ public class CharacterData : IMemorySerializable<CharacterData>
             LinhThach = linhThach,
             MoneyVip = moneyVip
         };
+    }
+
+    public UseDanResult UseDan(UseDanRequest request)
+    {
+        var id = request.Id;
+        var count = request.Count;
+        if (count == 0)
+        {
+            throw new Exception(Strings.LinhDanQuantityInvalid);
+        }
+
+        var linhDan = GameConfig.LuyenDanResources.LinhDans.FirstOrDefault(x => x.Id == id);
+        if (linhDan == null)
+        {
+            throw new Exception(Strings.LinhDanNotFound);
+        }
+
+        var type = linhDan.ETypeDan;
+        var level = Progression.Level;
+        var danCombatUseds = EquipmentManager.DanCombatUseds;
+        if (type == ETypeDan.DanCombat)
+        {
+            var danCombatRef = new DanCombatUsed()
+            {
+                Id = id
+            };
+            if (danCombatUseds.TryGetValue(danCombatRef, out var used))
+            {
+                if (used.Count + count > level)
+                {
+                    throw new Exception(Strings.DanCombatLimitExceeded);
+                }
+            }
+        }
+
+        var linhDans = InventoryManager.LinhDans;
+        var linhDanRef = new ItemRef()
+        {
+            Id = id,
+        };
+        if (!linhDans.TryGetValue(linhDanRef, out var item))
+        {
+            throw new Exception(Strings.InventoryItemNotFound);
+        }
+
+        var remaining = item.Count - count;
+        if (remaining < 0)
+        {
+            throw new Exception(Strings.InventoryItemQuantityInvalid);
+        }
+
+        if (type == ETypeDan.DanCombat)
+        {
+            var danCombatRef = new DanCombatUsed()
+            {
+                Id = id
+            };
+            if (danCombatUseds.TryGetValue(danCombatRef, out var used))
+            {
+                used.Count += count;
+                EquipmentManager.Update(used);
+            }
+            else
+            {
+                danCombatRef.Count = count;
+                EquipmentManager.Add(danCombatRef);
+            }
+        }
+
+        InventoryManager.Decrease(new ItemRef()
+        {
+            Type = ItemType.LinhDan,
+            Id = id,
+            Count = count,
+        });
+        var buffType = linhDan.EBuffType;
+        StatsSnapshot? snapshot = null;
+
+        if (buffType != EDanBuffType.None)
+        {
+            Stats.Buff(linhDan, count);
+            snapshot = new StatsSnapshot(Stats);
+        }
+        var result = new UseDanResult()
+        {
+            Success = true,
+            Stats = snapshot,
+        };
+        return result;
     }
 }
