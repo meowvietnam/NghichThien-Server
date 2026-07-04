@@ -224,11 +224,13 @@ public partial class ShopManager
                 totalSellAmount += sellPrice;
             }
         }
+
         var money = CharData.Stats.LinhThach + totalSellAmount - totalBuyAmount;
         if (money < 0)
         {
             throw new Exception(Strings.NotEnoughMoney);
         }
+
         foreach (var buyItem in buyItems)
         {
             var count = buyItem.Count;
@@ -242,6 +244,7 @@ public partial class ShopManager
                 {
                     var furnace = new FurnaceData()
                     {
+                        CharId = CharId,
                         Id = buyItem.Id,
                         Durability = 100
                     };
@@ -260,6 +263,7 @@ public partial class ShopManager
                 }
                 else
                 {
+                    buyItem.CharId = CharId;
                     myItems.Add(buyItem);
                     tracking.Add(buyItem);
                     result.Items.Add(buyItem);
@@ -271,8 +275,10 @@ public partial class ShopManager
             {
                 items.Remove(item);
             }
+
             shop.Dirty = true;
         }
+
         foreach (var sellItem in sellItems)
         {
             var id = sellItem.Id;
@@ -296,8 +302,8 @@ public partial class ShopManager
                 var tracking = itemCollection.Tracking as Modify<ItemRef>;
                 if (myItems.TryGetValue(sellItem, out var myItem))
                 {
-                    myItem.Count -= count;
-                    if (myItem.Count < 0)
+                    var remaining = myItem.Count - count;
+                    if (remaining <= 0)
                     {
                         myItems.Remove(myItem);
                         tracking.Delete(myItem);
@@ -305,12 +311,14 @@ public partial class ShopManager
                     }
                     else
                     {
+                        myItem.Count = (ushort)remaining;
                         tracking.Update(myItem);
                         result.Items.Update(myItem);
                     }
                 }
             }
         }
+
         CharData.Stats.SetLinhThach(money);
         result.ReloadShop = shop;
         result.TotalBuyAmount = totalBuyAmount;
