@@ -18,6 +18,7 @@ public class ReloadDailyQuestService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
+            delay = TimeSpan.FromSeconds(6);
             logger.LogInformation(
                 "{Service} sẽ chạy sau {Delay}", nameof(ReloadDailyQuestService), delay);
             await Task.Delay(delay, stoppingToken);

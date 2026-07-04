@@ -158,7 +158,7 @@ public partial class QuestManager
                 {
                     reward = new QuestMoneyVipReward(item);
                 }
-                quests[i].Reload(reward);
+                quests[j].Reload(reward);
             }
             i++;
         } 
