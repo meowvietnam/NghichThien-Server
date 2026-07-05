@@ -20,6 +20,7 @@ public partial class LevelUpdated
         progression.SetNgoDaoDiem(NewNgoDaoDiem);
         var stats = charData.Stats;
         stats.SetSinhMenh(HpMax);
+        stats.SetHp(HpMax);
         stats.SetThanThuc(ThanThuc);
         stats.SetTocDoBay(DonToc);
         stats.SetThoNguyen(ThoNguyen);

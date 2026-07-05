@@ -92,7 +92,8 @@ public class Progression : IMemorySerializable<Progression>
     public void SetCurrentExp(int exp)
     {
         if (CurrentExp == exp) return;
-        var infoLevel = GameConfig.infoLevels[Level - 1];
+        var infoLevels = LevelResource.Instance.infoLevels;
+        var infoLevel = infoLevels[Level - 1];
         var require = infoLevel.tuviRequireNextLevel;
         if (exp < require)
         {
@@ -101,15 +102,15 @@ public class Progression : IMemorySerializable<Progression>
             return;
         }
 
-        if (Level == GameConfig.infoLevels.Length - 1)
+        if (Level == infoLevels.Length - 1)
         {
             CurrentExp = require;
             dirty = true;
             return;
         }
 
-        var nextLevelRequireItems = GameConfig.infoLevels[Level].requireItems;
-        if (nextLevelRequireItems is { Length: > 0 })
+        var nextLevelRequireItems = infoLevels[Level].requireItems;
+        if (nextLevelRequireItems is { Count: > 0 })
         {
             CurrentExp = require;
             dirty = true;
@@ -139,7 +140,8 @@ public class Progression : IMemorySerializable<Progression>
     {
         if (Level == level) return;
         Level = level;
-        var newInfoLevel = GameConfig.infoLevels[level - 1];
+        var infoLevels = LevelResource.Instance.infoLevels;
+        var newInfoLevel = infoLevels[level - 1];
         var stats = CharacterData.Stats;
         var maxHp = stats.SinhMenh + newInfoLevel.hpMaxBuff;
         if(stats.Ability.HasFlag(Ability.ThanMaHuyetMach))

@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using MTS.Game;
 using MTS.Network;
-
+using static MTS.Utils.Utils;
 namespace MTS.Services;
 
 public class ReloadDailyQuestService : BackgroundService
@@ -127,14 +128,11 @@ public class ReloadDailyQuestService : BackgroundService
 
     private static TimeSpan GetDelayToNextRun()
     {
-        var utc7 = TimeSpan.FromHours(7);
-        var now = DateTimeOffset.UtcNow.ToOffset(utc7);
-        var nextMidnight = new DateTimeOffset(
-            now.Year,
-            now.Month,
-            now.Day,
-            0, 0, 0,
-            utc7).AddDays(1);
-        return nextMidnight - now;
+        var start = GameConfig.GameReleaseDate;
+        start = new DateTimeOffset(start.Year, start.Month, start.Day, 0, 0, 0, start.Offset);
+        var now = Now();
+        var interval = TimeSpan.FromDays(1);
+        var next = GetNextPeriodicTime(start, now, interval);
+        return next - now;
     }
 }

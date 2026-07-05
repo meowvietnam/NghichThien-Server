@@ -5,6 +5,7 @@ namespace MTS.Utils;
 
 public static class Utils
 {
+    public static readonly TimeSpan Utc7 = TimeSpan.FromHours(7);
     public static string GenerateSecureString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -30,5 +31,23 @@ public static class Utils
     public static byte[] HashSHA256(string input)
     {
         return SHA256.HashData(Encoding.UTF8.GetBytes(input));
+    }
+    public static DateTimeOffset GetNextPeriodicTime(
+        DateTimeOffset startDate,
+        DateTimeOffset now,
+        TimeSpan interval)
+    {
+        now = now.ToOffset(startDate.Offset);
+        if (now < startDate)
+            return startDate;
+        var intervalTicks = interval.Ticks;
+        var elapsedTicks = (now - startDate).Ticks;
+        var passedPeriods = elapsedTicks / intervalTicks;
+        return startDate.AddTicks((passedPeriods + 1) * intervalTicks);
+    }
+
+    public static DateTimeOffset Now()
+    {
+        return DateTimeOffset.UtcNow.ToOffset(Utc7);
     }
 }
