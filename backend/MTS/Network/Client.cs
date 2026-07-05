@@ -180,19 +180,6 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
             Console.WriteLine(ex);
         }
     }
-
-    public async Task<RewardResult?> ClaimMail(int id)
-    {
-        var inventory = await GetInventory();
-        return await MailManager.ClaimMail(id, inventory);
-    }
-
-    public async Task<RewardResult?> ClaimAllMails()
-    {
-        var inventory = await GetInventory();
-        return await MailManager.ClaimAllMails(inventory);
-    }
-    
     public void OnSelectedCharacter()
     {
         var module = CoreModule;

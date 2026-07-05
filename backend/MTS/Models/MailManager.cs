@@ -10,50 +10,58 @@ namespace MTS.Models;
 public class MailManager
 {
     private readonly CharacterData characterData;
-    private readonly ISender<MessageTag> sender;
-    private bool isLoaded;
-    public MailManager(CharacterData characterData, ISender<MessageTag> sender)
+    private readonly ISender<MessageTag>? sender;
+
+    public MailManager(CharacterData characterData, ISender<MessageTag>? sender)
     {
         this.characterData = characterData;
         this.sender = sender;
     }
-    public async Task<List<Mail>> GetMails()
+
+    public async Task<GetMailsResult> GetMails(long startId, int pageSize)
     {
-        if (!isLoaded)
+        pageSize = Math.Clamp(pageSize, 10, 100);
+        var charId = characterData.Id;
+        await using var db = await Program.CreateDbAsync();
+        var mails = await db.Mails
+            .AsNoTracking()
+            .Where(x => x.CharId == charId && x.Id < startId)
+            .OrderByDescending(x => x.Id)
+            .Take(pageSize + 1)
+            .ToListAsync();
+        var hasNext = mails.Count > pageSize;
+        if (hasNext)
         {
-            await using var db = await Program.CreateDbAsync();
-            var mails = await db.Mails
-                .AsNoTracking()
-                .Where(x => x.CharId == characterData.Id)
-                .ToListAsync();
-            characterData.Social.Mails = mails;
-            isLoaded = true;
+            mails.RemoveAt(mails.Count - 1);
         }
-        return characterData.Social.Mails;
+
+        return new GetMailsResult
+        {
+            Success = true,
+            Mails = mails,
+            HasNext = hasNext
+        };
     }
-    public async Task SendMail(Mail mail)
+
+    public async Task<Mail> SendMail(Mail mail)
     {
         mail.CharId = characterData.Id;
         await using var db = await Program.CreateDbAsync();
         var entity = await db.Mails.AddAsync(mail);
         await db.SaveChangesAsync();
-        sender.Send(MessageTag.NewMail, entity.Entity);
+        sender?.Send(MessageTag.NewMail, entity.Entity);
+        return entity.Entity;
     }
 
-    public int ReadMail(int id)
+    public async Task<long> ReadMail(long id)
     {
         try
         {
-            var mail = characterData.Social.Mails.FirstOrDefault(x => x.Id == id);
-            if (mail == null || mail.IsRead) return -1;
-            mail.IsRead = true;
-            _ = Task.Run(async () =>
-            {
-                await using var db = await Program.CreateDbAsync();
-                await db.Mails
-                    .Where(x => x.Id == id)
-                    .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsRead, true));
-            });
+            var charId = characterData.Id;
+            await using var db = await Program.CreateDbAsync();
+            await db.Mails
+                .Where(x => x.Id == id && x.CharId == charId)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsRead, true));
             return id;
         }
         catch (Exception ex)
@@ -63,68 +71,74 @@ public class MailManager
         }
     }
 
-    public int RemoveMail(int id)
+    public async Task<long> RemoveMail(long id)
     {
-        var mail = characterData.Social.Mails.FirstOrDefault(x => x.Id == id);
-        if (mail == null) return -1;
-        _ = Task.Run(async () =>
+        try
         {
+            var charId = characterData.Id;
             await using var db = await Program.CreateDbAsync();
-            await db.Mails.Where(x => x.Id == id).ExecuteDeleteAsync();
-        });
-        characterData.Social.Mails.Remove(mail);
-        return id;
+            await db.Mails.Where(x => x.Id == id && x.CharId == charId)
+                .ExecuteDeleteAsync();
+            return id;
+        }
+        catch (Exception ex)
+        {
+            return -1;
+        }
     }
 
-    public List<int> RemoveAllMails()
+    public async Task<List<long>> RemoveAllMails()
     {
-        var removes = characterData.Social.Mails
-            .Where(x => x.IsRead && (x.Rewards.Count == 0 || x.IsClaim))
+        var charId = characterData.Id;
+        await using var db = await Program.CreateDbAsync();
+        var mails = await db.Mails
+            .Where(x => x.IsRead && x.CharId == charId)
+            .ToListAsync();
+
+        var removeIds =  mails
+            .Where(x => x.IsClaim || !x.Rewards.Any())
+            .Select(x => x.Id)
             .ToList();
-        var removeIds = removes.Select(x => x.Id).ToList();
-        if (removes.Any())
+        if (removeIds.Count > 0)
         {
-            characterData.Social.Mails.RemoveAll(x => removeIds.Contains(x.Id));
-            _ = Task.Run(async () =>
-            {
-                await using var db = await Program.CreateDbAsync();
-                await db.Mails.Where(x => removeIds.Contains(x.Id)).ExecuteDeleteAsync();
-            });
+            await db.Mails
+                .Where(x => removeIds.Contains(x.Id))
+                .ExecuteDeleteAsync();
         }
+
         return removeIds;
     }
 
-    public async Task<RewardResult?> ClaimMail(int id, InventoryManager inventory)
+    public async Task<RewardResult?> ClaimMail(long id)
     {
-        var mail = characterData.Social.Mails.FirstOrDefault(x => x.Id == id);
+        await using var db = await Program.CreateDbAsync();
+        var mail = await db.Mails.FirstOrDefaultAsync(x => x.Id == id);
         if (mail == null || mail.IsClaim) return null;
-        var result = inventory.AddToInventory(mail.Rewards);
-        mail.IsClaim = true;
-        _ = Task.Run(async () =>
+        var rewards = mail.Rewards;
+        foreach (var mailReward in rewards)
         {
-            await using var db = await Program.CreateDbAsync();
-            await db.Mails
-                .Where(x => x.Id == id)
-                .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsClaim, true));
-        });
-        return new RewardResult { Mails = new List<int> { id }, RewardItems = result };
+            mailReward.ClaimReward(characterData);
+        }
+
+        mail.IsClaim = true;
+        await db.SaveChangesAsync();
+        return new RewardResult { Mails = new List<long> { id }, Rewards = rewards };
     }
 
-    public async Task<RewardResult?> ClaimAllMails(InventoryManager inventory)
+    public async Task<RewardResult?> ClaimAllMails()
     {
-        var neverClaims = characterData.Social.Mails.Where(x => !x.IsClaim).ToList();
+        await using var db = await Program.CreateDbAsync();
+        var neverClaims = await db.Mails.Where(x => !x.IsClaim).ToListAsync();
         if (!neverClaims.Any()) return null;
         var mailIds = neverClaims.Select(x => x.Id).ToList();
         var rewards = neverClaims.SelectMany(x => x.Rewards).ToList();
-        var result = inventory.AddToInventory(rewards);
-        _ = Task.Run(async () =>
+        foreach (var mailReward in rewards)
         {
-            await using var db = await Program.CreateDbAsync();
-            await db.Mails
-                .Where(x => mailIds.Contains(x.Id))
-                .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsClaim, true));
-        });
+            mailReward.ClaimReward(characterData);
+        }
+
         foreach (var mail in neverClaims) mail.IsClaim = true;
-        return new RewardResult { Mails = mailIds, RewardItems = result };
+        await db.SaveChangesAsync();
+        return new RewardResult { Mails = mailIds, Rewards = rewards };
     }
 }

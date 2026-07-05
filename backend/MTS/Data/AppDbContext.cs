@@ -180,12 +180,11 @@ public class AppDbContext : DbContext
             {
                 e.HasKey(x => x.Id);
                 e.Property(x => x.Rewards)
-                    .HasColumnType(json)
+                    .HasColumnType(blob)
                     .HasConversion(
-                        v => SerializeObject(v),
-                        v => DeserializeObject<List<ItemRef>>(v)
-                    )
-                    .Metadata.SetValueComparer(ValueComparerList<ItemRef>.Comparer());
+                        v => MemoryPackSerializer.Serialize(v),
+                        v => MemoryPackSerializer.Deserialize<List<IMailReward>>(v)
+                    );
                 e.HasOne(x => x.Social)
                     .WithMany(x => x.Mails)
                     .HasForeignKey(x => x.CharId)

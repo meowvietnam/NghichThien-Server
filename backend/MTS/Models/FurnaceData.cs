@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using MemoryPack;
 using MTS.Converter;
 using MTS.Interfaces;
 using MTS.Utils;
@@ -8,10 +9,12 @@ using Newtonsoft.Json;
 
 namespace MTS.Models;
 [JsonConverter(typeof(FurnaceDataConverter))]
-public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
+[MemoryPackable]
+public partial class FurnaceData :  IEquatable<FurnaceData> ,ICustomEquals<FurnaceData>, IDeepClone<FurnaceData>
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
     public ushort SelfId { get; set; }
     public ushort Id { get; set; }
@@ -19,23 +22,8 @@ public class FurnaceData : IMemorySerializable<FurnaceData>, IEquatable<FurnaceD
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public InventoryManager Inventory { get; set; }
-    public int ByteSize()
-    {
-        return SelfId.ByteSize() + Id.ByteSize()  + Durability.ByteSize();
-    }
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(SelfId);
-        writer.Write(Id);
-        writer.Write(Durability);
-    }
-    public void Deserialize(IReader reader, ref FurnaceData value)
-    {
-        value.SelfId = reader.Read<ushort>();
-        value.Id = reader.Read<ushort>();
-        value.Durability = reader.Read<sbyte>();
-    }
 
     public FurnaceData DeepClone()
     {

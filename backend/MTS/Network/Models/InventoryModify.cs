@@ -58,7 +58,7 @@ public class InventoryModify : InventoryTracking, IMemorySerializable<InventoryM
 
     public void Deserialize(IReader reader, ref InventoryModify value)
     {
-        value.Furnaces = DeserializeModify<FurnaceData>(reader);
+        value.Furnaces = DeserializeModify2<FurnaceData>(reader);
         value.Items = DeserializeModify2<ItemRef>(reader);
         value.NgoDaos = DeserializeModify2<NgoDao>(reader);
         value.CamNgos = DeserializeModify2<CamNgo>(reader);
@@ -69,13 +69,13 @@ public class InventoryModify : InventoryTracking, IMemorySerializable<InventoryM
 
     public int ByteSize()
     {
-        return ByteSize(Furnaces) + ByteSize2(Items)
+        return ByteSize2(Furnaces) + ByteSize2(Items)
                                   + ByteSize2(NgoDaos) + ByteSize2(CamNgos) + ByteSize2(CongPhaps)
                                   + ByteSize2(ThanThongs) + ByteSize2(Equipments);
     }
     public void Serialize(IWriter writer)
     {
-        SerializeModify(writer, Furnaces);
+        SerializeModify2(writer, Furnaces);
         SerializeModify2(writer, Items);
         SerializeModify2(writer, NgoDaos);
         SerializeModify2(writer, CamNgos);

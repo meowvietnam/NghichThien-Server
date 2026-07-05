@@ -1,34 +1,34 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MemoryPack;
+using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Utils;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Models;
-
-public class Social : IMemorySerializable<Social>
+[MemoryPackable]
+public partial class Social
 {
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
-
+    
     public List<Mail> Mails { get; set; } = new();
     public HashSet<Relationship> Relationships { get; set; } = new();
-
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     [ForeignKey(nameof(CharId))]
     public CharacterData CharacterData { get; set; }
 
-    [NotMapped] private Modify<Relationship> modifyRelationships = new();
-
-    public void Deserialize(IReader reader, ref Social value)
-    {
-        value.Mails = reader.ReadArray<Mail>().ToList();
-        value.Relationships = reader.ReadArray<Relationship>().ToHashSet();
-    }
-
+    [NotMapped]
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    private Modify<Relationship> modifyRelationships = new();
     public void AddRelationship(Relationship relationship)
     {
         relationship.CharId = CharId;
@@ -71,18 +71,6 @@ public class Social : IMemorySerializable<Social>
         var relationship = GetRelationship(npcId);
         RelationshipAddValue(relationship, value);
     }
-
-    public int ByteSize()
-    {
-        return Mails.ByteSize() + Relationships.ByteSize();
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        writer.WriteArray(Mails);
-        writer.WriteArray(Relationships);
-    }
-
     public void CopyFrom(Social other)
     {
         CharId = other.CharId;
@@ -103,7 +91,6 @@ public class Social : IMemorySerializable<Social>
             modifyRelationships.Apply(db.Relationships);
             modifyRelationships.Clear();
         }
-
         return Task.CompletedTask;
     }
 }

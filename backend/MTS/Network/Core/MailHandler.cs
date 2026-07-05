@@ -1,19 +1,19 @@
 using MTS.Network.Models;
-using Network;
-using Network.Extensions;
+
 
 namespace MTS.Network.Core;
 
 public class MailHandler : IClientHandler
 {
     private Client client;
+
     public MailHandler(Client client)
     {
         this.client = client;
     }
+
     public void OnEnter()
     {
-            
     }
 
     public async void Handle(Message<MessageTag> message)
@@ -22,61 +22,95 @@ public class MailHandler : IClientHandler
         var reader = message.Reader;
         if (tag == MessageTag.GetMails)
         {
+            var request = reader.Read<GetMails>();
+            GetMailsResult result = null;
             try
             {
-                var mails = await client.MailManager.GetMails();
-                var result = new GetMailsResult()
+                var mailManager = client.MailManager;
+                lock (mailManager)
                 {
-                    Success = true,
-                    Mails = mails
-                };
-                client.Send(MessageTag.GetMailsResult, result);
+                    lock (client.CharacterData)
+                    {
+                        result = mailManager.GetMails(request.StartId, request.PageSize)
+                            .GetAwaiter()
+                            .GetResult();
+                    }
+                }
             }
             catch (Exception e)
             {
-                var result = new GetMailsResult()
+                result = new GetMailsResult()
                 {
                     Success = false,
                     Message = e.Message
                 };
+            }
+            finally
+            {
                 client.Send(MessageTag.GetMailsResult, result);
             }
         }
         else if (tag == MessageTag.ReadMail)
         {
-            var id = reader.Read<int>();
-            var result = client.MailManager.ReadMail(id);
-            if (result == id)
+            var mailManager = client.MailManager;
+            lock (mailManager)
             {
-                client.Send(MessageTag.MarkMailRead, id);
+                var id = reader.Read<long>();
+                var result = mailManager.ReadMail(id).GetAwaiter().GetResult();
+                if (result == id)
+                {
+                    client.Send(MessageTag.MarkMailRead, id);
+                }
             }
         }
         else if (tag == MessageTag.RemoveMail)
         {
-            var id = reader.Read<int>();
-            var result = client.MailManager.RemoveMail(id);
-            if (result == id)
+            var mailManager = client.MailManager;
+            lock (mailManager)
             {
-                client.Send(MessageTag.RemoveMailId, id);
+                var id = reader.Read<long>();
+                var result = mailManager.RemoveMail(id).GetAwaiter().GetResult();
+                if (result == id)
+                {
+                    client.Send(MessageTag.RemoveMailId, id);
+                }
             }
         }
         else if (tag == MessageTag.RemoveAllMails)
         {
-            var result = client.MailManager.RemoveAllMails();
-            client.Send(MessageTag.RemoveAllMailsResult, result);
+            var mailManager = client.MailManager;
+            lock (mailManager)
+            {
+                var result = mailManager.RemoveAllMails().GetAwaiter().GetResult();
+                client.Send(MessageTag.RemoveAllMailsResult, result);
+            }
         }
         else if (tag == MessageTag.ClaimMail)
         {
-            var id = reader.Read<int>();
-            var result = await client.ClaimMail(id);
-            if (result == null) return;
-            client.Send(MessageTag.ClaimMailResult, result);
+            var id = reader.Read<long>();
+            var mailManager = client.MailManager;
+            lock (mailManager)
+            {
+                lock (client.CharacterData)
+                {
+                    var result = mailManager.ClaimMail(id).GetAwaiter().GetResult();
+                    if (result == null) return;
+                    client.Send(MessageTag.ClaimMailResult, result);
+                }
+            }
         }
         else if (tag == MessageTag.ClaimAllMails)
         {
-            var result = await client.ClaimAllMails();
-            if (result == null) return;
-            client.Send(MessageTag.ClaimAllMailsResult, result);
+            var mailManager = client.MailManager;
+            lock (mailManager)
+            {
+                lock (client.CharacterData)
+                {
+                    var result = mailManager.ClaimAllMails().GetAwaiter().GetResult();
+                    if (result == null) return;
+                    client.Send(MessageTag.ClaimAllMailsResult, result);
+                }
+            }
         }
     }
 

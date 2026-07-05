@@ -431,11 +431,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.Mail", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<int>("CharId")
                         .HasColumnType("int");
@@ -453,9 +453,9 @@ namespace MTS.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("Rewards")
+                    b.Property<byte[]>("Rewards")
                         .IsRequired()
-                        .HasColumnType("json");
+                        .HasColumnType("blob");
 
                     b.Property<string>("Title")
                         .IsRequired()
