@@ -88,6 +88,9 @@ namespace MTS.Network.Core
                 {
                     lock (charData)
                     {
+                        // nếu currentarena count < 5 thì load free
+                        // nếu < 10 và >= 5 thì xem ads và load arena 
+                        // nếu >= 10 tiêu 100 tiên ngọc để load arena
                         var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
                         var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
                         result = new LoadCharCombatResult()
@@ -96,6 +99,7 @@ namespace MTS.Network.Core
                             Client = new CharacterSnapshot(charData),
                             Enemy = enemy
                         };
+                        charData.ArenaManager.SetCurrentArenaCount(charData.ArenaManager.CurrentArenaCount+1);
                     }
                 }
                 catch (Exception e)

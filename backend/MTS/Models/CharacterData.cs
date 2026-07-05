@@ -976,6 +976,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
 
         int newHp = Stats.Hp;
+        int newPointRank = ArenaManager.Points;
         RewardSnapshot newReward = new RewardSnapshot();
         if (request.TypeCombat == ETypeCombat.AllMaps || request.TypeCombat == ETypeCombat.Boss)
         {
@@ -983,7 +984,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.HackerHP);
             }
-
+            if (request.CurrentThanThuc > Stats.ThanThuc)
+            {
+                throw new Exception(Strings.HackerThanThucEndCombat);
+            }
+            if (request.CurrentThoNguyen > Stats.ThoNguyen)
+            {
+                throw new Exception(Strings.HackerThoNguyenEndCombat);
+            }
             if (request.TypeCombat == ETypeCombat.AllMaps)
             {
                 if (request.CurrentLevelEnemy > Progression.Level + 2)
@@ -1031,17 +1039,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
             Stats.SetHp(newHp);
+            Stats.SetThoNguyen(request.CurrentThoNguyen);
+            Stats.SetThanThuc(request.CurrentThanThuc);
+
         }
         else if (request.TypeCombat == ETypeCombat.DauTruong)
         {
             if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
                 // cộng điểm đấu trường;
+                newPointRank += 25;
             }
             else
             {
+                newPointRank -= 15;
+
                 // truwf điểm đấu trường;
             }
+            ArenaManager.SetPoints(newPointRank);
         }
 
 
@@ -1053,6 +1068,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Reward = newReward,
             NewNgoDaoDiem = newNgoDaoDiem,
             TypeResultCombat = request.TypeResultCombat,
+            NewPointRank = newPointRank
         };
     }
 
@@ -1992,6 +2008,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         var id = request.Id;
         var count = request.Count;
+        
         if (count == 0)
         {
             throw new Exception(Strings.LinhDanQuantityInvalid);
@@ -2066,6 +2083,20 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         if (buffType != EDanBuffType.None)
         {
+            bool isTuViType = buffType switch
+            {
+                EDanBuffType.TuVi => true,
+                EDanBuffType.TuViVaDanDocDuoiTrucCo => true,
+                EDanBuffType.TuViVaDanDocDuoiKetDan => true,
+                EDanBuffType.TuViVaDanDocDuoiNguyenAnh => true,
+                EDanBuffType.TuViVaDanDocDuoiHoaThan => true,
+                _ => false // Các loại buff không phải tu vi
+            };
+
+            if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
+            {
+                throw new Exception(Strings.HasFlagTienThienDiMach);
+            }
             Stats.Buff(linhDan, count);
             snapshot = new StatsSnapshot(Stats);
         }

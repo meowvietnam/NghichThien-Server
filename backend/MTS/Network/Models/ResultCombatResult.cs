@@ -17,6 +17,7 @@ namespace MTS.Network.Models
         public CamNgo[]? NewCamNgo { get; set; } = Array.Empty<CamNgo>();
         public int NewNgoDaoDiem { get; set; }
         public ETypeResultCombat TypeResultCombat { get; set; }
+        public int NewPointRank { get; set; }
 
     }
 }
