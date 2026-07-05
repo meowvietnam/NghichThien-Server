@@ -976,6 +976,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         }
 
         int newHp = Stats.Hp;
+        int newPointRank = ArenaManager.Points;
         RewardSnapshot newReward = new RewardSnapshot();
         if (request.TypeCombat == ETypeCombat.AllMaps || request.TypeCombat == ETypeCombat.Boss)
         {
@@ -983,7 +984,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.HackerHP);
             }
-
+            if (request.CurrentThanThuc > Stats.ThanThuc)
+            {
+                throw new Exception(Strings.HackerThanThucEndCombat);
+            }
+            if (request.CurrentThoNguyen > Stats.ThoNguyen)
+            {
+                throw new Exception(Strings.HackerThoNguyenEndCombat);
+            }
             if (request.TypeCombat == ETypeCombat.AllMaps)
             {
                 if (request.CurrentLevelEnemy > Progression.Level + 2)
@@ -1031,17 +1039,24 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
             Stats.SetHp(newHp);
+            Stats.SetThoNguyen(request.CurrentThoNguyen);
+            Stats.SetThanThuc(request.CurrentThanThuc);
+
         }
         else if (request.TypeCombat == ETypeCombat.DauTruong)
         {
             if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
                 // cộng điểm đấu trường;
+                newPointRank += 25;
             }
             else
             {
+                newPointRank -= 15;
+
                 // truwf điểm đấu trường;
             }
+            ArenaManager.SetPoints(newPointRank);
         }
 
 
@@ -1053,6 +1068,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Reward = newReward,
             NewNgoDaoDiem = newNgoDaoDiem,
             TypeResultCombat = request.TypeResultCombat,
+            NewPointRank = newPointRank
         };
     }
 

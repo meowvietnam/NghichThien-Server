@@ -86,6 +86,8 @@ public static class Strings
     public static string GiftItemQuantityInvalid => _current.GiftItemQuantityInvalid;
     public static string LinhDanQuantityInvalid => _current.LinhDanQuantityInvalid;
     public static string HasFlagTienThienDiMach => "Sở hữu tiên thiên dị mạch";
+    public static string HackerThanThucEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
+    public static string HackerThoNguyenEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
     public static string LinhDanNotFound => _current.LinhDanNotFound;
     public static string DanCombatLimitExceeded => _current.DanCombatLimitExceeded;
 }
