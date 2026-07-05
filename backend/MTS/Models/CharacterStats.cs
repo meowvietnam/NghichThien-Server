@@ -360,10 +360,12 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         var type = linhDan.EBuffType;
         var value = linhDan.BuffValue * count;
         var danDoc = linhDan.DanDoc * count;
-        void AddStat(StatType type)
+        void AddStat(StatType type , bool addDanDoc = true)
         {
             var currentValue = Convert.ToSingle(GetValue(type));
             SetValue(type, currentValue + value);
+            SetValue(StatType.DanDoc, DanDoc + danDoc);
+
         }
         void AddTuVi(bool addDanDoc)
         {

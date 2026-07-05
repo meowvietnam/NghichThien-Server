@@ -142,10 +142,25 @@ public class Progression : IMemorySerializable<Progression>
         var newInfoLevel = GameConfig.infoLevels[level - 1];
         var stats = CharacterData.Stats;
         var maxHp = stats.SinhMenh + newInfoLevel.hpMaxBuff;
+        if(stats.Ability.HasFlag(Ability.ThanMaHuyetMach))
+        {
+            maxHp += (int)MathF.Ceiling(maxHp * 0.2f);
+
+        }
+        if (Level == 4 && stats.Ability.HasFlag(Ability.DiTocHuyetMach))
+        {
+            maxHp *= 2;
+
+        }
         var thanThuc = stats.ThanThuc + newInfoLevel.thanThucBuff;
         var docToc = stats.TocDoBay + newInfoLevel.donTocBuff;
         var thoNguyen = stats.ThoNguyen + newInfoLevel.thoNguyenBuff;
-        var ngoDaoDiem = NgoDaoDiem + 1;
+        var ngoDaoDiemBuff = 1;
+        if(stats.Ability.HasFlag(Ability.ChuyenTheTienNhan))
+        {
+            ngoDaoDiemBuff = 2;
+        }
+        var ngoDaoDiem = NgoDaoDiem + ngoDaoDiemBuff;
         dirty = true;
         var levelUpdated = new LevelUpdated()
         {

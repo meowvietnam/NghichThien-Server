@@ -576,6 +576,17 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh);
+        if (Stats.Ability.HasFlag(Ability.TienThienDaoThe))
+        {
+            // Nhân với 0.1f, làm tròn lên thành số nguyên, rồi cộng vào buffExp
+            buffExp += (int)MathF.Ceiling(buffExp * 0.1f);
+        }
+
+        if (Stats.Ability.HasFlag(Ability.HuyenAmTuyetMach))
+        {
+            // Nhân với 0.1f, làm tròn lên thành số nguyên, rồi trừ đi từ buffExp
+            buffExp -= (int)MathF.Ceiling(buffExp * 0.1f);
+        }
         var oldExp = Progression.CurrentExp;
         var oldHp = Stats.Hp;
         var exp = oldExp + buffExp;
@@ -592,7 +603,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             RemainingMoney = remaining,
             NewHp = newHp,
             DeltaExp = buffExp,
-            DeltaHp = newHp - oldExp
+            DeltaHp = newHp - oldHp
         };
     }
 
