@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using MTS.CP;
 using MTS.Data;
 using MTS.Game.CreateCharacter;
 using MTS.Game.LuyenDan;
@@ -360,55 +361,120 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         var type = linhDan.EBuffType;
         var value = linhDan.BuffValue * count;
         var danDoc = linhDan.DanDoc * count;
-        void AddStat(StatType type , bool addDanDoc = true)
+        bool isAddDanDoc = true;
+        void AddStat(StatType type)
         {
             var currentValue = Convert.ToSingle(GetValue(type));
             SetValue(type, currentValue + value);
-            SetValue(StatType.DanDoc, DanDoc + danDoc);
 
         }
-        void AddTuVi(bool addDanDoc)
+        void AddTuVi()
         {
             var progression = CharacterData.Progression;
             progression.SetCurrentExp(progression.CurrentExp + value);
-            if (addDanDoc)
+           
+        }
+        ND.ETypeSkill ConvertETypeBuffDanToETypeND(EDanBuffType eDanBuffType)
+        {
+            if(eDanBuffType == EDanBuffType.KimChiDao)
             {
-                SetValue(StatType.DanDoc, DanDoc + danDoc);
+                return ND.ETypeSkill.Kim;
+            }    
+         
+            else if (eDanBuffType == EDanBuffType.MocChiDao)
+            {
+                return ND.ETypeSkill.Moc;
+
             }
+
+            else if (eDanBuffType == EDanBuffType.ThuyChiDao)
+            {
+                return ND.ETypeSkill.Thuy;
+
+            }
+
+            else if (eDanBuffType == EDanBuffType.HoaChiDao)
+            {
+                return ND.ETypeSkill.Hoa;
+
+            }
+
+            else if (eDanBuffType == EDanBuffType.ThoChiDao)
+            {
+                return ND.ETypeSkill.Tho;
+
+            }
+            else if (eDanBuffType == EDanBuffType.KiemChiDao)
+            {
+                return ND.ETypeSkill.Kiem;
+
+            }
+            else if (eDanBuffType == EDanBuffType.ThanThucChiDao)
+            {
+                return ND.ETypeSkill.Than;
+
+            }
+            return ND.ETypeSkill.None;
+        }
+        void AddCamNgo(EDanBuffType eDanBuffType)
+        {
+
+            var camNgoType = ConvertETypeBuffDanToETypeND(eDanBuffType);
+            if (camNgoType == ND.ETypeSkill.None) return;
+            var userCamNgo = CharacterData.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
+            int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
+            var camNgo = new CamNgo
+            {
+                Id = camNgoType,
+                Value = value + currentUserCamNgoValue,
+            };
+            CharacterData.InventoryManager.AddOrUpdate(camNgo);
+
         }
         switch (type)
         {
             case EDanBuffType.None:
                 return;
             case EDanBuffType.KimChiDao:
+                AddCamNgo(EDanBuffType.KimChiDao);
+                break;
             case EDanBuffType.KimLinhCan:
                 AddStat(StatType.Kim);
                 break;
             case EDanBuffType.MocChiDao:
+                AddCamNgo(EDanBuffType.MocChiDao);
+                break;
             case EDanBuffType.MocLinhCan:
                 AddStat(StatType.Moc);
                 break;
             case EDanBuffType.ThuyChiDao:
+                AddCamNgo(EDanBuffType.ThuyChiDao);
+                break;
             case EDanBuffType.ThuyLinhCan:
                 AddStat(StatType.Thuy);
                 break;
             case EDanBuffType.HoaChiDao:
+                AddCamNgo(EDanBuffType.HoaChiDao);
+                break;
             case EDanBuffType.HoaLinhCan:
                 AddStat(StatType.Hoa);
                 break;
             case EDanBuffType.ThoChiDao:
+                AddCamNgo(EDanBuffType.ThoChiDao);
+                break;
             case EDanBuffType.ThoLinhCan:
                 AddStat(StatType.Tho);
                 break;
             case EDanBuffType.KiemChiDao:
-                AddStat(StatType.Ma);
+                AddCamNgo(EDanBuffType.KiemChiDao);
                 break;
+                
             case EDanBuffType.NgoDaoDiem:
                 var progression = CharacterData.Progression;
                 progression.SetNgoDaoDiem(progression.NgoDaoDiem + value);
                 break;
             case EDanBuffType.DanDoc:
-                SetValue(StatType.DanDoc, DanDoc + value);
+                SetValue(StatType.DanDoc, DanDoc - value);
                 break;
             case EDanBuffType.Hp:
                 SetHp(Math.Clamp(Hp + value, 0, SinhMenh));
@@ -426,23 +492,29 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 AddStat(StatType.NgoTinh);
                 break;
             case EDanBuffType.ThanThuc:
-            case EDanBuffType.ThanThucChiDao:
                 SetThanThuc(ThanThuc + value);
                 break;
+            case EDanBuffType.ThanThucChiDao:
+                AddCamNgo(EDanBuffType.ThanThucChiDao);
+                break;
             case EDanBuffType.TuVi:
-                AddTuVi(false);
+                AddTuVi();
                 break;
             case EDanBuffType.TuViVaDanDocDuoiTrucCo:
-                AddTuVi(CharacterData.Progression.Level < 4);
+                isAddDanDoc = CharacterData.Progression.Level < 4;
+                AddTuVi();
                 break;
             case EDanBuffType.TuViVaDanDocDuoiKetDan:
-                AddTuVi(CharacterData.Progression.Level < 7);
+                isAddDanDoc = CharacterData.Progression.Level < 7;
+                AddTuVi();
                 break;
             case EDanBuffType.TuViVaDanDocDuoiNguyenAnh:
-                AddTuVi(CharacterData.Progression.Level < 10);
+                isAddDanDoc = CharacterData.Progression.Level < 10;
+                AddTuVi();
                 break;
             case EDanBuffType.TuViVaDanDocDuoiHoaThan:
-                AddTuVi(CharacterData.Progression.Level < 13);
+                isAddDanDoc = CharacterData.Progression.Level < 13;
+                AddTuVi();
                 break;
             case EDanBuffType.TuChat:
                 AddStat(StatType.TuChat);
@@ -456,5 +528,9 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
+        if(isAddDanDoc)
+        {
+            SetValue(StatType.DanDoc, DanDoc + danDoc);
+        }    
     }
 }

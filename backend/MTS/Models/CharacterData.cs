@@ -1992,6 +1992,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         var id = request.Id;
         var count = request.Count;
+        
         if (count == 0)
         {
             throw new Exception(Strings.LinhDanQuantityInvalid);
@@ -2066,6 +2067,20 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         if (buffType != EDanBuffType.None)
         {
+            bool isTuViType = buffType switch
+            {
+                EDanBuffType.TuVi => true,
+                EDanBuffType.TuViVaDanDocDuoiTrucCo => true,
+                EDanBuffType.TuViVaDanDocDuoiKetDan => true,
+                EDanBuffType.TuViVaDanDocDuoiNguyenAnh => true,
+                EDanBuffType.TuViVaDanDocDuoiHoaThan => true,
+                _ => false // Các loại buff không phải tu vi
+            };
+
+            if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
+            {
+                throw new Exception(Strings.HasFlagTienThienDiMach);
+            }
             Stats.Buff(linhDan, count);
             snapshot = new StatsSnapshot(Stats);
         }
