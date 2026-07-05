@@ -11,8 +11,8 @@ public partial class InfoLevel
     public int thanThucBuff;
     public int donTocBuff;
     public int thoNguyenBuff;
-    public List<ItemRef> requireItems;
-    public List<ItemRef> buffItems;
+    public List<ItemRef> RequireItem;
+    public List<ItemRef> BuffItem;
     [MemoryPackIgnore]
-    public bool IsSpecialLevelUp => requireItems.Count > 0;
+    public bool IsSpecialLevelUp => RequireItem.Count > 0;
 }

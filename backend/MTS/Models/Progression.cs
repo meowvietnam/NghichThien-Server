@@ -109,7 +109,7 @@ public class Progression : IMemorySerializable<Progression>
             return;
         }
 
-        var nextLevelRequireItems = infoLevels[Level].requireItems;
+        var nextLevelRequireItems = infoLevels[Level].RequireItem;
         if (nextLevelRequireItems is { Count: > 0 })
         {
             CurrentExp = require;
