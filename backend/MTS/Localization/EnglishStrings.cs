@@ -73,6 +73,7 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "NPC gift data is invalid!";
     public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
+    public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
     public override string ShopItemNotFound => "Item does not exist in the shop!";
     public override string ShopItemQuantityInvalid => "The shop does not have enough of this item!";
     public override string InventoryItemNotFound => "Item does not exist in the inventory!";
@@ -82,4 +83,7 @@ public class EnglishStrings : ILanguageStrings
     public override string LinhDanQuantityInvalid => "The Linh Dan quantity is invalid!";
     public override string LinhDanNotFound => "Linh Dan does not exist!";
     public override string DanCombatLimitExceeded => "The combat pill usage limit for the current level has been exceeded!";
+    public override string ArenaRewardNotFound => "Arena reward does not exist!";
+    public override string ArenaRewardAlreadyClaimed => "Arena reward has already been claimed!";
+    public override string ArenaRankNotReached => "The required arena rank has not been reached!";
 }

@@ -70,6 +70,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "Dữ liệu tặng quà NPC không hợp lệ!";
     public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
+    public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
     public override string ShopItemNotFound => "Vật phẩm không tồn tại trong cửa hàng!";
     public override string ShopItemQuantityInvalid => "Số lượng vật phẩm trong cửa hàng không đủ!";
     public override string InventoryItemNotFound => "Vật phẩm không tồn tại trong túi đồ!";
@@ -79,4 +80,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string LinhDanQuantityInvalid => "Số lượng đan dược sử dụng không hợp lệ!";
     public override string LinhDanNotFound => "Đan dược không tồn tại!";
     public override string DanCombatLimitExceeded => "Số lượng đan chiến đấu sử dụng vượt quá giới hạn cấp độ!";
+    public override string ArenaRewardNotFound => "Phần thưởng đấu trường không tồn tại!";
+    public override string ArenaRewardAlreadyClaimed => "Phần thưởng đấu trường đã được nhận!";
+    public override string ArenaRankNotReached => "Chưa đạt đủ điểm xếp hạng để nhận phần thưởng đấu trường!";
 }

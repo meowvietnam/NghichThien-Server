@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MTS.Game;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
+using MTS.Services;
 using Network;
 using Network.Extensions;
 
@@ -13,7 +16,8 @@ namespace MTS.Network.Core
         private static MessageTag[] handler =
         [
             MessageTag.ResultCombat, MessageTag.LoadCharCombat,
-            MessageTag.LoadCharCombatArena
+            MessageTag.LoadCharCombatArena, MessageTag.LoadRankRequest,
+            MessageTag.ClaimRankRewardRequest
         ];
 
         public CombatHandler(Client client)
@@ -64,7 +68,6 @@ namespace MTS.Network.Core
                             Success = true,
                             Client = new CharacterSnapshot(charData)
                         };
-                        ;
                         charData.EquipmentManager.ClearDanCombat();
                     }
                 }
@@ -91,15 +94,32 @@ namespace MTS.Network.Core
                         // nếu currentarena count < 5 thì load free
                         // nếu < 10 và >= 5 thì xem ads và load arena 
                         // nếu >= 10 tiêu 100 tiên ngọc để load arena
+                        var (state, cost) = GetMatchMakingState();
+                        if (state == MatchMakingState.NotFree)
+                        {
+                            var remainingMoneyVip = charData.MoneyVip - cost;
+                            if (remainingMoneyVip < 0)
+                            {
+                                throw new Exception(Strings.NotEnoughMoneyVip);
+                            }
+                            charData.SetMoneyVip(remainingMoneyVip);
+                        }
+                        else if (state == MatchMakingState.Ads)
+                        {
+                            client.Send(MessageTag.WatchAds);
+                        }
                         var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
                         var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
+                        var arena = charData.ArenaManager;
+                        arena.SetCurrentArenaCount(arena.CurrentArenaCount + 1);
                         result = new LoadCharCombatResult()
                         {
                             Success = true,
                             Client = new CharacterSnapshot(charData),
-                            Enemy = enemy
+                            Enemy = enemy,
+                            CurrentArenaCount = arena.CurrentArenaCount,
+                            NewMoneyVip = charData.MoneyVip,
                         };
-                        charData.ArenaManager.SetCurrentArenaCount(charData.ArenaManager.CurrentArenaCount+1);
                     }
                 }
                 catch (Exception e)
@@ -115,13 +135,89 @@ namespace MTS.Network.Core
                     client.Send(MessageTag.LoadCharCombatArenaResult, result);
                 }
             }
+            else if (tag == MessageTag.LoadRankRequest)
+            {
+                var result = LoadRank();
+                client.MemSend(MessageTag.LoadRankRequest, result);
+            }
+            else if (tag == MessageTag.ClaimRankRewardRequest)
+            {
+                var id = reader.Read<long>();
+                ClaimRankRewardResult result = null;
+                try
+                {
+                    lock (charData)
+                    {
+                        var moneyVip = charData.ArenaManager.Claim(id).GetAwaiter().GetResult();
+                        result = new ClaimRankRewardResult()
+                        {
+                            Success = true,
+                            Id = id,
+                            MoneyVip = moneyVip,
+                        };
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new ClaimRankRewardResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.ClaimRankRewardRequest, result);
+                }
+            }
         }
-
+        private (MatchMakingState state, int cost) GetMatchMakingState()
+        {
+            var cost = 0;
+            var matchMakingState = MatchMakingState.Free;
+            var charData = client.CharacterData;
+            var arena = charData.ArenaManager;
+            var count = arena.CurrentArenaCount;
+            switch (count)
+            {
+                case < 5:
+                    matchMakingState = MatchMakingState.Free;
+                    cost = 0;
+                    break;
+                case < 10:
+                    matchMakingState = charData.IsNoAds ? MatchMakingState.Free : MatchMakingState.Ads;
+                    cost = 0;
+                    break;
+                default:
+                    matchMakingState = MatchMakingState.NotFree;
+                    cost = GameConfig.MatchMakingCost;
+                    break;
+            }
+            return (matchMakingState, cost);
+        }
+        private LoadRankResult LoadRank()
+        {
+            var nextReload = ArenaService.GetDelayToGrantRewards();
+            var typeRankArenaWithValue = GameConfig.TypeRankArenaWithValue;
+            var typeRankArenaWithReward = GameConfig.TypeRankArenaWithReward;
+            var (matchMakingState, cost) = GetMatchMakingState();
+            var result = new LoadRankResult()
+            {
+                Success = true,
+                TypeRankArenaWithValue = typeRankArenaWithValue,
+                TypeRankArenaWithReward = typeRankArenaWithReward,
+                NextReload = nextReload,
+                MatchMakingState = matchMakingState,
+                Cost = cost,
+            };
+            return result;
+        }
         private async Task<CharacterData> LoadEnemyCombat()
         {
-            var point = client.CharacterData.ArenaManager.Points;
-            var level = client.CharacterData.Progression.Level;
-            var charId = client.CharacterData.Id;
+            var charData = client.CharacterData;
+            var point = charData.ArenaManager.Points;
+            var level = charData.Progression.Level;
+            var charId = charData.Id;
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
@@ -143,13 +239,6 @@ namespace MTS.Network.Core
                     .ThenInclude(x => x.DanCombatUseds)
                     .Include(x => x.CharacterData)
                     .ThenInclude(x => x.InventoryManager)
-                    .ThenInclude(x => x.VuKhis)
-                    .Include(x => x.CharacterData)
-                    .ThenInclude(x => x.InventoryManager)
-                    .ThenInclude(x => x.PhongCus)
-                    .Include(x => x.CharacterData)
-                    .ThenInclude(x => x.InventoryManager)
-                    .ThenInclude(x => x.TrangSucs)
                     .Include(x => x.CharacterData)
                     .ThenInclude(x => x.InventoryManager)
                     .ThenInclude(x => x.NgoDaos)
@@ -163,6 +252,8 @@ namespace MTS.Network.Core
             {
                 return null;
             }
+
+            await matchPlayerProgression.CharacterData.InventoryManager.LoadEquipments(db);
             return matchPlayerProgression.CharacterData;
         }
 

@@ -9,12 +9,6 @@ public class TuViRankService : BackgroundService
 {
     private readonly ILogger<TuViRankService> logger;
     public List<CharacterData> Tops { get; private set; }
-
-    public readonly DateTimeOffset EndTime = new DateTimeOffset(
-        2026, 7, 15,
-        0, 0, 0,
-        TimeSpan.FromHours(7));
-
     public TuViRankService(ILogger<TuViRankService> logger)
     {
         this.logger = logger;

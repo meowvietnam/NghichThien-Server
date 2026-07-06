@@ -119,6 +119,16 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         return (ushort)(x - 1);
     }
 
+    public async Task LoadEquipments(AppDbContext db)
+    {
+        var equipments = await db.Equipments
+            .AsNoTracking()
+            .Where(x => x.CharId == CharId)
+            .ToArrayAsync();
+        VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
+        PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
+        TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
+    }
     public async Task Load(AppDbContext db)
     {
         var items = await db.Items
@@ -130,10 +140,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
-        var equipments = await db.Equipments
-            .AsNoTracking()
-            .Where(x => x.CharId == CharId)
-            .ToArrayAsync();
         Furnaces = furnaces;
         Recipes = items.GetValueOrDefault(ItemType.Recipe, new());
         Herbs = items.GetValueOrDefault(ItemType.Herb, new());
@@ -141,9 +147,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         CongPhaps = items.GetValueOrDefault(ItemType.CongPhap, new());
         LinhDans = items.GetValueOrDefault(ItemType.LinhDan, new());
         Materials = items.GetValueOrDefault(ItemType.Material, new());
-        VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
-        PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
-        TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
+        await LoadEquipments(db);
         NgoDaos = await db.NgoDaos
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
@@ -995,6 +999,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
         return newNgoDaoDiem;
     }
+
 }
 
 public static class LuyenKhiMessage

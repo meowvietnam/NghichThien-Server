@@ -114,6 +114,7 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var social = await db.Socials
             .AsNoTracking()
             .Include(x => x.Relationships)
+            .AsSplitQuery()
             .FirstAsync(x => x.CharId == id);
         social.CharacterData = characterData;
         characterData.Social = social;
@@ -127,6 +128,8 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         
         var arenaManager = await db.ArenaManagers
             .AsNoTracking()
+            .Include(x => x.Rewards)
+            .AsSplitQuery()
             .FirstAsync(x => x.CharId == id);
         arenaManager.CharData = characterData;
         characterData.ArenaManager = arenaManager;

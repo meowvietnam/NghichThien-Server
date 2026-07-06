@@ -78,6 +78,7 @@ public static class Strings
     public static string HackerTangQuaNPC => _current.HackerTangQuaNPC;
     public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
+    public static string NotEnoughMoneyVip => _current.NotEnoughMoneyVip;
     public static string ShopItemNotFound => _current.ShopItemNotFound;
     public static string ShopItemQuantityInvalid => _current.ShopItemQuantityInvalid;
     public static string InventoryItemNotFound => _current.InventoryItemNotFound;
@@ -90,4 +91,7 @@ public static class Strings
     public static string HackerThoNguyenEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
     public static string LinhDanNotFound => _current.LinhDanNotFound;
     public static string DanCombatLimitExceeded => _current.DanCombatLimitExceeded;
+    public static string ArenaRewardNotFound => _current.ArenaRewardNotFound;
+    public static string ArenaRewardAlreadyClaimed => _current.ArenaRewardAlreadyClaimed;
+    public static string ArenaRankNotReached => _current.ArenaRankNotReached;
 }

@@ -522,6 +522,30 @@ namespace MTS.Migrations
                     b.ToTable("QuestManagers");
                 });
 
+            modelBuilder.Entity("MTS.Models.RankReward", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsClaim")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("RankRewards");
+                });
+
             modelBuilder.Entity("MTS.Models.Relationship", b =>
                 {
                     b.Property<int>("CharId")
@@ -845,6 +869,17 @@ namespace MTS.Migrations
                     b.Navigation("CharData");
                 });
 
+            modelBuilder.Entity("MTS.Models.RankReward", b =>
+                {
+                    b.HasOne("MTS.Models.ArenaManager", "ArenaManager")
+                        .WithMany("Rewards")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ArenaManager");
+                });
+
             modelBuilder.Entity("MTS.Models.Relationship", b =>
                 {
                     b.HasOne("MTS.Models.Social", "Social")
@@ -909,6 +944,11 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MTS.Models.ArenaManager", b =>
+                {
+                    b.Navigation("Rewards");
                 });
 
             modelBuilder.Entity("MTS.Models.CharacterData", b =>

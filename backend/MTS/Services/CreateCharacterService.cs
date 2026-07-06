@@ -344,6 +344,7 @@ public class CreateCharacterService
             .OrderBy(x => x.LastReload)
             .ToList();
         db.DailyQuests.AddRange(quests);
+        Char.ArenaManager.Init();
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;

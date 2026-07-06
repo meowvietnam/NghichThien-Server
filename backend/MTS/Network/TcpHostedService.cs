@@ -16,8 +16,13 @@ public class TcpHostedService : IHostedService
         tcpServer = new TcpServer(port);
     }
 
+    private async Task StartTask(CancellationToken stoppingToken)
+    {
+    }
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await StartTask(cancellationToken);
         await Task.Run(() => tcpServer.Run(), cancellationToken);
     }
 

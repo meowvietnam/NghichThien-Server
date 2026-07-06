@@ -89,6 +89,7 @@ public abstract class ILanguageStrings
     // IAP messages
     public abstract string IapPurchaseAlreadyProcessed { get; }
     public abstract string MoneyVipInvalid { get; }
+    public abstract string NotEnoughMoneyVip { get; }
 
     // Shop messages
     public abstract string ShopItemNotFound { get; }
@@ -104,4 +105,9 @@ public abstract class ILanguageStrings
     public abstract string LinhDanQuantityInvalid { get; }
     public abstract string LinhDanNotFound { get; }
     public abstract string DanCombatLimitExceeded { get; }
+
+    // Arena messages
+    public abstract string ArenaRewardNotFound { get; }
+    public abstract string ArenaRewardAlreadyClaimed { get; }
+    public abstract string ArenaRankNotReached { get; }
 }

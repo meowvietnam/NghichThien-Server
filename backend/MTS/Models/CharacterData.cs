@@ -1047,18 +1047,15 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
-                // cộng điểm đấu trường;
                 newPointRank += 25;
             }
             else
             {
                 newPointRank -= 15;
 
-                // truwf điểm đấu trường;
             }
             ArenaManager.SetPoints(newPointRank);
         }
-
 
         return new ResultCombatResult()
         {

@@ -14,6 +14,7 @@ using Network.Extensions;
 using Newtonsoft.Json;
 using MTS.Game.Gacha;
 using static MTS.Utils.Utils;
+
 namespace MTS.Game;
 
 public static class GameConfig
@@ -106,6 +107,7 @@ public static class GameConfig
         { Tier.NguPham, 13500 },
         { Tier.LucPham, 81000 },
     };
+
     public static Dictionary<ERelationShip, int> relationShipRequireThanThong = new Dictionary<ERelationShip, int>
     {
         { ERelationShip.None, 1 }, // Use { key, value }
@@ -113,23 +115,28 @@ public static class GameConfig
         { ERelationShip.BanBe, 500 },
         { ERelationShip.ThanThiet, 1000 },
     };
+
     public static Dictionary<ERelationShip, int> relationShipRequireCongPhap = new Dictionary<ERelationShip, int>
     {
         { ERelationShip.None, 1 }, // Use { key, value }
         { ERelationShip.Quen, 200 },
         { ERelationShip.BanBe, 1000 },
         { ERelationShip.ThanThiet, 2000 },
-
     };
+
+    public static int MatchMakingCost { get; private set; } = 100;
+
     public static ERelationShip GetERelationShip(int myScore, bool isThanThong)
     {
-        Dictionary<ERelationShip, int> relationRequire = isThanThong ? relationShipRequireThanThong : relationShipRequireCongPhap;
+        Dictionary<ERelationShip, int> relationRequire =
+            isThanThong ? relationShipRequireThanThong : relationShipRequireCongPhap;
         return relationRequire
-        .Where(pair => myScore >= pair.Value)
-        .OrderByDescending(pair => pair.Value) 
-        .FirstOrDefault()
-        .Key;
+            .Where(pair => myScore >= pair.Value)
+            .OrderByDescending(pair => pair.Value)
+            .FirstOrDefault()
+            .Key;
     }
+
     public static Dictionary<BaseSkill.ETierSkill, int> tierSkillWithLevel = new Dictionary<BaseSkill.ETierSkill, int>
     {
         { BaseSkill.ETierSkill.NhanGiaiHa, 1 },
@@ -161,6 +168,7 @@ public static class GameConfig
         { EquipmentTier.ThuanDuong, 12 },
         { EquipmentTier.ThongThien, 15 },
     };
+
     public static Dictionary<Tier, int> PriceTienNgocVatLieuAndHerbTask = new Dictionary<Tier, int>
     {
         { Tier.NhatPham, 20 },
@@ -170,8 +178,47 @@ public static class GameConfig
         { Tier.NguPham, 60 },
         { Tier.LucPham, 70 },
     };
+
     public static Dictionary<Tier, int> PriceFurnaceWithTierPerDurability => PriceHerbWithTier;
 
+    public static Dictionary<ETypeGacha, int> PageGachaWithRequireValue = new Dictionary<ETypeGacha, int>
+    {
+        { ETypeGacha.ThanThong, 400 },
+        { ETypeGacha.CongPhap, 500 },
+        { ETypeGacha.DanDuoc, 500 },
+        { ETypeGacha.DuocLieu, 300 },
+        { ETypeGacha.VatLieu, 200 },
+    };
+
+    public static ETypeArenaRank GetArenaRankWithPoint(int pointUser)
+    {
+        foreach (var rank in TypeRankArenaWithValue)
+        {
+            if (pointUser >= rank.Value)
+            {
+                return rank.Key;
+            }
+        }
+        return ETypeArenaRank.None;
+    }
+    public static Dictionary<ETypeArenaRank, int> TypeRankArenaWithValue = new Dictionary<ETypeArenaRank, int>
+    {
+        { ETypeArenaRank.ThanhGiai, 2100 },
+        { ETypeArenaRank.ThanGiai, 1500 },
+        { ETypeArenaRank.ThienGiai, 1100 },
+        { ETypeArenaRank.DiaGiai, 800 },
+        { ETypeArenaRank.HuyenGiai, 400 },
+        { ETypeArenaRank.HoangGiai, 1 },
+    };
+    public static Dictionary<ETypeArenaRank, int> TypeRankArenaWithReward = new Dictionary<ETypeArenaRank, int>
+    {
+        { ETypeArenaRank.ThanhGiai, 3000 },
+        { ETypeArenaRank.ThanGiai, 2000 },
+        { ETypeArenaRank.ThienGiai, 1000 },
+        { ETypeArenaRank.DiaGiai, 500 },
+        { ETypeArenaRank.HuyenGiai, 300 },
+        { ETypeArenaRank.HoangGiai, 100 },
+    };
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
     {
         var reader = new Reader(File.ReadAllBytes(filePath));
@@ -183,19 +230,13 @@ public static class GameConfig
         var bytes = File.ReadAllBytes(filePath);
         return MemoryPackSerializer.Deserialize<T>(bytes);
     }
+
     public static T[] ReadArray2<T>(string filePath) where T : IMemoryPackable<T>
     {
         var bytes = File.ReadAllBytes(filePath);
         return MemoryPackSerializer.Deserialize<T[]>(bytes);
     }
-    public static Dictionary<ETypeGacha, int> PageGachaWithRequireValue = new Dictionary<ETypeGacha, int>
-    {
-        {ETypeGacha.ThanThong,400},
-        {ETypeGacha.CongPhap,500},
-        {ETypeGacha.DanDuoc,500},
-        {ETypeGacha.DuocLieu,300},
-        {ETypeGacha.VatLieu,200},
-    };
+
     public static void Init()
     {
         CharacterTemplate = Json.Deserialize<CharacterData>(File.ReadAllText("Data/character-template.json"));
