@@ -21,7 +21,6 @@ public static class Program
 {
     public static WebApplication App { get; private set; }
     public static IDbContextFactory<AppDbContext> Db { get; private set; }
-
     public static async Task<AppDbContext> CreateDbAsync()
     {
         return await Db.CreateDbContextAsync();
@@ -107,6 +106,10 @@ public static class Program
         builder.Services.AddHostedService<TcpHostedService>();
         builder.Services.AddHostedService<ReloadShopService>();
         builder.Services.AddHostedService<ReloadDailyQuestService>();
+        builder.Services.AddHostedService<ArenaRankService>();
+        builder.Services.AddHostedService<TuViRankService>();
+        builder.Services.AddHostedService<RechargeRankService>();
+        builder.Services.AddHostedService<MoneyVipSpendingRankService>();
         App = builder.Build();
         Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
         GameConfig.Init();

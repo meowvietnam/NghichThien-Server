@@ -190,7 +190,7 @@ namespace MTS.Network.Core
         }
         private LoadRankResult LoadRank()
         {
-            var nextReload = ArenaService.GetDelayToGrantRewards();
+            var nextReload = ArenaRankService.GetDelayToGrantRewards();
             var typeRankArenaWithValue = GameConfig.TypeRankArenaWithValue;
             var typeRankArenaWithReward = GameConfig.TypeRankArenaWithReward;
             var (matchMakingState, cost) = GetMatchMakingState();

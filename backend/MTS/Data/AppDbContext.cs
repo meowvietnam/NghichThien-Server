@@ -39,7 +39,7 @@ public class AppDbContext : DbContext
     public DbSet<ShopManager> ShopManagers { get; private set; }
     public DbSet<DailyQuest> DailyQuests { get; private set; }
     public DbSet<RankReward> RankRewards { get; private set; }
-
+    public DbSet<SpendingMoneyVip> SpendingMoneyVips { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -373,6 +373,14 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasOne(x => x.ArenaManager)
                 .WithMany(x => x.Rewards)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<SpendingMoneyVip>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.CharData)
+                .WithMany()
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

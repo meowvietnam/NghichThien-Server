@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Game;
+using MTS.Game.Rank;
 using MTS.Models;
+using MTS.Network;
 
 namespace MTS.Services;
 
@@ -8,7 +10,7 @@ using static MTS.Utils.Utils;
 public class TuViRankService : BackgroundService
 {
     private readonly ILogger<TuViRankService> logger;
-    public List<CharacterData> Tops { get; private set; }
+    public static List<CharacterWrapper> Tops { get; private set; } = new();
     public TuViRankService(ILogger<TuViRankService> logger)
     {
         this.logger = logger;
@@ -16,7 +18,8 @@ public class TuViRankService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Task.Run(GrantRewards, stoppingToken);
+        await RunJobAsync(stoppingToken);
+        _ = Task.Run(() => GrantRewardsLoop(stoppingToken), stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
@@ -33,27 +36,34 @@ public class TuViRankService : BackgroundService
             }
         }
     }
-    private record TopReward(List<CharacterData> Tops, int MoneyVip);
-    private async Task GrantRewards()
+    private async Task GrantRewardsLoop(CancellationToken stoppingToken)
     {
-        var delay = GetDelayToGrantRewards();
-        await Task.Delay(delay);
-        await GetTopsAsync(CancellationToken.None);
-        var tops = Tops;
-        var top1 = tops.Take(1).ToList();
-        var top2 = tops.Skip(1).Take(1).ToList();
-        var top3 = tops.Skip(2).Take(1).ToList();
-        var top4To10 = tops.Skip(3).Take(7).ToList();
-        var rewards = new TopReward[]
+        while (!stoppingToken.IsCancellationRequested)
         {
-            new (top1, 1000),
-            new (top2, 500),
-            new (top3, 300),
-            new(top4To10, 100),
-        };
+            var delay = GetDelayToGrantRewards();
+            logger.LogInformation(
+                "{Service} sẽ phát thưởng sau {Delay}", nameof(TuViRankService), delay);
+            await Task.Delay(delay, stoppingToken);
+            try
+            {
+                await GetTopsAsync(stoppingToken);
+                var rewards = new TopReward[]
+                {
+                    new(Tops.Take(1).Select(x => x.Character).ToArray(), 1000, "Top 1"),
+                    new(Tops.Skip(1).Take(1).Select(x => x.Character).ToArray(), 500, "Top 2"),
+                    new(Tops.Skip(2).Take(1).Select(x => x.Character).ToArray(), 300, "Top 3"),
+                    new(Tops.Skip(3).Take(7).Select(x => x.Character).ToArray(), 100, "Top 4-10"),
+                };
+                await RankRewardMailer.SendAsync(rewards, "Tu Vi", stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Lỗi khi phát thưởng {Service}", nameof(TuViRankService));
+            }
+        }
     }
 
-    private static TimeSpan GetDelayToGrantRewards()
+    public static TimeSpan GetDelayToGrantRewards()
     {
         var start = GameConfig.GameReleaseDate;
         var now = Now();
@@ -83,6 +93,7 @@ public class TuViRankService : BackgroundService
             .ThenByDescending(x => x.Progression.CurrentExp)
             .ThenByDescending(x => x.Stats.SinhMenh)
             .Take(10)
+            .Select(x => new CharacterWrapper(x))
             .AsSplitQuery()
             .ToListAsync(stoppingToken);
     }

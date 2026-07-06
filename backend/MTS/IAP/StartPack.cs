@@ -1,5 +1,6 @@
 using MemoryPack;
 using MTS.Models;
+using MTS.Network.Models;
 
 namespace MTS.IAP;
 
@@ -43,5 +44,9 @@ public partial class StartPack : IIapReward
         {
             inventory.Add(congPhapRef, -1);
         }
+    }
+    public void Edit(IapPurchase purchase)
+    {
+        purchase.MoneyVipSnapshot += MoneyVip;
     }
 }

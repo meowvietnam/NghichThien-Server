@@ -1,5 +1,6 @@
 using MemoryPack;
 using MTS.Models;
+using MTS.Network.Models;
 
 namespace MTS.IAP;
 [MemoryPackable]
@@ -9,4 +10,5 @@ public partial interface IIapReward
 {
     void Execute(CharacterData charData);
     void Refund(CharacterData charData);
+    void Edit(IapPurchase purchase);
 }

@@ -594,6 +594,33 @@ namespace MTS.Migrations
                     b.ToTable("Socials");
                 });
 
+            modelBuilder.Entity("MTS.Models.SpendingMoneyVip", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("MoneyVip")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SpendFor")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("SpendingMoneyVips");
+                });
+
             modelBuilder.Entity("MTS.Models.ThanThong", b =>
                 {
                     b.Property<int>("CharId")
@@ -650,8 +677,14 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<long>("MoneyVipSnapshot")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("PurchaseDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<byte[]>("PurchaseTokenHash")
                         .IsRequired()
@@ -911,6 +944,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharacterData");
+                });
+
+            modelBuilder.Entity("MTS.Models.SpendingMoneyVip", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
                 });
 
             modelBuilder.Entity("MTS.Models.ThanThong", b =>

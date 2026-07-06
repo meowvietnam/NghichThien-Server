@@ -234,6 +234,11 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var adsHandler = new AdsHandler(this);
         module.RemoveHandler<AdsHandler>();
         module.AddHandler(adsHandler);
+
+        var rankHandler = new RankHandler(this);
+        module.RemoveHandler<RankHandler>();
+        module.AddHandler(rankHandler);
+        
         ChangeState(new AllMaps(this));
     }
 

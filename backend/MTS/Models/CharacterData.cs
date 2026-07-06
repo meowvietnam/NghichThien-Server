@@ -59,6 +59,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
     [NotMapped]
     public Client Client { get; set; }
 
+    [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
+    private List<SpendingMoneyVip> addedSpendingMoneyVips = new();
     public void SetMonPhai(EMonPhai value)
     {
         if (MonPhai != value)
@@ -242,6 +244,14 @@ public class CharacterData : IMemorySerializable<CharacterData>
             dirty = false;
         }
 
+        lock (addedSpendingMoneyVips)
+        {
+            if (addedSpendingMoneyVips.Count > 0)
+            {
+                db.SpendingMoneyVips.AddRange(addedSpendingMoneyVips);
+                addedSpendingMoneyVips.Clear();
+            }
+        }
         if (!Stats.IsDefault())
         {
             await Stats.SaveChanges(db);
@@ -1128,6 +1138,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         this.InventoryManager.AddToInventory(listItemRef);
         reward.ItemRefs = listItemRef;
         this.SetMoneyVip(newTienNgoc);
+        AddSpendMoneyVip(require, SpendFor.Gacha);
         return new GachaResult()
         {
             Success = true,
@@ -1943,7 +1954,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 await GooglePlayIap.AcknowledgeAsync(productId, purchaseToken, cancelToken);
             }
 
-            product.Reward.Execute(this);
             var purchase = new IapPurchase()
             {
                 CharId = Id,
@@ -1951,7 +1961,11 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 Store = store,
                 PurchaseTokenHash = purchaseTokenHash,
             };
+            var reward = product.Reward;
+            reward.Execute(this);
+            reward.Edit(purchase);
             await db.IapPurchases.AddAsync(purchase, cancelToken);
+            await db.SaveChangesAsync(cancelToken);
             return new IapResult()
             {
                 Success = true,
@@ -2103,5 +2117,45 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Stats = snapshot,
         };
         return result;
+    }
+
+    private bool IsOnline()
+    {
+        return Client != null;
+    }
+    public async void AddSpendMoneyVip(long moneyVip, SpendFor spendFor)
+    {
+        var spendingMoneyVip = new SpendingMoneyVip
+        {
+            CharId = Id,
+            SpendFor = spendFor,
+            MoneyVip = moneyVip,
+        };
+        if (IsOnline())
+        {
+            addedSpendingMoneyVips.Add(spendingMoneyVip);
+        }
+        else
+        {
+            await using var db = await Program.CreateDbAsync();
+            await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    public async Task<long> GetTongNap()
+    {
+        await using var db = await Program.CreateDbAsync();
+        return await db.IapPurchases
+            .Where(x => x.CharId == Id)
+            .SumAsync(x => x.MoneyVipSnapshot);
+    }
+
+    public async Task<long> GetTongTieu()
+    {
+        await using var db = await Program.CreateDbAsync();
+        return await db.SpendingMoneyVips
+            .Where(x => x.CharId == Id)
+            .SumAsync(x => x.MoneyVip);
     }
 }

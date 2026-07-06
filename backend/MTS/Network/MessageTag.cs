@@ -142,4 +142,6 @@ public enum MessageTag
     GetAdsMoneyVipConfigRequest = 843,
     WatchAdsMoneyVipRequest = 854,
     ActiveAdsMoneyVip = 856,
+    
+    GetRankRequest = 887,
 }
