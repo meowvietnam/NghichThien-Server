@@ -110,4 +110,7 @@ public abstract class ILanguageStrings
     public abstract string ArenaRewardNotFound { get; }
     public abstract string ArenaRewardAlreadyClaimed { get; }
     public abstract string ArenaRankNotReached { get; }
+
+    // Ads messages
+    public abstract string AdsMoneyVipLimitReached { get; }
 }

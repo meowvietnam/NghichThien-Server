@@ -125,6 +125,8 @@ public static class GameConfig
     };
 
     public static int MatchMakingCost { get; private set; } = 100;
+    public static int AdsMoneyVip { get; private set; } = 10;
+    public static int TotalAdsMoneyVip { get; private set; } = 10;
 
     public static ERelationShip GetERelationShip(int myScore, bool isThanThong)
     {

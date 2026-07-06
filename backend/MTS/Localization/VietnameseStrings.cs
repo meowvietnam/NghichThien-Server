@@ -83,4 +83,5 @@ public class VietnameseStrings : ILanguageStrings
     public override string ArenaRewardNotFound => "Phần thưởng đấu trường không tồn tại!";
     public override string ArenaRewardAlreadyClaimed => "Phần thưởng đấu trường đã được nhận!";
     public override string ArenaRankNotReached => "Chưa đạt đủ điểm xếp hạng để nhận phần thưởng đấu trường!";
+    public override string AdsMoneyVipLimitReached => "Đã đạt giới hạn nhận Tiên ngọc miễn phí từ quảng cáo!";
 }

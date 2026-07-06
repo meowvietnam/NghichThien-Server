@@ -94,4 +94,5 @@ public static class Strings
     public static string ArenaRewardNotFound => _current.ArenaRewardNotFound;
     public static string ArenaRewardAlreadyClaimed => _current.ArenaRewardAlreadyClaimed;
     public static string ArenaRankNotReached => _current.ArenaRankNotReached;
+    public static string AdsMoneyVipLimitReached => _current.AdsMoneyVipLimitReached;
 }

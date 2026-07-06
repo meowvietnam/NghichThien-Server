@@ -230,7 +230,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var shopHandler = new ShopHandler(this);
         module.RemoveHandler<ShopHandler>();
         module.AddHandler(shopHandler);
-        
+
+        var adsHandler = new AdsHandler(this);
+        module.RemoveHandler<AdsHandler>();
+        module.AddHandler(adsHandler);
         ChangeState(new AllMaps(this));
     }
 

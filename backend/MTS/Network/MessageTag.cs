@@ -139,5 +139,7 @@ public enum MessageTag
     
     LevelUpdated = 783,
     
-    WatchAds = 843,
+    GetAdsMoneyVipConfigRequest = 843,
+    WatchAdsMoneyVipRequest = 854,
+    ActiveAdsMoneyVip = 856,
 }

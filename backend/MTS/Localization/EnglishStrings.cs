@@ -86,4 +86,5 @@ public class EnglishStrings : ILanguageStrings
     public override string ArenaRewardNotFound => "Arena reward does not exist!";
     public override string ArenaRewardAlreadyClaimed => "Arena reward has already been claimed!";
     public override string ArenaRankNotReached => "The required arena rank has not been reached!";
+    public override string AdsMoneyVipLimitReached => "The free Tien Ngoc ad reward limit has been reached!";
 }

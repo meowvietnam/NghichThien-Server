@@ -91,9 +91,6 @@ namespace MTS.Network.Core
                 {
                     lock (charData)
                     {
-                        // nếu currentarena count < 5 thì load free
-                        // nếu < 10 và >= 5 thì xem ads và load arena 
-                        // nếu >= 10 tiêu 100 tiên ngọc để load arena
                         var (state, cost) = GetMatchMakingState();
                         if (state == MatchMakingState.NotFree)
                         {
@@ -103,10 +100,6 @@ namespace MTS.Network.Core
                                 throw new Exception(Strings.NotEnoughMoneyVip);
                             }
                             charData.SetMoneyVip(remainingMoneyVip);
-                        }
-                        else if (state == MatchMakingState.Ads)
-                        {
-                            client.Send(MessageTag.WatchAds);
                         }
                         var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
                         var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
