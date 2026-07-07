@@ -30,7 +30,6 @@ public static class RankRewardMailer
                     character = onlineCharacter;
                     client = onlineCharacter.Client;
                 }
-
                 var mail = new Mail
                 {
                     Title = $"Phần thưởng xếp hạng {rankName}",

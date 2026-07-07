@@ -194,7 +194,7 @@ namespace MTS.Network.Core
                     matchMakingState = MatchMakingState.Free;
                     cost = 0;
                     break;
-                case < 10:
+                case < 15:
                     matchMakingState = charData.IsNoAds ? MatchMakingState.Free : MatchMakingState.Ads;
                     cost = 0;
                     break;

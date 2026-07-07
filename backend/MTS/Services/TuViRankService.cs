@@ -11,6 +11,7 @@ public class TuViRankService : BackgroundService
 {
     private readonly ILogger<TuViRankService> logger;
     public static List<CharacterWrapper> Tops { get; private set; } = new();
+    private static readonly TimeSpan Interval = TimeSpan.FromDays(7);
     public TuViRankService(ILogger<TuViRankService> logger)
     {
         this.logger = logger;
@@ -67,7 +68,7 @@ public class TuViRankService : BackgroundService
     {
         var start = GameConfig.GameReleaseDate;
         var now = Now();
-        var next = GetNextPeriodicTime(start, now, TimeSpan.FromDays(7));
+        var next = GetNextPeriodicTime(start, now, Interval);
         return next - now;
     }
 

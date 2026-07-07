@@ -158,4 +158,5 @@ public enum MessageTag
     CompleteAds = 912,
     CloseAds = 913,
     LoadAdsFail = 914,
+    ResetArenaRank = 923,
 }
