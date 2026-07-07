@@ -1,0 +1,39 @@
+using MemoryPack;
+using MTS.Network;
+using MTS.Network.Core;
+
+namespace MTS.Models
+{
+    [MemoryPackable]
+    public partial class ArenaAds : ShowAds
+    {
+        [MemoryPackConstructor]
+        public ArenaAds()
+        {
+            
+        }
+        public ArenaAds(string location, string buttonName, Client client) : base(location, buttonName, client)
+        {
+        }
+
+        public override void OnReward()
+        {
+            var handler = Client.GetHandler<CombatHandler>();
+            handler.SendLoadCharCombatArena();
+        }
+
+        public override void OnClose()
+        {
+        }
+
+        public override void OnLoadFail()
+        {
+            OnReward();
+        }
+
+        public override ShowAdsType GetAdsType()
+        {
+            return ShowAdsType.Arena;
+        }
+    }
+}

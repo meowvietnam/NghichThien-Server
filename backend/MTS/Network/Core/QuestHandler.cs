@@ -18,7 +18,7 @@ namespace MTS.Network.Core
         [
             MessageTag.CompleteMainQuest, MessageTag.CompleteSideQuest,
             MessageTag.GetDailyQuestRequest, MessageTag.DoneDailyQuestRequest,
-            MessageTag.ReloadDailyQuestRequest,
+            MessageTag.ReloadDailyQuest,
         ];
 
         public MessageTag[] HandleTag => handler;
@@ -112,17 +112,52 @@ namespace MTS.Network.Core
                     client.MemSend(MessageTag.DoneDailyQuestRequest, result);
                 }
             }
-            else if (tag == MessageTag.ReloadDailyQuestRequest)
+            else if (tag == MessageTag.ReloadDailyQuest)
             {
                 var eDailyQuest = reader.Read<EDailyQuest>();
-                lock (charData)
+                if (charData.IsNoAds)
                 {
-                    var listQuests = charData.QuestManager.Reload(eDailyQuest);
-                    client.MemSend(MessageTag.ReloadDailyQuestRequest, listQuests);
+                    SendReloadDailyQuest(eDailyQuest);
+                }
+                else
+                {
+                    var adsHandler = client.GetHandler<AdsHandler>();
+                    ShowAds ads = new ReloadTaskAds("ReloadTask", "Xem quảng cáo để làm mới nhiệm vụ", client, eDailyQuest);
+                    adsHandler.SendAds(ads);
                 }
             }
         }
 
+        public void SendReloadDailyQuest(EDailyQuest eDailyQuest)
+        {
+            var charData = client.CharacterData;
+            ReloadDailyQuestResult result = null;
+            try
+            {
+                lock (charData)
+                {
+                    var listQuests = charData.QuestManager.Reload(eDailyQuest);
+                    result = new ReloadDailyQuestResult()
+                    {
+                        Success = true,
+                        EDailyQuest =  eDailyQuest,
+                        DailyQuests =  listQuests,
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                result = new ReloadDailyQuestResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.ReloadDailyQuestResult, result);
+            }
+        }
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
         }

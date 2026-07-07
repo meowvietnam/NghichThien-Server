@@ -14,4 +14,9 @@ public partial class BuyAndSellResult
     public Shop ReloadShop { get; set; }
     public Modify<FurnaceData> Furnaces { get; set; } = new();
     public Modify<ItemRef> Items { get; set; } = new();
+
+    public long GetTotalAmount()
+    {
+        return TotalSellAmount - TotalBuyAmount;
+    }
 }

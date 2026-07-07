@@ -324,6 +324,11 @@ public partial class ShopManager
         result.TotalBuyAmount = totalBuyAmount;
         result.TotalSellAmount = totalSellAmount;
         result.LinhThach = money;
+        var totalAmount = result.GetTotalAmount();
+        string message;
+        message = totalAmount >= 0 ? $"Giao dịch thành công! Bạn nhận được {totalAmount} Linh thạch!" 
+            : $"Giao dịch thành công! Bạn phải trả {-totalAmount} Linh thạch!";
+        result.Message = message;
         return result;
     }
 }

@@ -86,47 +86,18 @@ namespace MTS.Network.Core
             }
             else if (tag == MessageTag.LoadCharCombatArena)
             {
-                LoadCharCombatResult result = null;
-                try
+                lock (charData)
                 {
-                    lock (charData)
+                    var (state, _) = GetMatchMakingState();
+                    if (state == MatchMakingState.Ads && !charData.IsNoAds)
                     {
-                        var (state, cost) = GetMatchMakingState();
-                        if (state == MatchMakingState.NotFree)
-                        {
-                            var remainingMoneyVip = charData.MoneyVip - cost;
-                            if (remainingMoneyVip < 0)
-                            {
-                                throw new Exception(Strings.NotEnoughMoneyVip);
-                            }
-                            charData.SetMoneyVip(remainingMoneyVip);
-                        }
-                        var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
-                        var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
-                        var arena = charData.ArenaManager;
-                        arena.SetCurrentArenaCount(arena.CurrentArenaCount + 1);
-                        result = new LoadCharCombatResult()
-                        {
-                            Success = true,
-                            Client = new CharacterSnapshot(charData),
-                            Enemy = enemy,
-                            CurrentArenaCount = arena.CurrentArenaCount,
-                            NewMoneyVip = charData.MoneyVip,
-                        };
+                        var adsHandler = client.GetHandler<AdsHandler>();
+                        ShowAds ads = new ArenaAds("LoadCharCombatArena", "Xem quảng cáo để tham gia đấu trường", client);
+                        adsHandler.SendAds(ads);
+                        return;
                     }
-                }
-                catch (Exception e)
-                {
-                    result = new LoadCharCombatResult()
-                    {
-                        Success = false,
-                        Message = e.Message
-                    };
-                }
-                finally
-                {
-                    client.Send(MessageTag.LoadCharCombatArenaResult, result);
-                }
+                    SendLoadCharCombatArena();
+                }                
             }
             else if (tag == MessageTag.LoadRankRequest)
             {
@@ -162,6 +133,52 @@ namespace MTS.Network.Core
                 {
                     client.MemSend(MessageTag.ClaimRankRewardRequest, result);
                 }
+            }
+        }
+
+        public void SendLoadCharCombatArena()
+        {
+            LoadCharCombatResult result = null;
+            var charData = client.CharacterData;
+            try
+            {
+                lock (charData)
+                {
+                    var (state, cost) = GetMatchMakingState();
+                    if (state == MatchMakingState.NotFree)
+                    {
+                        var remainingMoneyVip = charData.MoneyVip - cost;
+                        if (remainingMoneyVip < 0)
+                        {
+                            throw new Exception(Strings.NotEnoughMoneyVip);
+                        }
+                        charData.SetMoneyVip(remainingMoneyVip);
+                    }
+                    var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
+                    var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
+                    var arena = charData.ArenaManager;
+                    arena.SetCurrentArenaCount(arena.CurrentArenaCount + 1);
+                    result = new LoadCharCombatResult()
+                    {
+                        Success = true,
+                        Client = new CharacterSnapshot(charData),
+                        Enemy = enemy,
+                        CurrentArenaCount = arena.CurrentArenaCount,
+                        NewMoneyVip = charData.MoneyVip,
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                result = new LoadCharCombatResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.Send(MessageTag.LoadCharCombatArenaResult, result);
             }
         }
         private (MatchMakingState state, int cost) GetMatchMakingState()

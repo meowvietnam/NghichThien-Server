@@ -27,34 +27,18 @@ public class ShopHandler : IClientHandler
             var shop = charData.ShopManager.GetShop(shopType);
             client.MemSend(MessageTag.LoadShopRequest, shop);
         }
-        else if (tag == MessageTag.ReloadShopRequest)
+        else if (tag == MessageTag.ReloadShop)
         {
-            var shopManager = charData.ShopManager;
             var shopType = reader.Read<EShopType>();
-            ReloadShopResult result = null!;
-            try
+            if (charData.IsNoAds)
             {
-                lock (shopManager)
-                {
-                    var shop = shopManager.ReloadShop(shopType);
-                    result = new ReloadShopResult()
-                    {
-                        Success = true,
-                        Shop = shop,
-                    };
-                }
+                SendReloadShop(shopType);
             }
-            catch (Exception ex)
+            else
             {
-                result = new ReloadShopResult()
-                {
-                    Success = false,
-                    Message = ex.Message,
-                };
-            }
-            finally
-            {
-                client.MemSend(MessageTag.ReloadShopRequest, result);
+                ShowAds ads = new ReloadShopAds("ReloadShop", "Xem quảng cáo để làm mới cửa hàng", client, shopType);
+                var adsHandler = client.GetHandler<AdsHandler>();
+                adsHandler.SendAds(ads);
             }
         }
         else if (tag == MessageTag.BuyAndSellRequest)
@@ -83,6 +67,37 @@ public class ShopHandler : IClientHandler
         }
     }
 
+    public void SendReloadShop(EShopType shopType)
+    {
+        var charData = client.CharacterData;
+        var shopManager = charData.ShopManager;
+        ReloadShopResult result = null!;
+        try
+        {
+            lock (shopManager)
+            {
+                var shop = shopManager.ReloadShop(shopType);
+                result = new ReloadShopResult()
+                {
+                    Success = true,
+                    Shop = shop,
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            result = new ReloadShopResult()
+            {
+                Success = false,
+                Message = ex.Message,
+            };
+        }
+        finally
+        {
+            client.MemSend(MessageTag.ReloadShopResult, result);
+        }
+    }
+
     public void OnLeave()
     {
     }
@@ -94,7 +109,7 @@ public class ShopHandler : IClientHandler
     private static readonly MessageTag[] handler =
     [
         MessageTag.LoadShopRequest,
-        MessageTag.ReloadShopRequest,
+        MessageTag.ReloadShop,
         MessageTag.BuyAndSellRequest
     ];
 

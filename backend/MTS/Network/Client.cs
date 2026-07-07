@@ -242,6 +242,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         ChangeState(new AllMaps(this));
     }
 
+    public T GetHandler<T>() where T : IClientHandler
+    {
+        return CoreModule.GetHandler<T>();
+    }
     public void AddRequest(MessageTag tag, Action<IReader> response, int timeoutMilliseconds = 0, Action<Exception> onError = null)
     {
         AddRequest(TcpClient ,tag, response, timeoutMilliseconds, onError);

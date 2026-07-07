@@ -104,7 +104,8 @@ public enum MessageTag
     CompleteSideQuestResult = 404,
     GetDailyQuestRequest = 406,
     DoneDailyQuestRequest = 407,
-    ReloadDailyQuestRequest = 408,
+    ReloadDailyQuest = 408,
+    ReloadDailyQuestResult = 409,
     
     ResultCombat = 413,
     ResultCombatResult = 414,
@@ -133,15 +134,28 @@ public enum MessageTag
     
     
     LoadShopRequest = 635,
-    ReloadShopRequest = 636,
-    BuyAndSellRequest = 637,
+          
+    ReloadShop = 636,
+    ReloadShopResult = 637,
+    
+    
+    BuyAndSellRequest = 647,
     
     
     LevelUpdated = 783,
     
     GetAdsMoneyVipConfigRequest = 843,
-    WatchAdsMoneyVipRequest = 854,
+    
+    WatchAdsMoneyVip = 854,
+    WatchAdsMoneyVipResult = 855,
+    
     ActiveAdsMoneyVip = 856,
     
+    WatchAds = 861,
+
+    
     GetRankRequest = 887,
+    CompleteAds = 912,
+    CloseAds = 913,
+    LoadAdsFail = 914,
 }

@@ -1,5 +1,6 @@
 using MTS.Game;
 using MTS.Localization;
+using MTS.Models;
 using MTS.Network.Models;
 
 namespace MTS.Network.Core
@@ -7,6 +8,7 @@ namespace MTS.Network.Core
     public class AdsHandler : IClientHandler
     {
         private Client client;
+        public Dictionary<ShowAdsType, ShowAds> Ads { get; private set; } = new();
 
         public AdsHandler(Client client)
         {
@@ -31,47 +33,105 @@ namespace MTS.Network.Core
                 };
                 client.Send(MessageTag.GetAdsMoneyVipConfigRequest, config);
             }
-            else if (tag == MessageTag.WatchAdsMoneyVipRequest)
+            else if (tag == MessageTag.WatchAdsMoneyVip)
             {
-                WatchAdsMoneyVipResult result = null;
                 try
                 {
                     var charData = client.CharacterData;
                     lock (charData)
                     {
-                        var current = client.CharacterData.CurrentFreeAdsMoneyVipCount;
+                        var current = charData.CurrentFreeAdsMoneyVipCount;
                         if (current >= GameConfig.TotalAdsMoneyVip)
                         {
                             throw new Exception(Strings.AdsMoneyVipLimitReached);
                         }
-                        current++;
-                        var newMoneyVip = charData.MoneyVip + GameConfig.AdsMoneyVip;
-                        charData.SetMoneyVip(newMoneyVip);
-                        charData.SetCurrentFreeAdsMoneyVipCount(current);
-                        result = new WatchAdsMoneyVipResult()
+
+                        if (charData.IsNoAds)
                         {
-                            Success = true,
-                            MoneyVip = GameConfig.AdsMoneyVip,
-                            Count = current,
-                        };
-                        if (current >= GameConfig.TotalAdsMoneyVip)
+                            SendWatchAdsMoneyVipResult();
+                        }
+                        else
                         {
-                            client.Send(MessageTag.ActiveAdsMoneyVip, false);
+                            ShowAds ads = new MoneyVipAds("MoneyVipAds", "Xem quảng cáo để nhận tiên ngọc", client);
+                            SendAds(ads);
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    result = new WatchAdsMoneyVipResult()
+                    var result = new WatchAdsMoneyVipResult()
                     {
                         Success = false,
                         Message = e.Message,
                     };
+                    client.MemSend(MessageTag.WatchAdsMoneyVipResult, result);
                 }
-                finally
+            }
+            else if (tag == MessageTag.CompleteAds)
+            {
+                var type = reader.Read<ShowAdsType>();
+                if (Ads.Remove(type, out var ads))
                 {
-                    client.MemSend(MessageTag.WatchAdsMoneyVipRequest, result);
+                    if (ads.Validate())
+                    {
+                        ads.OnReward();
+                    }
                 }
+            }
+            else if (tag == MessageTag.CloseAds)
+            {
+                var type = reader.Read<ShowAdsType>();
+                if (Ads.Remove(type, out var ads))
+                {
+                    ads.OnClose();
+                }
+            }
+            else if (tag == MessageTag.LoadAdsFail)
+            {
+                var type = reader.Read<ShowAdsType>();
+                if (Ads.Remove(type, out var ads))
+                {
+                    ads.OnLoadFail();
+                }
+            }
+        }
+
+        public void SendWatchAdsMoneyVipResult()
+        {
+            WatchAdsMoneyVipResult result = null;
+            try
+            {
+                var charData = client.CharacterData;
+                lock (charData)
+                {
+                    var current = charData.CurrentFreeAdsMoneyVipCount;
+                    current++;
+                    var newMoneyVip = charData.MoneyVip + GameConfig.AdsMoneyVip;
+                    charData.SetMoneyVip(newMoneyVip);
+                    charData.SetCurrentFreeAdsMoneyVipCount(current);
+                    result = new WatchAdsMoneyVipResult()
+                    {
+                        Success = true,
+                        MoneyVip = GameConfig.AdsMoneyVip,
+                        Count = current,
+                    };
+                    if (current >= GameConfig.TotalAdsMoneyVip)
+                    {
+                        client.Send(MessageTag.ActiveAdsMoneyVip, false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                result = new WatchAdsMoneyVipResult()
+                {
+                    Success = false,
+                    Message = e.Message,
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.WatchAdsMoneyVipResult, result);
             }
         }
 
@@ -86,8 +146,18 @@ namespace MTS.Network.Core
         private static MessageTag[] handler =
         {
             MessageTag.GetAdsMoneyVipConfigRequest,
-            MessageTag.WatchAdsMoneyVipRequest
+            MessageTag.WatchAdsMoneyVip,
+            MessageTag.CompleteAds,
+            MessageTag.CloseAds,
+            MessageTag.LoadAdsFail,
         };
+
         public MessageTag[] HandleTag => handler;
+
+        public void SendAds(ShowAds ads)
+        {
+            Ads[ads.GetAdsType()] = ads;
+            client.MemSend(MessageTag.WatchAds, ads);
+        }
     }
 }
