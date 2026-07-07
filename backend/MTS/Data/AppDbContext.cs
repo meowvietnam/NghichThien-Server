@@ -165,7 +165,7 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => new { x.CharId, x.Id, x.Type });
             e.HasOne(x => x.Inventory)
-                .WithMany()
+                .WithMany(x => x.ItemRefs)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

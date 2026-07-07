@@ -20,8 +20,8 @@ public class ReloadShopService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
-            logger.LogInformation(
-                "{Service} sẽ chạy sau {Delay}", nameof(ReloadShopService), delay);
+            // logger.LogInformation(
+            //     "{Service} sẽ chạy sau {Delay}", nameof(ReloadShopService), delay);
             await Task.Delay(delay, stoppingToken);
             try
             {

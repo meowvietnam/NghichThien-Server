@@ -1,11 +1,14 @@
 using System.Text.RegularExpressions;
+using Google.Apis.AndroidPublisher.v3.Data;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.CreateCharacter;
 using MTS.Localization;
 using MTS.Models;
+using MTS.ND;
 using MTS.Network.Models;
+using MTS.Utils;
 using Action = MTS.Game.CreateCharacter.Action;
 
 namespace MTS.Services;
@@ -245,6 +248,7 @@ public class CreateCharacterService
         {
             throw new Exception($"{Strings.NotEnoughNatural}: {money}");
         }
+
         stats.SetValue(StatType.Hp, stats.SinhMenh);
         Char.Stats = stats;
     }
@@ -333,6 +337,7 @@ public class CreateCharacterService
         {
             throw new Exception(Strings.CharacterLimitExceeded);
         }
+
         var userId = user.Id;
         await using var db = await Program.CreateDbAsync();
         await ValidateName(Char.Name);
@@ -345,6 +350,77 @@ public class CreateCharacterService
             .ToList();
         db.DailyQuests.AddRange(quests);
         Char.ArenaManager.Init();
+
+        var inventory = Char.InventoryManager;
+        inventory.CharacterData = Char;
+        var stats = Char.Stats;
+        stats.CharacterData = Char;
+        var equipment = Char.EquipmentManager;
+        equipment.CharacterData = Char;
+
+        var ability = stats.Ability;
+        if (ability.HasFlag(Ability.SoKhuyMonKinh))
+        {
+            var values = Enum.GetValues<ETypeSkill>().ToList();
+            values.Remove(ETypeSkill.None);
+            var camNgos = values.Select(x => new CamNgo()
+            {
+                Id = x,
+                Value = 1000,
+            }).ToList();
+            foreach (var camNgo in camNgos)
+            {
+                inventory.Add(camNgo);
+            }
+        }
+
+        if (ability.HasFlag(Ability.TeNuiKyNgo))
+        {
+            var herbs = GameConfig.LuyenDanResources.HerbDatas;
+            var herbIds = new[] { 2067, 2077, 2073, 2039 };
+            var items = herbIds.Select(x => herbs.First(i => i.Id == x))
+                .Select(x => new ItemRef()
+                {
+                    Id = (ushort)x.Id,
+                    Type = ItemType.Herb,
+                    Count = 1
+                })
+                .ToList();
+            inventory.ItemRefs.AddRange(items);
+        }
+
+        var congPhapId = ability.HasFlag(Ability.GiaTocTuChan) ? (ushort)536 : (ushort)501;
+        var congPhap = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == congPhapId);
+        var congPhapRef = new CongPhap()
+        {
+            Id = congPhapId,
+            Level = 1,
+        };
+        inventory.Add(congPhapRef);
+        var equipCongPhapRequest = new EquipCongPhap()
+        {
+            Id = congPhapId,
+            Slot = ETypeSlotCP.ChuTu1
+        };
+        Char.EquipCongPhap(equipCongPhapRequest);
+        var thanThongIds = new[] { 1, 201, 101, 301, 401, 501, 519 };
+        var thanThongs = thanThongIds.Select(x => GameConfig.NDCPTTManager.ThanThongs.First(i => i.Id == x))
+            .Select(x => new ThanThong()
+            {
+                Id = (ushort)x.Id,
+            }).ToList();
+        for (var i = 0; i < thanThongs.Count; i++)
+        {
+            var thanThong = thanThongs[i];
+            inventory.Add(thanThong);
+            var request = new EquipThanThong()
+            {
+                Id = thanThong.Id,
+                Index = (byte)i
+            };
+            Char.EquipThanThong(request);
+        }
+
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;

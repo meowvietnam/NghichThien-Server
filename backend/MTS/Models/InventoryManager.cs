@@ -30,7 +30,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
-
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Recipes { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Herbs { get; set; } = new();
@@ -48,16 +47,18 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     [NotMapped] private IdAllocator<ushort> furnaceIdAllocator;
     [NotMapped] private IdAllocator<ushort> equipmentIdAllocator;
-    [NotMapped] public InventoryTracking Tracking { get; private set; }
+    [NotMapped] public InventoryTracking Tracking { get; private set; } = new();
 
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
-
+    [System.Text.Json.Serialization.JsonIgnore]                      
+    [JsonIgnore]                                                     
+    public HashSet<ItemRef> ItemRefs { get; private set; } = new();  
     public void Init()
     {
-        Tracking = new InventoryTracking();
+        Tracking = new();
         furnaceIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
         equipmentIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
         var equipments = VuKhis.Union(PhongCus).Union(TrangSucs).ToHashSet();

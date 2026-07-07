@@ -24,8 +24,8 @@ public class TuViRankService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
-            logger.LogInformation(
-                "{Service} sẽ chạy sau {Delay}", nameof(TuViRankService), delay);
+            // logger.LogInformation(
+            //     "{Service} sẽ chạy sau {Delay}", nameof(TuViRankService), delay);
             await Task.Delay(delay, stoppingToken);
             try
             {

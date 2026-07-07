@@ -33,8 +33,8 @@ public class MoneyVipSpendingRankService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = TimeSpan.FromMinutes(2);
-            logger.LogInformation(
-                "{Service} sẽ chạy sau {Delay}", nameof(MoneyVipSpendingRankService), delay);
+            // logger.LogInformation(
+            //     "{Service} sẽ chạy sau {Delay}", nameof(MoneyVipSpendingRankService), delay);
             await Task.Delay(delay, stoppingToken);
 
             try

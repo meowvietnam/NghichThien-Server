@@ -850,7 +850,7 @@ namespace MTS.Migrations
             modelBuilder.Entity("MTS.Models.ItemRef", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", "Inventory")
-                        .WithMany()
+                        .WithMany("ItemRefs")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1039,6 +1039,8 @@ namespace MTS.Migrations
                     b.Navigation("CongPhapOwners");
 
                     b.Navigation("Furnaces");
+
+                    b.Navigation("ItemRefs");
 
                     b.Navigation("NgoDaos");
 

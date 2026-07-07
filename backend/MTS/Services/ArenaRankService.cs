@@ -24,8 +24,8 @@ public class ArenaRankService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
-            logger.LogInformation(
-                "{Service} sẽ chạy sau {Delay}", nameof(ArenaRankService), delay);
+            // logger.LogInformation(
+            //     "{Service} sẽ chạy sau {Delay}", nameof(ArenaRankService), delay);
             await Task.Delay(delay, stoppingToken);
 
             try

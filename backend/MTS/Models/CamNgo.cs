@@ -14,12 +14,8 @@ public partial class CamNgo : IEquatable<CamNgo>
     [Newtonsoft.Json.JsonIgnore]
     [MemoryPackIgnore]
     public int CharId { get; set; }
-
-    
     public ETypeSkill Id { get; set; }
     public int Value { get; set; }
-
-    
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [ForeignKey(nameof(CharId))]

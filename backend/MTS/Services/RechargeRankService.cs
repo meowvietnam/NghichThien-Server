@@ -35,8 +35,8 @@ public class RechargeRankService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToNextRun();
-            logger.LogInformation(
-                "{Service} sẽ chạy sau {Delay}", nameof(RechargeRankService), delay);
+            // logger.LogInformation(
+            //     "{Service} sẽ chạy sau {Delay}", nameof(RechargeRankService), delay);
             await Task.Delay(delay, stoppingToken);
 
             try

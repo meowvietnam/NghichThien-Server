@@ -1,5 +1,6 @@
 using MemoryPack;
 using MTS.Game;
+using MTS.Game.LuyenDan;
 using MTS.Network.Models;
 
 namespace MTS.Models;
@@ -10,6 +11,7 @@ public partial class MaterialShop : Shop
     {
         var materials = GameConfig.LuyenKhiResources.Materials;
         Items = materials
+            .Where(x => x.Tier <= Tier.NhiPham)
             .OrderBy(x => Random.Shared.Next())
             .Take(Take())
             .Select(x => new ItemRef()
