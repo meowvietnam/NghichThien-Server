@@ -84,7 +84,13 @@ public class VietnameseStrings : ILanguageStrings
     public override string GiftItemQuantityInvalid => "Số lượng vật phẩm tặng không hợp lệ!";
     public override string LinhDanQuantityInvalid => "Số lượng đan dược sử dụng không hợp lệ!";
     public override string LinhDanNotFound => "Đan dược không tồn tại!";
+    public override string LinhDanCombatBuffInvalid => "Không thể dùng đan chiến đấu để tăng thuộc tính trực tiếp!";
     public override string DanCombatLimitExceeded => "Số lượng đan chiến đấu sử dụng vượt quá giới hạn cấp độ!";
+    public override string SpecialLevelUpNotEnoughExp => "Tu vi chưa đủ để đột phá!";
+    public override string SpecialLevelUpMaxLevelReached => "Đã đạt cảnh giới tối đa!";
+    public override string SpecialLevelUpNotRequired => "Cảnh giới hiện tại không cần đột phá đặc biệt!";
+    public override string SpecialLevelUpItemQuantityInvalid => "Số lượng đan dược đột phá không đủ!";
+    public override string SpecialLevelUpItemNotFound => "Không tìm thấy đan dược đột phá trong túi đồ!";
     public override string ArenaRewardNotFound => "Phần thưởng đấu trường không tồn tại!";
     public override string ArenaRewardAlreadyClaimed => "Phần thưởng đấu trường đã được nhận!";
     public override string ArenaRankNotReached => "Chưa đạt đủ điểm xếp hạng để nhận phần thưởng đấu trường!";

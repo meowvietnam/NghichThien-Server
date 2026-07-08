@@ -143,6 +143,7 @@ public enum MessageTag
     
     
     LevelUpdated = 783,
+    SpecialLevelUpRequest = 789,
     
     GetAdsMoneyVipConfigRequest = 843,
     

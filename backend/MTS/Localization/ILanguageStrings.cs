@@ -109,7 +109,13 @@ public abstract class ILanguageStrings
     // Linh Dan messages
     public abstract string LinhDanQuantityInvalid { get; }
     public abstract string LinhDanNotFound { get; }
+    public abstract string LinhDanCombatBuffInvalid { get; }
     public abstract string DanCombatLimitExceeded { get; }
+    public abstract string SpecialLevelUpNotEnoughExp { get; }
+    public abstract string SpecialLevelUpMaxLevelReached { get; }
+    public abstract string SpecialLevelUpNotRequired { get; }
+    public abstract string SpecialLevelUpItemQuantityInvalid { get; }
+    public abstract string SpecialLevelUpItemNotFound { get; }
 
     // Arena messages
     public abstract string ArenaRewardNotFound { get; }

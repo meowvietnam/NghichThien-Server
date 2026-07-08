@@ -45,16 +45,24 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
     public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
 
-    [NotMapped] private IdAllocator<ushort> furnaceIdAllocator;
-    [NotMapped] private IdAllocator<ushort> equipmentIdAllocator;
-    [NotMapped] public InventoryTracking Tracking { get; private set; } = new();
-
+    [NotMapped] 
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    private IdAllocator<ushort> furnaceIdAllocator;
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    [NotMapped] 
+    private IdAllocator<ushort> equipmentIdAllocator;
+    [NotMapped] 
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public InventoryTracking Tracking { get; private set; } = new();
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
     [System.Text.Json.Serialization.JsonIgnore]                      
-    [JsonIgnore]                                                     
+    [JsonIgnore]                                        
     public HashSet<ItemRef> ItemRefs { get; private set; } = new();  
     public void Init()
     {

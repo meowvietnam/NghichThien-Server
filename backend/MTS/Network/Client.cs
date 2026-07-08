@@ -241,6 +241,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var rankHandler = new RankHandler(this);
         module.RemoveHandler<RankHandler>();
         module.AddHandler(rankHandler);
+
+        var progressionHandler = new ProgressionHandler(this);
+        module.RemoveHandler<ProgressionHandler>();
+        module.AddHandler(progressionHandler);
         
         ChangeState(new AllMaps(this));
     }

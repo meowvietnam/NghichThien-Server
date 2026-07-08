@@ -234,7 +234,7 @@ public class SkillHandler : IClientHandler
             {
                 lock (charData)
                 {
-                    charData.UseDan(request);
+                    result = charData.UseDan(request);
                 }
             }
             catch (Exception e)

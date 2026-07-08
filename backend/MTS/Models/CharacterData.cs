@@ -61,6 +61,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
     [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
     private List<SpendingMoneyVip> addedSpendingMoneyVips = new();
+
     public void SetMonPhai(EMonPhai value)
     {
         if (MonPhai != value)
@@ -252,6 +253,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 addedSpendingMoneyVips.Clear();
             }
         }
+
         if (!Stats.IsDefault())
         {
             await Stats.SaveChanges(db);
@@ -568,10 +570,12 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             throw new Exception(Strings.ExceedLimit);
         }
+
         var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
         var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
         var percentTuChat = GetPercentTuChat();
         var percentTamCanh = GetPercentTamCanh();
+
         int GetTotalValueBuffWithMultiplier(params float[] percent)
         {
             float total = tocDocTuLuyen;
@@ -582,6 +586,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
             return (int)total;
         }
+
         var newTamCanh = Stats.TamCanh - months * 2;
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
@@ -597,6 +602,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             // Nhân với 0.1f, làm tròn lên thành số nguyên, rồi trừ đi từ buffExp
             buffExp -= (int)MathF.Ceiling(buffExp * 0.1f);
         }
+
         var oldExp = Progression.CurrentExp;
         var oldHp = Stats.Hp;
         var exp = oldExp + buffExp;
@@ -930,6 +936,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.HackerLevelNpc);
             }
+
             Social.RelationshipAddValue((ushort)item, 10);
         }
 
@@ -990,14 +997,17 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.HackerHP);
             }
+
             if (request.CurrentThanThuc > Stats.ThanThuc)
             {
                 throw new Exception(Strings.HackerThanThucEndCombat);
             }
+
             if (request.CurrentThoNguyen > Stats.ThoNguyen)
             {
                 throw new Exception(Strings.HackerThoNguyenEndCombat);
             }
+
             if (request.TypeCombat == ETypeCombat.AllMaps)
             {
                 if (request.CurrentLevelEnemy > Progression.Level + 2)
@@ -1047,7 +1057,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             Stats.SetHp(newHp);
             Stats.SetThoNguyen(request.CurrentThoNguyen);
             Stats.SetThanThuc(request.CurrentThanThuc);
-
         }
         else if (request.TypeCombat == ETypeCombat.DauTruong)
         {
@@ -1058,8 +1067,8 @@ public class CharacterData : IMemorySerializable<CharacterData>
             else
             {
                 newPointRank -= 15;
-
             }
+
             ArenaManager.SetPoints(newPointRank);
         }
 
@@ -2011,11 +2020,49 @@ public class CharacterData : IMemorySerializable<CharacterData>
         };
     }
 
+    public void BuffDan(ItemRef linhDanRef)
+    {
+        var id = linhDanRef.Id;
+        var count = linhDanRef.Count;
+
+        if (count == 0)
+        {
+            throw new Exception(Strings.LinhDanQuantityInvalid);
+        }
+        var linhDan = GameConfig.LuyenDanResources.LinhDans.FirstOrDefault(x => x.Id == id);
+        if (linhDan == null)
+        {
+            throw new Exception(Strings.LinhDanNotFound);
+        }
+
+        if (linhDan.ETypeDan == ETypeDan.DanCombat)
+        {
+            throw new Exception(Strings.LinhDanCombatBuffInvalid);
+        }
+        var buffType = linhDan.EBuffType;
+        if (buffType != EDanBuffType.None)
+        {
+            bool isTuViType = buffType switch
+            {
+                EDanBuffType.TuVi => true,
+                EDanBuffType.TuViVaDanDocDuoiTrucCo => true,
+                EDanBuffType.TuViVaDanDocDuoiKetDan => true,
+                EDanBuffType.TuViVaDanDocDuoiNguyenAnh => true,
+                EDanBuffType.TuViVaDanDocDuoiHoaThan => true,
+                _ => false
+            };
+            if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
+            {
+                throw new Exception(Strings.HasFlagTienThienDiMach);
+            }
+            Stats.Buff(linhDan, count);
+        }
+    }
     public UseDanResult UseDan(UseDanRequest request)
     {
         var id = request.Id;
         var count = request.Count;
-        
+
         if (count == 0)
         {
             throw new Exception(Strings.LinhDanQuantityInvalid);
@@ -2097,16 +2144,18 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 EDanBuffType.TuViVaDanDocDuoiKetDan => true,
                 EDanBuffType.TuViVaDanDocDuoiNguyenAnh => true,
                 EDanBuffType.TuViVaDanDocDuoiHoaThan => true,
-                _ => false // Các loại buff không phải tu vi
+                _ => false
             };
 
             if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
             {
                 throw new Exception(Strings.HasFlagTienThienDiMach);
             }
+
             Stats.Buff(linhDan, count);
             snapshot = new StatsSnapshot(Stats);
         }
+
         var result = new UseDanResult()
         {
             Success = true,
@@ -2119,6 +2168,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
     {
         return Client != null;
     }
+
     public async void AddSpendMoneyVip(long moneyVip, SpendFor spendFor)
     {
         var spendingMoneyVip = new SpendingMoneyVip

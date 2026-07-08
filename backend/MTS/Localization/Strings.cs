@@ -95,7 +95,13 @@ public static class Strings
     public static string HackerThanThucEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
     public static string HackerThoNguyenEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
     public static string LinhDanNotFound => _current.LinhDanNotFound;
+    public static string LinhDanCombatBuffInvalid => _current.LinhDanCombatBuffInvalid;
     public static string DanCombatLimitExceeded => _current.DanCombatLimitExceeded;
+    public static string SpecialLevelUpNotEnoughExp => _current.SpecialLevelUpNotEnoughExp;
+    public static string SpecialLevelUpMaxLevelReached => _current.SpecialLevelUpMaxLevelReached;
+    public static string SpecialLevelUpNotRequired => _current.SpecialLevelUpNotRequired;
+    public static string SpecialLevelUpItemQuantityInvalid => _current.SpecialLevelUpItemQuantityInvalid;
+    public static string SpecialLevelUpItemNotFound => _current.SpecialLevelUpItemNotFound;
     public static string ArenaRewardNotFound => _current.ArenaRewardNotFound;
     public static string ArenaRewardAlreadyClaimed => _current.ArenaRewardAlreadyClaimed;
     public static string ArenaRankNotReached => _current.ArenaRankNotReached;

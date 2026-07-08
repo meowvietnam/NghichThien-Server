@@ -87,7 +87,13 @@ public class EnglishStrings : ILanguageStrings
     public override string GiftItemQuantityInvalid => "Gift item quantity is invalid!";
     public override string LinhDanQuantityInvalid => "The Linh Dan quantity is invalid!";
     public override string LinhDanNotFound => "Linh Dan does not exist!";
+    public override string LinhDanCombatBuffInvalid => "Combat pills cannot be used for direct stat buffs!";
     public override string DanCombatLimitExceeded => "The combat pill usage limit for the current level has been exceeded!";
+    public override string SpecialLevelUpNotEnoughExp => "Not enough cultivation experience to break through!";
+    public override string SpecialLevelUpMaxLevelReached => "Maximum realm has already been reached!";
+    public override string SpecialLevelUpNotRequired => "The current realm does not require a special breakthrough!";
+    public override string SpecialLevelUpItemQuantityInvalid => "Not enough breakthrough pills!";
+    public override string SpecialLevelUpItemNotFound => "Breakthrough pill was not found in the inventory!";
     public override string ArenaRewardNotFound => "Arena reward does not exist!";
     public override string ArenaRewardAlreadyClaimed => "Arena reward has already been claimed!";
     public override string ArenaRankNotReached => "The required arena rank has not been reached!";
