@@ -111,8 +111,9 @@ public class MailManager
 
     public async Task<RewardResult?> ClaimMail(long id)
     {
+        var charId = characterData.Id;
         await using var db = await Program.CreateDbAsync();
-        var mail = await db.Mails.FirstOrDefaultAsync(x => x.Id == id);
+        var mail = await db.Mails.FirstOrDefaultAsync(x => x.Id == id && x.CharId == charId);
         if (mail == null || mail.IsClaim) return null;
         var rewards = mail.Rewards;
         foreach (var mailReward in rewards)
@@ -127,8 +128,10 @@ public class MailManager
 
     public async Task<RewardResult?> ClaimAllMails()
     {
+        var charId = characterData.Id;
         await using var db = await Program.CreateDbAsync();
-        var neverClaims = await db.Mails.Where(x => !x.IsClaim).ToListAsync();
+        var neverClaims = await db.Mails.Where(x => !x.IsClaim && x.CharId == charId)
+            .ToListAsync();
         if (!neverClaims.Any()) return null;
         var mailIds = neverClaims.Select(x => x.Id).ToList();
         var rewards = neverClaims.SelectMany(x => x.Rewards).ToList();
@@ -136,7 +139,6 @@ public class MailManager
         {
             mailReward.ClaimReward(characterData);
         }
-
         foreach (var mail in neverClaims) mail.IsClaim = true;
         await db.SaveChangesAsync();
         return new RewardResult { Mails = mailIds, Rewards = rewards };

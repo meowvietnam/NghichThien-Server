@@ -74,9 +74,12 @@ public static class Strings
     public static string HackerLevelNpc => _current.HackerLevelNpc;
     public static string NotEnoughCongPhap => _current.NotEnoughCongPhap;
     public static string NpcNotExist => _current.NpcNotExist;
+    public static string NpcGiftValueInvalid => _current.NpcGiftValueInvalid;
     public static string HackerSkillNotExistOnNpc => _current.HackerSkillNotExistOnNpc;
+    public static string NpcSkillRequestInvalid => _current.NpcSkillRequestInvalid;
     public static string HackerTangQuaNPC => _current.HackerTangQuaNPC;
     public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
+    public static string IapStoreNotSupported => _current.IapStoreNotSupported;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
     public static string NotEnoughMoneyVip => _current.NotEnoughMoneyVip;
     public static string ShopItemNotFound => _current.ShopItemNotFound;

@@ -427,6 +427,7 @@ public class CreateCharacterService
         var inventoryManager = Char.InventoryManager;
         inventoryManager.CharacterData = Char;
         inventoryManager.Init();
+        await inventoryManager.Load(db);
         var shop = Char.ShopManager;
         shop.CharData = Char;
         shop.ReloadAll();

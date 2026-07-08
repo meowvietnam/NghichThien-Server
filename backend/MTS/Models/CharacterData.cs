@@ -1488,7 +1488,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Console.WriteLine("value add âm");
 
-            throw new Exception();
+            throw new Exception(Strings.NpcGiftValueInvalid);
         }
 
         int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2 * 2;
@@ -1728,7 +1728,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         {
             Console.WriteLine("sai thiết kế client");
 
-            throw new Exception();
+            throw new Exception(Strings.NpcSkillRequestInvalid);
         }
 
 
@@ -1975,7 +1975,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             };
         }
 
-        throw new NotImplementedException($"Iap purchase not implemented for {store}");
+        throw new Exception($"{Strings.IapStoreNotSupported}: {store}");
     }
 
     public async Task<List<OwnerIapProduct>> GetProducts()

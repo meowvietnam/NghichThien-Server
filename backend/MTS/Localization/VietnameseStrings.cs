@@ -66,9 +66,12 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerLevelNpc => "Cấp độ NPC không hợp lệ!";
     public override string NotEnoughCongPhap => "Không đủ công pháp!";
     public override string NpcNotExist => "NPC không tồn tại!";
+    public override string NpcGiftValueInvalid => "Giá trị vật phẩm tặng NPC không hợp lệ!";
     public override string HackerSkillNotExistOnNpc => "Kỹ năng không tồn tại trên NPC!";
+    public override string NpcSkillRequestInvalid => "Dữ liệu thỉnh giáo kỹ năng NPC không hợp lệ!";
     public override string HackerTangQuaNPC => "Dữ liệu tặng quà NPC không hợp lệ!";
     public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
+    public override string IapStoreNotSupported => "Cửa hàng IAP không được hỗ trợ!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
     public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
     public override string ShopItemNotFound => "Vật phẩm không tồn tại trong cửa hàng!";

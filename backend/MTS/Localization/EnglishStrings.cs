@@ -69,9 +69,12 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerLevelNpc => "NPC level is invalid!";
     public override string NotEnoughCongPhap => "Not enough Cong Phap!";
     public override string NpcNotExist => "NPC does not exist!";
+    public override string NpcGiftValueInvalid => "NPC gift item value is invalid!";
     public override string HackerSkillNotExistOnNpc => "Skill does not exist on this NPC!";
+    public override string NpcSkillRequestInvalid => "NPC skill request data is invalid!";
     public override string HackerTangQuaNPC => "NPC gift data is invalid!";
     public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
+    public override string IapStoreNotSupported => "IAP store is not supported!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
     public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
     public override string ShopItemNotFound => "Item does not exist in the shop!";
