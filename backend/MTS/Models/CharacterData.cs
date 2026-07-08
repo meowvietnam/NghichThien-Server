@@ -1017,7 +1017,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             }
             else if (request.TypeCombat == ETypeCombat.Boss)
             {
-                int validBossLevel = ((Progression.Level - 1) / 3 + 1) * 3 + 1;
+                int validBossLevel = ((Progression.Level - 1) / 3 + 1) * 3;
 
                 if (request.CurrentLevelEnemy != validBossLevel)
                 {
@@ -1063,13 +1063,20 @@ public class CharacterData : IMemorySerializable<CharacterData>
             if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
                 newPointRank += 25;
+                ArenaManager.SetPoints(newPointRank);
+
             }
             else
             {
-                newPointRank -= 15;
+                if(ArenaManager.Points>400)
+                {
+                    newPointRank -= 15;
+
+                    ArenaManager.SetPoints(newPointRank);
+                }
+
             }
 
-            ArenaManager.SetPoints(newPointRank);
         }
 
         return new ResultCombatResult()
