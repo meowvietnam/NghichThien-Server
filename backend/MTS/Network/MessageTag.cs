@@ -64,6 +64,7 @@ public enum MessageTag
     SetMoneyVipResult = 239,
     SetMoney = 240,
     SetMoneyResult = 241,
+    SetExpRequest = 243,
     TestRequest = 245,
     
     ChangeScene = 256,

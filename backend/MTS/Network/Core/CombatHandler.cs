@@ -66,7 +66,7 @@ namespace MTS.Network.Core
                 {
                     if (combatSession != null)
                     {
-                        throw new();
+                        throw new(string.Empty);
                     }
                     lock (charData)
                     {
@@ -98,7 +98,7 @@ namespace MTS.Network.Core
                 {
                     if (combatSession != null)
                     {
-                        throw new();
+                        throw new(string.Empty);
                     }
                     lock (charData)
                     {
@@ -261,7 +261,7 @@ namespace MTS.Network.Core
             await using var db = await Program.CreateDbAsync();
             var matchPointPlayers =
                 await db.ArenaManagers
-                    .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
+                    .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId && x.CharData.Progression.Level >= level)
                     .OrderBy(_ => EF.Functions.Random())
                     .Select(x => x.CharId)
                     .Take(10)
@@ -285,7 +285,7 @@ namespace MTS.Network.Core
                     .Include(x => x.CharacterData)
                     .ThenInclude(x => x.Appearance)
                     .AsSplitQuery()
-                    .FirstOrDefaultAsync(x => matchPointPlayers.Contains(x.CharId) && x.Level >= level);
+                    .FirstOrDefaultAsync(x => matchPointPlayers.Contains(x.CharId));
             if (matchPlayerProgression == null)
             {
                 return null;

@@ -172,33 +172,37 @@ public class Progression : IMemorySerializable<Progression>
     {
         if (CurrentExp == exp) return;
         var infoLevels = LevelResource.Instance.infoLevels;
-        var infoLevel = infoLevels[Level - 1];
-        var require = infoLevel.tuviRequireNextLevel;
-        if (exp < require)
+        var remainingExp = exp;
+        while (true)
         {
-            CurrentExp = exp;
-            dirty = true;
-            return;
-        }
+            var infoLevel = infoLevels[Level - 1];
+            var require = infoLevel.tuviRequireNextLevel;
+            if (remainingExp < require)
+            {
+                CurrentExp = remainingExp;
+                dirty = true;
+                return;
+            }
 
-        if (Level == infoLevels.Length - 1)
-        {
-            CurrentExp = require;
-            dirty = true;
-            return;
-        }
+            if (Level == infoLevels.Length - 1)
+            {
+                CurrentExp = require;
+                dirty = true;
+                return;
+            }
 
-        var nextLevelRequireItems = infoLevel.RequireItem;
-        if (nextLevelRequireItems is { Count: > 0 })
-        {
-            CurrentExp = require;
-            dirty = true;
-            return;
-        }
+            var nextLevelRequireItems = infoLevel.RequireItem;
+            if (nextLevelRequireItems is { Count: > 0 })
+            {
+                CurrentExp = require;
+                dirty = true;
+                return;
+            }
 
-        CurrentExp = exp - require;
-        var level = Level + 1;
-        SetLevel(level);
+            remainingExp -= require;
+            CurrentExp = remainingExp;
+            SetLevel(Level + 1);
+        }
     }
 
     public void SetCurrentEnergy(int newEnergy)
