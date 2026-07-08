@@ -26,7 +26,13 @@ public class UnauthenticatedClient : ClientConnection
             {
                 var version = reader.Read();
                 var success = true;
-                client.TcpClient.Send(MessageTag.CheckVersionResult, success);
+                var msg = success ? $"Phiên bản hợp lệ" : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
+                var result = new CheckVersionResult()
+                {
+                    Success = success,
+                    Message = msg
+                };
+                client.TcpClient.MemSend(MessageTag.CheckVersionResult, result);
                 if (success)
                 {
                     TcpServer.Instance.AuthenticatedSuccess(client);

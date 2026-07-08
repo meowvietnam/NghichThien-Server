@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MTS.Game;
+using MTS.Game.Combat;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
@@ -20,6 +21,7 @@ namespace MTS.Network.Core
             MessageTag.ClaimRankRewardRequest
         ];
 
+        private CombatSession? combatSession;
         public CombatHandler(Client client)
         {
             this.client = client;
@@ -41,6 +43,7 @@ namespace MTS.Network.Core
                     lock (charData)
                     {
                         result = charData.ResultCombat(request);
+                        EndCombat();
                     }
                 }
                 catch (Exception e)
@@ -61,6 +64,10 @@ namespace MTS.Network.Core
                 LoadCharCombatResult result = null;
                 try
                 {
+                    if (combatSession != null)
+                    {
+                        throw new();
+                    }
                     lock (charData)
                     {
                         result = new LoadCharCombatResult()
@@ -69,6 +76,7 @@ namespace MTS.Network.Core
                             Client = new CharacterSnapshot(charData)
                         };
                         charData.EquipmentManager.ClearDanCombat();
+                        StartCombat(ETypeCombat.AllMaps, charData.Progression.Level);
                     }
                 }
                 catch (Exception e)
@@ -86,18 +94,35 @@ namespace MTS.Network.Core
             }
             else if (tag == MessageTag.LoadCharCombatArena)
             {
-                lock (charData)
+                try
                 {
-                    var (state, _) = GetMatchMakingState();
-                    if (state == MatchMakingState.Ads && !charData.IsNoAds)
+                    if (combatSession != null)
                     {
-                        var adsHandler = client.GetHandler<AdsHandler>();
-                        ShowAds ads = new ArenaAds("LoadCharCombatArena", "Xem quảng cáo để tham gia đấu trường", client);
-                        adsHandler.SendAds(ads);
-                        return;
+                        throw new();
                     }
-                    SendLoadCharCombatArena();
-                }                
+                    lock (charData)
+                    {
+                        var (state, _) = GetMatchMakingState();
+                        if (state == MatchMakingState.Ads && !charData.IsNoAds)
+                        {
+                            var adsHandler = client.GetHandler<AdsHandler>();
+                            ShowAds ads = new ArenaAds("LoadCharCombatArena", "Xem quảng cáo để tham gia đấu trường",
+                                client);
+                            adsHandler.SendAds(ads);
+                            return;
+                        }
+                        SendLoadCharCombatArena();
+                    }
+                }
+                catch (Exception e)
+                {
+                    var result = new LoadCharCombatResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                    client.Send(MessageTag.LoadCharCombatArenaResult, result);
+                }
             }
             else if (tag == MessageTag.LoadRankRequest)
             {
@@ -166,6 +191,9 @@ namespace MTS.Network.Core
                         CurrentArenaCount = arena.CurrentArenaCount,
                         NewMoneyVip = charData.MoneyVip,
                     };
+                    charData.EquipmentManager.ClearDanCombat();
+                    var level = enemy != null ? enemy.Level : charData.Progression.Level;
+                    StartCombat(ETypeCombat.DauTruong, level);
                 }
             }
             catch (Exception e)
@@ -267,8 +295,52 @@ namespace MTS.Network.Core
             return matchPlayerProgression.CharacterData;
         }
 
+        private void StartCombat(ETypeCombat type, int level)
+        {
+            combatSession = new CombatSession()
+            {
+                Type = type,
+                Level = level,
+            };
+        }
+
+        private void EndCombat()
+        {
+            combatSession = null;
+        }
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
+            var charData = client.CharacterData;
+            if (combatSession == null)
+            {
+                return;
+            }
+            lock (charData)
+            {
+                try
+                {
+                    var stats = charData.Stats;
+                    var result = new ResultCombat()
+                    {
+                        CurrentHPUser = stats.Hp,
+                        CurrentLevelEnemy = combatSession.Level,
+                        CurrentThanThuc = stats.ThanThuc,
+                        CurrentThoNguyen = stats.ThoNguyen,
+                        ListIdThanThong = new(),
+                        TypeCombat = combatSession.Type,
+                        TypeResultCombat = ETypeResultCombat.LoseByRun
+                    };
+                    charData.ResultCombat(result);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                finally
+                {
+                    EndCombat();
+                }
+            }
         }
 
         public void OnEnter()

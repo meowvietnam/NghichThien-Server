@@ -78,7 +78,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
 
     protected override void OnDisconnected(IProtocol<MessageTag> protocol)
     {
-        Console.WriteLine($"Client {Id} has been disconnected.");
+        if (IsCharacterSelected())
+        {
+            Console.WriteLine($"Player {CharacterData.Name} disconnected");
+        }
         _ = SaveChanges();
         TcpServer.Instance.Remove(this);
     }

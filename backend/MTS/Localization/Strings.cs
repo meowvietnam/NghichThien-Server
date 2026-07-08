@@ -11,6 +11,8 @@ public static class Strings
     }
 
     public static string LoginSuccess => _current.LoginSuccess;
+    public static string GoogleLoginInvalid => _current.GoogleLoginInvalid;
+    public static string NotLoggedIn => _current.NotLoggedIn;
     public static string ClientOnline => _current.ClientOnline;
     public static string ConnectSuccess => _current.ConnectSuccess;
     public static string SaveChangesCompleted => _current.SaveChangesCompleted;

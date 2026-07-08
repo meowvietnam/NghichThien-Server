@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MTS.Models;
 
-public class DeveloperAccount
+public class GuestAccount
 {
     [Key]
     public int Id { get; set; }

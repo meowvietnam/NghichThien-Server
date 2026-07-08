@@ -3,6 +3,8 @@ namespace MTS.Localization;
 public class EnglishStrings : ILanguageStrings
 {
     public override string LoginSuccess => "Login successful!";
+    public override string GoogleLoginInvalid => "Google login is invalid or expired!";
+    public override string NotLoggedIn => "You are not logged in!";
     public override string ClientOnline => "Account is already logged in elsewhere!";
     public override string ConnectSuccess => "Connected to server successfully!";
     public override string SaveChangesCompleted => "Save changes completed!";

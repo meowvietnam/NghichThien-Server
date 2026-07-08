@@ -3,6 +3,8 @@ namespace MTS.Localization;
 public class VietnameseStrings : ILanguageStrings
 {
     public override string LoginSuccess => "Đăng nhập thành công!";
+    public override string GoogleLoginInvalid => "Đăng nhập Google không hợp lệ hoặc đã hết hạn!";
+    public override string NotLoggedIn => "Bạn chưa đăng nhập!";
     public override string ClientOnline => "Tài khoản đang đăng nhập nơi khác!";
     public override string ConnectSuccess => "Kết nối tới máy chủ thành công!";
     public override string SaveChangesCompleted => "Lưu thay đổi hoàn tất!";

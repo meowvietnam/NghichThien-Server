@@ -11,46 +11,113 @@ namespace MTS.Network.ClientState
         public void OnEnter()
         {
         }
-        public async void Handle(Message<MessageTag> message)
+        private void ValidateOnline(int userId)
+        {
+            var isClentOnline = TcpServer.Instance.IsClientOnline(userId);
+            if (isClentOnline)
+            {
+                throw new Exception(Strings.ClientOnline);
+            }
+        }
+        public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            if (tag == MessageTag.LoginDeveloper)
+            if (tag == MessageTag.LoginRequest)
             {
-                var username = reader.Read();
-                var service = new AuthService();
+                var login = reader.MemRead<ILogin>();
+                LoginResult result = null;
                 try
                 {
-                    var userData = await service.CreateOrLogin(username);
-                    var isClentOnline = TcpServer.Instance.IsClientOnline(userData.Id);
-                    if (isClentOnline)
+                    lock (client)
                     {
-                        throw new Exception(Strings.ClientOnline);
+                        result = login.Login().GetAwaiter().GetResult();
+                        var user = result.UserData.User;
+                        ValidateOnline(user.Id);
+                        client.SetUserData(user);
                     }
-                    client.SetUserData(userData);
-                    var result = new LoginResult
-                    {
-                        Success = true,
-                        Message = Strings.LoginSuccess,
-                        UserData = userData
-                    };
-                    client.Send(MessageTag.LoginDeveloperResult, result);
-                    client.ChangeState(new SelectCharacter(client));
                 }
                 catch (Exception e)
                 {
-                    var result = new LoginResult
+                    result = new LoginResult
                     {
                         Success = false,
                         Message = e.Message
                     };
-                    client.Send(MessageTag.LoginDeveloperResult, result);
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.LoginRequest, result);
+                }
+            }
+            else if (tag == MessageTag.LogoutRequest)
+            {
+                LogoutResult result = null;
+                try
+                {
+                    lock (client)
+                    {
+                        if (!client.IsLoggedIn())
+                        {
+                            throw new Exception(Strings.NotLoggedIn);
+                        }
+                        client.SetUserData(null);
+                        result = new LogoutResult()
+                        {
+                            Success = true,
+                        };
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new LogoutResult
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.LogoutRequest, result);
+                }
+            }
+            else if (tag == MessageTag.PlayRequest)
+            {
+                PlayResult result = null;
+                try
+                {
+                    lock (client)
+                    {
+                        if (!client.IsLoggedIn())
+                        {
+                            throw new Exception(Strings.NotLoggedIn);
+                        }
+                        result = new PlayResult()
+                        {
+                            Success = true,
+                        };
+                        client.ChangeState(new SelectCharacter(client));
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new PlayResult
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.PlayRequest, result);
                 }
             }
         }
+
         public void OnLeave()
         {
         }
+
         public MessageState State => MessageState.AuthState;
     }
 }

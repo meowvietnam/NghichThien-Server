@@ -918,8 +918,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
 
         foreach (var item in sideQuestComplete.ListIdNpc)
         {
-            // add tăng mối quan hệ với npc này thêm 10 điểm 
-            //id npc thì a check là npc đó có level có nằm trong khoảng min là level player -1 => max là level player + 2 không vì e đảm bảo chỉ random ra lv npc trong khoảng này
             var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == item);
             if (npcRef == null)
             {
@@ -932,8 +930,6 @@ public class CharacterData : IMemorySerializable<CharacterData>
             {
                 throw new Exception(Strings.HackerLevelNpc);
             }
-
-            //SetRelationShip
             Social.RelationshipAddValue((ushort)item, 10);
         }
 

@@ -9,7 +9,7 @@ public class AuthService
     public async Task<UserData> CreateOrLogin(string username)
     {
         using var db = await Program.CreateDbAsync();
-        var account = await db.DeveloperAccounts
+        var account = await db.GuestAccounts
             .AsNoTracking()
             .Include(x => x.UserData)
             .FirstOrDefaultAsync(x => x.UserName == username);
@@ -26,12 +26,12 @@ public class AuthService
             account.UserData.CharacterDatas = characterDatas;
             return account.UserData;
         }
-        account = new DeveloperAccount()
+        account = new GuestAccount()
         {
             UserName = username,
             UserData = new UserData()
         };
-        db.DeveloperAccounts.Add(account);
+        db.GuestAccounts.Add(account);
         await db.SaveChangesAsync();
         return account.UserData;
     }

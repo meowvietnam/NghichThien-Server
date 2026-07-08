@@ -1,5 +1,6 @@
 using MemoryPack;
 using MTS.Network;
+using MTS.Network.Core;
 
 namespace MTS.Models
 {
@@ -20,7 +21,8 @@ namespace MTS.Models
 
         public override void OnReward()
         {
-            
+            var handler = Client.GetHandler<QuestHandler>();
+            handler.SendReloadDailyQuest(eDailyQuest);
         }
 
         public override void OnClose()
@@ -29,6 +31,7 @@ namespace MTS.Models
 
         public override void OnLoadFail()
         {
+            OnReward();
         }
 
         public override ShowAdsType GetAdsType()

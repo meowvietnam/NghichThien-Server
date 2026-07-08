@@ -4,6 +4,8 @@ public abstract class ILanguageStrings
 {
     // Auth messages
     public abstract string LoginSuccess { get; }
+    public abstract string GoogleLoginInvalid { get; }
+    public abstract string NotLoggedIn { get; }
     public abstract string ClientOnline { get; }
 
     // Connection messages

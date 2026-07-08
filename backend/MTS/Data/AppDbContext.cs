@@ -12,7 +12,8 @@ namespace MTS.Data;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<DeveloperAccount> DeveloperAccounts { get; set; }
+    public DbSet<GuestAccount> GuestAccounts { get; set; }
+    public DbSet<GoogleAccount> GoogleAccounts { get; set; }
     public DbSet<UserData> Users { get; private set; }
     public DbSet<CharacterData> Characters { get; private set; }
     public DbSet<Progression> Progressions { get; private set; }
@@ -81,13 +82,22 @@ public class AppDbContext : DbContext
     {
         var json = "json";
         var blob = "blob";
-        modelBuilder.Entity<DeveloperAccount>(e =>
+        modelBuilder.Entity<GuestAccount>(e =>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.UserName).IsUnique();
             e.HasOne(x => x.UserData)
                 .WithOne()
-                .HasForeignKey<DeveloperAccount>(x => x.UserId)
+                .HasForeignKey<GuestAccount>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<GoogleAccount>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Email).IsUnique();
+            e.HasOne(x => x.UserData)
+                .WithOne()
+                .HasForeignKey<GoogleAccount>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<UserData>((e) => { e.HasKey(x => x.Id); });
