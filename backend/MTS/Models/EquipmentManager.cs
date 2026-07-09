@@ -136,6 +136,11 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
                 ChuTu1Used = value;
                 break;
             case ETypeSlotCP.ChuTu2:
+                var level = CharacterData.Progression.Level;
+                if (level < 10)
+                {
+                    throw new Exception(Strings.SlotCongPhapLevelRequired);
+                }
                 ChuTu2Used = value;
                 break;
             case ETypeSlotCP.DonThuat:
@@ -155,7 +160,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
                 break;
             default:
                 isDirty2 = false;
-                break;
+                throw new Exception(Strings.SlotCongPhapInvalid);
         }
     }
     public bool IsDefault()

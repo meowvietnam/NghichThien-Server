@@ -3,17 +3,20 @@ using MTS.Network.Models;
 using MTS.Services;
 using Network;
 using Network.Extensions;
+
 namespace MTS.Network.ClientState;
 
 public class CreateCharacter : IClientState
 {
     private Client client;
     private CreateCharacterService service;
+
     public CreateCharacter(Client client)
     {
         this.client = client;
         service = new CreateCharacterService();
     }
+
     public void OnEnter()
     {
     }
@@ -32,12 +35,12 @@ public class CreateCharacter : IClientState
             var name = reader.Read();
             try
             {
-                await service.SetName(name);
+                service.SetName(name).GetAwaiter().GetResult();
                 var result = new SetCharNameResult()
                 {
                     Success = true,
                 };
-                client.Send(MessageTag.SetCharNameResult,result);
+                client.Send(MessageTag.SetCharNameResult, result);
             }
             catch (Exception ex)
             {
@@ -46,7 +49,7 @@ public class CreateCharacter : IClientState
                     Success = false,
                     Message = ex.Message
                 };
-                client.Send(MessageTag.SetCharNameResult,result);
+                client.Send(MessageTag.SetCharNameResult, result);
             }
         }
         else if (tag == MessageTag.SetSkins)
@@ -59,7 +62,7 @@ public class CreateCharacter : IClientState
                 {
                     Success = true,
                 };
-                client.Send(MessageTag.SetSkinsResult,result);
+                client.Send(MessageTag.SetSkinsResult, result);
             }
             catch (Exception ex)
             {
@@ -68,7 +71,7 @@ public class CreateCharacter : IClientState
                     Success = false,
                     Message = ex.Message
                 };
-                client.Send(MessageTag.SetSkinsResult,result);
+                client.Send(MessageTag.SetSkinsResult, result);
             }
         }
         else if (tag == MessageTag.ApplyStats)
@@ -82,7 +85,7 @@ public class CreateCharacter : IClientState
                 {
                     Success = true,
                 };
-                client.Send(MessageTag.ApplyStatsResult,result);
+                client.Send(MessageTag.ApplyStatsResult, result);
                 client.ChangeState(new SelectCharacter(client));
             }
             catch (Exception ex)
@@ -92,7 +95,7 @@ public class CreateCharacter : IClientState
                     Success = false,
                     Message = ex.Message
                 };
-                client.Send(MessageTag.ApplyStatsResult,result);
+                client.Send(MessageTag.ApplyStatsResult, result);
             }
         }
     }

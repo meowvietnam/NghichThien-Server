@@ -5,15 +5,18 @@ using MTS.Network.Core;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+
 namespace MTS.Network.ClientState
 {
     public class SelectCharacter : IClientState
     {
         private Client client;
+
         public SelectCharacter(Client client)
         {
             this.client = client;
         }
+
         public void OnEnter()
         {
         }
@@ -59,6 +62,7 @@ namespace MTS.Network.ClientState
                     {
                         throw new(Strings.CharacterNotFound);
                     }
+
                     character = await client.Select(character);
                     var result = new SelectCharacterResult()
                     {
@@ -76,6 +80,30 @@ namespace MTS.Network.ClientState
                         Message = e.Message,
                     };
                     client.Send(MessageTag.SelectCharacterResult, result);
+                }
+            }
+            else if (tag == MessageTag.BackToMainMenuRequest)
+            {
+                Result result = null;
+                try
+                {
+                    client.ChangeState(new AuthState(client));
+                    result = new Result()
+                    {
+                        Success = true,
+                    };
+                }
+                catch (Exception ex)
+                {
+                    result = new Result()
+                    {
+                        Success = false,
+                        Message = ex.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.BackToMainMenuRequest, result);
                 }
             }
         }

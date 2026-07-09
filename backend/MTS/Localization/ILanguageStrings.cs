@@ -53,6 +53,7 @@ public abstract class ILanguageStrings
 
     // Cong Phap equip messages
     public abstract string SlotCongPhapInvalid { get; }
+    public abstract string SlotCongPhapLevelRequired { get; }
     public abstract string SlotCongPhongNotEmpty { get; }
     public abstract string CongPhapNotOwned { get; }
     public abstract string SlotCongPhapEmpty { get; }

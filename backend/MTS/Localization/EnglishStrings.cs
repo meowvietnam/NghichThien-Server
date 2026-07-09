@@ -42,6 +42,7 @@ public class EnglishStrings : ILanguageStrings
     public override string NotEnoughCamNgoPoints => "Not enough Cam Ngo points!";
     public override string ThanThongNotOwned => "This Than Thong is not owned!";
     public override string SlotCongPhapInvalid => "Cong Phap equipment slot is invalid!";
+    public override string SlotCongPhapLevelRequired => "The current realm has not unlocked this Cong Phap equipment slot!";
     public override string SlotCongPhongNotEmpty => "Cong Phap equipment slot is not empty!";
     public override string CongPhapNotOwned => "This Cong Phap is not owned!";
     public override string SlotCongPhapEmpty => "Cong Phap equipment slot is empty!";

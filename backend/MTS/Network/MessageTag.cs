@@ -172,4 +172,5 @@ public enum MessageTag
     
     InGameLogout = 987,
     InGameLogoutResult = 988,
+    BackToMainMenuRequest = 992,
 }

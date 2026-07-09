@@ -50,6 +50,7 @@ public static class Strings
     public static string NotEnoughCamNgoPoints => _current.NotEnoughCamNgoPoints;
     public static string ThanThongNotOwned => _current.ThanThongNotOwned;
     public static string SlotCongPhapInvalid => _current.SlotCongPhapInvalid;
+    public static string SlotCongPhapLevelRequired => _current.SlotCongPhapLevelRequired;
     public static string SlotCongPhongNotEmpty => _current.SlotCongPhongNotEmpty;
     public static string CongPhapNotOwned => _current.CongPhapNotOwned;
     public static string SlotCongPhapEmpty => _current.SlotCongPhapEmpty;

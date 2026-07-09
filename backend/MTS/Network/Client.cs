@@ -19,7 +19,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
     public CharacterData CharacterData { get; private set; }
     public MailManager MailManager { get; private set; }
     public IMessageState<MessageTag,MessageState> ClientState => stateModule.State;
-
+    
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
