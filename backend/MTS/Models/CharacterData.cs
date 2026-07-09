@@ -2104,6 +2104,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var linhDanRef = new ItemRef()
         {
             Id = id,
+            Type = ItemType.LinhDan
         };
         if (!linhDans.TryGetValue(linhDanRef, out var item))
         {
