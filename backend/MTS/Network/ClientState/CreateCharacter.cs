@@ -1,4 +1,5 @@
 using MTS.Game.CreateCharacter;
+using MTS.Models;
 using MTS.Network.Models;
 using MTS.Services;
 using Network;
@@ -10,6 +11,8 @@ public class CreateCharacter : IClientState
 {
     private Client client;
     private CreateCharacterService service;
+    private readonly object serviceLock = new();
+    private bool isCompleting;
 
     public CreateCharacter(Client client)
     {
@@ -28,14 +31,20 @@ public class CreateCharacter : IClientState
         if (tag == MessageTag.BackToSelectChar)
         {
             client.Send(MessageTag.BackToSelectCharOk);
-            client.ChangeState(new SelectCharacter(client));
+            lock (client.StateLock)
+            {
+                client.ChangeState(new SelectCharacter(client));
+            }
         }
         else if (tag == MessageTag.SetCharName)
         {
             var name = reader.Read();
             try
             {
-                service.SetName(name).GetAwaiter().GetResult();
+                lock (serviceLock)
+                {
+                    service.SetName(name).GetAwaiter().GetResult();
+                }
                 var result = new SetCharNameResult()
                 {
                     Success = true,
@@ -57,7 +66,10 @@ public class CreateCharacter : IClientState
             var request = reader.Read<SetSkinRequest>();
             try
             {
-                service.SetSkin(request);
+                lock (serviceLock)
+                {
+                    service.SetSkin(request);
+                }
                 var result = new SetSkinResult()
                 {
                     Success = true,
@@ -79,17 +91,37 @@ public class CreateCharacter : IClientState
             var models = reader.ReadArray<SelectionModel>().ToList();
             try
             {
-                service.ApplyStats(models);
-                await service.Completed(client.UserData);
+                UserData userData;
+                lock (serviceLock)
+                {
+                    if (isCompleting)
+                    {
+                        throw new Exception("Đang tạo nhân vật, vui lòng chờ");
+                    }
+                    service.ApplyStats(models);
+                    isCompleting = true;
+                }
+                lock (client.StateLock)
+                {
+                    userData = client.UserData;
+                }
+                await service.Completed(userData);
                 var result = new ApplyStatsResult()
                 {
                     Success = true,
                 };
                 client.Send(MessageTag.ApplyStatsResult, result);
-                client.ChangeState(new SelectCharacter(client));
+                lock (client.StateLock)
+                {
+                    client.ChangeState(new SelectCharacter(client));
+                }
             }
             catch (Exception ex)
             {
+                lock (serviceLock)
+                {
+                    isCompleting = false;
+                }
                 var result = new ApplyStatsResult()
                 {
                     Success = false,

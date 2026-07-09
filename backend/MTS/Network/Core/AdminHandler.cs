@@ -30,25 +30,39 @@ public class AdminHandler : IClientHandler
                 return;
             }
             var inventory = await client.GetInventory();
-            var rewards = inventory.AddToInventory(items);
+            RewardItems rewards;
+            lock (client.CharacterLock)
+            {
+                rewards = inventory.AddToInventory(items);
+            }
             client.Send(MessageTag.AddItemsResult, rewards);
         }
         else if (tag == MessageTag.SetInfinityEnergy)
         {
             var infinityEnergy = reader.Read<bool>();
-            client.CharacterData.SetIsInfiniteEnergy(infinityEnergy);
+            lock (client.CharacterLock)
+            {
+                client.CharacterData.SetIsInfiniteEnergy(infinityEnergy);
+            }
         }
         else if (tag == MessageTag.SetNgoDaoDiem)
         {
             var ngoDaoDiem = reader.Read<int>();
-            client.CharacterData.Progression.SetNgoDaoDiem(ngoDaoDiem);
+            lock (client.CharacterLock)
+            {
+                client.CharacterData.Progression.SetNgoDaoDiem(ngoDaoDiem);
+            }
             client.Send(MessageTag.SetNgoDaoDiemResult, ngoDaoDiem);
         }
         else if (tag == MessageTag.SetCamNgo)
         {
             var camNgo = reader.Read<CamNgo>();
             var inventory = await client.GetInventory();
-            var newNgoDaoDiem = inventory.AddOrUpdate(camNgo);
+            int newNgoDaoDiem;
+            lock (client.CharacterLock)
+            {
+                newNgoDaoDiem = inventory.AddOrUpdate(camNgo);
+            }
             var result = new SetCamNgoResult()
             {
                 CamNgo = camNgo,
@@ -60,7 +74,12 @@ public class AdminHandler : IClientHandler
         {
             var id = reader.Read<ushort>();
             var inventory = await client.GetInventory();
-            if (inventory.EquipThanThong(id))
+            var equipped = false;
+            lock (client.CharacterLock)
+            {
+                equipped = inventory.EquipThanThong(id);
+            }
+            if (equipped)
             {
                 client.Send(MessageTag.AddThanThongResult, id);
             }
@@ -69,27 +88,41 @@ public class AdminHandler : IClientHandler
         {
             var congPhap = reader.Read<CongPhap>();
             if (congPhap.Level == 0) return;
-            client.CharacterData.InventoryManager.AddOrUpdate(congPhap);
+            lock (client.CharacterLock)
+            {
+                client.CharacterData.InventoryManager.AddOrUpdate(congPhap);
+            }
             client.Send(MessageTag.AddCongPhapResult, congPhap);
         }
         else if (tag == MessageTag.SetMoneyVip)
         {
             var moneyVip = reader.Read<int>();
-            client.CharacterData.SetMoneyVip(moneyVip);
+            lock (client.CharacterLock)
+            {
+                client.CharacterData.SetMoneyVip(moneyVip);
+            }
             client.Send(MessageTag.SetMoneyVipResult, moneyVip);
         }
         else if (tag == MessageTag.SetMoney)
         {
             var money = reader.Read<int>();
-            client.CharacterData.Stats.SetLinhThach(money);
+            lock (client.CharacterLock)
+            {
+                client.CharacterData.Stats.SetLinhThach(money);
+            }
             client.Send(MessageTag.SetMoneyResult, money);
         }
         else if (tag == MessageTag.SetExpRequest)
         {
             var exp = reader.Read<int>();
-            var progress = client.CharacterData.Progression;
-            client.CharacterData.Progression.SetCurrentExp(exp);
-            client.Send(MessageTag.SetExpRequest, progress.CurrentExp);
+            int currentExp;
+            lock (client.CharacterLock)
+            {
+                var progress = client.CharacterData.Progression;
+                progress.SetCurrentExp(exp);
+                currentExp = progress.CurrentExp;
+            }
+            client.Send(MessageTag.SetExpRequest, currentExp);
         }
     }
 

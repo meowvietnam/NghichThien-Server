@@ -8,6 +8,7 @@ public class LuyenDan : IClientState
 {
     private Client client;
     private bool isLuyenDan;
+    private readonly object luyenDanLock = new();
     public LuyenDan(Client client)
     {
         this.client = client;
@@ -23,16 +24,23 @@ public class LuyenDan : IClientState
         var reader = message.Reader;
         if (tag == MessageTag.LuyenDan)
         {
-            if(isLuyenDan) return;
+            lock (luyenDanLock)
+            {
+                if (isLuyenDan) return;
+                isLuyenDan = true;
+            }
             try
             {
                 var request = reader.Read<LuyenDanRequest>();
-                isLuyenDan = true;
-                var charData = client.CharacterData;
-                var result = charData.InventoryManager.Refine(charData, request);
-                if (result.Success)
+                LuyenDanResult result;
+                lock (client.CharacterLock)
                 {
-                    charData.Stats.SetTuoiTac(result.NewTuoiTac);
+                    var charData = client.CharacterData;
+                    result = charData.InventoryManager.Refine(charData, request);
+                    if (result.Success)
+                    {
+                        charData.Stats.SetTuoiTac(result.NewTuoiTac);
+                    }
                 }
                 client.Send(MessageTag.LuyenDanResult, result);
             }
@@ -46,7 +54,10 @@ public class LuyenDan : IClientState
             }
             finally
             {
-                isLuyenDan = false;
+                lock (luyenDanLock)
+                {
+                    isLuyenDan = false;
+                }
             }
         }
     }

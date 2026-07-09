@@ -27,12 +27,20 @@ namespace MTS.Network.ClientState
             var reader = message.Reader;
             if (tag == MessageTag.GetCharacters)
             {
-                var chars = client.UserData.CharacterDatas;
+                List<CharacterData> chars;
+                lock (client.StateLock)
+                {
+                    chars = client.UserData.CharacterDatas.ToList();
+                }
                 client.Send(MessageTag.GetCharactersResult, chars);
             }
             else if (tag == MessageTag.CanCreateCharacter)
             {
-                var charCount = client.UserData.CharacterDatas.Count;
+                int charCount;
+                lock (client.StateLock)
+                {
+                    charCount = client.UserData.CharacterDatas.Count;
+                }
                 if (charCount >= 1)
                 {
                     var result = new CanCreateChar()
@@ -49,7 +57,10 @@ namespace MTS.Network.ClientState
                         CanCreate = true,
                     };
                     client.Send(MessageTag.CanCreateCharacterResult, result);
-                    client.ChangeState(new CreateCharacter(client));
+                    lock (client.StateLock)
+                    {
+                        client.ChangeState(new CreateCharacter(client));
+                    }
                 }
             }
             else if (tag == MessageTag.SelectCharacter)
@@ -57,7 +68,11 @@ namespace MTS.Network.ClientState
                 var id = reader.Read<int>();
                 try
                 {
-                    var character = client.UserData.CharacterDatas.FirstOrDefault(x => x.Id == id);
+                    CharacterData character;
+                    lock (client.StateLock)
+                    {
+                        character = client.UserData.CharacterDatas.FirstOrDefault(x => x.Id == id);
+                    }
                     if (character == null)
                     {
                         throw new(Strings.CharacterNotFound);
@@ -70,7 +85,10 @@ namespace MTS.Network.ClientState
                         CharacterData = character,
                     };
                     client.Send(MessageTag.SelectCharacterResult, result);
-                    client.OnSelectedCharacter();
+                    lock (client.StateLock)
+                    {
+                        client.OnSelectedCharacter();
+                    }
                 }
                 catch (Exception e)
                 {
@@ -87,7 +105,10 @@ namespace MTS.Network.ClientState
                 Result result = null;
                 try
                 {
-                    client.ChangeState(new AuthState(client));
+                    lock (client.StateLock)
+                    {
+                        client.ChangeState(new AuthState(client));
+                    }
                     result = new Result()
                     {
                         Success = true,

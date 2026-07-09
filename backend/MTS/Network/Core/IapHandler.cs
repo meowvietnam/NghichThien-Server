@@ -33,15 +33,15 @@ namespace MTS.Network.Core
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            var charData = client.CharacterData;
             if (tag == MessageTag.IapPurchase)
             {
                 var request = reader.Read<IapModel>();
                 IapResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.IapPurchase(request).GetAwaiter().GetResult();
                     }
                 }
@@ -60,8 +60,9 @@ namespace MTS.Network.Core
             }
             else if (tag == MessageTag.GetProductsRequest)
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     var ownerProducts = charData.GetProducts().GetAwaiter().GetResult();
                     client.MemSend(MessageTag.GetProductsRequest, ownerProducts);
                 }
@@ -71,8 +72,9 @@ namespace MTS.Network.Core
                 ExchangeMoneyVipResult result = null!;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         var amount = reader.Read<int>();
                         result = charData.ExchangeMoneyVipForLinhThach(amount);
                     }

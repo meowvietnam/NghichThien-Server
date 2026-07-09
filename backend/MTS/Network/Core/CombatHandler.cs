@@ -21,6 +21,7 @@ namespace MTS.Network.Core
             MessageTag.ClaimRankRewardRequest
         ];
 
+        private readonly object combatLock = new();
         private CombatSession? combatSession;
         public CombatHandler(Client client)
         {
@@ -33,15 +34,15 @@ namespace MTS.Network.Core
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            var charData = client.CharacterData;
             if (tag == MessageTag.ResultCombat)
             {
                 var request = reader.Read<ResultCombat>();
                 ResultCombatResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.ResultCombat(request);
                         EndCombat();
                     }
@@ -64,12 +65,10 @@ namespace MTS.Network.Core
                 LoadCharCombatResult result = null;
                 try
                 {
-                    if (combatSession != null)
+                    lock (client.CharacterLock)
                     {
-                        throw new Exception(Strings.CombatAlreadyInProgress);
-                    }
-                    lock (charData)
-                    {
+                        var charData = client.CharacterData;
+                        EnsureNoCombatSession();
                         result = new LoadCharCombatResult()
                         {
                             Success = true,
@@ -96,13 +95,11 @@ namespace MTS.Network.Core
             {
                 try
                 {
-                    if (combatSession != null)
+                    lock (client.CharacterLock)
                     {
-                        throw new Exception(Strings.CombatAlreadyInProgress);
-                    }
-                    lock (charData)
-                    {
-                        var (state, _) = GetMatchMakingState();
+                        var charData = client.CharacterData;
+                        EnsureNoCombatSession();
+                        var (state, _) = GetMatchMakingState(charData);
                         if (state == MatchMakingState.Ads && !charData.IsNoAds)
                         {
                             var adsHandler = client.GetHandler<AdsHandler>();
@@ -135,8 +132,9 @@ namespace MTS.Network.Core
                 ClaimRankRewardResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         var moneyVip = charData.ArenaManager.Claim(id).GetAwaiter().GetResult();
                         result = new ClaimRankRewardResult()
                         {
@@ -164,12 +162,13 @@ namespace MTS.Network.Core
         public void SendLoadCharCombatArena()
         {
             LoadCharCombatResult result = null;
-            var charData = client.CharacterData;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
-                    var (state, cost) = GetMatchMakingState();
+                    var charData = client.CharacterData;
+                    EnsureNoCombatSession();
+                    var (state, cost) = GetMatchMakingState(charData);
                     if (state == MatchMakingState.NotFree)
                     {
                         var remainingMoneyVip = charData.MoneyVip - cost;
@@ -209,11 +208,10 @@ namespace MTS.Network.Core
                 client.Send(MessageTag.LoadCharCombatArenaResult, result);
             }
         }
-        private (MatchMakingState state, int cost) GetMatchMakingState()
+        private (MatchMakingState state, int cost) GetMatchMakingState(CharacterData charData)
         {
             var cost = 0;
             var matchMakingState = MatchMakingState.Free;
-            var charData = client.CharacterData;
             var arena = charData.ArenaManager;
             var count = arena.CurrentArenaCount;
             switch (count)
@@ -238,7 +236,13 @@ namespace MTS.Network.Core
             var nextReload = ArenaRankService.GetDelayToGrantRewards();
             var typeRankArenaWithValue = GameConfig.TypeRankArenaWithValue;
             var typeRankArenaWithReward = GameConfig.TypeRankArenaWithReward;
-            var (matchMakingState, cost) = GetMatchMakingState();
+            MatchMakingState matchMakingState;
+            int cost;
+            lock (client.CharacterLock)
+            {
+                var charData = client.CharacterData;
+                (matchMakingState, cost) = GetMatchMakingState(charData);
+            }
             var result = new LoadRankResult()
             {
                 Success = true,
@@ -252,10 +256,16 @@ namespace MTS.Network.Core
         }
         private async Task<CharacterData> LoadEnemyCombat()
         {
-            var charData = client.CharacterData;
-            var point = charData.ArenaManager.Points;
-            var level = charData.Progression.Level;
-            var charId = charData.Id;
+            int point;
+            int level;
+            int charId;
+            lock (client.CharacterLock)
+            {
+                var charData = client.CharacterData;
+                point = charData.ArenaManager.Points;
+                level = charData.Progression.Level;
+                charId = charData.Id;
+            }
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
@@ -297,37 +307,65 @@ namespace MTS.Network.Core
 
         private void StartCombat(ETypeCombat type, int level)
         {
-            combatSession = new CombatSession()
+            lock (combatLock)
             {
-                Type = type,
-                Level = level,
-            };
+                if (combatSession != null)
+                {
+                    throw new Exception(Strings.CombatAlreadyInProgress);
+                }
+
+                combatSession = new CombatSession()
+                {
+                    Type = type,
+                    Level = level,
+                };
+            }
+        }
+
+        private void EnsureNoCombatSession()
+        {
+            lock (combatLock)
+            {
+                if (combatSession != null)
+                {
+                    throw new Exception(Strings.CombatAlreadyInProgress);
+                }
+            }
         }
 
         private void EndCombat()
         {
-            combatSession = null;
+            lock (combatLock)
+            {
+                combatSession = null;
+            }
         }
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
-            var charData = client.CharacterData;
-            if (combatSession == null)
+            lock (client.CharacterLock)
             {
-                return;
-            }
-            lock (charData)
-            {
+                var charData = client.CharacterData;
+                CombatSession session;
+                lock (combatLock)
+                {
+                    if (combatSession == null)
+                    {
+                        return;
+                    }
+
+                    session = combatSession;
+                }
                 try
                 {
                     var stats = charData.Stats;
                     var result = new ResultCombat()
                     {
                         CurrentHPUser = stats.Hp,
-                        CurrentLevelEnemy = combatSession.Level,
+                        CurrentLevelEnemy = session.Level,
                         CurrentThanThuc = stats.ThanThuc,
                         CurrentThoNguyen = stats.ThoNguyen,
                         ListIdThanThong = new(),
-                        TypeCombat = combatSession.Type,
+                        TypeCombat = session.Type,
                         TypeResultCombat = ETypeResultCombat.LoseByRun
                     };
                     charData.ResultCombat(result);

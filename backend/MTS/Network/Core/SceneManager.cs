@@ -32,19 +32,28 @@ public class SceneManager : IClientHandler
                 switch (sceneName)
                 {
                     case AllMaps:
-                        client.ChangeState(new AllMaps(client));
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new AllMaps(client));
+                        }
                         result.Success = true;
                         result.SceneName = sceneName;
                         break;
                     case LuyenDan:
-                        client.ChangeState(new LuyenDan(client));
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new LuyenDan(client));
+                        }
                         result.Success = true;
                         result.SceneName = sceneName;
                         break;
                     case LuyenKhi:
                         result.Success = true;
                         result.SceneName = sceneName;
-                        client.ChangeState(new LuyenKhi(client));
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new LuyenKhi(client));
+                        }
                         break;
                     default:
                         result.Success = true;

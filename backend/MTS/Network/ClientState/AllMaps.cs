@@ -22,9 +22,14 @@ public class AllMaps : IClientState
 
     private CharacterSnapshot[] GetCharsOnlineThisNode()
     {
-        var progression = client.CharacterData.Progression;
-        var currentNodeId = progression.IdCurrentNode;
-        var charId = client.CharacterData.Id;
+        int currentNodeId;
+        int charId;
+        lock (client.CharacterLock)
+        {
+            var charData = client.CharacterData;
+            currentNodeId = charData.Progression.IdCurrentNode;
+            charId = charData.Id;
+        }
         var charsOnline = TcpServer.Instance.GetCharsOnline()
             .Where(x => x.Progression.IdCurrentNode == currentNodeId && x.Id != charId)
             .Select(x => new CharacterSnapshot(x))
@@ -37,41 +42,48 @@ public class AllMaps : IClientState
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        var charData = client.CharacterData;
         if (tag == MessageTag.MoveToMap)
         {
-            if (isMoving)
+            lock (client.StateLock)
             {
-                return;
+                if (isMoving)
+                {
+                    return;
+                }
+                isMoving = true;
             }
-            isMoving = true;
             var id = reader.Read<int>();
             try
             {
-                var currentMapId = charData.Progression.IdCurrentNode;
-                var path = GameConfig.MapManager.FindPath(currentMapId, id);
-                var energy = charData.IsInfiniteEnergy ? 0 : path.Count;
-                var newEnergy = charData.Progression.CurrentEnergy - energy;
-                if (newEnergy < 0)
+                MoveToMapResult result;
+                lock (client.CharacterLock)
                 {
-                    throw new Exception($"{NotEnoughEnergy}: {energy}");
+                    var charData = client.CharacterData;
+                    var currentMapId = charData.Progression.IdCurrentNode;
+                    var path = GameConfig.MapManager.FindPath(currentMapId, id);
+                    var energy = charData.IsInfiniteEnergy ? 0 : path.Count;
+                    var newEnergy = charData.Progression.CurrentEnergy - energy;
+                    if (newEnergy < 0)
+                    {
+                        throw new Exception($"{NotEnoughEnergy}: {energy}");
+                    }
+                    var stats = charData.Stats;
+                    var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
+                    var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
+                    stats.SetTuoiTac(newAge);
+                    charData.Progression.SetIdCurrentNode(id);
+                    charData.Progression.SetCurrentEnergy(newEnergy);
+                    var charsOnline = GetCharsOnlineThisNode();
+                    var pathIds = path.Select(x => x.Id).ToArray();
+                    result = new MoveToMapResult()
+                    {
+                        Success = true,
+                        Energy = newEnergy,
+                        Path = pathIds,
+                        CharactersOnline = charsOnline,
+                        NewAge = newAge
+                    };
                 }
-                var stats = charData.Stats;
-                var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
-                var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
-                stats.SetTuoiTac(newAge);
-                charData.Progression.SetIdCurrentNode(id);
-                charData.Progression.SetCurrentEnergy(newEnergy);
-                var charsOnline = GetCharsOnlineThisNode();
-                var pathIds = path.Select(x => x.Id).ToArray();
-                var result = new MoveToMapResult()
-                {
-                    Success = true,
-                    Energy = newEnergy,
-                    Path = pathIds,
-                    CharactersOnline = charsOnline,
-                    NewAge = newAge
-                };
                 client.Send(MessageTag.MoveToMapResult, result);
             }
             catch (Exception e)
@@ -85,7 +97,10 @@ public class AllMaps : IClientState
             }
             finally
             {
-                isMoving = false;
+                lock (client.StateLock)
+                {
+                    isMoving = false;
+                }
             }
         }
         else if (tag == MessageTag.GetPlayerOnlineThisNode)
@@ -115,8 +130,9 @@ public class AllMaps : IClientState
             WatchAdsForEnergyResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     charData.Progression.SetCurrentEnergy(100);
                     result = new WatchAdsForEnergyResult
                     {

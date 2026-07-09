@@ -20,7 +20,6 @@ public class InventoryHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        var charData = client.CharacterData;
         if (tag == MessageTag.GetInventory)
         {
             try
@@ -49,11 +48,10 @@ public class InventoryHandler : IClientHandler
             EquipEquipmentResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
-
+                    var charData = client.CharacterData;
                     result = charData.EquipEquipment(request);
-
                 }
             }
             catch (Exception e)

@@ -25,15 +25,15 @@ namespace MTS.Network.Core
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            var charData = client.CharacterData;
             if (tag == MessageTag.JoinMonPhai)
             {
                 var request = reader.Read<EMonPhai>();
                 JoinMonPhaiResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.JoinMonPhai(request);
                     }
                 }

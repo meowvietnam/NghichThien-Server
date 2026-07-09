@@ -19,6 +19,9 @@ public class Client : ClientConnection, IRequester<MessageTag>
     public CharacterData CharacterData { get; private set; }
     public MailManager MailManager { get; private set; }
     public IMessageState<MessageTag,MessageState> ClientState => stateModule.State;
+    public object StateLock { get; } = new();
+    public object CharacterLock { get; } = new();
+    public object MailLock { get; } = new();
     
     public Client(UnauthenticatedClient client)
     {
@@ -143,25 +146,46 @@ public class Client : ClientConnection, IRequester<MessageTag>
         shopManager.CharData = characterData;
         characterData.ShopManager = shopManager;
         
-        CharacterData = characterData;
-        MailManager = new MailManager(characterData, this);
+        lock (CharacterLock)
+        {
+            CharacterData = characterData;
+            MailManager = new MailManager(characterData, this);
+        }
         return characterData;
     }
 
     public async Task<InventoryManager> GetInventory()
     {
-        if (CharacterData.IsInventoryDefault())
+        var shouldLoad = false;
+        int id;
+        lock (CharacterLock)
+        {
+            shouldLoad = CharacterData.IsInventoryDefault();
+            id = CharacterData.Id;
+        }
+        if (shouldLoad)
         {
             await using var db = await Program.CreateDbAsync();
-            var id = CharacterData.Id;
             var inventoryManager = await db.InventoryManagers
                 .AsNoTracking()
                 .FirstAsync(x => x.CharId == id);
-            inventoryManager.CharacterData = CharacterData;
+            lock (CharacterLock)
+            {
+                inventoryManager.CharacterData = CharacterData;
+            }
             await inventoryManager.Load(db);
-            CharacterData.InventoryManager = inventoryManager;
+            lock (CharacterLock)
+            {
+                if (CharacterData.IsInventoryDefault())
+                {
+                    CharacterData.InventoryManager = inventoryManager;
+                }
+            }
         }
-        return CharacterData.InventoryManager;
+        lock (CharacterLock)
+        {
+            return CharacterData.InventoryManager;
+        }
     }
 
     public async Task SaveChanges()
@@ -175,7 +199,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
         {
             await UserData.SaveChanges(db);
             if (!IsCharacterSelected()) return;
-            lock (CharacterData)
+            lock (CharacterLock)
             {
                 CharacterData.SaveChanges(db).GetAwaiter().GetResult();
             }

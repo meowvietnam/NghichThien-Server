@@ -23,9 +23,9 @@ public class ProgressionHandler : IClientHandler
             SpecialLevelUpResult result = null;
             try
             {
-                var charData = client.CharacterData;
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.Progression.SpecialLevelUp();
                 }
             }

@@ -6,6 +6,7 @@ public class LuyenKhi : IClientState
 {
     private Client client;
     private bool isLuyenKhi;
+    private readonly object luyenKhiLock = new();
     public LuyenKhi(Client client)
     {
         this.client = client;
@@ -19,13 +20,20 @@ public class LuyenKhi : IClientState
         var reader = message.Reader;
         if (tag == MessageTag.LuyenKhi)
         {
-            if(isLuyenKhi) return;
+            lock (luyenKhiLock)
+            {
+                if (isLuyenKhi) return;
+                isLuyenKhi = true;
+            }
             try
             {
-                isLuyenKhi = true;
                 var request = reader.Read<LuyenKhiRequest>();
                 var inventory = await client.GetInventory();
-                var result = inventory.LuyenKhi(request);
+                LuyenKhiResult result;
+                lock (client.CharacterLock)
+                {
+                    result = inventory.LuyenKhi(request);
+                }
                 client.Send(MessageTag.LuyenKhiResult, result);
             }
             catch (Exception e)
@@ -38,14 +46,21 @@ public class LuyenKhi : IClientState
             }
             finally
             {
-                isLuyenKhi = false;
+                lock (luyenKhiLock)
+                {
+                    isLuyenKhi = false;
+                }
             }
         }
         if (tag == MessageTag.SetEquipmentName)
         {
             var request = reader.Read<SetEquipmentName>();
             var inventory = await client.GetInventory();
-            var result = inventory.SetEquipmentName(request);
+            SetEquipmentNameResult result;
+            lock (client.CharacterLock)
+            {
+                result = inventory.SetEquipmentName(request);
+            }
             client.Send(MessageTag.SetEquipmentNameResult, result);
         }
     }

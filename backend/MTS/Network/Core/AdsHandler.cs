@@ -8,6 +8,7 @@ namespace MTS.Network.Core
     public class AdsHandler : IClientHandler
     {
         private Client client;
+        private readonly object adsLock = new();
         public Dictionary<ShowAdsType, ShowAds> Ads { get; private set; } = new();
 
         public AdsHandler(Client client)
@@ -25,7 +26,11 @@ namespace MTS.Network.Core
             var reader = message.Reader;
             if (tag == MessageTag.GetAdsMoneyVipConfigRequest)
             {
-                var active = client.CharacterData.CurrentFreeAdsMoneyVipCount < GameConfig.TotalAdsMoneyVip;
+                bool active;
+                lock (client.CharacterLock)
+                {
+                    active = client.CharacterData.CurrentFreeAdsMoneyVipCount < GameConfig.TotalAdsMoneyVip;
+                }
                 var config = new AdsMoneyVipConfig()
                 {
                     MoneyVip = GameConfig.AdsMoneyVip,
@@ -37,9 +42,9 @@ namespace MTS.Network.Core
             {
                 try
                 {
-                    var charData = client.CharacterData;
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         var current = charData.CurrentFreeAdsMoneyVipCount;
                         if (current >= GameConfig.TotalAdsMoneyVip)
                         {
@@ -70,7 +75,12 @@ namespace MTS.Network.Core
             else if (tag == MessageTag.CompleteAds)
             {
                 var type = reader.Read<ShowAdsType>();
-                if (Ads.Remove(type, out var ads))
+                ShowAds ads;
+                lock (adsLock)
+                {
+                    Ads.Remove(type, out ads);
+                }
+                if (ads != null)
                 {
                     if (ads.Validate())
                     {
@@ -81,7 +91,12 @@ namespace MTS.Network.Core
             else if (tag == MessageTag.CloseAds)
             {
                 var type = reader.Read<ShowAdsType>();
-                if (Ads.Remove(type, out var ads))
+                ShowAds ads;
+                lock (adsLock)
+                {
+                    Ads.Remove(type, out ads);
+                }
+                if (ads != null)
                 {
                     ads.OnClose();
                 }
@@ -89,7 +104,12 @@ namespace MTS.Network.Core
             else if (tag == MessageTag.LoadAdsFail)
             {
                 var type = reader.Read<ShowAdsType>();
-                if (Ads.Remove(type, out var ads))
+                ShowAds ads;
+                lock (adsLock)
+                {
+                    Ads.Remove(type, out ads);
+                }
+                if (ads != null)
                 {
                     ads.OnLoadFail();
                 }
@@ -101,9 +121,9 @@ namespace MTS.Network.Core
             WatchAdsMoneyVipResult result = null;
             try
             {
-                var charData = client.CharacterData;
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     var current = charData.CurrentFreeAdsMoneyVipCount;
                     current++;
                     var newMoneyVip = charData.MoneyVip + GameConfig.AdsMoneyVip;
@@ -156,7 +176,10 @@ namespace MTS.Network.Core
 
         public void SendAds(ShowAds ads)
         {
-            Ads[ads.GetAdsType()] = ads;
+            lock (adsLock)
+            {
+                Ads[ads.GetAdsType()] = ads;
+            }
             client.MemSend(MessageTag.WatchAds, ads);
         }
     }

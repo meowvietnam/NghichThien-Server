@@ -27,16 +27,15 @@ namespace MTS.Network.Core
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            var charData = client.CharacterData;
-            var questManager = charData.QuestManager;
             if (tag == MessageTag.CompleteMainQuest)
             {
                 var request = reader.Read<int>();
                 CompleteMainQuestResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.CompleteMainQuest(request);
                     }
                 }
@@ -59,8 +58,9 @@ namespace MTS.Network.Core
                 CompleteSideQuestResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.CompleteSideQuest(request);
                     }
                 }
@@ -80,7 +80,12 @@ namespace MTS.Network.Core
             else if (tag == MessageTag.GetDailyQuestRequest)
             {
                 var eQuest = reader.Read<EDailyQuest>();
-                var listQuest = questManager.DailyQuests[eQuest];
+                List<DailyQuest> listQuest;
+                lock (client.CharacterLock)
+                {
+                    var charData = client.CharacterData;
+                    listQuest = charData.QuestManager.DailyQuests[eQuest].ToList();
+                }
                 client.MemSend(MessageTag.GetDailyQuestRequest, listQuest);
             }
             else if (tag == MessageTag.DoneDailyQuestRequest)
@@ -89,8 +94,9 @@ namespace MTS.Network.Core
                 DoneQuestResult result = null!;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         charData.QuestManager.ClaimDailyQuest(id);
                         result = new DoneQuestResult()
                         {
@@ -115,7 +121,12 @@ namespace MTS.Network.Core
             else if (tag == MessageTag.ReloadDailyQuest)
             {
                 var eDailyQuest = reader.Read<EDailyQuest>();
-                if (charData.IsNoAds)
+                bool isNoAds;
+                lock (client.CharacterLock)
+                {
+                    isNoAds = client.CharacterData.IsNoAds;
+                }
+                if (isNoAds)
                 {
                     SendReloadDailyQuest(eDailyQuest);
                 }
@@ -130,12 +141,12 @@ namespace MTS.Network.Core
 
         public void SendReloadDailyQuest(EDailyQuest eDailyQuest)
         {
-            var charData = client.CharacterData;
             ReloadDailyQuestResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     var listQuests = charData.QuestManager.Reload(eDailyQuest);
                     result = new ReloadDailyQuestResult()
                     {

@@ -20,17 +20,26 @@ public class ShopHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        var charData = client.CharacterData;
         if (tag == MessageTag.LoadShopRequest)
         {
             var shopType = reader.Read<EShopType>();
-            var shop = charData.ShopManager.GetShop(shopType);
+            Shop shop;
+            lock (client.CharacterLock)
+            {
+                var charData = client.CharacterData;
+                shop = charData.ShopManager.GetShop(shopType);
+            }
             client.MemSend(MessageTag.LoadShopRequest, shop);
         }
         else if (tag == MessageTag.ReloadShop)
         {
             var shopType = reader.Read<EShopType>();
-            if (charData.IsNoAds)
+            bool isNoAds;
+            lock (client.CharacterLock)
+            {
+                isNoAds = client.CharacterData.IsNoAds;
+            }
+            if (isNoAds)
             {
                 SendReloadShop(shopType);
             }
@@ -47,8 +56,9 @@ public class ShopHandler : IClientHandler
             BuyAndSellResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.ShopManager.BuyAndSell(request);
                 }
             }
@@ -69,13 +79,13 @@ public class ShopHandler : IClientHandler
 
     public void SendReloadShop(EShopType shopType)
     {
-        var charData = client.CharacterData;
-        var shopManager = charData.ShopManager;
         ReloadShopResult result = null!;
         try
         {
-            lock (shopManager)
+            lock (client.CharacterLock)
             {
+                var charData = client.CharacterData;
+                var shopManager = charData.ShopManager;
                 var shop = shopManager.ReloadShop(shopType);
                 result = new ReloadShopResult()
                 {

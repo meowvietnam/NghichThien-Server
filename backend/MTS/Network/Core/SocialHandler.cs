@@ -27,15 +27,15 @@ namespace MTS.Network.Core
         {
             var tag = message.Tag;
             var reader = message.Reader;
-            var charData = client.CharacterData;
             if (tag == MessageTag.ThinhGiaoKyNang)
             {
                 var request = reader.Read<ThinhGiaoKyNang>();
                 ThinhGiaoKyNangResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.ThinhGiaoKyNang(request);
                     }
                 }
@@ -58,8 +58,9 @@ namespace MTS.Network.Core
                 TangQuaNpcResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.TangQuaNpc(request);
                     }
                 }
@@ -83,8 +84,9 @@ namespace MTS.Network.Core
                 GachaResult result = null;
                 try
                 {
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         result = charData.Gacha(request);
                     }
                 }

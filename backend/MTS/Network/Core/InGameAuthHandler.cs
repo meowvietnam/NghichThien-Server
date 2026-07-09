@@ -39,7 +39,7 @@ public class InGameAuthHandler : IClientHandler
             LogoutResult result = null;
             try
             {
-                lock (client)
+                lock (client.StateLock)
                 {
                     result = ClientLogout().GetAwaiter().GetResult();
                 }

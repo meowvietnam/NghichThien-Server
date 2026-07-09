@@ -27,9 +27,9 @@ namespace MTS.Network.Core
                 GetRankResult result = null;
                 try
                 {
-                    var charData = client.CharacterData;
-                    lock (charData)
+                    lock (client.CharacterLock)
                     {
+                        var charData = client.CharacterData;
                         IRank rank = null;
                         if (rankType == RankType.RankLevel)
                         {

@@ -30,7 +30,7 @@ namespace MTS.Network.ClientState
                 LoginResult result = null;
                 try
                 {
-                    lock (client)
+                    lock (client.StateLock)
                     {
                         result = login.Login().GetAwaiter().GetResult();
                         var user = result.UserData.User;
@@ -56,7 +56,7 @@ namespace MTS.Network.ClientState
                 LogoutResult result = null;
                 try
                 {
-                    lock (client)
+                    lock (client.StateLock)
                     {
                         if (!client.IsLoggedIn())
                         {
@@ -87,7 +87,7 @@ namespace MTS.Network.ClientState
                 PlayResult result = null;
                 try
                 {
-                    lock (client)
+                    lock (client.StateLock)
                     {
                         if (!client.IsLoggedIn())
                         {
@@ -118,9 +118,14 @@ namespace MTS.Network.ClientState
                 DeleteAccountResult result = null;
                 try
                 {
-                    lock (client)
+                    lock (client.StateLock)
                     {
-                        result = DeleteAccount().GetAwaiter().GetResult();
+                        if (!client.IsLoggedIn())
+                        {
+                            throw new Exception(Strings.NotLoggedIn);
+                        }
+
+                        result = DeleteAccount(client.UserData.Id).GetAwaiter().GetResult();
                     }
                 }
                 catch (Exception e)
@@ -138,16 +143,11 @@ namespace MTS.Network.ClientState
             }
         }
 
-        private async Task<DeleteAccountResult> DeleteAccount()
+        private async Task<DeleteAccountResult> DeleteAccount(int userId)
         {
-            if (!client.IsLoggedIn())
-            {
-                throw new Exception(Strings.NotLoggedIn);
-            }
-
             await using var db = await Program.CreateDbAsync();
             var result = await db.Users
-                .Where(x => x.Id == client.UserData.Id)
+                .Where(x => x.Id == userId)
                 .ExecuteDeleteAsync();
             if (result <= 0)
             {

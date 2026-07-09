@@ -33,15 +33,15 @@ public class SkillHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        var charData = client.CharacterData;
         if (tag == MessageTag.LearnNgoDao)
         {
             var idNgoDao = reader.Read<int>();
             LearnNgoDaoResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.LearnNgoDao(idNgoDao);
                 }
             }
@@ -64,8 +64,9 @@ public class SkillHandler : IClientHandler
             EquipThanThongResult result = null!;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.EquipThanThong(request);
                 }
             }
@@ -88,8 +89,9 @@ public class SkillHandler : IClientHandler
             UnequipThanThongResult result = null!;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.UnequipThanThong((ushort)id);
                 }
             }
@@ -112,8 +114,9 @@ public class SkillHandler : IClientHandler
             EquipCongPhapResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.EquipCongPhap(request);
                 }
             }
@@ -136,8 +139,9 @@ public class SkillHandler : IClientHandler
             UnequipCongPhapResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.UnequipCongPhap(slot);
                 }
             }
@@ -160,8 +164,9 @@ public class SkillHandler : IClientHandler
             TuLuyenResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.TuLuyen(time);
                 }
             }
@@ -184,8 +189,9 @@ public class SkillHandler : IClientHandler
             LinhNgoResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.LinhNgo(request);
                 }
             }
@@ -208,8 +214,9 @@ public class SkillHandler : IClientHandler
             DotPhaCongPhapResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.DotPhaCongPhap(request);
                 }
             }
@@ -232,8 +239,9 @@ public class SkillHandler : IClientHandler
             UseDanResult result = null;
             try
             {
-                lock (charData)
+                lock (client.CharacterLock)
                 {
+                    var charData = client.CharacterData;
                     result = charData.UseDan(request);
                 }
             }

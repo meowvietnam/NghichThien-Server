@@ -27,9 +27,9 @@ public class MailHandler : IClientHandler
             try
             {
                 var mailManager = client.MailManager;
-                lock (mailManager)
+                lock (client.MailLock)
                 {
-                    lock (client.CharacterData)
+                    lock (client.CharacterLock)
                     {
                         result = mailManager.GetMails(request.StartId, request.PageSize)
                             .GetAwaiter()
@@ -53,7 +53,7 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.ReadMail)
         {
             var mailManager = client.MailManager;
-            lock (mailManager)
+            lock (client.MailLock)
             {
                 var id = reader.Read<long>();
                 var result = mailManager.ReadMail(id).GetAwaiter().GetResult();
@@ -66,7 +66,7 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.RemoveMail)
         {
             var mailManager = client.MailManager;
-            lock (mailManager)
+            lock (client.MailLock)
             {
                 var id = reader.Read<long>();
                 var result = mailManager.RemoveMail(id).GetAwaiter().GetResult();
@@ -79,7 +79,7 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.RemoveAllMails)
         {
             var mailManager = client.MailManager;
-            lock (mailManager)
+            lock (client.MailLock)
             {
                 var result = mailManager.RemoveAllMails().GetAwaiter().GetResult();
                 client.Send(MessageTag.RemoveAllMailsResult, result);
@@ -89,9 +89,9 @@ public class MailHandler : IClientHandler
         {
             var id = reader.Read<long>();
             var mailManager = client.MailManager;
-            lock (mailManager)
+            lock (client.MailLock)
             {
-                lock (client.CharacterData)
+                lock (client.CharacterLock)
                 {
                     var result = mailManager.ClaimMail(id).GetAwaiter().GetResult();
                     if (result == null) return;
@@ -102,9 +102,9 @@ public class MailHandler : IClientHandler
         else if (tag == MessageTag.ClaimAllMails)
         {
             var mailManager = client.MailManager;
-            lock (mailManager)
+            lock (client.MailLock)
             {
-                lock (client.CharacterData)
+                lock (client.CharacterLock)
                 {
                     var result = mailManager.ClaimAllMails().GetAwaiter().GetResult();
                     if (result == null) return;
