@@ -9,6 +9,7 @@ namespace MTS.Models;
 public class UserData : IMemorySerializable<UserData>
 {
     [Key] public int Id { get; set; }
+    public Role Role { get; set; }
     public List<CharacterData> CharacterDatas { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -40,10 +41,6 @@ public class UserData : IMemorySerializable<UserData>
         {
             return;
         }
-        // await db.Users
-        //     .Where(x => x.Id == Id)
-        //     .ExecuteUpdateAsync(s => s
-        //         .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy));
         dirty = false;
     }
 }

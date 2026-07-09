@@ -6,6 +6,7 @@ public abstract class ILanguageStrings
     public abstract string LoginSuccess { get; }
     public abstract string GoogleLoginInvalid { get; }
     public abstract string NotLoggedIn { get; }
+    public abstract string DeleteAccountFailed { get; }
     public abstract string ClientOnline { get; }
 
     // Connection messages
@@ -15,6 +16,7 @@ public abstract class ILanguageStrings
     // Character selection messages
     public abstract string LimitCharacter { get; }
     public abstract string CharacterNotFound { get; }
+    public abstract string CharacterNotSelected { get; }
 
     // Character creation validation messages
     public abstract string SkinGenderInvalid { get; }
@@ -77,6 +79,7 @@ public abstract class ILanguageStrings
     // Combat validation messages
     public abstract string HackerLevelEnemyCombat { get; }
     public abstract string HackerHP { get; }
+    public abstract string CombatAlreadyInProgress { get; }
     public abstract string HackerLevelBossCombat { get; }
     public abstract string HackerSkillCombat { get; }
 

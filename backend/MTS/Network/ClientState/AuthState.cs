@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Services;
@@ -112,8 +113,52 @@ namespace MTS.Network.ClientState
                     client.MemSend(MessageTag.PlayRequest, result);
                 }
             }
+            else if (tag == MessageTag.DeleteAccountRequest)
+            {
+                DeleteAccountResult result = null;
+                try
+                {
+                    lock (client)
+                    {
+                        result = DeleteAccount().GetAwaiter().GetResult();
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new DeleteAccountResult
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.DeleteAccountRequest, result);
+                }
+            }
         }
 
+        private async Task<DeleteAccountResult> DeleteAccount()
+        {
+            if (!client.IsLoggedIn())
+            {
+                throw new Exception(Strings.NotLoggedIn);
+            }
+
+            await using var db = await Program.CreateDbAsync();
+            var result = await db.Users
+                .Where(x => x.Id == client.UserData.Id)
+                .ExecuteDeleteAsync();
+            if (result <= 0)
+            {
+                throw new Exception(Strings.DeleteAccountFailed);
+            }
+
+            return new DeleteAccountResult()
+            {
+                Success = true,
+            };
+        }
         public void OnLeave()
         {
         }

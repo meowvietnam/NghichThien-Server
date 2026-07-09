@@ -366,7 +366,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         {
             var currentValue = Convert.ToSingle(GetValue(type));
             SetValue(type, currentValue + value);
-
         }
         void AddTuVi()
         {
@@ -412,7 +411,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             else if (eDanBuffType == EDanBuffType.ThanThucChiDao)
             {
                 return ND.ETypeSkill.Than;
-
             }
             return ND.ETypeSkill.None;
         }
@@ -532,5 +530,11 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         {
             SetValue(StatType.DanDoc, DanDoc + danDoc);
         }    
+    }
+
+    public void ClampHp()
+    {
+        Hp = Math.Clamp(Hp, 0, SinhMenh);
+        isDirty = true;
     }
 }

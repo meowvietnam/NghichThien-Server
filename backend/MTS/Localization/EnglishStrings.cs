@@ -5,11 +5,13 @@ public class EnglishStrings : ILanguageStrings
     public override string LoginSuccess => "Login successful!";
     public override string GoogleLoginInvalid => "Google login is invalid or expired!";
     public override string NotLoggedIn => "You are not logged in!";
+    public override string DeleteAccountFailed => "Failed to delete account!";
     public override string ClientOnline => "Account is already logged in elsewhere!";
     public override string ConnectSuccess => "Connected to server successfully!";
     public override string SaveChangesCompleted => "Save changes completed!";
     public override string LimitCharacter => "Character limit reached!";
     public override string CharacterNotFound => "Character not found!";
+    public override string CharacterNotSelected => "No character has been selected!";
     public override string SkinGenderInvalid => "Skin gender is invalid!";
     public override string SkinCategoryMissing => "Not all skin categories selected!";
     public override string SkinOptionInvalid => "Skin option does not exist!";
@@ -65,6 +67,7 @@ public class EnglishStrings : ILanguageStrings
     public override string DailyQuestNotFound => "Daily quest does not exist!";
     public override string HackerLevelEnemyCombat => "Enemy level in combat is invalid!";
     public override string HackerHP => "Post-combat HP is invalid!";
+    public override string CombatAlreadyInProgress => "A combat session is already in progress!";
     public override string HackerLevelBossCombat => "Boss level in combat is invalid!";
     public override string HackerSkillCombat => "Skill used in combat is invalid!";
     public override string HackerEquipment => "Equipment data is invalid!";

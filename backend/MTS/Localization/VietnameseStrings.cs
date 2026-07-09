@@ -5,11 +5,13 @@ public class VietnameseStrings : ILanguageStrings
     public override string LoginSuccess => "Đăng nhập thành công!";
     public override string GoogleLoginInvalid => "Đăng nhập Google không hợp lệ hoặc đã hết hạn!";
     public override string NotLoggedIn => "Bạn chưa đăng nhập!";
+    public override string DeleteAccountFailed => "Xóa tài khoản thất bại!";
     public override string ClientOnline => "Tài khoản đang đăng nhập nơi khác!";
     public override string ConnectSuccess => "Kết nối tới máy chủ thành công!";
     public override string SaveChangesCompleted => "Lưu thay đổi hoàn tất!";
     public override string LimitCharacter => "Số lượng nhân vật đã đạt giới hạn!";
     public override string CharacterNotFound => "Nhân vật không tồn tại!";
+    public override string CharacterNotSelected => "Chưa chọn nhân vật!";
     public override string SkinGenderInvalid => "Giới tính ngoại hình không hợp lệ!";
     public override string SkinCategoryMissing => "Chưa chọn đầy đủ các bộ phận ngoại hình!";
     public override string SkinOptionInvalid => "Tùy chọn ngoại hình không tồn tại!";
@@ -62,6 +64,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string DailyQuestNotFound => "Nhiệm vụ hằng ngày không tồn tại!";
     public override string HackerLevelEnemyCombat => "Cấp độ quái trong trận đấu không hợp lệ!";
     public override string HackerHP => "Sinh mệnh sau trận đấu không hợp lệ!";
+    public override string CombatAlreadyInProgress => "Đang trong trận chiến, không thể bắt đầu trận mới!";
     public override string HackerLevelBossCombat => "Cấp độ Boss trong trận đấu không hợp lệ!";
     public override string HackerSkillCombat => "Thần thông sử dụng trong trận đấu không hợp lệ!";
     public override string HackerEquipment => "Dữ liệu trang bị không hợp lệ!";

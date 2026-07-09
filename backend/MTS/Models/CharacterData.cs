@@ -2063,6 +2063,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
                 throw new Exception(Strings.HasFlagTienThienDiMach);
             }
             Stats.Buff(linhDan, count);
+            Stats.ClampHp();
         }
     }
     public UseDanResult UseDan(UseDanRequest request)
@@ -2160,6 +2161,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
             }
 
             Stats.Buff(linhDan, count);
+            Stats.ClampHp();
             snapshot = new StatsSnapshot(Stats);
         }
 

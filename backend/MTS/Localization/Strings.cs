@@ -13,11 +13,13 @@ public static class Strings
     public static string LoginSuccess => _current.LoginSuccess;
     public static string GoogleLoginInvalid => _current.GoogleLoginInvalid;
     public static string NotLoggedIn => _current.NotLoggedIn;
+    public static string DeleteAccountFailed => _current.DeleteAccountFailed;
     public static string ClientOnline => _current.ClientOnline;
     public static string ConnectSuccess => _current.ConnectSuccess;
     public static string SaveChangesCompleted => _current.SaveChangesCompleted;
     public static string LimitCharacter => _current.LimitCharacter;
     public static string CharacterNotFound => _current.CharacterNotFound;
+    public static string CharacterNotSelected => _current.CharacterNotSelected;
     public static string SkinGenderInvalid => _current.SkinGenderInvalid;
     public static string SkinCategoryMissing => _current.SkinCategoryMissing;
     public static string SkinOptionInvalid => _current.SkinOptionInvalid;
@@ -70,6 +72,7 @@ public static class Strings
     public static string DailyQuestNotFound => _current.DailyQuestNotFound;
     public static string HackerLevelEnemyCombat => _current.HackerLevelEnemyCombat;
     public static string HackerHP => _current.HackerHP;
+    public static string CombatAlreadyInProgress => _current.CombatAlreadyInProgress;
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
     public static string HackerSkillCombat => _current.HackerSkillCombat;
     public static string HackerEquipment => _current.HackerEquipment;

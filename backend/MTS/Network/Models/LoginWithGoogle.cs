@@ -27,14 +27,14 @@ public partial class LoginWithGoogle : ILogin
             throw new Exception(Strings.GoogleLoginInvalid);
         }
         var email = payload.Email;
-        var name = payload.GivenName;
+        var name = payload.Name;
         var userData = await CreateOrLogin(email);
         return new LoginResult()
         {
             Success = true,
             UserData = new (userData),
             Message = $"Đăng nhập thành công với tài khoản Google {name}!",
-            WelcomeText = $"Chào mừng đạo hữu {name} bước vào Tiên Giới"
+            AccountAlias = name
         };
     }
 

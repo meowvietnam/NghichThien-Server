@@ -66,7 +66,7 @@ namespace MTS.Network.Core
                 {
                     if (combatSession != null)
                     {
-                        throw new(string.Empty);
+                        throw new Exception(Strings.CombatAlreadyInProgress);
                     }
                     lock (charData)
                     {
@@ -98,7 +98,7 @@ namespace MTS.Network.Core
                 {
                     if (combatSession != null)
                     {
-                        throw new(string.Empty);
+                        throw new Exception(Strings.CombatAlreadyInProgress);
                     }
                     lock (charData)
                     {

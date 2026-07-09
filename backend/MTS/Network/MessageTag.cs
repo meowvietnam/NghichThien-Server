@@ -167,4 +167,9 @@ public enum MessageTag
     
     LogoutRequest = 948,
     PlayRequest = 959,
+    DeleteAccountRequest = 969,
+    
+    
+    InGameLogout = 987,
+    InGameLogoutResult = 988,
 }

@@ -9,7 +9,7 @@ using Network.Extensions;
 
 namespace MTS.Network;
 
-public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageTag>
+public class Client : ClientConnection, IRequester<MessageTag>
 {
     public int Id { get; private set; }
     public string Key { get; private set; }
@@ -197,10 +197,13 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         module.RemoveHandler<InventoryHandler>();
         var inventoryHandler = new InventoryHandler(this);
         module.AddHandler(inventoryHandler);
-        
-        module.RemoveHandler<AdminHandler>();
-        var adminHandler = new AdminHandler(this);
-        module.AddHandler(adminHandler);
+
+        if (UserData.Role == Role.Admin)
+        {
+            module.RemoveHandler<AdminHandler>();
+            var adminHandler = new AdminHandler(this);
+            module.AddHandler(adminHandler);
+        }
         
         var sceneManager = new SceneManager(this);
         module.RemoveHandler<SceneManager>();
@@ -245,6 +248,10 @@ public class Client : ClientConnection, ISender<MessageTag>, IRequester<MessageT
         var progressionHandler = new ProgressionHandler(this);
         module.RemoveHandler<ProgressionHandler>();
         module.AddHandler(progressionHandler);
+        
+        var inGameAuthHandler = new InGameAuthHandler(this);
+        module.RemoveHandler<InGameAuthHandler>();
+        module.AddHandler(inGameAuthHandler);
         
         ChangeState(new AllMaps(this));
     }
