@@ -31,10 +31,13 @@ public class Client : ClientConnection, IRequester<MessageTag>
         client.TransferProtocol(tcpClient, this);
         TcpClient = tcpClient;
         CoreModule = new CoreMessageHandler<MessageTag>();
+        var sessionHandler = new SessionHandler(this);
+        CoreModule.RemoveHandler<SessionHandler>();
+        CoreModule.AddHandler(sessionHandler);
         stateModule = new MessageStateHandler<MessageTag, MessageState>();
         AddModule(CoreModule);
         AddModule(stateModule);
-        _ = Save();
+        Task.Run(Save);
     }
 
     private async Task Save()
@@ -89,6 +92,15 @@ public class Client : ClientConnection, IRequester<MessageTag>
         TcpServer.Instance.Remove(this);
     }
 
+    public async Task ForceLogout()
+    {
+        this.MemSend(MessageTag.InGameLogoutResult, new LogoutResult()
+        {
+            Success = true,
+        });
+        await SaveChanges();
+        SetUserData(null);
+    }
     public void Send(Span<byte> data)
     {
         TcpClient.Send(data);

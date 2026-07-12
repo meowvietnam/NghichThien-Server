@@ -182,5 +182,10 @@ namespace MTS.Network.Core
             }
             client.MemSend(MessageTag.WatchAds, ads);
         }
+
+        public bool IsWatching()
+        {
+            return Ads.Count > 0;
+        }
     }
 }

@@ -5,6 +5,7 @@ using MTS.Game;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.ClientState;
+using MTS.Network.Core;
 using NetworkServer;
 
 namespace MTS.Network;
@@ -55,6 +56,7 @@ public class TcpServer : BaseTcpServer
     public void AuthenticatedSuccess(UnauthenticatedClient client)
     {
         var newClient = new Client(client);
+
         clients.TryAdd(client.Id, newClient);
         newClient.ChangeState(new AuthState(newClient));
     }
@@ -86,8 +88,8 @@ public class TcpServer : BaseTcpServer
         Console.WriteLine(Strings.SaveChangesCompleted);
     }
 
-    public bool IsClientOnline(int userDataId)
+    public Client? GetClientOnline(int userDataId)
     {
-        return clients.Values.Any(x => x.IsLoggedIn() && x.UserData.Id == userDataId);
+        return clients.Values.FirstOrDefault(x => x.IsLoggedIn() && x.UserData.Id == userDataId);
     }
 }

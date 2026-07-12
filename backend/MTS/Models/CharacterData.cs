@@ -608,6 +608,7 @@ public class CharacterData : IMemorySerializable<CharacterData>
         var exp = oldExp + buffExp;
         Progression.SetCurrentExp(exp);
         var newHp = (int)Math.Ceiling(oldHp + Stats.SinhMenh * percentAddHp);
+        newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
         Stats.SetHp(newHp);

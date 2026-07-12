@@ -12,12 +12,12 @@ namespace MTS.Network.ClientState
         public void OnEnter()
         {
         }
-        private void ValidateOnline(int userId)
+        private async Task LogoutClientOnline(int userId)
         {
-            var isClentOnline = TcpServer.Instance.IsClientOnline(userId);
-            if (isClentOnline)
+            var clientOnline = TcpServer.Instance.GetClientOnline(userId);
+            if (clientOnline != null)
             {
-                throw new Exception(Strings.ClientOnline);
+                await clientOnline.ForceLogout();
             }
         }
         public void Handle(Message<MessageTag> message)
@@ -34,7 +34,7 @@ namespace MTS.Network.ClientState
                     {
                         result = login.Login().GetAwaiter().GetResult();
                         var user = result.UserData.User;
-                        ValidateOnline(user.Id);
+                        LogoutClientOnline(user.Id).GetAwaiter().GetResult();
                         client.SetUserData(user);
                     }
                 }
