@@ -126,16 +126,13 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
 
     public static int GetMinTamCanh()
     {
-        return -50;
+        return -100;
     }
     public void SetTamCanh(int tamCanh)
     {
+        tamCanh = Math.Max(GetMinTamCanh(), tamCanh);
         if (TamCanh != tamCanh)
         {
-            if (tamCanh < GetMinTamCanh())
-            {
-                throw new Exception(Strings.TamCanhBelowMinimum);
-            }
             TamCanh = tamCanh;
             isDirty = true;
         }

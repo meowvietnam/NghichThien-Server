@@ -304,10 +304,6 @@ public partial class CharacterData
         }
         var months = time.Days / 30;
         var newTamCanh = Stats.TamCanh - months;
-        if (newTamCanh < CharacterStats.GetMinTamCanh())
-        {
-            throw new Exception(Strings.TamCanhBelowMinimum);
-        }
         var cost = CalculateCostTuLuyen() * months;
         var money = Stats.LinhThach;
         var remaining = money - cost;
@@ -341,7 +337,7 @@ public partial class CharacterData
         {
             Success = true,
             CurrentExp = Progression.CurrentExp,
-            NewTamCanh = newTamCanh,
+            NewTamCanh = Stats.TamCanh,
             RemainingMoney = remaining,
             NewHp = newHp,
             DeltaExp = buffExp,

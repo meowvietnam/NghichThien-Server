@@ -11,6 +11,6 @@ namespace MTS.Network.Models
         public int MoneyVipRandom { get; set; }
         public int CurrentSideQuest { get; set; }
         public int LinhThachRandom { get; set; }
-
+        public int NewTamCanh { get; set; }
     }
 }

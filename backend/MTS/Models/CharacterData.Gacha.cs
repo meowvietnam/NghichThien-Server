@@ -21,7 +21,6 @@ public partial class CharacterData
 {
     public GachaResult? Gacha(GachaModel request)
     {
-        RewardSnapshot reward = new RewardSnapshot();
         List<ItemRef> listItemRef = new List<ItemRef>();
 
         int require = GameConfig.PageGachaWithRequireValue[request.TypeGacha];
@@ -75,14 +74,13 @@ public partial class CharacterData
         }
 
         listItemRef = ConsolidateItemRefs(listItemRef);
-        this.InventoryManager.AddToInventory(listItemRef);
-        reward.ItemRefs = listItemRef;
-        this.SetMoneyVip(newTienNgoc);
+        var rewardItems = InventoryManager.AddToInventory(listItemRef);
+        SetMoneyVip(newTienNgoc);
         AddSpendMoneyVip(require, SpendFor.Gacha);
         return new GachaResult()
         {
             Success = true,
-            Reward = reward,
+            RewardItems = rewardItems,
             NewTienNgoc = newTienNgoc,
         };
     }

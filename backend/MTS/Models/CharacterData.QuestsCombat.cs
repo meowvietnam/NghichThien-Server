@@ -124,6 +124,7 @@ public partial class CharacterData
             MoneyVipRandom = moneyVip,
             CurrentSideQuest = newCountSideQuest,
             LinhThachRandom = linhThach,
+            NewTamCanh = Stats.TamCanh,
         };
     }
 
@@ -263,7 +264,7 @@ public partial class CharacterData
             NewNgoDaoDiem = newNgoDaoDiem,
             TypeResultCombat = request.TypeResultCombat,
             NewPointRank = newPointRank,
-            NewTamCanh = newTamCanh,
+            NewTamCanh = Stats.TamCanh,
         };
     }
 
