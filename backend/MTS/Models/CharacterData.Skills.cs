@@ -262,6 +262,35 @@ public partial class CharacterData
         return percentTamCanh;
     }
 
+    public int GetBuffExp(int months, float param2)
+    {
+        var chuTu1Id = EquipmentManager.ChuTu1Used;
+        var level = Progression.Level;
+        var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
+        var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
+        var percentTuChat = GetPercentTuChat();
+        var percentTamCanh = GetPercentTamCanh();      
+
+        int GetTotalValueBuffWithMultiplier(params float[] percent)
+        {
+            float total = tocDocTuLuyen;
+            foreach (var item in percent)
+            {
+                total *= (1 + item / 100f);
+            }
+            return (int)total;
+        }
+        var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, param2, percentTamCanh) * months;
+        if (Stats.Ability.HasFlag(Ability.TienThienDaoThe))
+        {
+            buffExp += (int)MathF.Ceiling(buffExp * 0.1f);
+        }
+        if (Stats.Ability.HasFlag(Ability.HuyenAmTuyetMach))
+        {
+            buffExp -= (int)MathF.Ceiling(buffExp * 0.1f);
+        }
+        return buffExp;
+    }
     public TuLuyenResult TuLuyen(TimeSpan time)
     {
         if (time < TimeSpan.FromDays(30))
@@ -296,36 +325,9 @@ public partial class CharacterData
         {
             throw new Exception(Strings.ExceedLimit);
         }
-
-        var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
-        var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
-        var percentTuChat = GetPercentTuChat();
-        var percentTamCanh = GetPercentTamCanh();
-
-        int GetTotalValueBuffWithMultiplier(params float[] percent)
-        {
-            float total = tocDocTuLuyen;
-            foreach (var item in percent)
-            {
-                total *= (1 + item / 100f);
-            }
-
-            return (int)total;
-        }
-
+        var buffExp = GetBuffExp(months, 100);
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);
-        var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, 100, percentTamCanh) * months;
-        if (Stats.Ability.HasFlag(Ability.TienThienDaoThe))
-        {
-            buffExp += (int)MathF.Ceiling(buffExp * 0.1f);
-        }
-
-        if (Stats.Ability.HasFlag(Ability.HuyenAmTuyetMach))
-        {
-            buffExp -= (int)MathF.Ceiling(buffExp * 0.1f);
-        }
-
         var oldExp = Progression.CurrentExp;
         var oldHp = Stats.Hp;
         var exp = oldExp + buffExp;

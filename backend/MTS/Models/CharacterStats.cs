@@ -117,8 +117,10 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     {
         if (TuoiTac != value)
         {
+            var oldValue = TuoiTac;
             TuoiTac = value;
             isDirty = true;
+            CharacterData.Progression.OnSetTuoiTac(oldValue, value);
         }
     }
 

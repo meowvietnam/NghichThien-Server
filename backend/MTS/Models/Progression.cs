@@ -199,7 +199,7 @@ public class Progression : IMemorySerializable<Progression>
                 dirty = true;
                 return;
             }
-
+            
             remainingExp -= require;
             CurrentExp = remainingExp;
             SetLevel(Level + 1);
@@ -260,6 +260,35 @@ public class Progression : IMemorySerializable<Progression>
             NewNgoDaoDiem = ngoDaoDiem,
         };
         levelUpdated.ApplyTo(CharacterData);
-        CharacterData.Client.MemSend(MessageTag.LevelUpdated, levelUpdated);
+        var client = CharacterData.Client;
+        if (client != null)
+        {
+            client.MemSend(MessageTag.LevelUpdated, levelUpdated);
+        }
+    }
+
+    public void OnSetTuoiTac(TimeSpan oldValue, TimeSpan newValue)
+    {
+        var days1 = (int)(oldValue.TotalDays - 15 * 12 * 30);
+        var days2 = (int)(newValue.TotalDays - 15 * 12 * 30);
+        var month1 = days1 / 30;
+        var month2 = days2 / 30;
+        var delta = month2 - month1;
+        if (delta <= 0)
+        {
+            return;
+        }
+        var buffExp = CharacterData.GetBuffExp(delta, 0);
+        SetCurrentExp(CurrentExp + buffExp);
+        var client = CharacterData.Client;
+        if (client != null)
+        {
+            var reward = new ExperienceReward()
+            {
+                AddExp = buffExp,
+                NewExp = CurrentExp
+            };
+            client.MemSend(MessageTag.ExperienceReward, reward);
+        }
     }
 }

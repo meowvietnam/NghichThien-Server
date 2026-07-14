@@ -57,7 +57,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     [Newtonsoft.Json.JsonIgnore]
     [MemoryPackIgnore]
     [NotMapped]
-    public Client Client { get; set; }
+    public Client? Client { get; set; }
 
     [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
     private List<SpendingMoneyVip> addedSpendingMoneyVips = new();
