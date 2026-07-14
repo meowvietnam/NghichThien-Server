@@ -74,7 +74,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
         if (oldSlot != null)
         {
             ThanThongEquips.Remove(oldSlot);
-            tracking.ThanThongEquips.Delete(thanThong);
+            tracking.ThanThongEquips.Delete(oldSlot);
             isDirty1 = true;
         }
         var add = ThanThongEquips.Add(thanThong);

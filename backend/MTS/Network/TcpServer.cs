@@ -15,6 +15,7 @@ public class TcpServer : BaseTcpServer
     public static TcpServer Instance { get; private set; }
     private ConcurrentDictionary<int, UnauthenticatedClient> unauthenticatedClients = new();
     private ConcurrentDictionary<int, Client> clients = new();
+    private ConcurrentDictionary<int, Client> disconnectedClients = new();
     private int currentId = int.MinValue;
     public TcpServer(int port) : base(port)
     {
@@ -49,9 +50,12 @@ public class TcpServer : BaseTcpServer
     {
         unauthenticatedClients.TryRemove(unauthenticatedClient.Id, out _);
     }
-    public void Remove(Client client)
+    public async Task Remove(Client client)
     {
         clients.TryRemove(client.Id, out _);
+        disconnectedClients.TryAdd(client.Id, client);
+        await Task.Delay(TimeSpan.FromMinutes(5));
+        disconnectedClients.TryRemove(client.Id, out _);
     }
     public void AuthenticatedSuccess(UnauthenticatedClient client)
     {
@@ -87,9 +91,39 @@ public class TcpServer : BaseTcpServer
         await Task.WhenAll(tasks);
         Console.WriteLine(Strings.SaveChangesCompleted);
     }
-
     public Client? GetClientOnline(int userDataId)
     {
         return clients.Values.FirstOrDefault(x => x.IsLoggedIn() && x.UserData.Id == userDataId);
+    }
+    public Client? GetDisconnectedClient(Reconnect request)
+    {
+        var id = request.Id;
+        var key = request.Key;
+        if (disconnectedClients.TryGetValue(id, out var client))
+        {
+            if(client.Key == key)
+            {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    public Client? GetDisconnectedClientHasLogin(int userId)
+    {
+        return disconnectedClients.Values.FirstOrDefault(x => x.IsLoggedIn() && x.UserData.Id == userId);
+    }
+    public void RemoveDisconnectClient(Client client)
+    {
+        disconnectedClients.TryRemove(client.Id, out _);
+    }
+
+    public Client[] GetClientsOnline()
+    {
+        return clients.Values.ToArray();
+    }
+    public Client[] GetClientsDisconnected()
+    {
+        return disconnectedClients.Values.ToArray();
     }
 }

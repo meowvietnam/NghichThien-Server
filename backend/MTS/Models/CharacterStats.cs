@@ -6,6 +6,7 @@ using MTS.CP;
 using MTS.Data;
 using MTS.Game.CreateCharacter;
 using MTS.Game.LuyenDan;
+using MTS.Localization;
 using Network;
 using Network.Extensions;
 using Action = MTS.Game.CreateCharacter.Action;
@@ -120,11 +121,19 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
-    
+
+    public static int GetMinTamCanh()
+    {
+        return -50;
+    }
     public void SetTamCanh(int tamCanh)
     {
         if (TamCanh != tamCanh)
         {
+            if (tamCanh < GetMinTamCanh())
+            {
+                throw new Exception(Strings.TamCanhBelowMinimum);
+            }
             TamCanh = tamCanh;
             isDirty = true;
         }

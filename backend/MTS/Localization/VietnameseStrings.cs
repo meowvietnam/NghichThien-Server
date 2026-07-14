@@ -7,6 +7,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string NotLoggedIn => "Bạn chưa đăng nhập!";
     public override string DeleteAccountFailed => "Xóa tài khoản thất bại!";
     public override string ClientOnline => "Tài khoản đang đăng nhập nơi khác!";
+    public override string ReconnectClientNotFound => "Không tìm thấy phiên kết nối để khôi phục!";
     public override string ConnectSuccess => "Kết nối tới máy chủ thành công!";
     public override string SaveChangesCompleted => "Lưu thay đổi hoàn tất!";
     public override string LimitCharacter => "Số lượng nhân vật đã đạt giới hạn!";
@@ -85,6 +86,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string InventoryItemNotFound => "Vật phẩm không tồn tại trong túi đồ!";
     public override string InventoryItemQuantityInvalid => "Số lượng vật phẩm trong túi đồ không đủ!";
     public override string RetreatDurationInvalid => "Thời gian tu luyện phải ít nhất 30 ngày!";
+    public override string TamCanhBelowMinimum => "Tâm cảnh đã xuống dưới giới hạn cho phép!";
     public override string GiftItemQuantityInvalid => "Số lượng vật phẩm tặng không hợp lệ!";
     public override string LinhDanQuantityInvalid => "Số lượng đan dược sử dụng không hợp lệ!";
     public override string LinhDanNotFound => "Đan dược không tồn tại!";

@@ -165,6 +165,7 @@ public class Progression : IMemorySerializable<Progression>
         {
             Success = true,
             StatsSnapshot = new StatsSnapshot(CharacterData.Stats),
+            BuffItems = actualyBuffItems,
         };
     }
 

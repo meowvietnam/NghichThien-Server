@@ -11,7 +11,7 @@ public class ArenaRankService : BackgroundService
 {
     private readonly ILogger<ArenaRankService> logger;
     public static List<CharacterWrapper> Tops { get; private set; } = new();
-    private static readonly TimeSpan Interval = TimeSpan.FromDays(14);
+    private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
     public ArenaRankService(ILogger<ArenaRankService> logger)
     {
         this.logger = logger;

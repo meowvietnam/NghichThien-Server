@@ -1,8 +1,10 @@
 using MTS.Localization;
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
 using Network.Extensions;
+using Network.Extensions.MemoryPack;
 namespace MTS.Network;
 
 public class UnauthenticatedClient : ClientConnection
@@ -15,6 +17,7 @@ public class UnauthenticatedClient : ClientConnection
 
     private class CheckVersionState(UnauthenticatedClient client) : IMessageState<MessageTag, MessageState>
     {
+        private static readonly string[] acceptVersions = ["apk_v1.0.4"];
         public void OnEnter()
         {
         }
@@ -25,7 +28,7 @@ public class UnauthenticatedClient : ClientConnection
             if (tag == MessageTag.CheckVersion)
             {
                 var version = reader.Read();
-                var success = true;
+                var success = acceptVersions.Contains(version);
                 var msg = success ? $"Phiên bản hợp lệ" : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {
@@ -78,8 +81,42 @@ public class UnauthenticatedClient : ClientConnection
                 client.TcpClient.Send(MessageTag.ConnectResult, result);
                 client.ChangeState(new CheckVersionState(client));
             }
-            else if (tag == MessageTag.Reconnect) 
+            else if (tag == MessageTag.Reconnect)
             {
+                Result result =  null!;
+                var tcp = client.TcpClient;
+                try
+                {
+                    lock (client)
+                    {
+                        var request = reader.MemRead<Reconnect>();
+                        var disconnectedClient = TcpServer.Instance.GetDisconnectedClient(request);
+                        if (disconnectedClient == null)
+                        {
+                            throw new Exception(Strings.ReconnectClientNotFound);
+                        }
+                        isAuthenticated = true;
+                        disconnectedClient.TcpClient.Reconnect(client.TcpClient);
+                        TcpServer.Instance.RemoveDisconnectClient(disconnectedClient);
+                        tcp = disconnectedClient.TcpClient;
+                        result = new Result()
+                        {
+                            Success = true,
+                        };
+                    }
+                }
+                catch (Exception e)
+                {
+                    result = new Result()
+                    {
+                        Success = false,
+                        Message = e.Message,
+                    };
+                }
+                finally
+                {
+                    tcp.MemSend(MessageTag.ReconnectResult, result);
+                }
             }
         }
         public void OnLeave()

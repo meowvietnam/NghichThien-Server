@@ -18,6 +18,6 @@ namespace MTS.Network.Models
         public int NewNgoDaoDiem { get; set; }
         public ETypeResultCombat TypeResultCombat { get; set; }
         public int NewPointRank { get; set; }
-
+        public int NewTamCanh { get; set; }
     }
 }

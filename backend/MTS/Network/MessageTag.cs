@@ -175,4 +175,5 @@ public enum MessageTag
     BackToMainMenuRequest = 992,
     Ping = 1029,
     Pong = 1030,
+    SyncCharacterData = 1062,
 }

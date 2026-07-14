@@ -11,7 +11,7 @@ public class TuViRankService : BackgroundService
 {
     private readonly ILogger<TuViRankService> logger;
     public static List<CharacterWrapper> Tops { get; private set; } = new();
-    private static readonly TimeSpan Interval = TimeSpan.FromDays(7);
+    private static readonly TimeSpan Interval = TimeSpan.FromHours(12);
     public TuViRankService(ILogger<TuViRankService> logger)
     {
         this.logger = logger;

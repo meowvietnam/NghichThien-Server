@@ -28,6 +28,14 @@ namespace MTS.Game.ItemProvider
         public override int GetPriceItemSell(ushort id)
         {
             FurnaceData furnaceData = GetDataItemByIdRef(id);
+            if (furnaceData == null)
+            {
+                furnaceData = new FurnaceData()
+                {
+                    Id = id,
+                    Durability = 100
+                };
+            }
             return furnaceData.Durability * GameConfig.PriceFurnaceWithTierPerDurability[LuyenDanResources.Instance.FindItem(furnaceData).Tier];
         }
         public override (int, int) ValueTangQuaNPCWithItem(ushort id, int npcLevel)

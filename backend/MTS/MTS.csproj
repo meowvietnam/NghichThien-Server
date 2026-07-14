@@ -13,6 +13,7 @@
         <!-- Entity Framework Core -->
         <PackageReference Include="Google.Apis.AndroidPublisher.v3" Version="1.74.0.4165" />
         <PackageReference Include="JetBrains.Profiler.Api" Version="1.4.11" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
@@ -30,7 +31,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 
         <!-- JWT Authentication -->
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.1" />
 
         <!-- AutoMapper -->
         <PackageReference Include="AutoMapper" Version="16.1.1" />
@@ -94,4 +95,3 @@
     </ItemGroup>
 
 </Project>
-

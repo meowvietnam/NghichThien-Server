@@ -11,6 +11,8 @@ public partial class IapProduct
     public string StoreProductId { get; set; }      
     public long Price { get; set; }
     public IapProductType ProductType { get; set; }
+    [MemoryPackIgnore]
+    public IapProductType ActualProductType { get; set; }
     public Store Store { get; set; }
     public IIapReward Reward { get; set; }
     public bool IsActive { get; set; }

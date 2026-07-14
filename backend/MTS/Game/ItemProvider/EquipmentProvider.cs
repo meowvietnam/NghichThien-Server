@@ -17,7 +17,7 @@ public abstract class EquipmentProvider : ItemProvider<Equipment>
     {
         this.inventoryManager = inventoryManager;
     }
-    public abstract override Equipment GetDataItemByIdRef(ushort Id);
+    public abstract override Equipment GetDataItemByIdRef(ushort id);
     protected virtual string GetTextNameEquipment(ArtifactType artifactType)
     {
         return $" - {GetArtifactName(artifactType)}";
@@ -75,9 +75,7 @@ public abstract class EquipmentProvider : ItemProvider<Equipment>
     {
         var equipmentData = GetDataItemByIdRef(id);
         if (equipmentData == null) return 0;
-
         int totalPrice = 0;
-
         foreach (var item in equipmentData.Effects)
         {
             var materials = equipmentData.GetMaterialsWithEffectType(item.Type);
@@ -89,13 +87,10 @@ public abstract class EquipmentProvider : ItemProvider<Equipment>
                 float mid = (min + max) / 2f;
                 craftPercent = (item.Value - mid) / (max - min);
             }
-
             float gradeBonus = equipmentData.GradeConfig.MinGrade / 100f;
             float basePriceWithTier = materialCost * (1 + gradeBonus);
-
             totalPrice += Mathf.RoundToInt(basePriceWithTier * (1 + craftPercent));
         }
-
         return totalPrice;
     }
 

@@ -8,6 +8,7 @@ public abstract class ILanguageStrings
     public abstract string NotLoggedIn { get; }
     public abstract string DeleteAccountFailed { get; }
     public abstract string ClientOnline { get; }
+    public abstract string ReconnectClientNotFound { get; }
 
     // Connection messages
     public abstract string ConnectSuccess { get; }
@@ -108,6 +109,7 @@ public abstract class ILanguageStrings
 
     // Character action messages
     public abstract string RetreatDurationInvalid { get; }
+    public abstract string TamCanhBelowMinimum { get; }
     public abstract string GiftItemQuantityInvalid { get; }
 
     // Linh Dan messages

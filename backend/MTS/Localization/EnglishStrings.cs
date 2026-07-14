@@ -7,6 +7,7 @@ public class EnglishStrings : ILanguageStrings
     public override string NotLoggedIn => "You are not logged in!";
     public override string DeleteAccountFailed => "Failed to delete account!";
     public override string ClientOnline => "Account is already logged in elsewhere!";
+    public override string ReconnectClientNotFound => "Reconnect session was not found!";
     public override string ConnectSuccess => "Connected to server successfully!";
     public override string SaveChangesCompleted => "Save changes completed!";
     public override string LimitCharacter => "Character limit reached!";
@@ -88,6 +89,7 @@ public class EnglishStrings : ILanguageStrings
     public override string InventoryItemNotFound => "Item does not exist in the inventory!";
     public override string InventoryItemQuantityInvalid => "The inventory does not contain enough of this item!";
     public override string RetreatDurationInvalid => "Retreat duration must be at least 30 days!";
+    public override string TamCanhBelowMinimum => "Mental state is below the allowed minimum!";
     public override string GiftItemQuantityInvalid => "Gift item quantity is invalid!";
     public override string LinhDanQuantityInvalid => "The Linh Dan quantity is invalid!";
     public override string LinhDanNotFound => "Linh Dan does not exist!";

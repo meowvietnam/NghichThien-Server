@@ -18,9 +18,7 @@ public class TcpHostedService : IHostedService
 
     private async Task StartTask(CancellationToken stoppingToken)
     {
-        await using var db = await Program.CreateDbAsync();
-        var products = await db.IapProducts.ToListAsync(stoppingToken);
-        Console.WriteLine(products.Count);
+
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

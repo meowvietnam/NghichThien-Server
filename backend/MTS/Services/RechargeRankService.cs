@@ -11,7 +11,7 @@ namespace MTS.Services;
 
 public class RechargeRankService : BackgroundService
 {
-    private static readonly TimeSpan RankInterval = TimeSpan.FromDays(7);
+    private static readonly TimeSpan RankInterval = TimeSpan.FromHours(12);
     private readonly ILogger<RechargeRankService> logger;
     public static List<RechargeRankEntry> Tops { get; private set; } = new();
 

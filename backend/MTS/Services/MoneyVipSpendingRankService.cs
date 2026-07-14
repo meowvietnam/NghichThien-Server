@@ -9,7 +9,7 @@ namespace MTS.Services;
 
 public class MoneyVipSpendingRankService : BackgroundService
 {
-    private static readonly TimeSpan RankInterval = TimeSpan.FromDays(7);
+    private static readonly TimeSpan RankInterval = TimeSpan.FromHours(12);
     private readonly ILogger<MoneyVipSpendingRankService> logger;
     public static List<MoneyVipSpendingRankEntry> Tops { get; private set; } = new();
 

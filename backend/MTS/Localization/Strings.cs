@@ -15,6 +15,7 @@ public static class Strings
     public static string NotLoggedIn => _current.NotLoggedIn;
     public static string DeleteAccountFailed => _current.DeleteAccountFailed;
     public static string ClientOnline => _current.ClientOnline;
+    public static string ReconnectClientNotFound => _current.ReconnectClientNotFound;
     public static string ConnectSuccess => _current.ConnectSuccess;
     public static string SaveChangesCompleted => _current.SaveChangesCompleted;
     public static string LimitCharacter => _current.LimitCharacter;
@@ -93,6 +94,7 @@ public static class Strings
     public static string InventoryItemNotFound => _current.InventoryItemNotFound;
     public static string InventoryItemQuantityInvalid => _current.InventoryItemQuantityInvalid;
     public static string RetreatDurationInvalid => _current.RetreatDurationInvalid;
+    public static string TamCanhBelowMinimum => _current.TamCanhBelowMinimum;
     public static string GiftItemQuantityInvalid => _current.GiftItemQuantityInvalid;
     public static string LinhDanQuantityInvalid => _current.LinhDanQuantityInvalid;
     public static string HasFlagTienThienDiMach => "Sở hữu tiên thiên dị mạch";

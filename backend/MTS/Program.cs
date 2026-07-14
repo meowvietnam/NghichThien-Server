@@ -15,6 +15,7 @@ using MemoryPack;
 using MTS.Models;
 using MTS.Network.Models;
 using MTS.Services;
+using MTS.Utils;
 
 namespace MTS;
 public static class Program
@@ -27,6 +28,8 @@ public static class Program
     }
     public static void Main(string[] args)
     {
+        Console.Title = "MTS Server";
+        bool enableSwagger = true;
         Console.OutputEncoding = Encoding.UTF8;
         var builder = WebApplication.CreateBuilder(args);
         var webPort = builder.Configuration.GetValue("ServerPorts:WebPort", 9481);
@@ -100,7 +103,10 @@ public static class Program
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
-                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+                policy.SetIsOriginAllowed(_ => true)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials());
         });
 
         builder.Services.AddHostedService<TcpHostedService>();
@@ -113,7 +119,7 @@ public static class Program
         App = builder.Build();
         Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
         GameConfig.Init();
-        if (App.Environment.IsDevelopment())
+        if (App.Environment.IsDevelopment() || enableSwagger)
         {
             App.UseSwagger();
             App.UseSwaggerUI(c =>

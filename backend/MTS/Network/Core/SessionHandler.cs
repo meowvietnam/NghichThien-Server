@@ -80,6 +80,6 @@ public class SessionHandler : IClientHandler
         isConnected = false;
     }
 
-    private readonly MessageTag[] handlers = { MessageTag.Ping, MessageTag.Pong };
+    private static readonly MessageTag[] handlers = { MessageTag.Ping, MessageTag.Pong };
     public MessageTag[] HandleTag => handlers;
 }

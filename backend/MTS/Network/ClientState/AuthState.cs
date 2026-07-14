@@ -14,10 +14,18 @@ namespace MTS.Network.ClientState
         }
         private async Task LogoutClientOnline(int userId)
         {
-            var clientOnline = TcpServer.Instance.GetClientOnline(userId);
+            var server = TcpServer.Instance;
+            var clientOnline = server.GetClientOnline(userId);
             if (clientOnline != null)
             {
                 await clientOnline.ForceLogout();
+                return;
+            }
+            var disconnectedClient = server.GetDisconnectedClientHasLogin(userId);
+            if (disconnectedClient != null)
+            {
+                await disconnectedClient.ForceLogout();
+                server.RemoveDisconnectClient(disconnectedClient);
             }
         }
         public void Handle(Message<MessageTag> message)

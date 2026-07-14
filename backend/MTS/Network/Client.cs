@@ -15,8 +15,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
     public string Key { get; private set; }
     private MessageStateHandler<MessageTag, MessageState> stateModule;
     public CoreMessageHandler<MessageTag> CoreModule { get; private set; }
-    public UserData UserData { get; private set; }
-    public CharacterData CharacterData { get; private set; }
+    public UserData? UserData { get; private set; }
+    public CharacterData? CharacterData { get; private set; }
     public MailManager MailManager { get; private set; }
     public IMessageState<MessageTag,MessageState> ClientState => stateModule.State;
     public object StateLock { get; } = new();
@@ -72,7 +72,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
         return CharacterData != null;
     }
 
-    public void SetUserData(UserData userData)
+    public void SetUserData(UserData? userData)
     {
         UserData = userData;
     }
@@ -82,14 +82,21 @@ public class Client : ClientConnection, IRequester<MessageTag>
         Console.WriteLine(ex);
     }
 
-    protected override void OnDisconnected(IProtocol<MessageTag> protocol)
+    protected override async void OnDisconnected(IProtocol<MessageTag> protocol)
     {
-        if (IsCharacterSelected())
+        try
         {
-            Console.WriteLine($"Player {CharacterData.Name} disconnected");
+            if (IsCharacterSelected())
+            {
+                Console.WriteLine($"Player {CharacterData.Name} disconnected");
+            }
+            await SaveChanges();
+            TcpServer.Instance.Remove(this);
         }
-        _ = SaveChanges();
-        TcpServer.Instance.Remove(this);
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 
     public async Task ForceLogout()
@@ -100,14 +107,11 @@ public class Client : ClientConnection, IRequester<MessageTag>
         });
         await SaveChanges();
         SetUserData(null);
+        CharacterData = null;
     }
     public void Send(Span<byte> data)
     {
         TcpClient.Send(data);
-    }
-    public void Request(MessageTag tag, Action<IReader> callback, int timeoutMilliseconds = 0)
-    {
-        AddRequest(TcpClient, tag, callback, timeoutMilliseconds);
     }
     public async Task<CharacterData> Select(CharacterData characterData)
     {
