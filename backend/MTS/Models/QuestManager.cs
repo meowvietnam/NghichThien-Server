@@ -130,10 +130,13 @@ public partial class QuestManager
             {
                 reward = new QuestMoneyReward(item);
             }
+
             quest.Reload(reward);
         }
+
         return DailyQuests[edailyQuest];
     }
+
     public void ReloadDailyQuests()
     {
         var totalQuest = DailyQuests.First().Value.Count;
@@ -158,10 +161,12 @@ public partial class QuestManager
                 {
                     reward = new QuestMoneyVipReward(item);
                 }
+
                 quests[j].Reload(reward);
             }
+
             i++;
-        } 
+        }
     }
 
     private ushort RandomCount()
@@ -169,9 +174,8 @@ public partial class QuestManager
         return (ushort)Random.Shared.Next(1, 4);
     }
 
-    private ItemRef[] GetRandomItems(int totalQuest,int keys)
+    private ItemRef[] GetRandomItems(int totalQuest, int keys)
     {
-        var values = Enum.GetValues<EDailyQuest>();
         var herbs = GameConfig.LuyenDanResources.HerbDatas;
         var materials = GameConfig.LuyenKhiResources.Materials;
         var randoms = herbs

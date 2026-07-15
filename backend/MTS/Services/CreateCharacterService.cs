@@ -420,7 +420,9 @@ public class CreateCharacterService
             };
             Char.EquipThanThong(request);
         }
-
+        var shop = Char.ShopManager;
+        shop.CharData = Char;
+        shop.ReloadAll();
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
@@ -428,9 +430,7 @@ public class CreateCharacterService
         inventoryManager.CharacterData = Char;
         inventoryManager.Init();
         await inventoryManager.Load(db);
-        var shop = Char.ShopManager;
-        shop.CharData = Char;
-        shop.ReloadAll();
+
         user.CharacterDatas.Add(Char);
         return Char;
     }

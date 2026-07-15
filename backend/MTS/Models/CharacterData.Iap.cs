@@ -14,6 +14,7 @@ using MemoryPack;
 using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
+using MTS.Services;
 
 namespace MTS.Models;
 
@@ -146,19 +147,23 @@ public partial class CharacterData
         }
     }
 
-    public async Task<long> GetTongNap()
+    public async Task<long> GetTongNapInRank()
     {
         await using var db = await Program.CreateDbAsync();
+        var startUtc = RechargeRankService.GetTimeStart().UtcDateTime;
+        var endUtc = RechargeRankService.GetTimeEnd().UtcDateTime;
         return await db.IapPurchases
-            .Where(x => x.CharId == Id)
+            .Where(x => x.CharId == Id && x.PurchaseDate >= startUtc && x.PurchaseDate < endUtc)
             .SumAsync(x => x.MoneyVipSnapshot);
     }
-
-    public async Task<long> GetTongTieu()
+    
+    public async Task<long> GetTongTieuInRank()
     {
         await using var db = await Program.CreateDbAsync();
+        var startUtc = MoneyVipSpendingRankService.GetTimeStart().UtcDateTime;
+        var endUtc = MoneyVipSpendingRankService.GetTimeEnd().UtcDateTime;
         return await db.SpendingMoneyVips
-            .Where(x => x.CharId == Id)
+            .Where(x => x.CharId == Id && x.Time >= startUtc && x.Time < endUtc)
             .SumAsync(x => x.MoneyVip);
     }
 }

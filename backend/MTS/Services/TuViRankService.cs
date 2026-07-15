@@ -11,7 +11,7 @@ public class TuViRankService : BackgroundService
 {
     private readonly ILogger<TuViRankService> logger;
     public static List<CharacterWrapper> Tops { get; private set; } = new();
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(12);
+    private static readonly TimeSpan Interval = TimeSpan.FromDays(7);
     public TuViRankService(ILogger<TuViRankService> logger)
     {
         this.logger = logger;
@@ -66,10 +66,26 @@ public class TuViRankService : BackgroundService
 
     public static TimeSpan GetDelayToGrantRewards()
     {
+        var now = Now();
+        return GetTimeEnd() - now;
+    }
+
+    public static DateTimeOffset GetTimeStart()
+    {
         var start = GameConfig.GameReleaseDate;
         var now = Now();
-        var next = GetNextPeriodicTime(start, now, Interval);
-        return next - now;
+        if (now <= start)
+        {
+            return start;
+        }
+
+        var passedPeriods = (now - start).Ticks / Interval.Ticks;
+        return start.AddTicks(passedPeriods * Interval.Ticks);
+    }
+
+    public static DateTimeOffset GetTimeEnd()
+    {
+        return GetTimeStart() + Interval;
     }
 
     private static TimeSpan GetDelayToNextRun()

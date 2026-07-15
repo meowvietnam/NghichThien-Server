@@ -13,10 +13,11 @@ namespace MTS.Network.Core
         {
             this.client = client;
         }
+
         public void OnEnter()
         {
         }
-        
+
         public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
@@ -41,20 +42,22 @@ namespace MTS.Network.Core
                         {
                             var tops = RechargeRankService.Tops;
                             var time = RechargeRankService.GetDelayToGrantRewards();
-                            rank = new RankTongNap(tops, time, charData.GetTongNap().GetAwaiter().GetResult());
+                            rank = new RankTongNap(tops, time, charData.GetTongNapInRank().GetAwaiter().GetResult());
                         }
                         else if (rankType == RankType.RankTongTieu)
                         {
                             var tops = MoneyVipSpendingRankService.Tops;
                             var time = MoneyVipSpendingRankService.GetDelayToGrantRewards();
-                            rank = new RankTongTieu(tops, time, charData.GetTongTieu().GetAwaiter().GetResult());
+                            rank = new RankTongTieu(tops, time, charData.GetTongTieuInRank().GetAwaiter().GetResult());
                         }
-                        else if(rankType == RankType.RankArena)
+                        else if (rankType == RankType.RankArena)
                         {
                             var tops = ArenaRankService.Tops;
                             var time = ArenaRankService.GetDelayToGrantRewards();
-                            rank = new RankArena(tops, time,GameConfig.TypeRankArenaWithValue, GameConfig.TypeRankArenaWithValue);
+                            rank = new RankArena(tops, time, GameConfig.TypeRankArenaWithValue,
+                                GameConfig.TypeRankArenaWithValue);
                         }
+
                         result = new GetRankResult()
                         {
                             Success = rank != null,

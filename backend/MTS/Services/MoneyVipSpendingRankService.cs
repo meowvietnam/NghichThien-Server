@@ -9,7 +9,7 @@ namespace MTS.Services;
 
 public class MoneyVipSpendingRankService : BackgroundService
 {
-    private static readonly TimeSpan RankInterval = TimeSpan.FromHours(12);
+    private static readonly TimeSpan RankInterval = TimeSpan.FromDays(7);
     private readonly ILogger<MoneyVipSpendingRankService> logger;
     public static List<MoneyVipSpendingRankEntry> Tops { get; private set; } = new();
 
@@ -50,8 +50,7 @@ public class MoneyVipSpendingRankService : BackgroundService
 
     private async Task RefreshAsync(CancellationToken stoppingToken)
     {
-        var periodStart = GetCurrentPeriodStart(Now());
-        await GetTopsAsync(periodStart, periodStart + RankInterval, stoppingToken);
+        await GetTopsAsync(GetTimeStart(), GetTimeEnd(), stoppingToken);
     }
 
     private record RewardPercent(int Top, int Percent);
@@ -64,7 +63,7 @@ public class MoneyVipSpendingRankService : BackgroundService
             logger.LogInformation(
                 "{Service} sẽ phát thưởng sau {Delay}", nameof(MoneyVipSpendingRankService), delay);
             await Task.Delay(delay, stoppingToken);
-            var periodEnd = GetCurrentPeriodStart(Now());
+            var periodEnd = GetTimeStart();
 
             try
             {
@@ -93,15 +92,14 @@ public class MoneyVipSpendingRankService : BackgroundService
 
     public static TimeSpan GetDelayToGrantRewards()
     {
-        var start = GameConfig.GameReleaseDate;
         var now = Now();
-        var next = GetNextPeriodicTime(start, now, RankInterval);
-        return next - now;
+        return GetTimeEnd() - now;
     }
 
-    private static DateTimeOffset GetCurrentPeriodStart(DateTimeOffset now)
+    public static DateTimeOffset GetTimeStart()
     {
         var start = GameConfig.GameReleaseDate;
+        var now = Now();
         if (now <= start)
         {
             return start;
@@ -109,6 +107,11 @@ public class MoneyVipSpendingRankService : BackgroundService
 
         var passedPeriods = (now - start).Ticks / RankInterval.Ticks;
         return start.AddTicks(passedPeriods * RankInterval.Ticks);
+    }
+
+    public static DateTimeOffset GetTimeEnd()
+    {
+        return GetTimeStart() + RankInterval;
     }
 
     private async Task GetTopsAsync(
