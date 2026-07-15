@@ -62,6 +62,7 @@ public abstract class ILanguageStrings
     public abstract string MainCultivationRequiredForRetreat { get; }
     public abstract string ExceedLimit { get; }
     public abstract string CongPhapNotFound { get; }
+    public abstract string CongPhapMaxLevelReached { get; }
     public abstract string ThanThongNotFound { get; }
     public abstract string CongPhapOwned { get; }
     public abstract string ThanThongOwned { get; }

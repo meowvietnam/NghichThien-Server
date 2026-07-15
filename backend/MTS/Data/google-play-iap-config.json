@@ -1,5 +1,5 @@
 {
-  "PackageName": "com.",
-  "JsonPath": "",
-  "ApplicationName": ""
+  "PackageName": "com.DreamCultivationGame.NghchThinSkyBreaker",
+  "JsonPath": "Data/google-play-service-account.json",
+  "ApplicationName": "Sky-Breaker"
 }

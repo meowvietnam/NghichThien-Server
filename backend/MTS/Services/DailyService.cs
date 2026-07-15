@@ -18,14 +18,12 @@ public class DailyService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await RunJobAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = GetDelayToRun();
             logger.LogInformation(
                 "{Service} sẽ chạy sau {Delay}", nameof(DailyService), delay);
             await Task.Delay(delay, stoppingToken);
-
             try
             {
                 await RunJobAsync(stoppingToken);

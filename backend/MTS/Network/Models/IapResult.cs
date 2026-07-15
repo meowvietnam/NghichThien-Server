@@ -11,5 +11,9 @@ namespace MTS.Network.Models
         public Store Store { get; set; }
         public string ProductId { get; set; }
         public IIapReward Reward { get; set; }
+        public override string ToString()
+        {
+            return $"Success: {Success}, Message: {Message}, Store: {Store}, ProductId: {ProductId}, Reward: {Reward}";
+        }
     }
 }

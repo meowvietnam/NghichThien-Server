@@ -345,6 +345,10 @@ namespace MTS.Network.Core
             lock (client.CharacterLock)
             {
                 var charData = client.CharacterData;
+                if (charData == null)
+                {
+                    return;
+                }
                 CombatSession session;
                 lock (combatLock)
                 {

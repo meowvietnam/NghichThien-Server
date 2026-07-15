@@ -55,6 +55,7 @@ namespace MTS.Network.Core
                 }
                 finally
                 {
+                    Console.WriteLine(result);
                     client.Send(MessageTag.PurchaseIapResult, result);
                 }
             }

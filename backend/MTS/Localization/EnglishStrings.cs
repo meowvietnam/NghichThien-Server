@@ -54,6 +54,7 @@ public class EnglishStrings : ILanguageStrings
 
     public override string ExceedLimit => "Retreat duration exceeds the allowed limit!";
     public override string CongPhapNotFound => "Cong Phap does not exist!";
+    public override string CongPhapMaxLevelReached => "Cong Phap has reached the maximum level!";
     public override string ThanThongNotFound => "Than Thong does not exist!";
     public override string CongPhapOwned => "This Cong Phap is already owned!";
     public override string ThanThongOwned => "This Than Thong is already owned!";

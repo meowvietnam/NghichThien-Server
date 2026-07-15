@@ -509,7 +509,12 @@ public partial class CharacterData
         var congPhapOwners = InventoryManager.CongPhapOwners;
         if (congPhapOwners.TryGetValue(cpOwnerRef, out var cpOwner))
         {
-            require = cpOwner.Level + 1;
+            var newLevel = cpOwner.Level + 1;
+            if (newLevel >= 6)
+            {
+                throw new Exception(Strings.CongPhapMaxLevelReached);
+            }
+            require = newLevel;
         }
         else
         {

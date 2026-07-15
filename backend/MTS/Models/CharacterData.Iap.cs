@@ -22,6 +22,7 @@ public partial class CharacterData
 {
     public async Task<IapResult> IapPurchase(IapModel request)
     {
+        Console.WriteLine($"IapPurchase: {request}");
         var store = request.Store;
         var productId = request.ProductId;
         var purchaseToken = request.PurchaseToken;
@@ -32,16 +33,30 @@ public partial class CharacterData
             .FirstAsync(x => x.Store == store
                              && x.StoreProductId == productId
                              && x.IsActive);
+        var hasPurchased = await db.IapPurchases
+            .AnyAsync(x => x.Store == store
+                           && x.ProductId == product.Id
+                           && x.PurchaseTokenHash == purchaseTokenHash);
+        if (hasPurchased)
+        {
+            return new IapResult()
+            {
+                Success = true,
+                Reward = null,
+                Store = store,
+                ProductId = productId
+            };
+        }
+
         if (product.ActualProductType == IapProductType.NonConsumable)
         {
-            var hasPurchased = await db.IapPurchases
-                .AnyAsync(x => x.Store == store
-                               && x.PurchaseTokenHash == purchaseTokenHash);
+            hasPurchased = await db.IapPurchases.AnyAsync(x => x.Store == store && x.ProductId == product.Id);
             if (hasPurchased)
             {
                 throw new Exception(Strings.IapPurchaseAlreadyProcessed);
             }
         }
+
         var cancelToken = CancellationToken.None;
         if (store == Store.GooglePlay)
         {
@@ -156,7 +171,7 @@ public partial class CharacterData
             .Where(x => x.CharId == Id && x.PurchaseDate >= startUtc && x.PurchaseDate < endUtc)
             .SumAsync(x => x.MoneyVipSnapshot);
     }
-    
+
     public async Task<long> GetTongTieuInRank()
     {
         await using var db = await Program.CreateDbAsync();

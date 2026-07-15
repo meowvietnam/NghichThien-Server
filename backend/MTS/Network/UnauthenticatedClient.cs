@@ -5,6 +5,7 @@ using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
 using Network.Extensions;
 using Network.Extensions.MemoryPack;
+
 namespace MTS.Network;
 
 public class UnauthenticatedClient : ClientConnection
@@ -17,10 +18,12 @@ public class UnauthenticatedClient : ClientConnection
 
     private class CheckVersionState(UnauthenticatedClient client) : IMessageState<MessageTag, MessageState>
     {
-        private static readonly string[] acceptVersions = ["apk_v1.0.6"];
+        private static readonly string[] acceptVersions = ["apk_v1.0.6", "apk_v1.0.7"];
+
         public void OnEnter()
         {
         }
+
         public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
@@ -42,15 +45,19 @@ public class UnauthenticatedClient : ClientConnection
                 }
             }
         }
+
         public void OnLeave()
         {
         }
+
         public MessageState State => MessageState.CheckVersionState;
     }
-    private class ConnectState(UnauthenticatedClient client) : IMessageState<MessageTag,MessageState>
+
+    private class ConnectState(UnauthenticatedClient client) : IMessageState<MessageTag, MessageState>
     {
         public MessageState State => MessageState.ConnectState;
         private bool isAuthenticated;
+
         public void OnEnter()
         {
             _ = CheckAuthentication();
@@ -64,6 +71,7 @@ public class UnauthenticatedClient : ClientConnection
                 client.TcpClient.Disconnect();
             }
         }
+
         public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
@@ -83,7 +91,7 @@ public class UnauthenticatedClient : ClientConnection
             }
             else if (tag == MessageTag.Reconnect)
             {
-                Result result =  null!;
+                Result result = null!;
                 var tcp = client.TcpClient;
                 try
                 {
@@ -95,6 +103,7 @@ public class UnauthenticatedClient : ClientConnection
                         {
                             throw new Exception(Strings.ReconnectClientNotFound);
                         }
+
                         isAuthenticated = true;
                         disconnectedClient.TcpClient.Reconnect(client.TcpClient);
                         TcpServer.Instance.OnReconnected(disconnectedClient);
@@ -119,29 +128,33 @@ public class UnauthenticatedClient : ClientConnection
                 }
             }
         }
+
         public void OnLeave()
         {
         }
     }
+
     public int Id { get; private set; }
     public string Key { get; private set; }
-    private MessageStateHandler<MessageTag,MessageState> module;
+    private MessageStateHandler<MessageTag, MessageState> module;
 
-    public UnauthenticatedClient(int id, string key, NativeTcp client) 
+    public UnauthenticatedClient(int id, string key, NativeTcp client)
     {
         Id = id;
         Key = key;
-        module = new MessageStateHandler<MessageTag,MessageState>();
+        module = new MessageStateHandler<MessageTag, MessageState>();
         module.ChangeState(new ConnectState(this));
         AddModule(module);
         TcpClient = new TcpClient(client);
         AddProtocol(TcpClient);
         TcpClient.StartRead();
     }
-    private void ChangeState(IMessageState<MessageTag,MessageState> state)
+
+    private void ChangeState(IMessageState<MessageTag, MessageState> state)
     {
         module.ChangeState(state);
     }
+
     protected override void OnDisconnected(IProtocol<MessageTag> protocol)
     {
         TcpServer.Instance.Remove(this);

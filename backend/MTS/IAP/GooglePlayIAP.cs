@@ -21,8 +21,7 @@ public static class GooglePlayIap
     }
     private static readonly Lazy<AndroidPublisherService> Service =
         new(CreateService, LazyThreadSafetyMode.ExecutionAndPublication);
-
-    private static AndroidPublisherService CreateService()
+    public static AndroidPublisherService CreateService()
     {
         var jsonPath = Config.JsonPath;
 
