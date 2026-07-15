@@ -6,6 +6,7 @@ using MTS.Game;
 using MTS.Game.BaseSkill;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
+using MTS.Game.Resources;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Utils;
@@ -705,22 +706,19 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             return Update(cam, camNgo);
         }
-        else
-        {
-            return Add(camNgo);
-        }
+        return Add(camNgo);
     }
 
     public int Update(CamNgo oldValue, CamNgo newValue)
     {
         var p = CharacterData.Progression;
         var newNgoDaoDiem = p.NgoDaoDiem;
-        if (oldValue.Value < newValue.Value)
+        bool crossed = NgoDaoResource.CamNgoRequire.Any(x => oldValue.Value < x && newValue.Value >= x);
+        if (crossed)
         {
             newNgoDaoDiem++;
             p.SetNgoDaoDiem(newNgoDaoDiem);
         }
-
         oldValue.Value = newValue.Value;
         Tracking.CamNgos.Update(oldValue);
         return newNgoDaoDiem;
