@@ -110,6 +110,7 @@ public static class Program
         });
 
         builder.Services.AddHostedService<TcpHostedService>();
+        builder.Services.AddHostedService<DailyService>();
         builder.Services.AddHostedService<ReloadShopService>();
         builder.Services.AddHostedService<ReloadDailyQuestService>();
         builder.Services.AddHostedService<ArenaRankService>();

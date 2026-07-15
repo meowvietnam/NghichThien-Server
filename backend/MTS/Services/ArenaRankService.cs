@@ -12,6 +12,7 @@ public class ArenaRankService : BackgroundService
     private readonly ILogger<ArenaRankService> logger;
     public static List<CharacterWrapper> Tops { get; private set; } = new();
     private static readonly TimeSpan Interval = TimeSpan.FromDays(14);
+
     public ArenaRankService(ILogger<ArenaRankService> logger)
     {
         this.logger = logger;
@@ -67,14 +68,18 @@ public class ArenaRankService : BackgroundService
             }
         }
     }
+
     private async Task ResetRank(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-
+        await db.ArenaManagers
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Points, 0)
+                .SetProperty(x => x.CurrentArenaCount, 0), stoppingToken);
+        await db.RankRewards
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsClaim, false), stoppingToken);
         var onlineChars = TcpServer.Instance
             .GetCharsOnline()
             .ToDictionary(x => x.Id);
-
         foreach (var charData in onlineChars.Values)
         {
             lock (charData)
@@ -85,17 +90,12 @@ public class ArenaRankService : BackgroundService
                 {
                     arenaManagerReward.IsClaim = false;
                 }
+                charData.Client.Send(MessageTag.ResetArenaRank);
             }
-            charData.Client.Send(MessageTag.ResetArenaRank);
         }
-        await db.ArenaManagers
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Points, 0)
-                .SetProperty(x => x.CurrentArenaCount, 0), stoppingToken);
-        await db.RankRewards
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsClaim, false));
         Tops = new List<CharacterWrapper>();
-        
     }
+
     private static TimeSpan GetDelayToNextRun()
     {
         return TimeSpan.FromMinutes(2);

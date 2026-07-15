@@ -97,7 +97,7 @@ public class UnauthenticatedClient : ClientConnection
                         }
                         isAuthenticated = true;
                         disconnectedClient.TcpClient.Reconnect(client.TcpClient);
-                        TcpServer.Instance.RemoveDisconnectClient(disconnectedClient);
+                        TcpServer.Instance.OnReconnected(disconnectedClient);
                         tcp = disconnectedClient.TcpClient;
                         result = new Result()
                         {

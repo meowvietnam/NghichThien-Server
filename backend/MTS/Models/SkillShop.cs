@@ -5,6 +5,7 @@ using MTS.Network.Models;
 using MTS.Utils;
 
 namespace MTS.Models;
+
 [MemoryPackable]
 public partial class SkillShop : Shop
 {
@@ -14,8 +15,9 @@ public partial class SkillShop : Shop
         var monPhai = request.MonPhai;
         var skill = MonPhaiToSkill(monPhai);
         var ndttcp = GameConfig.NDCPTTManager;
+        var tiers = new[] { ETierSkill.NhanGiaiHa,ETierSkill.NhanGiaiTrung,ETierSkill.NhanGiaiThuong };
         var congPhaps = ndttcp.CongPhaps
-            .Where(x => (x.eTierSkill == ETierSkill.NhanGiaiHa || x.eTierSkill == ETierSkill.NhanGiaiTrung) 
+            .Where(x => (tiers.Contains(x.eTierSkill))
                         && QuerySkill(skill, x.eTypeSkill))
             .OrderBy(x => Random.Shared.Next())
             .Take(Take())
@@ -27,7 +29,7 @@ public partial class SkillShop : Shop
             });
         items.AddRange(congPhaps);
         var thanThongs = ndttcp.ThanThongs
-            .Where(x => (x.eTierSkill == ETierSkill.NhanGiaiHa || x.eTierSkill == ETierSkill.NhanGiaiTrung) 
+            .Where(x => (tiers.Contains(x.eTierSkill))
                         && QuerySkill(skill, x.eTypeSkill))
             .OrderBy(x => Random.Shared.Next())
             .Take(Take())
@@ -49,8 +51,10 @@ public partial class SkillShop : Shop
         {
             return true;
         }
+
         return skills.Contains(skill);
     }
+
     private ETypeSkill MonPhaiToSkill(EMonPhai monPhai)
     {
         switch (monPhai)
@@ -71,6 +75,7 @@ public partial class SkillShop : Shop
                 return ETypeSkill.None;
         }
     }
+
     protected override ushort RandomCount()
     {
         return 1;

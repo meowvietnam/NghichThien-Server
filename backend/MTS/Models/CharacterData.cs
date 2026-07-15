@@ -302,4 +302,9 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void ApplyReset(DailyReset dailyReset)
+    {
+        ArenaManager.SetCurrentArenaCount(dailyReset.CurrentArenaCount);
+        QuestManager.SetCurrentCountSideQuest(dailyReset.CurrentCountSideQuest);
+    }
 }

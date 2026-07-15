@@ -118,6 +118,12 @@ public class TcpServer : BaseTcpServer
         disconnectedClients.TryRemove(client.Id, out _);
     }
 
+    public void OnReconnected(Client client)
+    {
+        RemoveDisconnectClient(client);
+        clients.TryAdd(client.Id, client);
+    }
+
     public Client[] GetClientsOnline()
     {
         return clients.Values.ToArray();
