@@ -12,6 +12,8 @@ public static class Strings
 
     public static string LoginSuccess => _current.LoginSuccess;
     public static string GoogleLoginInvalid => _current.GoogleLoginInvalid;
+    public static string AdminSecretKeyInvalid => _current.AdminSecretKeyInvalid;
+    public static string AdminGoogleAccountNotFound => _current.AdminGoogleAccountNotFound;
     public static string NotLoggedIn => _current.NotLoggedIn;
     public static string DeleteAccountFailed => _current.DeleteAccountFailed;
     public static string ClientOnline => _current.ClientOnline;

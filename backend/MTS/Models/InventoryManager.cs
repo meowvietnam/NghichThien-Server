@@ -31,6 +31,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public int CharId { get; set; }
+
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Recipes { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> Herbs { get; set; } = new();
@@ -46,25 +47,26 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
     public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
 
-    [NotMapped] 
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
+    [NotMapped] [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
     private IdAllocator<ushort> furnaceIdAllocator;
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
-    [NotMapped] 
+
+    [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore] [NotMapped]
     private IdAllocator<ushort> equipmentIdAllocator;
-    [NotMapped] 
+
+    [NotMapped]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public InventoryTracking Tracking { get; private set; } = new();
+
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
-    [System.Text.Json.Serialization.JsonIgnore]                      
-    [JsonIgnore]                                        
-    public HashSet<ItemRef> ItemRefs { get; private set; } = new();  
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public HashSet<ItemRef> ItemRefs { get; private set; } = new();
+
     public void Init()
     {
         Tracking = new();
@@ -139,6 +141,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
         TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
     }
+
     public async Task Load(AppDbContext db)
     {
         var items = await db.Items
@@ -444,10 +447,14 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var myRecipe = Recipes.FirstOrDefault(x => x.Id == dataRes.Id);
             if (myRecipe == null)
             {
-                var rnd = new Random();
-                var rnds = Enumerable.Range(0, count).Where(x => rnd.NextDouble() < 0.5).ToArray();
-                actualCount = rnds.Length;
-
+                actualCount = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    if (RandomUtils.RandomChance(100))
+                    {
+                        actualCount++;
+                    }
+                }
                 var success = actualCount > 0;
                 if (!success)
                 {
@@ -706,6 +713,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             return Update(cam, camNgo);
         }
+
         return Add(camNgo);
     }
 
@@ -719,6 +727,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             newNgoDaoDiem++;
             p.SetNgoDaoDiem(newNgoDaoDiem);
         }
+
         oldValue.Value = newValue.Value;
         Tracking.CamNgos.Update(oldValue);
         return newNgoDaoDiem;
@@ -1006,7 +1015,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
         return newNgoDaoDiem;
     }
-
 }
 
 public static class LuyenKhiMessage

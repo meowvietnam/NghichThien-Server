@@ -4,6 +4,8 @@ public class EnglishStrings : ILanguageStrings
 {
     public override string LoginSuccess => "Login successful!";
     public override string GoogleLoginInvalid => "Google login is invalid or expired!";
+    public override string AdminSecretKeyInvalid => "Admin secret key is invalid!";
+    public override string AdminGoogleAccountNotFound => "Admin Google account was not found!";
     public override string NotLoggedIn => "You are not logged in!";
     public override string DeleteAccountFailed => "Failed to delete account!";
     public override string ClientOnline => "Account is already logged in elsewhere!";
