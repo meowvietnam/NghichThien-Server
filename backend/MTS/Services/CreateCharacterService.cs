@@ -19,7 +19,7 @@ public class CreateCharacterService
 
     public CreateCharacterService()
     {
-        Char = new CharacterData(GameConfig.CharacterTemplate);
+        Char = CharacterData.DeepClone(GameConfig.CharacterTemplate);
     }
 
     public async Task SetName(string name)

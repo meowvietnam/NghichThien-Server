@@ -162,6 +162,12 @@ public class Client : ClientConnection, IRequester<MessageTag>
         shopManager.CharData = characterData;
         characterData.ShopManager = shopManager;
         
+        var gachaManager = await db.GachaManagers
+            .AsNoTracking()
+            .FirstAsync(x => x.CharId == id);
+        gachaManager.CharData = characterData;
+        characterData.GachaManager = gachaManager;
+        
         lock (CharacterLock)
         {
             CharacterData = characterData;

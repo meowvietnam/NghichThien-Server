@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using MTS.Game;
+using MTS.Game.Gacha;
 
 namespace MTS.Network.Models
 {
@@ -12,5 +13,7 @@ namespace MTS.Network.Models
         public int NewTienNgoc { get; set; }
         public int Money { get; set; }
         public int MoneyVip { get; set; }
+        public ETypeGacha Type { get; set; }
+        public int TotalGacha { get; set; }
     }
 }

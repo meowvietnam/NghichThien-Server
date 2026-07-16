@@ -42,7 +42,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public QuestManager QuestManager { get; set; } = new();
     public ArenaManager ArenaManager { get; set; } = new();
     public ShopManager ShopManager { get; set; } = new();
-
+    public GachaManager GachaManager { get; set; } = new();
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -115,46 +115,16 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
-
     public CharacterData()
     {
     }
-
-    public CharacterData(CharacterData clone)
+    public static CharacterData DeepClone(CharacterData clone)
     {
-        Clone1(clone);
+        var writer = new Writer(clone.ByteSize());
+        writer.Write(clone);
+        var reader = new Reader(writer.Buffer);
+        return reader.Read<CharacterData>();
     }
-
-    private void Clone0(CharacterData clone)
-    {
-        MonPhai = clone.MonPhai;
-        MoneyVip = clone.MoneyVip;
-        IsInfiniteEnergy = clone.IsInfiniteEnergy;
-        IsNoAds = clone.IsNoAds;
-        CanFly = clone.CanFly;
-        CurrentFreeAdsMoneyVipCount = clone.CurrentFreeAdsMoneyVipCount;
-        CreatedAt = clone.CreatedAt;
-        dirty = false;
-    }
-
-    private void Clone1(CharacterData clone)
-    {
-        Id = clone.Id;
-        Gender = clone.Gender;
-        Name = clone.Name;
-        Stats.CopyFrom(clone.Stats);
-        InventoryManager.Clone(clone.InventoryManager);
-        CreatedAt = clone.CreatedAt;
-        Progression.CopyFrom(clone.Progression);
-        Appearance.CopyFrom(clone.Appearance);
-        Social.CopyFrom(clone.Social);
-        EquipmentManager.CopyFrom(clone.EquipmentManager);
-        QuestManager.CopyFrom(clone.QuestManager);
-        ArenaManager.CopyFrom(clone.ArenaManager);
-        ShopManager.CopyFrom(clone.ShopManager);
-        Clone0(clone);
-    }
-
     public int ByteSize()
     {
         return Id.ByteSize()
@@ -175,7 +145,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                + Social.ByteSize()
                + QuestManager.ByteSize()
                + ArenaManager.ByteSize()
-               + ShopManager.ByteSize();
+               + ShopManager.ByteSize()
+               + GachaManager.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -199,6 +170,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         writer.Write(QuestManager);
         writer.Write(ArenaManager);
         writer.Write(ShopManager);
+        writer.Write(GachaManager);
     }
 
     public void Deserialize(IReader reader, ref CharacterData value)
@@ -222,6 +194,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         value.QuestManager = reader.Read<QuestManager>();
         value.ArenaManager = reader.Read<ArenaManager>();
         value.ShopManager = reader.Read<ShopManager>();
+        value.GachaManager = reader.Read<GachaManager>();
     }
 
     public bool IsInventoryDefault()
@@ -299,6 +272,11 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         if (!ShopManager.IsDefault())
         {
             await ShopManager.SaveChanges(db);
+        }
+
+        if (!GachaManager.IsDefault())
+        {
+            await GachaManager.SaveChanges(db);
         }
     }
 

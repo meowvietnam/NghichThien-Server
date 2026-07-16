@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
     public DbSet<DailyQuest> DailyQuests { get; private set; }
     public DbSet<RankReward> RankRewards { get; private set; }
     public DbSet<SpendingMoneyVip> SpendingMoneyVips { get; private set; }
+    public DbSet<GachaManager> GachaManagers { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -393,6 +394,14 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<GachaManager>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharData)
+                .WithOne(x => x.GachaManager)
+                .HasForeignKey<GachaManager>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);;
         });
     }
 }

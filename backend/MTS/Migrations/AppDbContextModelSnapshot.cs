@@ -338,6 +338,31 @@ namespace MTS.Migrations
                     b.ToTable("Furnaces");
                 });
 
+            modelBuilder.Entity("MTS.Models.GachaManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GachaCongPhap")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GachaDanDuoc")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GachaDuocLieu")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GachaThanThong")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GachaVatLieu")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("GachaManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.GoogleAccount", b =>
                 {
                     b.Property<int>("Id")
@@ -857,6 +882,17 @@ namespace MTS.Migrations
                     b.Navigation("Inventory");
                 });
 
+            modelBuilder.Entity("MTS.Models.GachaManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne("GachaManager")
+                        .HasForeignKey("MTS.Models.GachaManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.GoogleAccount", b =>
                 {
                     b.HasOne("MTS.Models.UserData", "UserData")
@@ -1047,6 +1083,9 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("EquipmentManager")
+                        .IsRequired();
+
+                    b.Navigation("GachaManager")
                         .IsRequired();
 
                     b.Navigation("InventoryManager")
