@@ -404,7 +404,8 @@ public class CreateCharacterService
         };
         Char.EquipCongPhap(equipCongPhapRequest);
         var thanThongIds = new[] { 1, 201, 101, 301, 401, 501, 519 };
-        var thanThongs = thanThongIds.Select(x => GameConfig.NDCPTTManager.ThanThongs.First(i => i.Id == x))
+        var thanThongs = thanThongIds
+            .Select(x => GameConfig.NDCPTTManager.ThanThongs.First(i => i.Id == x))
             .Select(x => new ThanThong()
             {
                 Id = (ushort)x.Id,
@@ -426,6 +427,7 @@ public class CreateCharacterService
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
+        await Startup.SendMailWelcome(Char);
         var inventoryManager = Char.InventoryManager;
         inventoryManager.CharacterData = Char;
         inventoryManager.Init();

@@ -15,31 +15,85 @@ public partial class SkillShop : Shop
         var monPhai = request.MonPhai;
         var skill = MonPhaiToSkill(monPhai);
         var ndttcp = GameConfig.NDCPTTManager;
-        var tiers = new[] { ETierSkill.NhanGiaiHa,ETierSkill.NhanGiaiTrung,ETierSkill.NhanGiaiThuong };
+        var tierRates = new[]
+        {
+            new
+            {
+                Tier = ETierSkill.NhanGiaiHa,
+                Rate = 50
+            },
+            new
+            {
+                Tier = ETierSkill.NhanGiaiTrung,
+                Rate = 30
+            },
+            new
+            {
+                Tier = ETierSkill.NhanGiaiThuong,
+                Rate = 20
+            },
+        };
+        var tiers = tierRates.Select(x => x.Tier).ToArray();
+        var count = Take();
         var congPhaps = ndttcp.CongPhaps
             .Where(x => (tiers.Contains(x.eTierSkill))
                         && QuerySkill(skill, x.eTypeSkill))
-            .OrderBy(x => Random.Shared.Next())
-            .Take(Take())
-            .Select(x => new ItemRef()
+            .Select(x => new
             {
-                Type = ItemType.CongPhap,
-                Id = (ushort)x.Id,
-                Count = RandomCount()
-            });
-        items.AddRange(congPhaps);
+                Tier = x.eTierSkill,
+                Ref = new ItemRef()
+                {
+                    Type = ItemType.CongPhap,
+                    Id = (ushort)x.Id,
+                    Count = RandomCount()
+                }
+            })
+            .GroupBy(x => x.Tier)
+            .ToDictionary(x => x.Key, x => x.Select(i => i.Ref).ToList());
+        var randomCongPhap = new ItemRateRandomizer<List<ItemRef>>();
+        foreach (var tierRate in tierRates)
+        {
+            if (congPhaps.TryGetValue(tierRate.Tier, out var list))
+            {
+                randomCongPhap.Add(list, tierRate.Rate);
+            }
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            var item = randomCongPhap.Random().Random();
+            items.Add(item);
+        }
+        
         var thanThongs = ndttcp.ThanThongs
             .Where(x => (tiers.Contains(x.eTierSkill))
                         && QuerySkill(skill, x.eTypeSkill))
-            .OrderBy(x => Random.Shared.Next())
-            .Take(Take())
-            .Select(x => new ItemRef()
+            .Select(x => new
             {
-                Type = ItemType.ThanThong,
-                Id = (ushort)x.Id,
-                Count = RandomCount()
-            });
-        items.AddRange(thanThongs);
+                Tier = x.eTierSkill,
+                Ref = new ItemRef()
+                {
+                    Type = ItemType.ThanThong,
+                    Id = (ushort)x.Id,
+                    Count = RandomCount()
+                }
+            })
+            .GroupBy(x => x.Tier)
+            .ToDictionary(x => x.Key, x => x.Select(i => i.Ref).ToList());
+        var randomThanThong = new ItemRateRandomizer<List<ItemRef>>();
+        foreach (var tierRate in tierRates)
+        {
+            if (thanThongs.TryGetValue(tierRate.Tier, out var list))
+            {
+                randomThanThong.Add(list, tierRate.Rate);
+            }
+        }
+        for (int i = 0; i < count; i++)
+        {
+            var item = randomThanThong.Random().Random();
+            items.Add(item);
+        }
+        
         Items = items;
         LastReloadTime = DateTime.UtcNow;
         Dirty = true;

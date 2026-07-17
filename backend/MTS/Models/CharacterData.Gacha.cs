@@ -118,37 +118,8 @@ public partial class CharacterData
 
     private ItemRef? RollThanThong(bool special = false)
     {
-        // DiaGiaiHa: 6%, DiaGiaiTrung: 5%, DiaGiaiThuong: 4% (total 15%)
-        // ThienGiaiHa: 3%, ThienGiaiTrung: 2%, ThienGiaiThuong: 1% (total 6%)
-        // Remaining 79% distributed among NhanGiaiHa, NhanGiaiTrung, NhanGiaiThuong
-        // Constraint: NhanGiaiThuong < NhanGiaiTrung < NhanGiaiHa
-        // NhanGiaiHa: 31.6%, NhanGiaiTrung: 26.35%, NhanGiaiThuong: 21.05% (6:5:4 ratio)
-
-        double roll = Random.Shared.NextDouble() * 100;
-        ETierSkill tier;
-
-        if (special)
-        {
-            tier = new[] { ETierSkill.ThienGiaiHa, ETierSkill.ThienGiaiTrung, ETierSkill.ThienGiaiThuong }.Random();
-        }
-        else
-        {
-            if (roll < 6) tier = ETierSkill.DiaGiaiHa;
-            else if (roll < 11) tier = ETierSkill.DiaGiaiTrung;
-            else if (roll < 15) tier = ETierSkill.DiaGiaiThuong;
-            else if (roll < 18) tier = ETierSkill.ThienGiaiHa;
-            else if (roll < 20) tier = ETierSkill.ThienGiaiTrung;
-            else if (roll < 21) tier = ETierSkill.ThienGiaiThuong;
-            else if (roll < 52.6) tier = ETierSkill.NhanGiaiHa;
-            else if (roll < 78.95) tier = ETierSkill.NhanGiaiTrung;
-            else tier = ETierSkill.NhanGiaiThuong;
-        }
-
-        var tierOrder = new[]
-        {
-            tier, ETierSkill.NhanGiaiHa, ETierSkill.NhanGiaiTrung,
-            ETierSkill.NhanGiaiThuong
-        };
+        var tier = RollSkillTier(special);
+        var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validThanThongs = GameConfig.NDCPTTManager.ThanThongs
@@ -164,40 +135,10 @@ public partial class CharacterData
         return null;
     }
 
-    private ItemRef RollCongPhap(bool special = false)
+    private ItemRef? RollCongPhap(bool special = false)
     {
-        // DiaGiaiHa: 6%, DiaGiaiTrung: 5%, DiaGiaiThuong: 4% (total 15%)
-        // ThienGiaiHa: 3%, ThienGiaiTrung: 2%, ThienGiaiThuong: 1% (total 6%)
-        // Remaining 79% distributed among NhanGiaiHa, NhanGiaiTrung, NhanGiaiThuong
-        // Constraint: NhanGiaiThuong < NhanGiaiTrung < NhanGiaiHa
-        // NhanGiaiHa: 31.6%, NhanGiaiTrung: 26.35%, NhanGiaiThuong: 21.05% (6:5:4 ratio)
-
-        double roll = Random.Shared.NextDouble() * 100;
-        ETierSkill tier;
-
-        if (special)
-        {
-            tier = new[] { ETierSkill.ThienGiaiHa, ETierSkill.ThienGiaiTrung, ETierSkill.ThienGiaiThuong }.Random();
-        }
-        else
-        {
-            if (roll < 6) tier = ETierSkill.DiaGiaiHa;
-            else if (roll < 11) tier = ETierSkill.DiaGiaiTrung;
-            else if (roll < 15) tier = ETierSkill.DiaGiaiThuong;
-            else if (roll < 18) tier = ETierSkill.ThienGiaiHa;
-            else if (roll < 20) tier = ETierSkill.ThienGiaiTrung;
-            else if (roll < 21) tier = ETierSkill.ThienGiaiThuong;
-            else if (roll < 52.6) tier = ETierSkill.NhanGiaiHa;
-            else if (roll < 78.95) tier = ETierSkill.NhanGiaiTrung;
-            else tier = ETierSkill.NhanGiaiThuong;
-        }
-
-        // Try to get an item from the rolled tier, with fallback to higher tiers
-        var tierOrder = new[]
-        {
-            tier, ETierSkill.NhanGiaiHa, ETierSkill.NhanGiaiTrung,
-            ETierSkill.NhanGiaiThuong
-        };
+        var tier = RollSkillTier(special);
+        var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps
@@ -211,6 +152,45 @@ public partial class CharacterData
         }
 
         return null;
+    }
+
+    private ETierSkill RollSkillTier(bool special)
+    {
+        if (special)
+        {
+            return new[] { ETierSkill.ThienGiaiHa, ETierSkill.ThienGiaiTrung, ETierSkill.ThienGiaiThuong }.Random();
+        }
+
+        return new ItemRateRandomizer<ETierSkill>()
+            .Add(ETierSkill.NhanGiaiThuong, 70)
+            .Add(ETierSkill.DiaGiaiHa, 8)
+            .Add(ETierSkill.DiaGiaiTrung, 6)
+            .Add(ETierSkill.DiaGiaiThuong, 5)
+            .Add(ETierSkill.ThienGiaiHa, 5)
+            .Add(ETierSkill.ThienGiaiTrung, 3.5)
+            .Add(ETierSkill.ThienGiaiThuong, 2.5)
+            .Random();
+    }
+
+    private ETierSkill[] GetSkillTierFallbackOrder(ETierSkill tier)
+    {
+        var allTiers = new[]
+        {
+            ETierSkill.NhanGiaiThuong,
+            ETierSkill.DiaGiaiHa,
+            ETierSkill.DiaGiaiTrung,
+            ETierSkill.DiaGiaiThuong,
+            ETierSkill.ThienGiaiHa,
+            ETierSkill.ThienGiaiTrung,
+            ETierSkill.ThienGiaiThuong
+        };
+        var tierIndex = Array.IndexOf(allTiers, tier);
+        if (tierIndex < 0)
+        {
+            return allTiers;
+        }
+
+        return allTiers.Skip(tierIndex).Concat(allTiers.Take(tierIndex)).ToArray();
     }
 
     private ItemRef RollDanDuoc(bool special = false)
@@ -279,99 +259,58 @@ public partial class CharacterData
 
     private ItemRef RollDuocLieu(bool special = false)
     {
-        // Herb: 2% Lục, 5% Ngũ, 10% Tứ, then random in Tâm, Nhị, Nhất
-        // Recipe: Only 2% Nhị and 5% Nhất (no drops in Lục, Ngũ, Tứ, Tâm)
-        // Furnace: Only 2% Nhị and 5% Nhất (no drops in Lục, Ngũ, Tứ, Tâm)
-        // Constraint: Recipe < Furnace < Herb (always)
-
-        double roll = Random.Shared.NextDouble() * 100;
-        ItemType type;
-        Tier tier;
         if (special)
         {
-            tier = Tier.LucPham;
-        }
-        else
-        {
-            // First determine tier - now extends to NhatPham and NhiPham
-            // Lục, Ngũ, Tứ only drop Herb. Tâm drops only Herb. Nhị and Nhất can drop Recipe and Furnace
-            if (roll < 2) tier = Tier.LucPham; // 2% Herb
-            else if (roll < 7) tier = Tier.NguPham; // 5% Herb, cumulative 7%
-            else if (roll < 17) tier = Tier.TuPham; // 10% Herb, cumulative 17%
-            else if (roll < 31.33) tier = Tier.TamPham; // 14.33% Herb (4 out of 15)
-            else if (roll < 49.33)
-                tier = Tier.NhiPham; // 18% for Nhi (5 out of 15) - includes Recipe 2% + Furnace 2%
-            else tier = Tier.NhatPham; // 50.67% for Nhat (6 out of 15) - includes Recipe 5% + Furnace 5%
+            return RollItemByTypeAndTier(ItemType.Herb, Tier.LucPham);
         }
 
-        // Now determine which type based on the tier
-        if (tier == Tier.LucPham)
+        var roll = Random.Shared.NextDouble() * 100;
+        if (roll < 7)
         {
-            // Lục: 100% Herb
-            type = ItemType.Herb;
-        }
-        else if (tier == Tier.NguPham)
-        {
-            // Ngũ: 100% Herb
-            type = ItemType.Herb;
-        }
-        else if (tier == Tier.TuPham)
-        {
-            // Tứ: 100% Herb
-            type = ItemType.Herb;
-        }
-        else if (tier == Tier.TamPham)
-        {
-            // Tâm: 100% Herb
-            type = ItemType.Herb;
-        }
-        else if (tier == Tier.NhiPham)
-        {
-            // Nhị: Herb (14%), Recipe (2%), Furnace (2%) -> Herb: 77.78%, Recipe: 11.11%, Furnace: 11.11%
-            double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 77.78) type = ItemType.Herb;
-            else if (typeRoll < 88.89) type = ItemType.Recipe;
-            else type = ItemType.Furnace;
-        }
-        else // NhatPham
-        {
-            // Nhất: Herb (40.67%), Recipe (5%), Furnace (5%) -> Herb: 80.26%, Recipe: 9.87%, Furnace: 9.87%
-            double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 80.26) type = ItemType.Herb;
-            else if (typeRoll < 90.13) type = ItemType.Recipe;
-            else type = ItemType.Furnace;
+            var tier = Random.Shared.NextDouble() < 2d / 7d ? Tier.NhiPham : Tier.NhatPham;
+            return RollItemByTypeAndTier(ItemType.Recipe, tier);
         }
 
-        return RollItemByTypeAndTier(type, tier);
+        if (roll < 14)
+        {
+            var tier = Random.Shared.NextDouble() < 2d / 7d ? Tier.NhiPham : Tier.NhatPham;
+            return RollItemByTypeAndTier(ItemType.Furnace, tier);
+        }
+
+        return RollItemByTypeAndTier(ItemType.Herb, RollDuocLieuHerbTier(), Tier.TamPham);
     }
 
     private ItemRef RollVatLieu(bool special = false)
     {
-        // Material: 2% Lục, 5% Ngũ, 10% Tứ (total 17%)
-        // Remaining 83% distributed among Tâm, Nhị, Nhất with constraint: Tâm < Nhị < Nhất
-
-        double roll = Random.Shared.NextDouble() * 100;
-        Tier tier;
-
         if (special)
         {
-            tier = Tier.LucPham;
-        }
-        else
-        {
-            if (roll < 2) tier = Tier.LucPham; // 2%
-            else if (roll < 7) tier = Tier.NguPham; // 5%, cumulative 7%
-            else if (roll < 17) tier = Tier.TuPham; // 10%, cumulative 17%
-            else if (roll < 31.33) tier = Tier.TamPham; // 14.33% for Tam (4 out of 15)
-            else if (roll < 49.33) tier = Tier.NhiPham; // 18% for Nhi (5 out of 15)
-            else tier = Tier.NhatPham; // 50.67% for Nhat (6 out of 15)
+            return RollItemByTypeAndTier(ItemType.Material, Tier.LucPham);
         }
 
-        return RollItemByTypeAndTier(ItemType.Material, tier);
+        return RollItemByTypeAndTier(ItemType.Material, RollVatLieuTier(), Tier.TamPham);
     }
 
+    private Tier RollDuocLieuHerbTier()
+    {
+        return new ItemRateRandomizer<Tier>()
+            .Add(Tier.TamPham, 68)
+            .Add(Tier.TuPham, 12)
+            .Add(Tier.NguPham, 4)
+            .Add(Tier.LucPham, 2)
+            .Random();
+    }
 
-    private ItemRef RollItemByTypeAndTier(ItemType type, Tier tier)
+    private Tier RollVatLieuTier()
+    {
+        return new ItemRateRandomizer<Tier>()
+            .Add(Tier.TamPham, 80)
+            .Add(Tier.TuPham, 12)
+            .Add(Tier.NguPham, 5)
+            .Add(Tier.LucPham, 3)
+            .Random();
+    }
+
+    private ItemRef RollItemByTypeAndTier(ItemType type, Tier tier, Tier? minTier = null)
     {
         // Fallback tier order - try higher tiers if current tier has no items
         var allTiers = new[]
@@ -379,7 +318,17 @@ public partial class CharacterData
             Tier.NhatPham, Tier.NhiPham, Tier.TamPham,
             Tier.TuPham, Tier.NguPham, Tier.LucPham
         };
+        if (minTier.HasValue)
+        {
+            allTiers = allTiers.Where(x => x >= minTier.Value).ToArray();
+        }
+
         var tierIndex = Array.IndexOf(allTiers, tier);
+        if (tierIndex < 0)
+        {
+            tierIndex = 0;
+        }
+
         var tierOrder = allTiers.Take(tierIndex + 1).Reverse().Concat(allTiers.Skip(tierIndex + 1)).ToArray();
 
         foreach (var checkTier in tierOrder)

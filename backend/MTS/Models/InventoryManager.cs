@@ -450,7 +450,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 actualCount = 0;
                 for (int i = 0; i < count; i++)
                 {
-                    if (RandomUtils.RandomChance(100))
+                    if (RandomUtils.RandomChance(25))
                     {
                         actualCount++;
                     }
