@@ -276,11 +276,37 @@ public partial class CharacterData
         int currentRealm = (monsterLevel - 1) / 3;
         int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
 
-        // 2. Tính năng Bảo Hiểm / Đột Biến: Nếu ở max level của đại cảnh giới (3, 6, 9, 12, 15), sửa tỷ lệ thành 1% (0.01)
-        bool isMaxLevelOfRealm = (monsterLevel % 3 == 0);
-        if (isMaxLevelOfRealm && Random.Shared.NextDouble() <= 0.01)
+        // 2. Tính năng Đột Biến Động Mới (Áp dụng cho mọi level)
+        // Xác định vị trí trong nhóm 3 level (Ví dụ: Lv 1,2,3 -> index tương ứng là 0, 1, 2)
+        int indexInRealm = (monsterLevel - 1) % 3;
+
+        double normalMutationRate = 0.02; // Mặc định Level Đầu (Lv 1, 4, 7...): +1 cấp là 2%
+        double superMutationRate = 0.01;  // Mặc định Level Đầu (Lv 1, 4, 7...): +2 cấp là 1%
+
+        if (indexInRealm == 1) // Level Giữa (Lv 2, 5, 8...)
         {
-            currentTierIndex++; // Nhảy vọt lên 1 phẩm cấp cao hơn
+            normalMutationRate = 0.04; // +1 cấp là 4%
+            superMutationRate = 0.02;  // +2 cấp là 2%
+        }
+        else if (indexInRealm == 2) // Level Cuối (Lv 3, 6, 9...)
+        {
+            normalMutationRate = 0.06; // +1 cấp là 6%
+            superMutationRate = 0.03;  // +2 cấp là 3%
+        }
+
+        // Tổng tỷ lệ đột biến (Ví dụ: Level Đầu là 3%, Giữa là 6%, Cuối là 9%)
+        double totalMutationRate = normalMutationRate + superMutationRate;
+
+        // Quay xúc xắc từ 0.0 đến 1.0
+        double rate = Random.Shared.NextDouble();
+
+        if (rate <= superMutationRate)
+        {
+            currentTierIndex += 2; // Trúng đột biến cực đại: +2 phẩm cấp
+        }
+        else if (rate <= totalMutationRate)
+        {
+            currentTierIndex += 1; // Trúng đột biến thường: +1 phẩm cấp
         }
 
         // Khống chế không vượt quá Lục Phẩm (Index 5 trong enum Tier)
@@ -373,7 +399,7 @@ public partial class CharacterData
         for (int i = 0; i <= maxAllowedTierIndex; i++)
         {
             Tier t = (Tier)i;
-            float weight = (float)Math.Pow(3.5, maxAllowedTierIndex - i);
+            float weight = (float)Math.Pow(1.5, maxAllowedTierIndex - i);
             weights.Add(t, weight);
         }
 
