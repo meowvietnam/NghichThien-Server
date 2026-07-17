@@ -276,11 +276,21 @@ public partial class CharacterData
         int currentRealm = (monsterLevel - 1) / 3;
         int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
 
-        // 2. Tính năng Bảo Hiểm / Đột Biến: Nếu ở max level của đại cảnh giới (3, 6, 9, 12, 15), sửa tỷ lệ thành 1% (0.01)
+        // 2. Tính năng Bảo Hiểm / Đột Biến Mới (Tổng 2%)
         bool isMaxLevelOfRealm = (monsterLevel % 3 == 0);
-        if (isMaxLevelOfRealm && Random.Shared.NextDouble() <= 0.01)
+        if (isMaxLevelOfRealm)
         {
-            currentTierIndex++; // Nhảy vọt lên 1 phẩm cấp cao hơn
+            // Quay xúc xắc từ 0.0 đến 1.0 (tương ứng 0% đến 100%)
+            double rate = Random.Shared.NextDouble();
+
+            if (rate <= 0.005) // 0.5% tỷ lệ trúng đột biến cực đại
+            {
+                currentTierIndex += 2; // Nhảy vọt lên hẳn 2 phẩm cấp cao hơn
+            }
+            else if (rate <= 0.020) // 1.5% tiếp theo (từ 0.5% đến 2.0%) trúng đột biến thường
+            {
+                currentTierIndex += 1; // Nhảy vọt lên 1 phẩm cấp cao hơn
+            }
         }
 
         // Khống chế không vượt quá Lục Phẩm (Index 5 trong enum Tier)
@@ -373,7 +383,7 @@ public partial class CharacterData
         for (int i = 0; i <= maxAllowedTierIndex; i++)
         {
             Tier t = (Tier)i;
-            float weight = (float)Math.Pow(3.5, maxAllowedTierIndex - i);
+            float weight = (float)Math.Pow(1.5, maxAllowedTierIndex - i);
             weights.Add(t, weight);
         }
 
