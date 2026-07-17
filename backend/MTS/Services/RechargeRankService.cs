@@ -152,10 +152,19 @@ public class RechargeRankService : BackgroundService
             .Include(x => x.Appearance)
             .Include(x => x.Progression)
             .Include(x => x.Stats)
+            .Include(x => x.ArenaManager)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.ThanThongEquips)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.DanCombatUseds)
+            .Include(x => x.InventoryManager)
             .Where(x => charIds.Contains(x.Id))
             .AsSplitQuery()
             .ToDictionaryAsync(x => x.Id, stoppingToken);
-
+        foreach (var character in characters.Values)
+        {
+            await character.InventoryManager.Load(db);
+        }
         Tops = totals
             .Where(x => characters.ContainsKey(x.CharId))
             .Select(x => new RechargeRankEntry(characters[x.CharId], x.TotalSpent))

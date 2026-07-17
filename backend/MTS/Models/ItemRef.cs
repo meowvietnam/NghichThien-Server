@@ -48,7 +48,7 @@ public partial class ItemRef : IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDee
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, (byte)Type);
+        return HashCode.Combine(Id, Type);
     }
 
     public bool Equals(ItemRef? other)

@@ -17,15 +17,8 @@ public class TcpHostedService : IHostedService
         tcpServer = new TcpServer(port);
     }
 
-    private async Task StartTask(CancellationToken stoppingToken)
-    {
-        await using var db = await Program.CreateDbAsync();
-
-    }
-
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await StartTask(cancellationToken);
         await Task.Run(() => tcpServer.Run(), cancellationToken);
     }
 

@@ -455,6 +455,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                         actualCount++;
                     }
                 }
+
                 var success = actualCount > 0;
                 if (!success)
                 {
@@ -562,8 +563,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (itemRefse.TryGetValue(itemRef, out var item))
             {
-                item.Count = (ushort)(itemRef.Count + count);
-                if (item.Count == 0)
+                var remaining = itemRef.Count + count;
+                item.Count = (ushort)remaining;
+                if (remaining <= 0)
                 {
                     itemRefse.Remove(item);
                     Tracking.Items.Delete(item);
