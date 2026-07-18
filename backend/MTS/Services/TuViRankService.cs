@@ -101,18 +101,28 @@ public class TuViRankService : BackgroundService
     private async Task GetTopsAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-        Tops = await db.Characters
+        var topCharacters = await db.Characters
             .AsNoTracking()
             .Include(x => x.Appearance)
             .Include(x => x.Progression)
             .Include(x => x.Stats)
+            .Include(x => x.ArenaManager)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.ThanThongEquips)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.DanCombatUseds)
+            .Include(x => x.InventoryManager)
             .OrderByDescending(x => x.Progression.Level)
             .ThenByDescending(x => x.Progression.CurrentExp)
             .ThenByDescending(x => x.Stats.SinhMenh)
             .Take(10)
-            .Select(x => new CharacterWrapper(x))
             .AsSplitQuery()
             .ToListAsync(stoppingToken);
+        foreach (var character in topCharacters)
+        {
+            await character.InventoryManager.Load(db);
+        }
+        Tops = topCharacters.Select(x => new CharacterWrapper(x)).ToList();
     }
 
 }

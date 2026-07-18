@@ -69,7 +69,6 @@ public partial class CharacterSnapshot
         this.PhuTu3Used = equipment.PhuTu3Used;
         this.PhuTu4Used = equipment.PhuTu4Used;
         this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
-
         this.DanCombatUseds = equipment.DanCombatUseds;
         this.NgoDaos = c.InventoryManager.NgoDaos;
         this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x => x.SelfId == c.EquipmentManager.VuKhi);

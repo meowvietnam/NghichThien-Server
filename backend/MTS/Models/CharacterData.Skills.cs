@@ -303,6 +303,10 @@ public partial class CharacterData
             throw new Exception(Strings.MainCultivationRequiredForRetreat);
         }
         var months = time.Days / 30;
+        if (months > 120)
+        {
+            throw new Exception(Strings.ExceedLimit);
+        }
         var newTamCanh = Stats.TamCanh - months;
         var cost = CalculateCostTuLuyen() * months;
         var money = Stats.LinhThach;
@@ -312,15 +316,6 @@ public partial class CharacterData
             throw new Exception(Strings.NotEnoughMoney);
         }
 
-        var level = Progression.Level;
-        var thoNguyen = TimeSpan.FromDays(Stats.ThoNguyen * 365);
-        var tuoiTac = Stats.TuoiTac;
-        var p1 = time.Ticks / thoNguyen.Ticks * 100;
-        var p2 = time.Ticks / tuoiTac.Ticks * 100;
-        if (p1 > 10 || p2 > 10)
-        {
-            throw new Exception(Strings.ExceedLimit);
-        }
         var buffExp = GetBuffExp(months, 100);
         var percentAddHp = 0.1 * months;
         percentAddHp = Math.Clamp(percentAddHp, 0, 1);

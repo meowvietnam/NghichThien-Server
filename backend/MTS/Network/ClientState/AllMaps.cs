@@ -33,6 +33,7 @@ public class AllMaps : IClientState
         var charsOnline = TcpServer.Instance.GetCharsOnline()
             .Where(x => x.Progression.IdCurrentNode == currentNodeId && x.Id != charId)
             .Select(x => new CharacterSnapshot(x))
+            .OrderBy(_ => Random.Shared.Next())
             .Take(5)
             .ToArray();
         return charsOnline;
