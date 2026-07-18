@@ -271,63 +271,39 @@ public partial class CharacterData
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {
         var itemRefs = new List<ItemRef>();
-
-        // 1. Xác định Cảnh giới gốc (0: Luyện Khí, 1: Trúc Cơ, 2: Kim Đan, 3: Nguyên Anh, 4: Hóa Thần, 5: Trên Hóa Thần)
+         
         int currentRealm = (monsterLevel - 1) / 3;
-        int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
-
         int indexInRealm = (monsterLevel - 1) % 3;
 
-        double normalMutationRate = 0.02;
-        double superMutationRate = 0.01;
+        double normalMutationRate = 0.2;
+        double superMutationRate = 0.1;
+        normalMutationRate *= (indexInRealm+1);
+        superMutationRate *= (indexInRealm + 1);
 
-        // Nếu đã lên các đại cảnh giới cao hơn Luyện Khí (Trúc Cơ trở lên), 
-        // tăng mạnh tỷ lệ đột biến +1 để bù đắp cho việc quái mạnh lên.
-        double catchUpBonus = currentRealm * 0.1f;
-
-        if (indexInRealm == 0) // Level Đầu (Lv 1, 4, 7...)
-        {
-            normalMutationRate = 0.06 + catchUpBonus; // Lv 1: 4% | Lv 4: 14% (Mở Tam Phẩm 14% cực kỳ hợp lý vì là quái Trúc Cơ)
-            superMutationRate = 0.04;
-        }
-        else if (indexInRealm == 1) // Level Giữa (Lv 2, 5, 8...)
-        {
-            normalMutationRate = 0.1 + catchUpBonus; // Lv 5: 18%
-            superMutationRate = 0.06;
-        }
-        else if (indexInRealm == 2) // Level Cuối (Lv 3, 6, 9...)
-        {
-            normalMutationRate = 0.18 + catchUpBonus; // Lv 3: 16% | Lv 6: 26%
-            superMutationRate = 0.1;                 // Lv 3: 8% (Mở Tam Phẩm)
-        }
-        normalMutationRate = Math.Min(normalMutationRate, 0.30);
-        superMutationRate = Math.Min(superMutationRate, 0.15);
-
-        // Tổng tỷ lệ đột biến (Ví dụ: Level Đầu là 3%, Giữa là 6%, Cuối là 9%)
         double totalMutationRate = normalMutationRate + superMutationRate;
+        int rewardCount = Random.Shared.Next(3, 9);
 
-        // Quay xúc xắc từ 0.0 đến 1.0
-        double rate = Random.Shared.NextDouble();
-
-        if (rate <= superMutationRate)
+        // VÒNG LẶP: Giờ đây mỗi slot là một lần xúc xắc độc lập hoàn toàn!
+        for (int i = 0; i < rewardCount; i++)
         {
-            currentTierIndex += 2; // Trúng đột biến cực đại: +2 phẩm cấp
-        }
-        else if (rate <= totalMutationRate)
-        {
-            currentTierIndex += 1; // Trúng đột biến thường: +1 phẩm cấp
-        }
+            // Khởi tạo lại cấp bậc gốc cho từng slot quay riêng biệt
+            int slotMaxTierIndex = currentRealm;
 
-        // Khống chế không vượt quá Lục Phẩm (Index 5 trong enum Tier)
-        if (currentTierIndex > 5) currentTierIndex = 5;
+            // Lắc xúc xắc đột biến CHỈ cho riêng slot này
+            double rate = Random.Shared.NextDouble();
+            if (rate <= superMutationRate)
+            {
+                slotMaxTierIndex += 2; // Đột biến cực đại slot i
+            }
+            else if (rate <= totalMutationRate)
+            {
+                slotMaxTierIndex += 1; // Đột biến thường slot i
+            }
 
-        // 3. Tính toán phân bổ tỷ lệ động dựa trên level cụ thể (Tính 1 lần dùng chung cho cả 5 item)
-        var tierWeights = CalculateTierWeights(monsterLevel, currentTierIndex);
+            if (slotMaxTierIndex > 5) slotMaxTierIndex = 5;
 
-        // VÒNG LẶP: Sinh ra đúng 3 loại item phần thưởng độc lập
-        for (int i = 0; i < 3; i++)
-        {
-            // Mỗi item sẽ quay xúc xắc chọn Tier riêng biệt dựa trên Trọng Số (Weights)
+            // Tính trọng số động riêng cho slot này dựa trên trần phẩm cấp vừa quay được
+            var tierWeights = CalculateTierWeights(monsterLevel, slotMaxTierIndex);
             Tier selectedTier = RollRandomTier(tierWeights);
 
             // 4. Quyết định loại Item rơi ra (50% Material, 50% Herb)
@@ -336,68 +312,48 @@ public partial class CharacterData
 
             if (selectedType == ItemType.Material)
             {
-                var validMaterials = GameConfig.LuyenKhiResources.Materials
-                    .Where(m => m.Tier == selectedTier).ToList();
-
-                // Nếu không tìm thấy vật phẩm đúng Tier (ví dụ thiếu Nhất Phẩm)
+                var validMaterials = GameConfig.LuyenKhiResources.Materials.Where(m => m.Tier == selectedTier).ToList();
                 if (validMaterials.Count == 0)
                 {
-                    // Duyệt tăng dần từ Nhất Phẩm (0) đến Lục Phẩm (5) để tìm phẩm cấp thay thế gần nhất
                     for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
                     {
-                        validMaterials = GameConfig.LuyenKhiResources.Materials
-                            .Where(m => (int)m.Tier == tierIndex).ToList();
-
-                        if (validMaterials.Count > 0) break; // Tìm thấy danh sách có hàng là dừng lại liền
+                        validMaterials = GameConfig.LuyenKhiResources.Materials.Where(m => (int)m.Tier == tierIndex).ToList();
+                        if (validMaterials.Count > 0) break;
                     }
                 }
-
-                // Tiến hành bốc item
                 if (validMaterials.Count > 0)
                     selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
                 else
-                    selectedId = 1001; // ID bảo hiểm cuối cùng nếu cả database trống rỗng
+                    selectedId = 1001;
             }
             else
             {
-                var validHerbs = GameConfig.LuyenDanResources.HerbDatas
-                    .Where(h => h.Tier == selectedTier).ToList();
-
-                // Nếu không tìm thấy Thảo dược đúng Tier
+                var validHerbs = GameConfig.LuyenDanResources.HerbDatas.Where(h => h.Tier == selectedTier).ToList();
                 if (validHerbs.Count == 0)
                 {
-                    // Duyệt tăng dần từ Nhất Phẩm đến Lục Phẩm để tìm danh sách có dữ liệu gần nhất
                     for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
                     {
-                        validHerbs = GameConfig.LuyenDanResources.HerbDatas
-                            .Where(h => (int)h.Tier == tierIndex).ToList();
-
+                        validHerbs = GameConfig.LuyenDanResources.HerbDatas.Where(h => (int)h.Tier == tierIndex).ToList();
                         if (validHerbs.Count > 0) break;
                     }
                 }
-
-                // Tiến hành bốc item
                 if (validHerbs.Count > 0)
                     selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
                 else
-                    selectedId = 2001; // ID thảo dược rác bảo hiểm cuối cùng
+                    selectedId = 2001;
             }
 
-            // 5. Random số lượng độc lập cho từng item (Count từ 1 đến 3)
-            int rewardCount = Random.Shared.Next(1, 4);
 
-            // Nạp item này vào danh sách kết quả
             itemRefs.Add(new ItemRef()
             {
                 Id = (ushort)selectedId,
                 Type = selectedType,
-                Count = (ushort)rewardCount
+                Count = 1,
             });
         }
 
         return itemRefs;
     }
-
     /// <summary>
     /// Hàm tính toán trọng số tỷ lệ động. Càng về sau càng mở khóa phẩm cao, nhưng tỷ lệ phẩm cao luôn thấp.
     /// </summary>
@@ -408,7 +364,7 @@ public partial class CharacterData
         for (int i = 0; i <= maxAllowedTierIndex; i++)
         {
             Tier t = (Tier)i;
-            float weight = (float)Math.Pow(1.5, maxAllowedTierIndex - i);
+            float weight = (float)Math.Pow(1, maxAllowedTierIndex - i);
             weights.Add(t, weight);
         }
 
