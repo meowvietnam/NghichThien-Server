@@ -276,23 +276,32 @@ public partial class CharacterData
         int currentRealm = (monsterLevel - 1) / 3;
         int currentTierIndex = currentRealm; // Mặc định Luyện Khí = Nhất Phẩm (0), Trúc Cơ = Nhị Phẩm (1)...
 
-        // 2. Tính năng Đột Biến Động Mới (Áp dụng cho mọi level)
-        // Xác định vị trí trong nhóm 3 level (Ví dụ: Lv 1,2,3 -> index tương ứng là 0, 1, 2)
         int indexInRealm = (monsterLevel - 1) % 3;
 
-        double normalMutationRate = 0.02; // Mặc định Level Đầu (Lv 1, 4, 7...): +1 cấp là 2%
-        double superMutationRate = 0.01;  // Mặc định Level Đầu (Lv 1, 4, 7...): +2 cấp là 1%
+        double normalMutationRate = 0.02;
+        double superMutationRate = 0.01;
 
-        if (indexInRealm == 1) // Level Giữa (Lv 2, 5, 8...)
+        // Nếu đã lên các đại cảnh giới cao hơn Luyện Khí (Trúc Cơ trở lên), 
+        // tăng mạnh tỷ lệ đột biến +1 để bù đắp cho việc quái mạnh lên.
+        double catchUpBonus = currentRealm * 0.1f;
+
+        if (indexInRealm == 0) // Level Đầu (Lv 1, 4, 7...)
         {
-            normalMutationRate = 0.04; // +1 cấp là 4%
-            superMutationRate = 0.02;  // +2 cấp là 2%
+            normalMutationRate = 0.06 + catchUpBonus; // Lv 1: 4% | Lv 4: 14% (Mở Tam Phẩm 14% cực kỳ hợp lý vì là quái Trúc Cơ)
+            superMutationRate = 0.04;
+        }
+        else if (indexInRealm == 1) // Level Giữa (Lv 2, 5, 8...)
+        {
+            normalMutationRate = 0.1 + catchUpBonus; // Lv 5: 18%
+            superMutationRate = 0.06;
         }
         else if (indexInRealm == 2) // Level Cuối (Lv 3, 6, 9...)
         {
-            normalMutationRate = 0.06; // +1 cấp là 6%
-            superMutationRate = 0.03;  // +2 cấp là 3%
+            normalMutationRate = 0.18 + catchUpBonus; // Lv 3: 16% | Lv 6: 26%
+            superMutationRate = 0.1;                 // Lv 3: 8% (Mở Tam Phẩm)
         }
+        normalMutationRate = Math.Min(normalMutationRate, 0.30);
+        superMutationRate = Math.Min(superMutationRate, 0.15);
 
         // Tổng tỷ lệ đột biến (Ví dụ: Level Đầu là 3%, Giữa là 6%, Cuối là 9%)
         double totalMutationRate = normalMutationRate + superMutationRate;
