@@ -23,7 +23,7 @@ public partial class ShopManager
     public Shop ShopDuocLieu { get; private set; } = new HerbsShop();
     public Shop ShopVatLieu { get; private set; } = new MaterialShop();
     public Shop ShopSkill { get; private set; } = new SkillShop();
-
+    public Shop ShopSkillAll { get; set; } = new SkillShop();
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [MemoryPackIgnore]
@@ -49,14 +49,21 @@ public partial class ShopManager
             };
             shop.Reload(request);
         }
+        var request2 = new ReloadShopRequest()
+        {
+            MonPhai = EMonPhai.None,
+            ShopType = EShopType.Skill
+        };
+        ShopSkillAll.Reload(request2);
     }
 
     public async Task SaveChanges(AppDbContext db)
     {
-        var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
+        var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill, ShopSkillAll };
         var dirtyMask = (ShopDuocLieu.Dirty ? 1 : 0)
                         | (ShopVatLieu.Dirty ? 2 : 0)
-                        | (ShopSkill.Dirty ? 4 : 0);
+                        | (ShopSkill.Dirty ? 4 : 0)
+                        | (ShopSkillAll.Dirty ? 8 : 0);
         if (dirtyMask == 0)
         {
             return;
@@ -84,6 +91,34 @@ public partial class ShopManager
                 .SetProperty(x => x.ShopDuocLieu, ShopDuocLieu)
                 .SetProperty(x => x.ShopVatLieu, ShopVatLieu)
                 .SetProperty(x => x.ShopSkill, ShopSkill)),
+            8 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            9 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopDuocLieu, ShopDuocLieu)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            10 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopVatLieu, ShopVatLieu)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            11 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopDuocLieu, ShopDuocLieu)
+                .SetProperty(x => x.ShopVatLieu, ShopVatLieu)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            12 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopSkill, ShopSkill)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            13 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopDuocLieu, ShopDuocLieu)
+                .SetProperty(x => x.ShopSkill, ShopSkill)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            14 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopVatLieu, ShopVatLieu)
+                .SetProperty(x => x.ShopSkill, ShopSkill)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
+            15 => await query.ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.ShopDuocLieu, ShopDuocLieu)
+                .SetProperty(x => x.ShopVatLieu, ShopVatLieu)
+                .SetProperty(x => x.ShopSkill, ShopSkill)
+                .SetProperty(x => x.ShopSkillAll, ShopSkillAll)),
             _ => 0
         };
 
@@ -94,16 +129,14 @@ public partial class ShopManager
     }
 
 
-    public Shop ReloadShop(EShopType shopType)
+    public Shop ReloadShop(ReloadShopRequest request)
     {
-        var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
-        var shop = shops.First(x => x.GetTypeShop() == shopType);
-        var monPhai = CharData.MonPhai;
-        var request = new ReloadShopRequest()
+        var loadShop = new LoadShopRequest()
         {
-            MonPhai = monPhai,
-            ShopType = shopType,
+            ShopType = request.ShopType,
+            MonPhai = request.MonPhai,
         };
+        var shop = GetShop(loadShop);
         shop.Reload(request);
         return shop;
     }
@@ -115,10 +148,29 @@ public partial class ShopManager
         ShopSkill = clone.ShopSkill;
     }
 
-    public Shop GetShop(EShopType shopType)
+    public Shop GetShop(LoadShopRequest request)
     {
-        var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
-        return shops.First(x => x.GetTypeShop() == shopType);
+        var shopType = request.ShopType;
+        var monPhai = request.MonPhai;
+        switch (shopType)
+        {
+            case EShopType.ShopDuocLieu:
+                return ShopDuocLieu;
+            case EShopType.ShopVatLieu:
+                return ShopVatLieu;
+            case EShopType.Skill:
+                if (monPhai == CharData.MonPhai)
+                {
+                    return ShopSkill;
+                }
+                if (monPhai == EMonPhai.None)
+                {
+                    return ShopSkillAll;
+                }
+                throw new Exception(Strings.ShopMonPhaiInvalid);
+            default:
+                throw new Exception(Strings.ShopTypeInvalid);
+        }
     }
 
     public BuyAndSellResult BuyAndSell(BuyAndSell request)
@@ -126,6 +178,7 @@ public partial class ShopManager
         var result = new BuyAndSellResult()
         {
             Success = true,
+            MonPhai = request.MonPhai,
         };
         var inventory = CharData.InventoryManager;
         var sellItems = request.SellItems.ToHashSet();
@@ -133,7 +186,13 @@ public partial class ShopManager
         var totalSellAmount = 0;
         var totalBuyAmount = 0;
         var shopType = request.ShopType;
-        var shop = GetShop(shopType);
+        var monPhai = request.MonPhai;
+        var loadShop = new LoadShopRequest()
+        {
+            ShopType =  shopType,
+            MonPhai = monPhai,
+        };
+        var shop = GetShop(loadShop);
         var items = shop.Items;
         var providers = new Dictionary<ItemType, IItemProvider>();
         foreach (var buyItem in buyItems)

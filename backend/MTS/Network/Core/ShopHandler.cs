@@ -22,18 +22,39 @@ public class ShopHandler : IClientHandler
         var reader = message.Reader;
         if (tag == MessageTag.LoadShopRequest)
         {
-            var shopType = reader.Read<EShopType>();
-            Shop shop;
-            lock (client.CharacterLock)
+            var request = reader.MemRead<LoadShopRequest>();
+            LoadShopResult result = null;
+            try
             {
-                var charData = client.CharacterData;
-                shop = charData.ShopManager.GetShop(shopType);
+                lock (client.CharacterLock)
+                {
+                    var charData = client.CharacterData;
+                    var shop = charData.ShopManager.GetShop(request);
+                    result = new LoadShopResult()
+                    {
+                        Success = true,
+                        Shop = shop,
+                        MonPhai = request.MonPhai,
+                    };
+                }
+
             }
-            client.MemSend(MessageTag.LoadShopRequest, shop);
+            catch (Exception ex)
+            {
+                result = new LoadShopResult()
+                {
+                    Success = false,
+                    Message = ex.Message,
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.LoadShopRequest, result);
+            }
         }
         else if (tag == MessageTag.ReloadShop)
         {
-            var shopType = reader.Read<EShopType>();
+            var request = reader.MemRead<ReloadShopRequest>();
             bool isNoAds;
             lock (client.CharacterLock)
             {
@@ -41,11 +62,11 @@ public class ShopHandler : IClientHandler
             }
             if (isNoAds)
             {
-                SendReloadShop(shopType);
+                SendReloadShop(request);
             }
             else
             {
-                ShowAds ads = new ReloadShopAds("ReloadShop", "Xem quảng cáo để làm mới cửa hàng", client, shopType);
+                ShowAds ads = new ReloadShopAds("ReloadShop", "Xem quảng cáo để làm mới cửa hàng", client, request);
                 var adsHandler = client.GetHandler<AdsHandler>();
                 adsHandler.SendAds(ads);
             }
@@ -77,7 +98,7 @@ public class ShopHandler : IClientHandler
         }
     }
 
-    public void SendReloadShop(EShopType shopType)
+    public void SendReloadShop(ReloadShopRequest request)
     {
         ReloadShopResult result = null!;
         try
@@ -86,11 +107,12 @@ public class ShopHandler : IClientHandler
             {
                 var charData = client.CharacterData;
                 var shopManager = charData.ShopManager;
-                var shop = shopManager.ReloadShop(shopType);
+                var shop = shopManager.ReloadShop(request);
                 result = new ReloadShopResult()
                 {
                     Success = true,
                     Shop = shop,
+                    MonPhai = request.MonPhai,
                 };
             }
         }

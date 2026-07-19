@@ -1,6 +1,7 @@
 using MemoryPack;
 using MTS.Network;
 using MTS.Network.Core;
+using MTS.Network.Models;
 
 namespace MTS.Models
 {
@@ -8,20 +9,20 @@ namespace MTS.Models
     public partial class ReloadShopAds : ShowAds
     {
         [MemoryPackIgnore]
-        private EShopType shopType;
+        private ReloadShopRequest request;
         [MemoryPackConstructor]
         public ReloadShopAds()
         {
             
         }
-        public ReloadShopAds(string location, string buttonName, Client client, EShopType shopType) : base(location, buttonName, client)
+        public ReloadShopAds(string location, string buttonName, Client client, ReloadShopRequest request) : base(location, buttonName, client)
         {
-            this.shopType = shopType;
+            this.request = request;
         }
         public override void OnReward()
         {
             var handler = Client.GetHandler<ShopHandler>();
-            handler.SendReloadShop(shopType);
+            handler.SendReloadShop(request);
         }
         public override void OnClose()
         {

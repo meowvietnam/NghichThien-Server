@@ -87,6 +87,8 @@ public class EnglishStrings : ILanguageStrings
     public override string IapStoreNotSupported => "IAP store is not supported!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
     public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
+    public override string ShopTypeInvalid => "Shop type is invalid!";
+    public override string ShopMonPhaiInvalid => "Sect is invalid for the skill shop!";
     public override string ShopItemNotFound => "Item does not exist in the shop!";
     public override string ShopItemQuantityInvalid => "The shop does not have enough of this item!";
     public override string InventoryItemNotFound => "Item does not exist in the inventory!";

@@ -350,19 +350,25 @@ public class AppDbContext : DbContext
                 .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
-                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                    v => ParseShop(v)
                 );
             e.Property(x => x.ShopVatLieu)
                 .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
-                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                    v => ParseShop(v)
                 );
             e.Property(x => x.ShopSkill)
                 .HasColumnType(blob)
                 .HasConversion(
                     v => MemoryPackSerializer.Serialize(v),
-                    v => MemoryPackSerializer.Deserialize<Shop>(v)
+                    v => ParseShop(v)
+                );
+            e.Property(x => x.ShopSkillAll)
+                .HasColumnType(blob)
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => ParseShop(v)
                 );
         });
         modelBuilder.Entity<DailyQuest>(e =>
@@ -403,5 +409,14 @@ public class AppDbContext : DbContext
                 .HasForeignKey<GachaManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);;
         });
+    }
+
+    private Shop ParseShop(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return null;
+        }
+        return MemoryPackSerializer.Deserialize<Shop>(data);
     }
 }

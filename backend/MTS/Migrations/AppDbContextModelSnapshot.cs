@@ -629,6 +629,10 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasColumnType("blob");
 
+                    b.Property<byte[]>("ShopSkillAll")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
                     b.Property<byte[]>("ShopVatLieu")
                         .IsRequired()
                         .HasColumnType("blob");

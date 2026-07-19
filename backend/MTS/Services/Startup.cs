@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Api.Models;
 using MTS.Models;
 using MTS.Network;
+using MTS.Network.Models;
 using static MTS.Utils.Utils;
 
 namespace MTS.Services;

@@ -84,6 +84,8 @@ public class VietnameseStrings : ILanguageStrings
     public override string IapStoreNotSupported => "Cửa hàng IAP không được hỗ trợ!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
     public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
+    public override string ShopTypeInvalid => "Loại cửa hàng không hợp lệ!";
+    public override string ShopMonPhaiInvalid => "Môn phái không hợp lệ với cửa hàng kỹ năng!";
     public override string ShopItemNotFound => "Vật phẩm không tồn tại trong cửa hàng!";
     public override string ShopItemQuantityInvalid => "Số lượng vật phẩm trong cửa hàng không đủ!";
     public override string InventoryItemNotFound => "Vật phẩm không tồn tại trong túi đồ!";

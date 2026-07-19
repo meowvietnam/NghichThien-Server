@@ -105,6 +105,8 @@ public abstract class ILanguageStrings
     public abstract string NotEnoughMoneyVip { get; }
 
     // Shop messages
+    public abstract string ShopTypeInvalid { get; }
+    public abstract string ShopMonPhaiInvalid { get; }
     public abstract string ShopItemNotFound { get; }
     public abstract string ShopItemQuantityInvalid { get; }
     public abstract string InventoryItemNotFound { get; }

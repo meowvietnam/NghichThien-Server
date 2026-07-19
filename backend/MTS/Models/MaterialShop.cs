@@ -32,7 +32,7 @@ public partial class MaterialShop : Shop
                 Tier = x.Tier,
                 Ref = new ItemRef()
                 {
-                    Type = ItemType.Herb,
+                    Type = ItemType.Material,
                     Id = (ushort)x.Id,
                     Count = RandomCount()
                 }
@@ -48,7 +48,20 @@ public partial class MaterialShop : Shop
                 randomMaterial.Add(list, tierRate.Rate);
             }
         }
-        Items = Enumerable.Range(0, count).Select(_ => randomMaterial.Random().Random()).ToHashSet();
+
+        var items = new HashSet<ItemRef>();
+        for (int i = 0; i < count; i++)
+        {
+            var list = randomMaterial.Random();
+            var item = list.Random();
+            list.Remove(item);
+            if (list.Count == 0)
+            {
+                randomMaterial.Remove(list);
+            }
+            items.Add(item);
+        }
+        Items = items;
         LastReloadTime = DateTime.UtcNow;
         Dirty = true;
     }

@@ -12,6 +12,7 @@ public partial class BuyAndSellResult
     public int TotalBuyAmount { get; set; }
     public int LinhThach { get; set; }
     public Shop ReloadShop { get; set; }
+    public EMonPhai MonPhai { get; set; }
     public Modify<FurnaceData> Furnaces { get; set; } = new();
     public Modify<ItemRef> Items { get; set; } = new();
 

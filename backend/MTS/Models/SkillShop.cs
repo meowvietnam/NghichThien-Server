@@ -59,10 +59,24 @@ public partial class SkillShop : Shop
             }
         }
 
-        for (int i = 0; i < count; i++)
+        try
         {
-            var item = randomCongPhap.Random().Random();
-            items.Add(item);
+            for (int i = 0; i < count; i++)
+            {
+                var list = randomCongPhap.Random();
+                var item = list.Random();
+                list.Remove(item);
+                if (list.Count == 0)
+                {
+                    randomCongPhap.Remove(list);
+                }
+
+                items.Add(item);
+            }
+        }
+        catch
+        {
+            //
         }
         
         var thanThongs = ndttcp.ThanThongs
@@ -88,12 +102,26 @@ public partial class SkillShop : Shop
                 randomThanThong.Add(list, tierRate.Rate);
             }
         }
-        for (int i = 0; i < count; i++)
+
+        try
         {
-            var item = randomThanThong.Random().Random();
-            items.Add(item);
+            for (int i = 0; i < count; i++)
+            {
+                var list = randomThanThong.Random();
+                var item = list.Random();
+                list.Remove(item);
+                if (list.Count == 0)
+                {
+                    randomThanThong.Remove(list);
+                }
+
+                items.Add(item);
+            }
         }
-        
+        catch
+        {
+            
+        }
         Items = items;
         LastReloadTime = DateTime.UtcNow;
         Dirty = true;
