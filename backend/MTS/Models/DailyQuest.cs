@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -37,7 +38,7 @@ public partial class DailyQuest
     {
         if (IsRewardClaimed)
         {
-            throw new Exception(Strings.DailyQuestRewardAlreadyClaimed);
+            throw new InvalidException(Strings.DailyQuestRewardAlreadyClaimed);
         }
         var charData = QuestManager.CharData;
         QuestReward.Claim(charData);

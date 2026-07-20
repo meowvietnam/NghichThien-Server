@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game;
 using MTS.Localization;
 using MTS.Models;
@@ -90,7 +91,7 @@ namespace MTS.Network.ClientState
                         client.OnSelectedCharacter();
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     var result = new SelectCharacterResult()
                     {
@@ -114,7 +115,7 @@ namespace MTS.Network.ClientState
                         Success = true,
                     };
                 }
-                catch (Exception ex)
+                catch (InvalidException ex)
                 {
                     result = new Result()
                     {

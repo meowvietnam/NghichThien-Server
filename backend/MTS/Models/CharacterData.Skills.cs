@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -48,26 +49,26 @@ public partial class CharacterData
         };
         if (owners.Contains(temp))
         {
-            throw new Exception(Strings.HasLearnedNgoDao);
+            throw new InvalidException(Strings.HasLearnedNgoDao);
         }
 
         var ndcptt = GameConfig.NDCPTTManager;
         var ngoDao = ndcptt.NgoDaos.FirstOrDefault(x => x.Id == idNgoDao);
         if (ngoDao == null)
         {
-            throw new Exception(Strings.NgoDaoNotExist);
+            throw new InvalidException(Strings.NgoDaoNotExist);
         }
 
         var ngoDaoDiem = Progression.NgoDaoDiem;
         if (ngoDaoDiem < ngoDao.Require)
         {
-            throw new Exception(Strings.NotEnoughNgoDaoPoints);
+            throw new InvalidException(Strings.NotEnoughNgoDaoPoints);
         }
 
         var res = FindResources(ngoDao);
         if (res.Count == 0)
         {
-            throw new Exception(Strings.NgoDaoResourceNotExist);
+            throw new InvalidException(Strings.NgoDaoResourceNotExist);
         }
 
         foreach (var (resource, index) in res)
@@ -79,7 +80,7 @@ public partial class CharacterData
             };
             if (!camNgos.TryGetValue(camNgoTmp, out var camNgo) || camNgo.Value < camNgoRequire)
             {
-                throw new Exception(Strings.NotEnoughCamNgoPoints);
+                throw new InvalidException(Strings.NotEnoughCamNgoPoints);
             }
 
             if (index > 0)
@@ -94,7 +95,7 @@ public partial class CharacterData
                 });
                 if (!any)
                 {
-                    throw new Exception(Strings.PreviousBranchRequiresAtLeastOneNgoDao);
+                    throw new InvalidException(Strings.PreviousBranchRequiresAtLeastOneNgoDao);
                 }
             }
         }
@@ -124,7 +125,7 @@ public partial class CharacterData
         };
         if (!InventoryManager.ThanThongOwners.Contains(thanThongOwner))
         {
-            throw new Exception(Strings.ThanThongNotOwned);
+            throw new InvalidException(Strings.ThanThongNotOwned);
         }
 
         var thanThong = EquipmentManager.EquipThanThong(request);
@@ -139,7 +140,7 @@ public partial class CharacterData
     {
         if (!EquipmentManager.UnequipThanThong(id))
         {
-            throw new Exception(Strings.ThanThongNotOwned);
+            throw new InvalidException(Strings.ThanThongNotOwned);
         }
 
         return new UnequipThanThongResult()
@@ -159,13 +160,13 @@ public partial class CharacterData
         };
         if (!InventoryManager.CongPhapOwners.TryGetValue(cpRef, out var congPhapOwner))
         {
-            throw new Exception(Strings.CongPhapNotOwned);
+            throw new InvalidException(Strings.CongPhapNotOwned);
         }
 
         var value = EquipmentManager.GetSlotCP(slot);
         if (value != ushort.MaxValue)
         {
-            throw new Exception(Strings.SlotCongPhongNotEmpty);
+            throw new InvalidException(Strings.SlotCongPhongNotEmpty);
         }
 
         EquipmentManager.SetSlotCP(slot, id);
@@ -183,7 +184,7 @@ public partial class CharacterData
         var value = EquipmentManager.GetSlotCP(slot);
         if (value == ushort.MaxValue)
         {
-            throw new Exception(Strings.SlotCongPhapEmpty);
+            throw new InvalidException(Strings.SlotCongPhapEmpty);
         }
         var cpRef = new CongPhap()
         {
@@ -191,7 +192,7 @@ public partial class CharacterData
         };
         if (!InventoryManager.CongPhapOwners.TryGetValue(cpRef, out var congPhapOwner))
         {
-            throw new Exception(Strings.CongPhapNotOwned);
+            throw new InvalidException(Strings.CongPhapNotOwned);
         }
 
         congPhapOwner.GetCongPhap().UnEquipCongPhap(this, congPhapOwner.Level);
@@ -295,17 +296,17 @@ public partial class CharacterData
     {
         if (time < TimeSpan.FromDays(30))
         {
-            throw new Exception(Strings.RetreatDurationInvalid);
+            throw new InvalidException(Strings.RetreatDurationInvalid);
         }
         var chuTu1Id = EquipmentManager.ChuTu1Used;
         if (chuTu1Id == ushort.MaxValue)
         {
-            throw new Exception(Strings.MainCultivationRequiredForRetreat);
+            throw new InvalidException(Strings.MainCultivationRequiredForRetreat);
         }
         var months = time.Days / 30;
         if (months > 120)
         {
-            throw new Exception(Strings.ExceedLimit);
+            throw new InvalidException(Strings.ExceedLimit);
         }
         var newTamCanh = Stats.TamCanh - months;
         var cost = CalculateCostTuLuyen() * months;
@@ -313,7 +314,7 @@ public partial class CharacterData
         var remaining = money - cost;
         if (remaining < 0)
         {
-            throw new Exception(Strings.NotEnoughMoney);
+            throw new InvalidException(Strings.NotEnoughMoney);
         }
 
         var buffExp = GetBuffExp(months, 100);
@@ -354,7 +355,7 @@ public partial class CharacterData
         {
             if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < 1)
             {
-                throw new Exception(Strings.CongPhapNotOwned);
+                throw new InvalidException(Strings.CongPhapNotOwned);
             }
 
             var cpOwnerRef = new CongPhap()
@@ -364,13 +365,13 @@ public partial class CharacterData
             var congPhapOwners = InventoryManager.CongPhapOwners;
             if (congPhapOwners.Contains(cpOwnerRef))
             {
-                throw new Exception(Strings.CongPhapOwned);
+                throw new InvalidException(Strings.CongPhapOwned);
             }
 
             var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
             if (cp == null)
             {
-                throw new Exception(Strings.CongPhapNotFound);
+                throw new InvalidException(Strings.CongPhapNotFound);
             }
 
             double totalDays = (double)cp.baseTimeLearn / Stats.NgoTinh;
@@ -381,7 +382,7 @@ public partial class CharacterData
             var remaining = money - price;
             if (remaining < 0)
             {
-                throw new Exception(Strings.NotEnoughMoney);
+                throw new InvalidException(Strings.NotEnoughMoney);
             }
 
             var congPhap = new CongPhap()
@@ -420,7 +421,7 @@ public partial class CharacterData
         {
             if (!InventoryManager.ThanThongs.TryGetValue(itemRef, out var ttRef) || ttRef.Count < 1)
             {
-                throw new Exception(Strings.CongPhapNotOwned);
+                throw new InvalidException(Strings.CongPhapNotOwned);
             }
 
             var ttOwnerRef = new ThanThong()
@@ -430,13 +431,13 @@ public partial class CharacterData
             var thanThongOwners = InventoryManager.ThanThongOwners;
             if (thanThongOwners.Contains(ttOwnerRef))
             {
-                throw new Exception(Strings.ThanThongOwned);
+                throw new InvalidException(Strings.ThanThongOwned);
             }
 
             var tt = GameConfig.NDCPTTManager.ThanThongs.FirstOrDefault(x => x.Id == id);
             if (tt == null)
             {
-                throw new Exception(Strings.ThanThongNotFound);
+                throw new InvalidException(Strings.ThanThongNotFound);
             }
 
             double totalDays = (double)tt.baseTimeLearn / Stats.NgoTinh;
@@ -448,7 +449,7 @@ public partial class CharacterData
             var remaining = money - price;
             if (remaining < 0)
             {
-                throw new Exception(Strings.NotEnoughMoney);
+                throw new InvalidException(Strings.NotEnoughMoney);
             }
 
             var thanThong = new ThanThong()
@@ -483,7 +484,7 @@ public partial class CharacterData
             };
         }
 
-        throw new Exception(Strings.NotSupportItemType);
+        throw new InvalidException(Strings.NotSupportItemType);
     }
 
     public DotPhaCongPhapResult? DotPhaCongPhap(int request)
@@ -507,25 +508,25 @@ public partial class CharacterData
             var newLevel = cpOwner.Level + 1;
             if (newLevel >= 6)
             {
-                throw new Exception(Strings.CongPhapMaxLevelReached);
+                throw new InvalidException(Strings.CongPhapMaxLevelReached);
             }
             require = newLevel;
         }
         else
         {
-            throw new Exception(Strings.CongPhapNotOwned);
+            throw new InvalidException(Strings.CongPhapNotOwned);
         }
 
         if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < require)
         {
-            throw new Exception(Strings.NotEnoughCongPhap);
+            throw new InvalidException(Strings.NotEnoughCongPhap);
         }
 
 
         var cp = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == id);
         if (cp == null)
         {
-            throw new Exception(Strings.CongPhapNotFound);
+            throw new InvalidException(Strings.CongPhapNotFound);
         }
 
         double totalDays = (double)(cp.baseTimeLearn * require) / Stats.NgoTinh;
@@ -536,7 +537,7 @@ public partial class CharacterData
         var remaining = money - price;
         if (remaining < 0)
         {
-            throw new Exception(Strings.NotEnoughMoney);
+            throw new InvalidException(Strings.NotEnoughMoney);
         }
 
 

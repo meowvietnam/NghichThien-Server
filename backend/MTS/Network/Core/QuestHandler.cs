@@ -1,4 +1,5 @@
-﻿using MTS.Models;
+﻿using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -39,7 +40,7 @@ namespace MTS.Network.Core
                         result = charData.CompleteMainQuest(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new CompleteMainQuestResult()
                     {
@@ -64,7 +65,7 @@ namespace MTS.Network.Core
                         result = charData.CompleteSideQuest(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new CompleteSideQuestResult()
                     {
@@ -105,7 +106,7 @@ namespace MTS.Network.Core
                         };
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new DoneQuestResult()
                     {
@@ -156,7 +157,7 @@ namespace MTS.Network.Core
                     };
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new ReloadDailyQuestResult()
                 {

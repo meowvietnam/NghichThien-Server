@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game;
 using MTS.Network.Models;
 using Network;
@@ -66,7 +67,7 @@ public class AllMaps : IClientState
                     var newEnergy = charData.Progression.CurrentEnergy - energy;
                     if (newEnergy < 0)
                     {
-                        throw new Exception($"{NotEnoughEnergy}: {energy}");
+                        throw new InvalidException($"{NotEnoughEnergy}: {energy}");
                     }
                     var stats = charData.Stats;
                     var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
@@ -87,7 +88,7 @@ public class AllMaps : IClientState
                 }
                 client.Send(MessageTag.MoveToMapResult, result);
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 var result = new MoveToMapResult()
                 {
@@ -116,7 +117,7 @@ public class AllMaps : IClientState
                 };
                 client.Send(MessageTag.GetPlayerOnlineThisNodeResult, result);
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 var result = new GetCharacterOnlineThisNodeResult()
                 {
@@ -142,7 +143,7 @@ public class AllMaps : IClientState
                     };
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new WatchAdsForEnergyResult()
                 {

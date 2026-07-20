@@ -1,4 +1,5 @@
-﻿using MTS.Models;
+﻿using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -37,7 +38,7 @@ namespace MTS.Network.Core
                         result = charData.JoinMonPhai(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new JoinMonPhaiResult()
                     {

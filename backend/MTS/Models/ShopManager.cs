@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
@@ -167,9 +168,9 @@ public partial class ShopManager
                 {
                     return ShopSkillAll;
                 }
-                throw new Exception(Strings.ShopMonPhaiInvalid);
+                throw new InvalidException(Strings.ShopMonPhaiInvalid);
             default:
-                throw new Exception(Strings.ShopTypeInvalid);
+                throw new InvalidException(Strings.ShopTypeInvalid);
         }
     }
 
@@ -199,18 +200,18 @@ public partial class ShopManager
         {
             if (buyItem.Count == 0)
             {
-                throw new Exception(Strings.ShopItemQuantityInvalid);
+                throw new InvalidException(Strings.ShopItemQuantityInvalid);
             }
 
             if (!items.TryGetValue(buyItem, out var item))
             {
-                throw new Exception(Strings.ShopItemNotFound);
+                throw new InvalidException(Strings.ShopItemNotFound);
             }
 
             var remaining = item.Count - buyItem.Count;
             if (remaining < 0)
             {
-                throw new Exception(Strings.ShopItemQuantityInvalid);
+                throw new InvalidException(Strings.ShopItemQuantityInvalid);
             }
 
             var type = buyItem.Type;
@@ -231,7 +232,7 @@ public partial class ShopManager
             var count = sellItem.Count;
             if (count == 0)
             {
-                throw new Exception(Strings.InventoryItemQuantityInvalid);
+                throw new InvalidException(Strings.InventoryItemQuantityInvalid);
             }
 
             var itemCollection = inventory.GetItemCollection(type);
@@ -239,7 +240,7 @@ public partial class ShopManager
             {
                 if (count != 1)
                 {
-                    throw new Exception(Strings.InventoryItemQuantityInvalid);
+                    throw new InvalidException(Strings.InventoryItemQuantityInvalid);
                 }
 
                 var furnace = new FurnaceData()
@@ -248,7 +249,7 @@ public partial class ShopManager
                 };
                 if (!furnaces.Contains(furnace))
                 {
-                    throw new Exception(Strings.InventoryItemNotFound);
+                    throw new InvalidException(Strings.InventoryItemNotFound);
                 }
 
                 if (!providers.TryGetValue(type, out var provider))
@@ -264,13 +265,13 @@ public partial class ShopManager
             {
                 if (!itemRefs.TryGetValue(sellItem, out var itemRef))
                 {
-                    throw new Exception(Strings.InventoryItemNotFound);
+                    throw new InvalidException(Strings.InventoryItemNotFound);
                 }
 
                 var remaining = itemRef.Count - count;
                 if (remaining < 0)
                 {
-                    throw new Exception(Strings.InventoryItemQuantityInvalid);
+                    throw new InvalidException(Strings.InventoryItemQuantityInvalid);
                 }
 
                 if (!providers.TryGetValue(type, out var provider))
@@ -287,7 +288,7 @@ public partial class ShopManager
         var money = CharData.Stats.LinhThach + totalSellAmount - totalBuyAmount;
         if (money < 0)
         {
-            throw new Exception(Strings.NotEnoughMoney);
+            throw new InvalidException(Strings.NotEnoughMoney);
         }
 
         foreach (var buyItem in buyItems)

@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -14,6 +15,7 @@ using MemoryPack;
 using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -24,7 +26,7 @@ public partial class CharacterData
         var itemRef = request.ItemRef;
         if (itemRef.Count == 0)
         {
-            throw new Exception(Strings.GiftItemQuantityInvalid);
+            throw new InvalidException(Strings.GiftItemQuantityInvalid);
         }
 
         var isUniqueItem = itemRef.Type is ItemType.Furnace
@@ -33,24 +35,24 @@ public partial class CharacterData
             or ItemType.TrangSuc;
         if (isUniqueItem && itemRef.Count != 1)
         {
-            throw new Exception(Strings.GiftItemQuantityInvalid);
+            throw new InvalidException(Strings.GiftItemQuantityInvalid);
         }
 
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
-            Console.WriteLine("npc k tồn tại");
-
-            throw new Exception(Strings.NpcNotExist);
+            Log.Warning("NPC gift rejected: NPC not found; CharacterId={CharacterId}, NpcId={NpcId}",
+                Id, request.IdChar);
+            throw new InvalidException(Strings.NpcNotExist);
         }
 
         var value = ItemProviderFactory.GetProvider(request.ItemRef.Type, InventoryManager)
             .ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
         if (value.Item1 < 0)
         {
-            Console.WriteLine("value add âm");
-
-            throw new Exception(Strings.NpcGiftValueInvalid);
+            Log.Warning("NPC gift rejected: invalid gift value; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}, Value={Value}",
+                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count, value.Item1);
+            throw new InvalidException(Strings.NpcGiftValueInvalid);
         }
 
         int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2 * 2;
@@ -134,9 +136,9 @@ public partial class CharacterData
 
         if (!isHasItem)
         {
-            Console.WriteLine("HackerTangQuaNPC khi k có đủ đồ");
-
-            throw new Exception(Strings.HackerTangQuaNPC);
+            Log.Warning("NPC gift rejected: item not owned or not enough quantity; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}",
+                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count);
+            throw new InvalidException(Strings.HackerTangQuaNPC);
         }
 
         ushort vuKhiEquip = EquipmentManager.VuKhi;
@@ -145,8 +147,9 @@ public partial class CharacterData
 
         if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip || request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip || request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
         {
-            Console.WriteLine("HackerTangQuaNPC tặng quà khi đang trang bị vũ khí");
-            throw new Exception(Strings.HackerTangQuaNPC);
+            Log.Warning("NPC gift rejected: equipped item cannot be gifted; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}",
+                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id);
+            throw new InvalidException(Strings.HackerTangQuaNPC);
         }
 
         if (request.ItemRef.Type == ItemType.Furnace)
@@ -178,8 +181,9 @@ public partial class CharacterData
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
-            Console.WriteLine("npc k tồn tại");
-            throw new Exception(Strings.NpcNotExist);
+            Log.Warning("NPC skill request rejected: NPC not found; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
+                Id, request.IdChar, request.TypeSkill, request.IdSkill);
+            throw new InvalidException(Strings.NpcNotExist);
         }
 
         int currentRelationshipValue = 0;
@@ -240,9 +244,9 @@ public partial class CharacterData
         }
         else
         {
-            Console.WriteLine("NotSupportItemType");
-
-            throw new Exception(Strings.NotSupportItemType);
+            Log.Warning("NPC skill request rejected: unsupported skill item type; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
+                Id, request.IdChar, request.TypeSkill, request.IdSkill);
+            throw new InvalidException(Strings.NotSupportItemType);
         }
 
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points - requireRelationShip;
@@ -267,9 +271,9 @@ public partial class CharacterData
 
             if (!baseSkillsCheck.Contains(request.IdSkill))
             {
-                Console.WriteLine("HackerSkillNotExistOnNpc");
-
-                throw new Exception(Strings.HackerSkillNotExistOnNpc);
+                Log.Warning("NPC skill request rejected: skill not available on NPC; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, Relationship={Relationship}",
+                    Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationType);
+                throw new InvalidException(Strings.HackerSkillNotExistOnNpc);
             }
 
             InventoryManager.AddToInventory(new List<ItemRef> { itemRefSkill });
@@ -278,9 +282,9 @@ public partial class CharacterData
         }
         else
         {
-            Console.WriteLine("sai thiết kế client");
-
-            throw new Exception(Strings.NpcSkillRequestInvalid);
+            Log.Warning("NPC skill request rejected: relationship is not enough; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, RelationshipValue={RelationshipValue}",
+                Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationshipValue);
+            throw new InvalidException(Strings.NpcSkillRequestInvalid);
         }
 
 

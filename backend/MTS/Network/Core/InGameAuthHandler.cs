@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
@@ -19,7 +20,7 @@ public class InGameAuthHandler : IClientHandler
     {
         if (!client.IsCharacterSelected())
         {
-            throw new Exception(Strings.CharacterNotSelected);
+            throw new InvalidException(Strings.CharacterNotSelected);
         }
         await client.SaveChanges();
         client.SetUserData(null);
@@ -44,7 +45,7 @@ public class InGameAuthHandler : IClientHandler
                     result = ClientLogout().GetAwaiter().GetResult();
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new LogoutResult()
                 {

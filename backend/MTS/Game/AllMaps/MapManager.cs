@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game.Algorithm;
 using Network;
 using Network.Extensions;
@@ -45,16 +46,16 @@ public class MapManager : IMemorySerializable<MapManager>
     {
         if (!MapsDict.TryGetValue(startId, out var start))
         {
-            throw new Exception(MapNotFound);
+            throw new InvalidException(MapNotFound);
         }
         if (!MapsDict.TryGetValue(targetId, out var target))
         {
-            throw new Exception(MapNotFound);
+            throw new InvalidException(MapNotFound);
         }
         var path = BFSPath.FindPath(Graphs,start,target);
         if(path == null ||  path.Count == 0)
         {
-            throw new Exception(PathNotFound);
+            throw new InvalidException(PathNotFound);
         }
         return path;
     }

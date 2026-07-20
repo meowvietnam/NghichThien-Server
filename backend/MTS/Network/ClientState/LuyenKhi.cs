@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -36,7 +37,7 @@ public class LuyenKhi : IClientState
                 }
                 client.Send(MessageTag.LuyenKhiResult, result);
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 client.Send(MessageTag.LuyenKhiResult, new LuyenKhiResult
                 {

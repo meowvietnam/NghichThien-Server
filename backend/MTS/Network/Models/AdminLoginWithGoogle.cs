@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Localization;
@@ -20,7 +21,7 @@ namespace MTS.Network.Models
         {
             if (SecretKey != Key)
             {
-                throw new Exception(Strings.AdminSecretKeyInvalid);
+                throw new InvalidException(Strings.AdminSecretKeyInvalid);
             }
 
             await using var db = await Program.CreateDbAsync();
@@ -30,7 +31,7 @@ namespace MTS.Network.Models
                 .FirstOrDefaultAsync(x => x.Email == Email);
             if (account == null)
             {
-                throw new Exception(Strings.AdminGoogleAccountNotFound);
+                throw new InvalidException(Strings.AdminGoogleAccountNotFound);
             }
 
             var userId = account.UserId;

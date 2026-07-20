@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
 using Network;
@@ -61,7 +62,7 @@ public class SceneManager : IClientHandler
                         break;
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result.Success = false;
                 result.Message = e.Message;

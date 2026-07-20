@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using Google.Apis.AndroidPublisher.v3.Data;
 using Microsoft.EntityFrameworkCore;
@@ -330,7 +331,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         if (itemRef.Count == 0)
         {
-            throw new Exception(Strings.InventoryItemQuantityInvalid);
+            throw new InvalidException(Strings.InventoryItemQuantityInvalid);
         }
 
         var collection = GetItemCollection(itemRef.Type);
@@ -338,13 +339,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (!c.TryGetValue(itemRef, out var item))
             {
-                throw new Exception(Strings.InventoryItemNotFound);
+                throw new InvalidException(Strings.InventoryItemNotFound);
             }
 
             var remaining = item.Count - itemRef.Count;
             if (remaining < 0)
             {
-                throw new Exception(Strings.InventoryItemQuantityInvalid);
+                throw new InvalidException(Strings.InventoryItemQuantityInvalid);
             }
 
             item.Count = (ushort)remaining;
@@ -373,21 +374,21 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         var furnace = Furnaces.FirstOrDefault(x => x.SelfId == furnaceId);
         if (furnace == null)
         {
-            throw new Exception(RefineMessage.FurnaceNotFound);
+            throw new InvalidException(RefineMessage.FurnaceNotFound);
         }
 
         ItemRef? Get(LuyenDanRequest.Herbs herbs)
         {
             if (herbs.IsDefault()) return null;
-            if (herbs.Count <= 0) throw new Exception(RefineMessage.QuantityInvalid);
+            if (herbs.Count <= 0) throw new InvalidException(RefineMessage.QuantityInvalid);
             var myHerb = Herbs.FirstOrDefault(x => x.Id == herbs.Id);
             if (myHerb == null)
             {
-                throw new Exception(RefineMessage.HerbsNotFound);
+                throw new InvalidException(RefineMessage.HerbsNotFound);
             }
 
             var myCount = myHerb.Count;
-            if (myCount - herbs.Count * count < 0) throw new Exception(RefineMessage.NotEnoughQuantity);
+            if (myCount - herbs.Count * count < 0) throw new InvalidException(RefineMessage.NotEnoughQuantity);
             return myHerb;
         }
 
@@ -842,7 +843,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var material = res.Materials.FirstOrDefault(y => y.Id == x);
             if (material == null)
             {
-                throw new Exception(LuyenKhiMessage.MaterialNotFound);
+                throw new InvalidException(LuyenKhiMessage.MaterialNotFound);
             }
 
             return material;
@@ -867,7 +868,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 var newCount = material.Count - itemRef.Count;
                 if (newCount < 0)
                 {
-                    throw new Exception(LuyenKhiMessage.NotEnoughMaterials);
+                    throw new InvalidException(LuyenKhiMessage.NotEnoughMaterials);
                 }
 
                 return new
@@ -877,7 +878,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 };
             }
 
-            throw new Exception(LuyenKhiMessage.DoesNotOwnMaterial);
+            throw new InvalidException(LuyenKhiMessage.DoesNotOwnMaterial);
         });
         var modify = new InventoryModify();
         var matConfigs = res.MaterialGradeConfigs;

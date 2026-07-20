@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game.CreateCharacter;
 using MTS.Models;
 using MTS.Network.Models;
@@ -51,7 +52,7 @@ public class CreateCharacter : IClientState
                 };
                 client.Send(MessageTag.SetCharNameResult, result);
             }
-            catch (Exception ex)
+            catch (InvalidException ex)
             {
                 var result = new SetCharNameResult()
                 {
@@ -76,7 +77,7 @@ public class CreateCharacter : IClientState
                 };
                 client.Send(MessageTag.SetSkinsResult, result);
             }
-            catch (Exception ex)
+            catch (InvalidException ex)
             {
                 var result = new SetSkinResult()
                 {
@@ -96,7 +97,7 @@ public class CreateCharacter : IClientState
                 {
                     if (isCompleting)
                     {
-                        throw new Exception("Đang tạo nhân vật, vui lòng chờ");
+                        throw new InvalidException("Đang tạo nhân vật, vui lòng chờ");
                     }
                     service.ApplyStats(models);
                     isCompleting = true;
@@ -116,7 +117,7 @@ public class CreateCharacter : IClientState
                     client.ChangeState(new SelectCharacter(client));
                 }
             }
-            catch (Exception ex)
+            catch (InvalidException ex)
             {
                 lock (serviceLock)
                 {

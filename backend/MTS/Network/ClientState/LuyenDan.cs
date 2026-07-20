@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -44,7 +45,7 @@ public class LuyenDan : IClientState
                 }
                 client.Send(MessageTag.LuyenDanResult, result);
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 client.Send(MessageTag.LuyenDanResult, new LuyenDanResult()
                 {

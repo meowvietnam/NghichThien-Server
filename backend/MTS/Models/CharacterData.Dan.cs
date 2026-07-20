@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -26,17 +27,17 @@ public partial class CharacterData
 
         if (count == 0)
         {
-            throw new Exception(Strings.LinhDanQuantityInvalid);
+            throw new InvalidException(Strings.LinhDanQuantityInvalid);
         }
         var linhDan = GameConfig.LuyenDanResources.LinhDans.FirstOrDefault(x => x.Id == id);
         if (linhDan == null)
         {
-            throw new Exception(Strings.LinhDanNotFound);
+            throw new InvalidException(Strings.LinhDanNotFound);
         }
 
         if (linhDan.ETypeDan == ETypeDan.DanCombat)
         {
-            throw new Exception(Strings.LinhDanCombatBuffInvalid);
+            throw new InvalidException(Strings.LinhDanCombatBuffInvalid);
         }
         var buffType = linhDan.EBuffType;
         if (buffType != EDanBuffType.None)
@@ -52,7 +53,7 @@ public partial class CharacterData
             };
             if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
             {
-                throw new Exception(Strings.HasFlagTienThienDiMach);
+                throw new InvalidException(Strings.HasFlagTienThienDiMach);
             }
             Stats.Buff(linhDan, count);
             Stats.ClampHp();
@@ -66,13 +67,13 @@ public partial class CharacterData
 
         if (count == 0)
         {
-            throw new Exception(Strings.LinhDanQuantityInvalid);
+            throw new InvalidException(Strings.LinhDanQuantityInvalid);
         }
 
         var linhDan = GameConfig.LuyenDanResources.LinhDans.FirstOrDefault(x => x.Id == id);
         if (linhDan == null)
         {
-            throw new Exception(Strings.LinhDanNotFound);
+            throw new InvalidException(Strings.LinhDanNotFound);
         }
 
         var type = linhDan.ETypeDan;
@@ -88,7 +89,7 @@ public partial class CharacterData
             {
                 if (used.Count + count > level)
                 {
-                    throw new Exception(Strings.DanCombatLimitExceeded);
+                    throw new InvalidException(Strings.DanCombatLimitExceeded);
                 }
             }
         }
@@ -101,13 +102,13 @@ public partial class CharacterData
         };
         if (!linhDans.TryGetValue(linhDanRef, out var item))
         {
-            throw new Exception(Strings.InventoryItemNotFound);
+            throw new InvalidException(Strings.InventoryItemNotFound);
         }
 
         var remaining = item.Count - count;
         if (remaining < 0)
         {
-            throw new Exception(Strings.InventoryItemQuantityInvalid);
+            throw new InvalidException(Strings.InventoryItemQuantityInvalid);
         }
 
         if (type == ETypeDan.DanCombat)
@@ -151,7 +152,7 @@ public partial class CharacterData
 
             if (isTuViType && Stats.Ability.HasFlag(Ability.TienThienDiMach))
             {
-                throw new Exception(Strings.HasFlagTienThienDiMach);
+                throw new InvalidException(Strings.HasFlagTienThienDiMach);
             }
 
             Stats.Buff(linhDan, count);

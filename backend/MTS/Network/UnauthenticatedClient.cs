@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
@@ -101,7 +102,7 @@ public class UnauthenticatedClient : ClientConnection
                         var disconnectedClient = TcpServer.Instance.GetDisconnectedClient(request);
                         if (disconnectedClient == null)
                         {
-                            throw new Exception(Strings.ReconnectClientNotFound);
+                            throw new InvalidException(Strings.ReconnectClientNotFound);
                         }
 
                         isAuthenticated = true;
@@ -114,7 +115,7 @@ public class UnauthenticatedClient : ClientConnection
                         };
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new Result()
                     {

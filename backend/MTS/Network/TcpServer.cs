@@ -7,6 +7,7 @@ using MTS.Models;
 using MTS.Network.ClientState;
 using MTS.Network.Core;
 using NetworkServer;
+using Serilog;
 
 namespace MTS.Network;
 
@@ -33,9 +34,10 @@ public class TcpServer : BaseTcpServer
     {
         if (ex is SocketException socketException)
         {
+            Log.Debug(socketException, "TCP socket error ignored");
             return;
         }
-        Console.WriteLine(ex);
+        Log.Error(ex, "TCP server error");
     }
 
     protected override void OnStop()
@@ -44,7 +46,7 @@ public class TcpServer : BaseTcpServer
     }
     protected override void OnRun()
     {
-        Console.WriteLine($"TcpServer is running at port: {Port}");
+        Log.Information("TCP server is running on port {Port}", Port);
     }
     public void Remove(UnauthenticatedClient unauthenticatedClient)
     {
@@ -89,7 +91,7 @@ public class TcpServer : BaseTcpServer
             }
         });
         await Task.WhenAll(tasks);
-        Console.WriteLine(Strings.SaveChangesCompleted);
+        Log.Information("{Message}; saved {ClientCount} online clients", Strings.SaveChangesCompleted, clients.Count);
     }
     public Client? GetClientOnline(int userDataId)
     {

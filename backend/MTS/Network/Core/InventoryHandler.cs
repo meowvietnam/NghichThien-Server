@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -32,7 +33,7 @@ public class InventoryHandler : IClientHandler
                 };
                 client.Send(MessageTag.GetInventoryResult, result);
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 var result = new GetInventoryResult()
                 {
@@ -54,7 +55,7 @@ public class InventoryHandler : IClientHandler
                     result = charData.EquipEquipment(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new EquipEquipmentResult()
                 {

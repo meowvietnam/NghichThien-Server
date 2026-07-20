@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.Text.RegularExpressions;
 using Google.Apis.AndroidPublisher.v3.Data;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ public class CreateCharacterService
         var skinGenderGroup = resources.GenderSkinGroups.FirstOrDefault(x => x.Gender == gender);
         if (skinGenderGroup == null)
         {
-            throw new Exception(Strings.SkinGenderInvalid);
+            throw new InvalidException(Strings.SkinGenderInvalid);
         }
 
         foreach (var skinGroup in skinGenderGroup.SkinGroups)
@@ -50,14 +51,14 @@ public class CreateCharacterService
                 var categoryId = skinGroupCategory.Id;
                 if (!skins.TryGetValue(categoryId, out var skin))
                 {
-                    throw new Exception(Strings.SkinCategoryMissing);
+                    throw new InvalidException(Strings.SkinCategoryMissing);
                 }
 
                 var existed = skinGroupCategory.Skins.Any(x =>
                     x.Name.Equals(skin, StringComparison.InvariantCultureIgnoreCase));
                 if (!existed)
                 {
-                    throw new Exception(Strings.SkinOptionInvalid);
+                    throw new InvalidException(Strings.SkinOptionInvalid);
                 }
 
                 newSkins.Add(categoryId, skin);
@@ -69,7 +70,7 @@ public class CreateCharacterService
                 {
                     if (!colors.TryGetValue(colorId, out var color))
                     {
-                        throw new Exception(Strings.SkinColorMissing + $" {colorId}");
+                        throw new InvalidException(Strings.SkinColorMissing + $" {colorId}");
                     }
 
                     color.A = 1;
@@ -87,25 +88,25 @@ public class CreateCharacterService
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new Exception(Strings.NameInvalid);
+            throw new InvalidException(Strings.NameInvalid);
         }
 
         name = name.Trim();
         if (name.Length <= 5 || name.Length >= 20)
         {
-            throw new Exception(Strings.NameLengthInvalid);
+            throw new InvalidException(Strings.NameLengthInvalid);
         }
 
         if (!Regex.IsMatch(name, @"^[\p{L}\p{N}\s]+$"))
         {
-            throw new Exception(Strings.NameSpecialCharInvalid);
+            throw new InvalidException(Strings.NameSpecialCharInvalid);
         }
 
         await using var db = await Program.CreateDbAsync();
         bool existed = await db.Characters.AnyAsync(x => x.Name == name);
         if (existed)
         {
-            throw new Exception(Strings.NameExisted);
+            throw new InvalidException(Strings.NameExisted);
         }
     }
 
@@ -143,7 +144,7 @@ public class CreateCharacterService
         var set2 = models.Select(x => x.Id).ToHashSet();
         if (!set1.SetEquals(set2))
         {
-            throw new Exception(Strings.IsIncomplete);
+            throw new InvalidException(Strings.IsIncomplete);
         }
 
         foreach (var model in models)
@@ -152,7 +153,7 @@ public class CreateCharacterService
             var step = steps.FirstOrDefault(s => s.Id == stepId);
             if (step == null)
             {
-                throw new Exception(Strings.StepInvalid);
+                throw new InvalidException(Strings.StepInvalid);
             }
 
             if (step is SelectionStepData s)
@@ -162,27 +163,27 @@ public class CreateCharacterService
                     var group = s.Groups.FirstOrDefault(g => g.Id == selectionGroup.Id);
                     if (group == null)
                     {
-                        throw new Exception(Strings.GroupInvalid);
+                        throw new InvalidException(Strings.GroupInvalid);
                     }
 
                     var exclusives = group.Exclusives;
                     var isViolation = model.Groups.Any(g => exclusives.Contains(g.Id));
                     if (isViolation)
                     {
-                        throw new Exception(Strings.GroupExclusiveViolation);
+                        throw new InvalidException(Strings.GroupExclusiveViolation);
                     }
 
                     var items = selectionGroup.Items;
                     if (items.Count != 1)
                     {
-                        throw new Exception(Strings.ItemCountInvalid);
+                        throw new InvalidException(Strings.ItemCountInvalid);
                     }
 
                     var item = items[0];
                     var statOption = group.StatOptions.FirstOrDefault(x => x.Id == item);
                     if (statOption == null)
                     {
-                        throw new Exception(Strings.StatOptionInvalid);
+                        throw new InvalidException(Strings.StatOptionInvalid);
                     }
 
                     var modifiers = statOption.Modifiers;
@@ -201,14 +202,14 @@ public class CreateCharacterService
                         .ToList();
                     if (e.GroupId != selectionGroup.Id)
                     {
-                        throw new Exception(Strings.GroupInvalid);
+                        throw new InvalidException(Strings.GroupInvalid);
                     }
 
                     var count = (int)stats.LinhCan + 1;
                     var items = selectionGroup.Items;
                     if (items.Count != count)
                     {
-                        throw new Exception(Strings.ElementalCountInvalid);
+                        throw new InvalidException(Strings.ElementalCountInvalid);
                     }
 
                     var unselectedCount = modifiers.Count - count;
@@ -224,13 +225,13 @@ public class CreateCharacterService
                         var elemental = e.Elementals.FirstOrDefault(x => x.Id == item);
                         if (elemental == null)
                         {
-                            throw new Exception(Strings.ElementalOptionInvalid);
+                            throw new InvalidException(Strings.ElementalOptionInvalid);
                         }
 
                         var modifier = modifiers.FirstOrDefault(x => x.Type == elemental.StatType);
                         if (modifier == null)
                         {
-                            throw new Exception(Strings.ElementalStatInvalid);
+                            throw new InvalidException(Strings.ElementalStatInvalid);
                         }
 
                         modifier.Value = selectPercent;
@@ -246,7 +247,7 @@ public class CreateCharacterService
 
         if (money < 0)
         {
-            throw new Exception($"{Strings.NotEnoughNatural}: {money}");
+            throw new InvalidException($"{Strings.NotEnoughNatural}: {money}");
         }
 
         stats.SetValue(StatType.Hp, stats.SinhMenh);
@@ -335,7 +336,7 @@ public class CreateCharacterService
         var charCount = user.CharacterDatas.Count;
         if (charCount >= 1)
         {
-            throw new Exception(Strings.CharacterLimitExceeded);
+            throw new InvalidException(Strings.CharacterLimitExceeded);
         }
 
         var userId = user.Id;

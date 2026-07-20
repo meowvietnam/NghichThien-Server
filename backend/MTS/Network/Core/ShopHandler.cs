@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Models;
 using MTS.Network.Models;
 
@@ -39,7 +40,7 @@ public class ShopHandler : IClientHandler
                 }
 
             }
-            catch (Exception ex)
+            catch (InvalidException ex)
             {
                 result = new LoadShopResult()
                 {
@@ -83,7 +84,7 @@ public class ShopHandler : IClientHandler
                     result = charData.ShopManager.BuyAndSell(request);
                 }
             }
-            catch (Exception ex)
+            catch (InvalidException ex)
             {
                 result = new BuyAndSellResult()
                 {
@@ -116,7 +117,7 @@ public class ShopHandler : IClientHandler
                 };
             }
         }
-        catch (Exception ex)
+        catch (InvalidException ex)
         {
             result = new ReloadShopResult()
             {

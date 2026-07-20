@@ -10,15 +10,15 @@ public class AppLifetimeService
     }
     private void OnStarted()
     {
-        Console.WriteLine("App started");
+        Serilog.Log.Information("App started");
     }
     private void OnStopping()
     {
-        Console.WriteLine("App stopping...");
+        Serilog.Log.Information("App stopping");
     }
 
     private void OnStopped()
     {
-        Console.WriteLine("App stopped");
+        Serilog.Log.Information("App stopped");
     }
 }

@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game;
 using MTS.Localization;
 using MTS.Models;
@@ -48,7 +49,7 @@ namespace MTS.Network.Core
                         var current = charData.CurrentFreeAdsMoneyVipCount;
                         if (current >= GameConfig.TotalAdsMoneyVip)
                         {
-                            throw new Exception(Strings.AdsMoneyVipLimitReached);
+                            throw new InvalidException(Strings.AdsMoneyVipLimitReached);
                         }
 
                         if (charData.IsNoAds)
@@ -62,7 +63,7 @@ namespace MTS.Network.Core
                         }
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     var result = new WatchAdsMoneyVipResult()
                     {
@@ -141,7 +142,7 @@ namespace MTS.Network.Core
                     }
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new WatchAdsMoneyVipResult()
                 {

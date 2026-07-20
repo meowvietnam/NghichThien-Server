@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -28,21 +29,21 @@ public partial class CharacterData
             case Game.LuyenKhi.EquipmentType.Weapon:
                 // Nếu không phải tháo đồ, check xem trong hòm có món này không
                 if (!isUnequip && !InventoryManager.VuKhis.Any(x => x.SelfId == request.Id))
-                    throw new Exception(Strings.HackerEquipment);
+                    throw new InvalidException(Strings.HackerEquipment);
 
                 EquipmentManager.EquipVuKhi(request.Id);
                 break;
 
             case Game.LuyenKhi.EquipmentType.Armor:
                 if (!isUnequip && !InventoryManager.PhongCus.Any(x => x.SelfId == request.Id))
-                    throw new Exception(Strings.HackerEquipment);
+                    throw new InvalidException(Strings.HackerEquipment);
 
                 EquipmentManager.EquipPhongCu(request.Id);
                 break;
 
             case Game.LuyenKhi.EquipmentType.Jewelry:
                 if (!isUnequip && !InventoryManager.TrangSucs.Any(x => x.SelfId == request.Id))
-                    throw new Exception(Strings.HackerEquipment);
+                    throw new InvalidException(Strings.HackerEquipment);
 
                 EquipmentManager.EquipTrangSuc(request.Id); // Đã sửa thành EquipTrangSuc chuẩn bài!
                 break;

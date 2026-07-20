@@ -4,6 +4,7 @@ using MTS.Network;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -66,7 +67,8 @@ public class MailManager
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Log.Error(ex, "Failed to mark mail as read; CharacterId={CharacterId}, MailId={MailId}",
+                characterData.Id, id);
             return -1;
         }
     }
@@ -83,6 +85,8 @@ public class MailManager
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "Failed to remove mail; CharacterId={CharacterId}, MailId={MailId}",
+                characterData.Id, id);
             return -1;
         }
     }

@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -16,7 +17,6 @@ using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
 using MTS.Utils;
-
 namespace MTS.Models;
 
 public partial class CharacterData
@@ -32,11 +32,9 @@ public partial class CharacterData
             require *= 10;
             gachaCount = 10;
         }
-
         if (MoneyVip < require)
         {
-            Console.WriteLine("chó hack moneyvip");
-            throw new Exception(Strings.NotEnoughMoney);
+            throw new InvalidException(Strings.NotEnoughMoney);
         }
 
         var type = request.TypeGacha;

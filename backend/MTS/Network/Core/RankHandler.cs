@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Game;
 using MTS.Game.Rank;
 using MTS.Network.Models;
@@ -65,7 +66,7 @@ namespace MTS.Network.Core
                         };
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new GetRankResult()
                     {

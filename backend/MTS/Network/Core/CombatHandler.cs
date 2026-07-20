@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MTS.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using MTS.Game;
 using MTS.Game.Combat;
 using MTS.Localization;
@@ -7,6 +8,7 @@ using MTS.Network.Models;
 using MTS.Services;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Network.Core
 {
@@ -47,7 +49,7 @@ namespace MTS.Network.Core
                         EndCombat();
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new ResultCombatResult()
                     {
@@ -78,7 +80,7 @@ namespace MTS.Network.Core
                         StartCombat(ETypeCombat.AllMaps, charData.Progression.Level);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new LoadCharCombatResult()
                     {
@@ -111,7 +113,7 @@ namespace MTS.Network.Core
                         SendLoadCharCombatArena();
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     var result = new LoadCharCombatResult()
                     {
@@ -144,7 +146,7 @@ namespace MTS.Network.Core
                         };
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new ClaimRankRewardResult()
                     {
@@ -174,7 +176,7 @@ namespace MTS.Network.Core
                         var remainingMoneyVip = charData.MoneyVip - cost;
                         if (remainingMoneyVip < 0)
                         {
-                            throw new Exception(Strings.NotEnoughMoneyVip);
+                            throw new InvalidException(Strings.NotEnoughMoneyVip);
                         }
                         charData.SetMoneyVip(remainingMoneyVip);
                     }
@@ -195,7 +197,7 @@ namespace MTS.Network.Core
                     StartCombat(ETypeCombat.DauTruong, level);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new LoadCharCombatResult()
                 {
@@ -311,7 +313,7 @@ namespace MTS.Network.Core
             {
                 if (combatSession != null)
                 {
-                    throw new Exception(Strings.CombatAlreadyInProgress);
+                    throw new InvalidException(Strings.CombatAlreadyInProgress);
                 }
 
                 combatSession = new CombatSession()
@@ -328,7 +330,7 @@ namespace MTS.Network.Core
             {
                 if (combatSession != null)
                 {
-                    throw new Exception(Strings.CombatAlreadyInProgress);
+                    throw new InvalidException(Strings.CombatAlreadyInProgress);
                 }
             }
         }
@@ -374,9 +376,10 @@ namespace MTS.Network.Core
                     };
                     charData.ResultCombat(result);
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
-                    Console.WriteLine(e);
+                    Log.Warning(e, "Failed to resolve combat on disconnect; ClientId={ClientId}, CharacterId={CharacterId}, CombatType={CombatType}, CombatLevel={CombatLevel}",
+                        client.Id, charData.Id, session.Type, session.Level);
                 }
                 finally
                 {

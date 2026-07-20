@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.Models;
 
 
@@ -37,7 +38,7 @@ public class MailHandler : IClientHandler
                     }
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new GetMailsResult()
                 {

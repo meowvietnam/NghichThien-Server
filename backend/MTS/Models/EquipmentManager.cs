@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
@@ -123,7 +124,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
             case ETypeSlotCP.PhuTu4:
                 return PhuTu4Used;
             default:
-                throw new Exception(Strings.SlotCongPhapInvalid);
+                throw new InvalidException(Strings.SlotCongPhapInvalid);
         }
     }
 
@@ -139,7 +140,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
                 var level = CharacterData.Progression.Level;
                 if (level < 10)
                 {
-                    throw new Exception(Strings.SlotCongPhapLevelRequired);
+                    throw new InvalidException(Strings.SlotCongPhapLevelRequired);
                 }
                 ChuTu2Used = value;
                 break;
@@ -160,7 +161,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
                 break;
             default:
                 isDirty2 = false;
-                throw new Exception(Strings.SlotCongPhapInvalid);
+                throw new InvalidException(Strings.SlotCongPhapInvalid);
         }
     }
     public bool IsDefault()

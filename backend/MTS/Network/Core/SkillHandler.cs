@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.Diagnostics;
 using MTS.Network.Models;
 using Network;
@@ -45,7 +46,7 @@ public class SkillHandler : IClientHandler
                     result = charData.LearnNgoDao(idNgoDao);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new LearnNgoDaoResult()
                 {
@@ -70,7 +71,7 @@ public class SkillHandler : IClientHandler
                     result = charData.EquipThanThong(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new EquipThanThongResult()
                 {
@@ -95,7 +96,7 @@ public class SkillHandler : IClientHandler
                     result = charData.UnequipThanThong((ushort)id);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new UnequipThanThongResult()
                 {
@@ -120,7 +121,7 @@ public class SkillHandler : IClientHandler
                     result = charData.EquipCongPhap(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new EquipCongPhapResult()
                 {
@@ -145,7 +146,7 @@ public class SkillHandler : IClientHandler
                     result = charData.UnequipCongPhap(slot);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new UnequipCongPhapResult()
                 {
@@ -170,7 +171,7 @@ public class SkillHandler : IClientHandler
                     result = charData.TuLuyen(time);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new TuLuyenResult()
                 {
@@ -195,7 +196,7 @@ public class SkillHandler : IClientHandler
                     result = charData.LinhNgo(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new LinhNgoResult()
                 {
@@ -220,7 +221,7 @@ public class SkillHandler : IClientHandler
                     result = charData.DotPhaCongPhap(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new DotPhaCongPhapResult()
                 {
@@ -245,7 +246,7 @@ public class SkillHandler : IClientHandler
                     result = charData.UseDan(request);
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new UseDanResult()
                 {

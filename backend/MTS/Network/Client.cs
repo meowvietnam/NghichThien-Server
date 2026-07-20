@@ -6,6 +6,7 @@ using MTS.Network.Core;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Network;
 
@@ -79,7 +80,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
 
     protected override void OnError(IProtocol<MessageTag> protocol, Exception ex)
     {
-        Console.WriteLine(ex);
+        Log.Error(ex, "Client protocol error; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
+            Id, UserData?.Id, CharacterData?.Id);
     }
 
     protected override async void OnDisconnected(IProtocol<MessageTag> protocol)
@@ -88,14 +90,16 @@ public class Client : ClientConnection, IRequester<MessageTag>
         {
             if (IsCharacterSelected())
             {
-                Console.WriteLine($"Player {CharacterData.Name} disconnected");
+                Log.Information("Player disconnected; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
+                    Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
             }
             await SaveChanges();
             TcpServer.Instance.Remove(this);
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Failed to handle client disconnect; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
+                Id, UserData?.Id, CharacterData?.Id);
         }
     }
 
@@ -229,7 +233,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Log.Error(ex, "Failed to save client data; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
+                Id, UserData?.Id, CharacterData?.Id);
         }
     }
     public void OnSelectedCharacter()

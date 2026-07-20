@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -15,6 +16,7 @@ using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
 using MTS.Services;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -22,10 +24,11 @@ public partial class CharacterData
 {
     public async Task<IapResult> IapPurchase(IapModel request)
     {
-        Console.WriteLine($"IapPurchase: {request}");
         var store = request.Store;
         var productId = request.ProductId;
         var purchaseToken = request.PurchaseToken;
+        Log.Information("IAP purchase requested; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
+            Id, store, productId);
         var purchaseTokenHash = Utils.Utils.HashSHA256(purchaseToken);
         await using var db = await Program.CreateDbAsync();
         var product = await db.IapProducts
@@ -39,6 +42,8 @@ public partial class CharacterData
                            && x.PurchaseTokenHash == purchaseTokenHash);
         if (hasPurchased)
         {
+            Log.Information("IAP purchase already processed; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
+                Id, store, productId);
             return new IapResult()
             {
                 Success = true,
@@ -53,7 +58,7 @@ public partial class CharacterData
             hasPurchased = await db.IapPurchases.AnyAsync(x => x.Store == store && x.ProductId == product.Id);
             if (hasPurchased)
             {
-                throw new Exception(Strings.IapPurchaseAlreadyProcessed);
+                throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
             }
         }
 
@@ -63,7 +68,7 @@ public partial class CharacterData
             var verify = await GooglePlayIap.VerifyAsync(productId, purchaseToken, cancelToken);
             if (!verify.IsValid)
             {
-                throw new Exception(verify.Error);
+                throw new InvalidException(verify.Error);
             }
 
             var productType = product.ProductType;
@@ -97,7 +102,7 @@ public partial class CharacterData
             };
         }
 
-        throw new Exception($"{Strings.IapStoreNotSupported}: {store}");
+        throw new InvalidException($"{Strings.IapStoreNotSupported}: {store}");
     }
 
     public async Task<List<OwnerIapProduct>> GetProducts()
@@ -122,7 +127,7 @@ public partial class CharacterData
     {
         if (amount <= 0 || amount > MoneyVip)
         {
-            throw new Exception(Strings.MoneyVipInvalid);
+            throw new InvalidException(Strings.MoneyVipInvalid);
         }
 
         var linhThach = Stats.LinhThach + amount * 100;

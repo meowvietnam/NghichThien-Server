@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
@@ -23,12 +24,12 @@ public partial class CharacterData
     {
         if (QuestManager.CurrentMainQuest <= 0)
         {
-            throw new Exception(Strings.NotCompleteFirstMainQuest);
+            throw new InvalidException(Strings.NotCompleteFirstMainQuest);
         }
 
         if (MonPhai != EMonPhai.None)
         {
-            throw new Exception(Strings.MonPhaiExisted);
+            throw new InvalidException(Strings.MonPhaiExisted);
         }
 
         SetMonPhai(request);
@@ -43,19 +44,19 @@ public partial class CharacterData
     {
         if (mainQuestComplete != QuestManager.CurrentMainQuest)
         {
-            throw new Exception(Strings.HackerMainQuest);
+            throw new InvalidException(Strings.HackerMainQuest);
         }
 
         int trueID = QuestManager.CurrentMainQuest + 1;
         var questRS = GameConfig.MainQuestManagerModel.MainQuestResource.FirstOrDefault(x => x.Id == trueID);
         if (questRS == null)
         {
-            throw new Exception(Strings.MainQuestResourceNotExist);
+            throw new InvalidException(Strings.MainQuestResourceNotExist);
         }
 
         if (Progression.Level < questRS.levelRequire)
         {
-            throw new Exception(Strings.HackerMainQuest);
+            throw new InvalidException(Strings.HackerMainQuest);
         }
 
         int linhThach = questRS.rewardRef.Money;
@@ -89,7 +90,7 @@ public partial class CharacterData
     {
         if (QuestManager.CurrentCountSideQuest >= 10)
         {
-            throw new Exception(Strings.HackerSideQuest);
+            throw new InvalidException(Strings.HackerSideQuest);
         }
 
         foreach (var item in sideQuestComplete.ListIdNpc)
@@ -97,14 +98,14 @@ public partial class CharacterData
             var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == item);
             if (npcRef == null)
             {
-                throw new Exception(Strings.NpcNotExist);
+                throw new InvalidException(Strings.NpcNotExist);
             }
 
             int levelMax = Progression.Level + 2;
             int levelMin = Progression.Level - 1;
             if (Progression.Level > levelMax || Progression.Level < levelMin)
             {
-                throw new Exception(Strings.HackerLevelNpc);
+                throw new InvalidException(Strings.HackerLevelNpc);
             }
 
             Social.RelationshipAddValue((ushort)item, 10);
@@ -135,7 +136,7 @@ public partial class CharacterData
         {
             if (!EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
             {
-                throw new Exception(Strings.HackerSkillCombat);
+                throw new InvalidException(Strings.HackerSkillCombat);
             }
         }
 
@@ -166,24 +167,24 @@ public partial class CharacterData
         {
             if (request.CurrentHPUser > Stats.SinhMenh * 5)
             {
-                throw new Exception(Strings.HackerHP);
+                throw new InvalidException(Strings.HackerHP);
             }
 
             if (request.CurrentThanThuc > Stats.ThanThuc)
             {
-                throw new Exception(Strings.HackerThanThucEndCombat);
+                throw new InvalidException(Strings.HackerThanThucEndCombat);
             }
 
             if (request.CurrentThoNguyen > Stats.ThoNguyen)
             {
-                throw new Exception(Strings.HackerThoNguyenEndCombat);
+                throw new InvalidException(Strings.HackerThoNguyenEndCombat);
             }
 
             if (request.TypeCombat == ETypeCombat.AllMaps)
             {
                 if (request.CurrentLevelEnemy > Progression.Level + 2)
                 {
-                    throw new Exception(Strings.HackerLevelEnemyCombat);
+                    throw new InvalidException(Strings.HackerLevelEnemyCombat);
                 }
             }
             else if (request.TypeCombat == ETypeCombat.Boss)
@@ -192,7 +193,7 @@ public partial class CharacterData
 
                 if (request.CurrentLevelEnemy != validBossLevel)
                 {
-                    throw new Exception(Strings.HackerLevelBossCombat);
+                    throw new InvalidException(Strings.HackerLevelBossCombat);
                 }
             }
 

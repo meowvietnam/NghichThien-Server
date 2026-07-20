@@ -1,6 +1,8 @@
-﻿using MTS.Network.Models;
+﻿using MTS.Exceptions;
+using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Network.Core
 {
@@ -45,7 +47,7 @@ namespace MTS.Network.Core
                         result = charData.IapPurchase(request).GetAwaiter().GetResult();
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new IapResult()
                     {
@@ -55,7 +57,8 @@ namespace MTS.Network.Core
                 }
                 finally
                 {
-                    Console.WriteLine(result);
+                    Log.Information("IAP purchase handled; ClientId={ClientId}, CharacterId={CharacterId}, Success={Success}, Store={Store}, ProductId={ProductId}",
+                        client.Id, client.CharacterData?.Id, result?.Success, request.Store, request.ProductId);
                     client.Send(MessageTag.PurchaseIapResult, result);
                 }
             }
@@ -80,7 +83,7 @@ namespace MTS.Network.Core
                         result = charData.ExchangeMoneyVipForLinhThach(amount);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new ExchangeMoneyVipResult()
                     {

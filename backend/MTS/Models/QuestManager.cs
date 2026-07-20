@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
@@ -100,7 +101,7 @@ public partial class QuestManager
             .FirstOrDefault(x => x.Id == id);
         if (quest == null)
         {
-            throw new Exception(Strings.DailyQuestNotFound);
+            throw new InvalidException(Strings.DailyQuestNotFound);
         }
 
         quest.Claim();

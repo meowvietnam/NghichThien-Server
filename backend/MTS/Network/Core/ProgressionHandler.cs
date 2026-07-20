@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using MTS.Network.Models;
 
 namespace MTS.Network.Core;
@@ -29,7 +30,7 @@ public class ProgressionHandler : IClientHandler
                     result = charData.Progression.SpecialLevelUp();
                 }
             }
-            catch (Exception e)
+            catch (InvalidException e)
             {
                 result = new SpecialLevelUpResult()
                 {

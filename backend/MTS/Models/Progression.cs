@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -98,17 +99,17 @@ public class Progression : IMemorySerializable<Progression>
         var require = infoLevel.tuviRequireNextLevel;
         if (CurrentExp < require)
         {
-            throw new Exception(Strings.SpecialLevelUpNotEnoughExp);
+            throw new InvalidException(Strings.SpecialLevelUpNotEnoughExp);
         }
 
         if (Level == infoLevels.Length - 1)
         {
-            throw new Exception(Strings.SpecialLevelUpMaxLevelReached);
+            throw new InvalidException(Strings.SpecialLevelUpMaxLevelReached);
         }
         var itemRequireds = infoLevel.RequireItem;
         if (itemRequireds is { Count: < 1 })
         {
-            throw new Exception(Strings.SpecialLevelUpNotRequired);
+            throw new InvalidException(Strings.SpecialLevelUpNotRequired);
         }
         var inventory = CharacterData.InventoryManager;
         var linhDans = inventory.LinhDans;
@@ -118,12 +119,12 @@ public class Progression : IMemorySerializable<Progression>
             {
                 if (item.Count < itemRequireds.Count)
                 {
-                    throw new Exception(Strings.SpecialLevelUpItemQuantityInvalid);
+                    throw new InvalidException(Strings.SpecialLevelUpItemQuantityInvalid);
                 }
             }
             else
             {
-                throw new Exception(Strings.SpecialLevelUpItemNotFound);
+                throw new InvalidException(Strings.SpecialLevelUpItemNotFound);
             }
         }
         var buffItems = infoLevel.BuffItem;

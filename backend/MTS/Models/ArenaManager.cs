@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
@@ -83,17 +84,17 @@ public partial class ArenaManager
         var reward = Rewards.FirstOrDefault(x => x.Id == id);
         if (reward == null)
         {
-            throw new Exception(Strings.ArenaRewardNotFound);
+            throw new InvalidException(Strings.ArenaRewardNotFound);
         }
 
         if (reward.IsClaim)
         {
-            throw new Exception(Strings.ArenaRewardAlreadyClaimed);
+            throw new InvalidException(Strings.ArenaRewardAlreadyClaimed);
         }
 
         if (GameConfig.TypeRankArenaWithValue[reward.Type] > Points)
         {
-            throw new Exception(Strings.ArenaRankNotReached);
+            throw new InvalidException(Strings.ArenaRankNotReached);
         }
         reward.IsClaim = true;
         await using var db = await Program.CreateDbAsync();

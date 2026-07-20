@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Localization;
 using MTS.Network.Models;
@@ -46,7 +47,7 @@ namespace MTS.Network.ClientState
                         client.SetUserData(user);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new LoginResult
                     {
@@ -68,7 +69,7 @@ namespace MTS.Network.ClientState
                     {
                         if (!client.IsLoggedIn())
                         {
-                            throw new Exception(Strings.NotLoggedIn);
+                            throw new InvalidException(Strings.NotLoggedIn);
                         }
                         client.SetUserData(null);
                         result = new LogoutResult()
@@ -77,7 +78,7 @@ namespace MTS.Network.ClientState
                         };
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new LogoutResult
                     {
@@ -99,7 +100,7 @@ namespace MTS.Network.ClientState
                     {
                         if (!client.IsLoggedIn())
                         {
-                            throw new Exception(Strings.NotLoggedIn);
+                            throw new InvalidException(Strings.NotLoggedIn);
                         }
                         result = new PlayResult()
                         {
@@ -108,7 +109,7 @@ namespace MTS.Network.ClientState
                         client.ChangeState(new SelectCharacter(client));
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new PlayResult
                     {
@@ -130,13 +131,13 @@ namespace MTS.Network.ClientState
                     {
                         if (!client.IsLoggedIn())
                         {
-                            throw new Exception(Strings.NotLoggedIn);
+                            throw new InvalidException(Strings.NotLoggedIn);
                         }
 
                         result = DeleteAccount(client.UserData.Id).GetAwaiter().GetResult();
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new DeleteAccountResult
                     {
@@ -159,7 +160,7 @@ namespace MTS.Network.ClientState
                 .ExecuteDeleteAsync();
             if (result <= 0)
             {
-                throw new Exception(Strings.DeleteAccountFailed);
+                throw new InvalidException(Strings.DeleteAccountFailed);
             }
 
             return new DeleteAccountResult()

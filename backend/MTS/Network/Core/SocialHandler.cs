@@ -1,4 +1,5 @@
-﻿using MTS.Network.Models;
+﻿using MTS.Exceptions;
+using MTS.Network.Models;
 
 namespace MTS.Network.Core
 {
@@ -39,7 +40,7 @@ namespace MTS.Network.Core
                         result = charData.ThinhGiaoKyNang(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
                     result = new ThinhGiaoKyNangResult()
                     {
@@ -64,7 +65,7 @@ namespace MTS.Network.Core
                         result = charData.TangQuaNpc(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
 
                     result = new TangQuaNpcResult()
@@ -90,7 +91,7 @@ namespace MTS.Network.Core
                         result = charData.Gacha(request);
                     }
                 }
-                catch (Exception e)
+                catch (InvalidException e)
                 {
 
                     result = new GachaResult()

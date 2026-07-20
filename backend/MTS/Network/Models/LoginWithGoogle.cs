@@ -1,3 +1,4 @@
+using MTS.Exceptions;
 using Google.Apis.Auth;
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ public partial class LoginWithGoogle : ILogin
         }
         catch
         {
-            throw new Exception(Strings.GoogleLoginInvalid);
+            throw new InvalidException(Strings.GoogleLoginInvalid);
         }
         var email = payload.Email;
         var name = payload.Name;
