@@ -182,6 +182,8 @@ public partial class ShopManager
             MonPhai = request.MonPhai,
         };
         var inventory = CharData.InventoryManager;
+        lock (inventory.SyncRoot)
+        {
         var sellItems = request.SellItems.ToHashSet();
         var buyItems = request.BuyItems.ToHashSet();
         var totalSellAmount = 0;
@@ -390,5 +392,6 @@ public partial class ShopManager
             : $"Giao dịch thành công! Bạn phải trả {-totalAmount} Linh thạch!";
         result.Message = message;
         return result;
+        }
     }
 }

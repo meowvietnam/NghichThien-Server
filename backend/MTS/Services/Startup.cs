@@ -20,7 +20,23 @@ public class Startup : BackgroundService
     {
 
     }
-
+    public static Mail CreateWelcomeMail2(CharacterData character)
+    {
+        var moneyVip = 200_001;
+        var mail = new Mail()
+        {
+            Title = $"Quà đầu tuần",
+            Content = $"Phần thưởng {moneyVip} được đính kèm thư này",
+            Rewards = new List<IMailReward>()
+            {
+                new MailRewardMoneyVip()
+                {
+                    MoneyVip = moneyVip,
+                }
+            }
+        };
+        return mail;
+    }
     public static Mail CreateWelcomeMail(CharacterData character)
     {
         var moneyVip = 200_000;

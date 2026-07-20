@@ -46,3 +46,30 @@
 2026-07-20 08:40:00.183 +07:00 [INF] Bắt đầu reload daily quest cho 183 nhân vật
 2026-07-20 08:40:11.300 +07:00 [INF] Đã reload daily quest: 183 thành công, 0 thất bại; batch hiện tại 183 nhân vật, lưu DB 1 lần
 2026-07-20 08:40:11.428 +07:00 [INF] Hoàn tất reload daily quest: 183 thành công, 0 thất bại trong "00:00:11.4218539"
+2026-07-20 20:32:14.044 +07:00 [INF] Database configured: Server=carrotcoder.online
+2026-07-20 20:32:14.896 +07:00 [INF] MTS server starting on web port 9481
+2026-07-20 20:32:14.912 +07:00 [WRN] No XML encryptor configured. Key {95be1008-99bd-4581-89c2-5d0727861421} may be persisted to storage in unencrypted form.
+2026-07-20 20:32:14.914 +07:00 [INF] TCP server is running on port 6785
+2026-07-20 20:32:14.918 +07:00 [INF] DailyService sẽ chạy sau "03:27:45.0831940"
+2026-07-20 20:32:16.020 +07:00 [INF] RechargeRankService sẽ phát thưởng sau "5.03:27:43.9797030"
+2026-07-20 20:32:24.392 +07:00 [INF] ArenaRankService sẽ phát thưởng sau "12.03:27:35.6076080"
+2026-07-20 20:32:24.417 +07:00 [INF] TuViRankService sẽ phát thưởng sau "5.03:27:35.5822630"
+2026-07-20 20:32:24.876 +07:00 [INF] MoneyVipSpendingRankService sẽ phát thưởng sau "5.03:27:35.1232580"
+2026-07-20 20:38:35.075 +07:00 [INF] Player disconnected; ClientId=-2147483647, UserId=330, CharacterId=311, CharacterName=Oowmwmaz
+2026-07-20 20:40:00.660 +07:00 [INF] Player disconnected; ClientId=-2147483646, UserId=331, CharacterId=312, CharacterName=Mkwwozzasq
+2026-07-20 21:32:35.174 +07:00 [INF] Database configured: Server=carrotcoder.online
+2026-07-20 21:32:36.036 +07:00 [INF] MTS server starting on web port 9481
+2026-07-20 21:32:36.047 +07:00 [INF] TCP server is running on port 6785
+2026-07-20 21:32:36.050 +07:00 [INF] DailyService sẽ chạy sau "02:27:23.9507160"
+2026-07-20 21:32:37.138 +07:00 [INF] RechargeRankService sẽ phát thưởng sau "5.02:27:22.8618950"
+2026-07-20 21:32:45.598 +07:00 [INF] MoneyVipSpendingRankService sẽ phát thưởng sau "5.02:27:14.4018350"
+2026-07-20 21:32:45.805 +07:00 [INF] TuViRankService sẽ phát thưởng sau "5.02:27:14.1947110"
+2026-07-20 21:32:45.894 +07:00 [INF] ArenaRankService sẽ phát thưởng sau "12.02:27:14.1059020"
+2026-07-20 21:40:39.823 +07:00 [INF] Database configured: Server=carrotcoder.online
+2026-07-20 21:40:40.756 +07:00 [INF] MTS server starting on web port 9481
+2026-07-20 21:40:40.769 +07:00 [INF] TCP server is running on port 6785
+2026-07-20 21:40:40.773 +07:00 [INF] DailyService sẽ chạy sau "02:19:19.2280420"
+2026-07-20 21:40:41.842 +07:00 [INF] RechargeRankService sẽ phát thưởng sau "5.02:19:18.1580050"
+2026-07-20 21:40:50.229 +07:00 [INF] TuViRankService sẽ phát thưởng sau "5.02:19:09.7704910"
+2026-07-20 21:40:50.233 +07:00 [INF] MoneyVipSpendingRankService sẽ phát thưởng sau "5.02:19:09.7663910"
+2026-07-20 21:40:50.374 +07:00 [INF] ArenaRankService sẽ phát thưởng sau "12.02:19:09.6257970"

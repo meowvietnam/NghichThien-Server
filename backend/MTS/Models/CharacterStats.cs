@@ -137,8 +137,14 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
+
+    public int GetMinThoNguyen()
+    {
+        return 0;
+    }
     public void SetThoNguyen(int thoNguyen)
     {
+        thoNguyen = Math.Max(GetMinThoNguyen(), thoNguyen);
         if (ThoNguyen != thoNguyen)
         {
             ThoNguyen = thoNguyen;

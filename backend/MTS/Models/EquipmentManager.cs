@@ -36,6 +36,11 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [NotMapped] private EquipmentTracking tracking = new();
     [NotMapped] private bool isDirty1;
     [NotMapped] private bool isDirty2;
+
+    public ushort[] GetAllSlotsCP()
+    {
+        return new[] { DonThuatUsed, PhuTu1Used, PhuTu2Used, PhuTu3Used , PhuTu4Used , ChuTu1Used, ChuTu2Used};
+    }
     // Hoặc nếu muốn viết tường minh, dễ gọi, tách làm 3 hàm như sau cho gọn:
     public void EquipVuKhi(ushort id)
     {

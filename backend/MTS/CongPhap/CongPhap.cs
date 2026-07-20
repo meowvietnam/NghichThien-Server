@@ -25,8 +25,7 @@ public class CongPhap : BaseSkill, IMemorySerializable<CongPhap>
     }
     public virtual void UpgradeCongPhapSuccess(CharacterData statsCurrent, int level)
     {
-        UnEquipCongPhap(statsCurrent, level - 1);
-        EquipCongPhap(statsCurrent, level);
+        
     }
     public virtual void LearnCongPhapSuccess(CharacterData statsCurrent, int level)
     {

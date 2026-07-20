@@ -186,6 +186,7 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.SlotCongPhapEmpty);
         }
+
         var cpRef = new CongPhap()
         {
             Id = value,
@@ -270,7 +271,7 @@ public partial class CharacterData
         var chuTu1 = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == chuTu1Id);
         var tocDocTuLuyen = chuTu1?.GetTocDoTuLuyen(level) ?? 0;
         var percentTuChat = GetPercentTuChat();
-        var percentTamCanh = GetPercentTamCanh();      
+        var percentTamCanh = GetPercentTamCanh();
 
         int GetTotalValueBuffWithMultiplier(params float[] percent)
         {
@@ -279,35 +280,43 @@ public partial class CharacterData
             {
                 total *= (1 + item / 100f);
             }
+
             return (int)total;
         }
+
         var buffExp = GetTotalValueBuffWithMultiplier(percentTuChat, param2, percentTamCanh) * months;
         if (Stats.Ability.HasFlag(Ability.TienThienDaoThe))
         {
             buffExp += (int)MathF.Ceiling(buffExp * 0.1f);
         }
+
         if (Stats.Ability.HasFlag(Ability.HuyenAmTuyetMach))
         {
             buffExp -= (int)MathF.Ceiling(buffExp * 0.1f);
         }
+
         return buffExp;
     }
+
     public TuLuyenResult TuLuyen(TimeSpan time)
     {
         if (time < TimeSpan.FromDays(30))
         {
             throw new InvalidException(Strings.RetreatDurationInvalid);
         }
+
         var chuTu1Id = EquipmentManager.ChuTu1Used;
         if (chuTu1Id == ushort.MaxValue)
         {
             throw new InvalidException(Strings.MainCultivationRequiredForRetreat);
         }
+
         var months = time.Days / 30;
         if (months > 120)
         {
             throw new InvalidException(Strings.ExceedLimit);
         }
+
         var newTamCanh = Stats.TamCanh - months;
         var cost = CalculateCostTuLuyen() * months;
         var money = Stats.LinhThach;
@@ -390,6 +399,7 @@ public partial class CharacterData
                 Id = id,
                 Level = 1
             };
+            cp.LearnCongPhapSuccess(this, congPhap.Level);
             var newTuoiTac = Stats.TuoiTac + time;
             InventoryManager.Add(congPhap);
             Stats.SetLinhThach(remaining);
@@ -510,11 +520,18 @@ public partial class CharacterData
             {
                 throw new InvalidException(Strings.CongPhapMaxLevelReached);
             }
+
             require = newLevel;
         }
         else
         {
             throw new InvalidException(Strings.CongPhapNotOwned);
+        }
+
+        var slots = EquipmentManager.GetAllSlotsCP();
+        if (slots.Contains(cpOwner.Id))
+        {
+            throw new InvalidException(string.Empty);
         }
 
         if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < require)
@@ -540,13 +557,13 @@ public partial class CharacterData
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
-
         var newTuoiTac = Stats.TuoiTac + time;
         CongPhap cpOwnerNewValue = new CongPhap()
         {
             Id = cpOwner.Id,
             Level = (ushort)(cpOwner.Level + 1),
         };
+        cp.UpgradeCongPhapSuccess(this, cpOwnerNewValue.Level);
         InventoryManager.Update(cpOwner, cpOwnerNewValue);
         Stats.SetLinhThach(remaining);
         Stats.SetTuoiTac(newTuoiTac);

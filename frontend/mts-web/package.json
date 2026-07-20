@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.39"
+    "jwt-decode": "^4.0.0",
+    "vue": "^3.5.39",
+    "vue-router": "^5.2.0",
+    "vue3-google-login": "^2.1.4"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",

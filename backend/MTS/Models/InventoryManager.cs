@@ -48,6 +48,16 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
     public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
 
+    [NotMapped]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    private readonly object inventoryLock = new();
+
+    [NotMapped]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public object SyncRoot => inventoryLock;
+
     [NotMapped] [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
     private IdAllocator<ushort> furnaceIdAllocator;
 
@@ -70,18 +80,21 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Init()
     {
-        Tracking = new();
-        furnaceIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
-        equipmentIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
-        var equipments = VuKhis.Union(PhongCus).Union(TrangSucs).ToHashSet();
-        foreach (var furnace in Furnaces)
+        lock (inventoryLock)
         {
-            furnaceIdAllocator.AddUsedId(furnace.SelfId);
-        }
+            Tracking = new();
+            furnaceIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
+            equipmentIdAllocator = new IdAllocator<ushort>(0, Increase, Decrease);
+            var equipments = VuKhis.Union(PhongCus).Union(TrangSucs).ToHashSet();
+            foreach (var furnace in Furnaces)
+            {
+                furnaceIdAllocator.AddUsedId(furnace.SelfId);
+            }
 
-        foreach (var equipment in equipments)
-        {
-            equipmentIdAllocator.AddUsedId(equipment.SelfId);
+            foreach (var equipment in equipments)
+            {
+                equipmentIdAllocator.AddUsedId(equipment.SelfId);
+            }
         }
     }
 
@@ -138,9 +151,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToArrayAsync();
-        VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
-        PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
-        TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
+        lock (inventoryLock)
+        {
+            VuKhis = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Weapon).ToHashSet();
+            PhongCus = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Armor).ToHashSet();
+            TrangSucs = equipments.Where(x => x.GetEquipmentType() == EquipmentType.Jewelry).ToHashSet();
+        }
     }
 
     public async Task Load(AppDbContext db)
@@ -154,60 +170,76 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
-        Furnaces = furnaces;
-        Recipes = items.GetValueOrDefault(ItemType.Recipe, new());
-        Herbs = items.GetValueOrDefault(ItemType.Herb, new());
-        ThanThongs = items.GetValueOrDefault(ItemType.ThanThong, new());
-        CongPhaps = items.GetValueOrDefault(ItemType.CongPhap, new());
-        LinhDans = items.GetValueOrDefault(ItemType.LinhDan, new());
-        Materials = items.GetValueOrDefault(ItemType.Material, new());
         await LoadEquipments(db);
-        NgoDaos = await db.NgoDaos
+        var ngoDaos = await db.NgoDaos
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
-        CamNgos = await db.CamNgos
+        var camNgos = await db.CamNgos
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
-        CongPhapOwners = await db.CongPhaps
+        var congPhapOwners = await db.CongPhaps
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
-        ThanThongOwners = await db.ThanThongs
+        var thanThongOwners = await db.ThanThongs
             .AsNoTracking()
             .Where(x => x.CharId == CharId)
             .ToHashSetAsync();
+        lock (inventoryLock)
+        {
+            Furnaces = furnaces;
+            Recipes = items.GetValueOrDefault(ItemType.Recipe, new());
+            Herbs = items.GetValueOrDefault(ItemType.Herb, new());
+            ThanThongs = items.GetValueOrDefault(ItemType.ThanThong, new());
+            CongPhaps = items.GetValueOrDefault(ItemType.CongPhap, new());
+            LinhDans = items.GetValueOrDefault(ItemType.LinhDan, new());
+            Materials = items.GetValueOrDefault(ItemType.Material, new());
+            NgoDaos = ngoDaos;
+            CamNgos = camNgos;
+            CongPhapOwners = congPhapOwners;
+            ThanThongOwners = thanThongOwners;
+        }
         Init();
     }
 
     public void AddFurnace(FurnaceData furnace)
     {
-        furnace.CharId = CharId;
-        var furnaceId = furnaceIdAllocator.GetId();
-        furnace.SelfId = furnaceId;
-        Furnaces.Add(furnace);
-        Tracking.Furnaces.Add(furnace);
+        lock (inventoryLock)
+        {
+            furnace.CharId = CharId;
+            var furnaceId = furnaceIdAllocator.GetId();
+            furnace.SelfId = furnaceId;
+            Furnaces.Add(furnace);
+            Tracking.Furnaces.Add(furnace);
+        }
     }
 
     public void UpdateFurnace(FurnaceData furnaceRef)
     {
-        if (Furnaces.TryGetValue(furnaceRef, out var furnace))
+        lock (inventoryLock)
         {
-            furnace.Durability = furnaceRef.Durability;
-            Tracking.Furnaces.Update(furnace);
+            if (Furnaces.TryGetValue(furnaceRef, out var furnace))
+            {
+                furnace.Durability = furnaceRef.Durability;
+                Tracking.Furnaces.Update(furnace);
+            }
         }
     }
 
     public bool RemoveFurnace(FurnaceData furnace)
     {
-        if (Furnaces.Remove(furnace))
+        lock (inventoryLock)
         {
-            Tracking.Furnaces.Delete(furnace);
-            return true;
-        }
+            if (Furnaces.Remove(furnace))
+            {
+                Tracking.Furnaces.Delete(furnace);
+                return true;
+            }
 
-        return false;
+            return false;
+        }
     }
 
     public bool RemoveFurnace(ushort selfId)
@@ -222,28 +254,34 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public int ByteSize()
     {
-        return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() +
-               CongPhaps.ByteSize() + VuKhis.ByteSize() + PhongCus.ByteSize() + TrangSucs.ByteSize() +
-               LinhDans.ByteSize() + NgoDaos.ByteSize() + CamNgos.ByteSize() + CongPhapOwners.ByteSize()
-               + ThanThongOwners.ByteSize() + Materials.ByteSize();
+        lock (inventoryLock)
+        {
+            return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() +
+                   CongPhaps.ByteSize() + VuKhis.ByteSize() + PhongCus.ByteSize() + TrangSucs.ByteSize() +
+                   LinhDans.ByteSize() + NgoDaos.ByteSize() + CamNgos.ByteSize() + CongPhapOwners.ByteSize()
+                   + ThanThongOwners.ByteSize() + Materials.ByteSize();
+        }
     }
 
     public void Serialize(IWriter writer)
     {
-        writer.WriteArray(Furnaces);
-        writer.WriteArray(Recipes);
-        writer.WriteArray(Herbs);
-        writer.WriteArray(ThanThongs);
-        writer.WriteArray(CongPhaps);
-        writer.WriteArray(VuKhis);
-        writer.WriteArray(PhongCus);
-        writer.WriteArray(TrangSucs);
-        writer.WriteArray(LinhDans);
-        writer.WriteArray(NgoDaos);
-        writer.WriteArray(CamNgos);
-        writer.WriteArray(CongPhapOwners);
-        writer.WriteArray(ThanThongOwners);
-        writer.WriteArray(Materials);
+        lock (inventoryLock)
+        {
+            writer.WriteArray(Furnaces);
+            writer.WriteArray(Recipes);
+            writer.WriteArray(Herbs);
+            writer.WriteArray(ThanThongs);
+            writer.WriteArray(CongPhaps);
+            writer.WriteArray(VuKhis);
+            writer.WriteArray(PhongCus);
+            writer.WriteArray(TrangSucs);
+            writer.WriteArray(LinhDans);
+            writer.WriteArray(NgoDaos);
+            writer.WriteArray(CamNgos);
+            writer.WriteArray(CongPhapOwners);
+            writer.WriteArray(ThanThongOwners);
+            writer.WriteArray(Materials);
+        }
     }
 
     public void Deserialize(IReader reader, ref InventoryManager value)
@@ -292,78 +330,93 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public Task SaveChanges(AppDbContext db)
     {
-        lock (Tracking)
+        lock (inventoryLock)
         {
             Tracking.Apply(db);
-            Tracking.Clear();
         }
 
         return Task.CompletedTask;
     }
 
+    public void AcceptChanges()
+    {
+        lock (inventoryLock)
+        {
+            Tracking.Clear();
+        }
+    }
+
     public RewardItems AddToInventory(List<ItemRef> rewards)
     {
-        var result = new RewardItems();
-        foreach (var itemRef in rewards)
+        lock (inventoryLock)
         {
-            var type = itemRef.Type;
-            if (type == ItemType.Furnace)
+            var result = new RewardItems();
+            foreach (var itemRef in rewards)
             {
-                var furnace = new FurnaceData()
+                var type = itemRef.Type;
+                if (type == ItemType.Furnace)
                 {
-                    Id = itemRef.Id,
-                    Durability = 100,
-                };
-                result.Furnaces.Add(furnace);
-                AddFurnace(furnace);
+                    var furnace = new FurnaceData()
+                    {
+                        Id = itemRef.Id,
+                        Durability = 100,
+                    };
+                    result.Furnaces.Add(furnace);
+                    AddFurnace(furnace);
+                }
+                else
+                {
+                    result.OtherItems.Add(itemRef);
+                    Add(itemRef);
+                }
             }
-            else
-            {
-                result.OtherItems.Add(itemRef);
-                Add(itemRef);
-            }
-        }
 
-        return result;
+            return result;
+        }
     }
 
     public void Decrease(ItemRef itemRef)
     {
-        if (itemRef.Count == 0)
+        lock (inventoryLock)
         {
-            throw new InvalidException(Strings.InventoryItemQuantityInvalid);
-        }
-
-        var collection = GetItemCollection(itemRef.Type);
-        if (collection.Collection is HashSet<ItemRef> c)
-        {
-            if (!c.TryGetValue(itemRef, out var item))
-            {
-                throw new InvalidException(Strings.InventoryItemNotFound);
-            }
-
-            var remaining = item.Count - itemRef.Count;
-            if (remaining < 0)
+            if (itemRef.Count == 0)
             {
                 throw new InvalidException(Strings.InventoryItemQuantityInvalid);
             }
 
-            item.Count = (ushort)remaining;
-            var tracking = collection.Tracking as Modify<ItemRef>;
-            if (remaining == 0)
+            var collection = GetItemCollection(itemRef.Type);
+            if (collection.Collection is HashSet<ItemRef> c)
             {
-                c.Remove(item);
-                tracking.Delete(item);
-            }
-            else
-            {
-                tracking.Update(item);
+                if (!c.TryGetValue(itemRef, out var item))
+                {
+                    throw new InvalidException(Strings.InventoryItemNotFound);
+                }
+
+                var remaining = item.Count - itemRef.Count;
+                if (remaining < 0)
+                {
+                    throw new InvalidException(Strings.InventoryItemQuantityInvalid);
+                }
+
+                item.Count = (ushort)remaining;
+                var tracking = collection.Tracking as Modify<ItemRef>;
+                if (remaining == 0)
+                {
+                    c.Remove(item);
+                    tracking.Delete(item);
+                }
+                else
+                {
+                    tracking.Update(item);
+                }
             }
         }
     }
 
     public LuyenDanResult Refine(CharacterData characterData, LuyenDanRequest request)
     {
+        lock (inventoryLock)
+        {
         var main1 = request.ChuDuoc;
         var sub1 = request.PhuDuoc1;
         var sub2 = request.PhuDuoc2;
@@ -517,109 +570,122 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             };
         }
 
-        return new LuyenDanResult()
-        {
-            Success = true,
-            Message = RefineMessage.RecipeInvalid,
-            ItemRefs = new(),
-            Modify = modify,
-            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
-        };
+            return new LuyenDanResult()
+            {
+                Success = true,
+                Message = RefineMessage.RecipeInvalid,
+                ItemRefs = new(),
+                Modify = modify,
+                NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+            };
+        }
     }
 
     public void Add(ItemRef itemRef)
     {
-        var type = itemRef.Type;
-        if (type == ItemType.Herb)
+        lock (inventoryLock)
         {
-            Add(Herbs, itemRef);
-        }
-        else if (type == ItemType.LinhDan)
-        {
-            Add(LinhDans, itemRef);
-        }
-        else if (type == ItemType.ThanThong)
-        {
-            Add(ThanThongs, itemRef);
-        }
-        else if (type == ItemType.CongPhap)
-        {
-            Add(CongPhaps, itemRef);
-        }
-        else if (type == ItemType.Recipe)
-        {
-            Add(Recipes, itemRef);
-        }
-        else if (type == ItemType.Material)
-        {
-            Add(Materials, itemRef);
+            var type = itemRef.Type;
+            if (type == ItemType.Herb)
+            {
+                Add(Herbs, itemRef);
+            }
+            else if (type == ItemType.LinhDan)
+            {
+                Add(LinhDans, itemRef);
+            }
+            else if (type == ItemType.ThanThong)
+            {
+                Add(ThanThongs, itemRef);
+            }
+            else if (type == ItemType.CongPhap)
+            {
+                Add(CongPhaps, itemRef);
+            }
+            else if (type == ItemType.Recipe)
+            {
+                Add(Recipes, itemRef);
+            }
+            else if (type == ItemType.Material)
+            {
+                Add(Materials, itemRef);
+            }
         }
     }
 
     public void Add(ItemRef itemRef, int count)
     {
-        itemRef.CharId = CharId;
-        var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
-        foreach (var itemRefse in array)
+        lock (inventoryLock)
         {
-            if (itemRefse.TryGetValue(itemRef, out var item))
+            itemRef.CharId = CharId;
+            var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
+            foreach (var itemRefse in array)
             {
-                var remaining = itemRef.Count + count;
-                item.Count = (ushort)remaining;
-                if (remaining <= 0)
+                if (itemRefse.TryGetValue(itemRef, out var item))
                 {
-                    itemRefse.Remove(item);
-                    Tracking.Items.Delete(item);
-                }
-                else
-                {
-                    Tracking.Items.Update(item);
-                }
+                    var remaining = item.Count + count;
+                    item.Count = (ushort)remaining;
+                    if (remaining <= 0)
+                    {
+                        itemRefse.Remove(item);
+                        Tracking.Items.Delete(item);
+                    }
+                    else
+                    {
+                        Tracking.Items.Update(item);
+                    }
 
-                return;
+                    return;
+                }
             }
         }
     }
 
     public bool Update(ItemRef itemRef)
     {
-        var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
-        return array.Any(x =>
+        lock (inventoryLock)
         {
-            if (x.TryGetValue(itemRef, out var item))
+            var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
+            return array.Any(x =>
             {
-                item.Count = itemRef.Count;
-                if (item.Count == 0)
+                if (x.TryGetValue(itemRef, out var item))
                 {
-                    x.Remove(item);
-                    Tracking.Items.Delete(item);
-                }
-                else
-                {
-                    Tracking.Items.Update(item);
+                    item.Count = itemRef.Count;
+                    if (item.Count == 0)
+                    {
+                        x.Remove(item);
+                        Tracking.Items.Delete(item);
+                    }
+                    else
+                    {
+                        Tracking.Items.Update(item);
+                    }
+
+                    return true;
                 }
 
-                return true;
-            }
-
-            return false;
-        });
+                return false;
+            });
+        }
     }
 
     public bool Remove(ItemRef itemRef)
     {
-        itemRef.CharId = CharId;
-        var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
-        return array.Any(x =>
+        lock (inventoryLock)
         {
-            if (x.Remove(itemRef))
+            itemRef.CharId = CharId;
+            var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
+            return array.Any(x =>
             {
-                Tracking.Items.Delete(itemRef);
-                return true;
-            }
+                if (x.Remove(itemRef))
+                {
+                    Tracking.Items.Delete(itemRef);
+                    return true;
+                }
 
-            return false;
-        });
+                return false;
+            });
+        }
     }
 
     private void Add(HashSet<ItemRef> inventory, ItemRef itemRef)
@@ -647,51 +713,60 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Add(Equipment equipment)
     {
-        var type = equipment.GetEquipmentType();
-        switch (type)
+        lock (inventoryLock)
         {
-            case EquipmentType.Weapon:
-                Add(VuKhis, equipment);
-                break;
-            case EquipmentType.Armor:
-                Add(PhongCus, equipment);
-                break;
-            case EquipmentType.Jewelry:
-                Add(TrangSucs, equipment);
-                break;
+            var type = equipment.GetEquipmentType();
+            switch (type)
+            {
+                case EquipmentType.Weapon:
+                    Add(VuKhis, equipment);
+                    break;
+                case EquipmentType.Armor:
+                    Add(PhongCus, equipment);
+                    break;
+                case EquipmentType.Jewelry:
+                    Add(TrangSucs, equipment);
+                    break;
+            }
         }
     }
 
     public bool Update(Equipment equipment)
     {
-        var array = new[] { VuKhis, PhongCus, TrangSucs };
-        return array.Any(x =>
+        lock (inventoryLock)
         {
-            if (x.TryGetValue(equipment, out var e))
+            var array = new[] { VuKhis, PhongCus, TrangSucs };
+            return array.Any(x =>
             {
-                e.Name = equipment.Name;
-                Tracking.Equipments.Update(e);
-                return true;
-            }
+                if (x.TryGetValue(equipment, out var e))
+                {
+                    e.Name = equipment.Name;
+                    Tracking.Equipments.Update(e);
+                    return true;
+                }
 
-            return false;
-        });
+                return false;
+            });
+        }
     }
 
     public bool Remove(Equipment equipment)
     {
-        equipment.CharId = CharId;
-        var array = new[] { VuKhis, PhongCus, TrangSucs };
-        return array.Any(x =>
+        lock (inventoryLock)
         {
-            if (x.Remove(equipment))
+            equipment.CharId = CharId;
+            var array = new[] { VuKhis, PhongCus, TrangSucs };
+            return array.Any(x =>
             {
-                Tracking.Equipments.Delete(equipment);
-                return true;
-            }
+                if (x.Remove(equipment))
+                {
+                    Tracking.Equipments.Delete(equipment);
+                    return true;
+                }
 
-            return false;
-        });
+                return false;
+            });
+        }
     }
 
     public bool RemoveEquipment(ushort seldId)
@@ -705,137 +780,172 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public void Add(NgoDao ngoDao)
     {
-        ngoDao.CharId = CharId;
-        NgoDaos.Add(ngoDao);
-        Tracking.NgoDaos.Add(ngoDao);
+        lock (inventoryLock)
+        {
+            ngoDao.CharId = CharId;
+            NgoDaos.Add(ngoDao);
+            Tracking.NgoDaos.Add(ngoDao);
+        }
     }
 
     public int AddOrUpdate(CamNgo camNgo)
     {
-        if (CamNgos.TryGetValue(camNgo, out var cam))
+        lock (inventoryLock)
         {
-            return Update(cam, camNgo);
-        }
+            if (CamNgos.TryGetValue(camNgo, out var cam))
+            {
+                return Update(cam, camNgo);
+            }
 
-        return Add(camNgo);
+            return Add(camNgo);
+        }
     }
 
     public int Update(CamNgo oldValue, CamNgo newValue)
     {
-        var p = CharacterData.Progression;
-        var newNgoDaoDiem = p.NgoDaoDiem;
-        bool crossed = NgoDaoResource.CamNgoRequire.Any(x => oldValue.Value < x && newValue.Value >= x);
-        if (crossed)
+        lock (inventoryLock)
         {
-            newNgoDaoDiem++;
-            p.SetNgoDaoDiem(newNgoDaoDiem);
-        }
+            var p = CharacterData.Progression;
+            var newNgoDaoDiem = p.NgoDaoDiem;
+            bool crossed = NgoDaoResource.CamNgoRequire.Any(x => oldValue.Value < x && newValue.Value >= x);
+            if (crossed)
+            {
+                newNgoDaoDiem++;
+                p.SetNgoDaoDiem(newNgoDaoDiem);
+            }
 
-        oldValue.Value = newValue.Value;
-        Tracking.CamNgos.Update(oldValue);
-        return newNgoDaoDiem;
+            oldValue.Value = newValue.Value;
+            Tracking.CamNgos.Update(oldValue);
+            return newNgoDaoDiem;
+        }
     }
 
     public int Add(CamNgo camNgo)
     {
-        var p = CharacterData.Progression;
-        var newNgoDaoDiem = p.NgoDaoDiem + 1;
-        p.SetNgoDaoDiem(newNgoDaoDiem);
-        camNgo.CharId = CharId;
-        CamNgos.Add(camNgo);
-        Tracking.CamNgos.Add(camNgo);
-        return newNgoDaoDiem;
+        lock (inventoryLock)
+        {
+            var p = CharacterData.Progression;
+            var newNgoDaoDiem = p.NgoDaoDiem + 1;
+            p.SetNgoDaoDiem(newNgoDaoDiem);
+            camNgo.CharId = CharId;
+            CamNgos.Add(camNgo);
+            Tracking.CamNgos.Add(camNgo);
+            return newNgoDaoDiem;
+        }
     }
 
     public void AddOrUpdate(CongPhap congPhap)
     {
-        if (CongPhapOwners.TryGetValue(congPhap, out var congPhapOwner))
+        lock (inventoryLock)
         {
-            Update(congPhapOwner, congPhap);
-        }
-        else
-        {
-            Add(congPhap);
+            if (CongPhapOwners.TryGetValue(congPhap, out var congPhapOwner))
+            {
+                Update(congPhapOwner, congPhap);
+            }
+            else
+            {
+                Add(congPhap);
+            }
         }
     }
 
     public void Update(CongPhap oldValue, CongPhap newValue)
     {
-        oldValue.Level = newValue.Level;
-        Tracking.CongPhaps.Update(oldValue);
+        lock (inventoryLock)
+        {
+            oldValue.Level = newValue.Level;
+            Tracking.CongPhaps.Update(oldValue);
+        }
     }
 
     public void Add(CongPhap congPhap)
     {
-        congPhap.CharId = CharId;
-        CongPhapOwners.Add(congPhap);
-        Tracking.CongPhaps.Add(congPhap);
+        lock (inventoryLock)
+        {
+            congPhap.CharId = CharId;
+            CongPhapOwners.Add(congPhap);
+            Tracking.CongPhaps.Add(congPhap);
+        }
     }
 
     public void Remove(CongPhap congPhap)
     {
-        congPhap.CharId = CharId;
-        CongPhapOwners.Remove(congPhap);
-        Tracking.CongPhaps.Delete(congPhap);
+        lock (inventoryLock)
+        {
+            congPhap.CharId = CharId;
+            CongPhapOwners.Remove(congPhap);
+            Tracking.CongPhaps.Delete(congPhap);
+        }
     }
 
     public void Add(ThanThong thanThong)
     {
-        thanThong.CharId = CharId;
-        ThanThongOwners.Add(thanThong);
-        Tracking.ThanThongs.Add(thanThong);
+        lock (inventoryLock)
+        {
+            thanThong.CharId = CharId;
+            ThanThongOwners.Add(thanThong);
+            Tracking.ThanThongs.Add(thanThong);
+        }
     }
 
     public void ApplyModify(InventoryModify m)
     {
-        m.Apply(this, Tracking);
+        lock (inventoryLock)
+        {
+            m.Apply(this, Tracking);
+        }
     }
 
     public SetEquipmentNameResult SetEquipmentName(SetEquipmentName request)
     {
-        var name = request.Name;
-        if (name.Length > 30)
+        lock (inventoryLock)
         {
+            var name = request.Name;
+            if (name.Length > 30)
+            {
+                return new SetEquipmentNameResult()
+                {
+                    Id = request.Id,
+                    SelfId = request.SelfId,
+                    Success = false,
+                    Message = LuyenKhiMessage.NameTooLong,
+                    Name = name,
+                };
+            }
+
+            var e = new Equipment()
+            {
+                Id = request.Id,
+                SelfId = request.SelfId,
+                Name = name,
+            };
+            if (!Update(e))
+            {
+                return new SetEquipmentNameResult()
+                {
+                    Id = request.Id,
+                    SelfId = request.SelfId,
+                    Success = false,
+                    Message = LuyenKhiMessage.EquipmentNotFound,
+                    Name = name,
+                };
+            }
+
             return new SetEquipmentNameResult()
             {
                 Id = request.Id,
                 SelfId = request.SelfId,
-                Success = false,
-                Message = LuyenKhiMessage.NameTooLong,
+                Success = true,
+                Message = LuyenKhiMessage.SetNameSucess,
                 Name = name,
             };
         }
-
-        var e = new Equipment()
-        {
-            Id = request.Id,
-            SelfId = request.SelfId,
-            Name = name,
-        };
-        if (!Update(e))
-        {
-            return new SetEquipmentNameResult()
-            {
-                Id = request.Id,
-                SelfId = request.SelfId,
-                Success = false,
-                Message = LuyenKhiMessage.EquipmentNotFound,
-                Name = name,
-            };
-        }
-
-        return new SetEquipmentNameResult()
-        {
-            Id = request.Id,
-            SelfId = request.SelfId,
-            Success = true,
-            Message = LuyenKhiMessage.SetNameSucess,
-            Name = name,
-        };
     }
 
     public LuyenKhiResult LuyenKhi(LuyenKhiRequest request)
     {
+        lock (inventoryLock)
+        {
         var ids = request.MaterialIds;
         var res = LuyenKhiResources.Instance;
         var materials = ids.Select(x =>
@@ -967,56 +1077,63 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
         Add(equipment);
         modify.Equipments.Add(equipment);
-        return new LuyenKhiResult()
-        {
-            Success = true,
-            Message = LuyenKhiMessage.Success,
-            Item = equipment,
-            NewTuoiTac = newTuoiTac,
-            Modify = modify
-        };
+            return new LuyenKhiResult()
+            {
+                Success = true,
+                Message = LuyenKhiMessage.Success,
+                Item = equipment,
+                NewTuoiTac = newTuoiTac,
+                Modify = modify
+            };
+        }
     }
 
     public bool EquipThanThong(ushort id)
     {
-        var thanThong = new ThanThong()
+        lock (inventoryLock)
         {
-            Id = id,
-            CharId = CharId
-        };
-        var add = ThanThongOwners.Add(thanThong);
-        if (add)
-        {
-            Tracking.ThanThongs.Add(thanThong);
-        }
+            var thanThong = new ThanThong()
+            {
+                Id = id,
+                CharId = CharId
+            };
+            var add = ThanThongOwners.Add(thanThong);
+            if (add)
+            {
+                Tracking.ThanThongs.Add(thanThong);
+            }
 
-        return add;
+            return add;
+        }
     }
 
     public int UpdateNgoDaoWithSkill(BaseSkill skill, int baseAdd, ref List<CamNgo> camNgoAdd, int count = 1)
     {
-        ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
+        lock (inventoryLock)
         {
-            return (ND.ETypeSkill)(int)eTypeSkill;
-        }
-
-        var newNgoDaoDiem = CharacterData.Progression.NgoDaoDiem;
-        foreach (var typeSkill in skill.eTypeSkill)
-        {
-            var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
-            var userCamNgo = CamNgos.FirstOrDefault(x => x.Id == camNgoType);
-            int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
-
-            var camNgo = new CamNgo
+            ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
             {
-                Id = camNgoType,
-                Value = (baseAdd * count * (int)skill.eTierSkill) + currentUserCamNgoValue,
-            };
-            newNgoDaoDiem = AddOrUpdate(camNgo);
-            camNgoAdd.Add(camNgo);
-        }
+                return (ND.ETypeSkill)(int)eTypeSkill;
+            }
 
-        return newNgoDaoDiem;
+            var newNgoDaoDiem = CharacterData.Progression.NgoDaoDiem;
+            foreach (var typeSkill in skill.eTypeSkill)
+            {
+                var camNgoType = ConvertETypeSkillToETypeND(typeSkill);
+                var userCamNgo = CamNgos.FirstOrDefault(x => x.Id == camNgoType);
+                int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
+
+                var camNgo = new CamNgo
+                {
+                    Id = camNgoType,
+                    Value = (baseAdd * count * (int)skill.eTierSkill) + currentUserCamNgoValue,
+                };
+                newNgoDaoDiem = AddOrUpdate(camNgo);
+                camNgoAdd.Add(camNgo);
+            }
+
+            return newNgoDaoDiem;
+        }
     }
 }
 

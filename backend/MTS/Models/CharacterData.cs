@@ -280,6 +280,14 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void AcceptChanges()
+    {
+        if (!InventoryManager.IsDefault())
+        {
+            InventoryManager.AcceptChanges();
+        }
+    }
+
     public void ApplyReset(DailyReset dailyReset)
     {
         ArenaManager.SetCurrentArenaCount(dailyReset.CurrentArenaCount);

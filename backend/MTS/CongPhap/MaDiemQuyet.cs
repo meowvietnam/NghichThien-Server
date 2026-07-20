@@ -1,4 +1,5 @@
 using System;
+using MTS.Exceptions;
 using MTS.Models;
 using Network;
 using Network.Extensions;
@@ -11,16 +12,42 @@ namespace MTS.CP
 
         public override void EquipCongPhap(CharacterData statsCurrent, int level)
         {
-            var stats = statsCurrent.Stats;
-            var thoNguyen = stats.ThoNguyen - thoNguyens[level - 1];
-            stats.SetThoNguyen(thoNguyen);
+            // var stats = statsCurrent.Stats;
+            // var thoNguyen = stats.ThoNguyen - thoNguyens[level - 1];
+            // stats.SetThoNguyen(thoNguyen);
         }
 
         public override void UnEquipCongPhap(CharacterData statsCurrent, int level)
         {
+            // var stats = statsCurrent.Stats;
+            // var thoNguyen = stats.ThoNguyen + thoNguyens[level - 1];
+            // stats.SetThoNguyen(thoNguyen);
+        }
+
+        public override void LearnCongPhapSuccess(CharacterData statsCurrent, int level)
+        {
             var stats = statsCurrent.Stats;
-            var thoNguyen = stats.ThoNguyen + thoNguyens[level - 1];
-            stats.SetThoNguyen(thoNguyen);
+            var thoNguyen = stats.ThoNguyen;
+            var require = thoNguyens[level - 1];
+            var newThoNguyen = thoNguyen - require;
+            if (newThoNguyen < stats.GetMinThoNguyen())
+            {
+                throw new InvalidException(string.Empty);
+            }
+            stats.SetThoNguyen(newThoNguyen);
+        }
+
+        public override void UpgradeCongPhapSuccess(CharacterData statsCurrent, int level)
+        {
+            var stats = statsCurrent.Stats;
+            var thoNguyen = stats.ThoNguyen;
+            var require = thoNguyens[level - 1];
+            var newThoNguyen = thoNguyen - require;
+            if (newThoNguyen < stats.GetMinThoNguyen())
+            {
+                throw new InvalidException(string.Empty);
+            }
+            stats.SetThoNguyen(newThoNguyen);
         }
 
         public override int ByteSize()

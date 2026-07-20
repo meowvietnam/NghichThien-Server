@@ -45,7 +45,6 @@ public partial class Modify<T> where T : class
     {
         if (Adds.Remove(value))
             return;
-
         Updates.Remove(value);
         Replace(Deletes, value);
     }

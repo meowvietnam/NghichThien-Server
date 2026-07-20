@@ -230,6 +230,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 CharacterData.SaveChanges(db).GetAwaiter().GetResult();
             }
             await db.SaveChangesAsync();
+            lock (CharacterLock)
+            {
+                CharacterData.AcceptChanges();
+            }
         }
         catch (Exception ex)
         {
