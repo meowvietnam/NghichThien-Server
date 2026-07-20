@@ -161,12 +161,12 @@ public partial class CharacterData
 
         return new ItemRateRandomizer<ETierSkill>()
             .Add(ETierSkill.NhanGiaiThuong, 70)
-            .Add(ETierSkill.DiaGiaiHa, 8)
-            .Add(ETierSkill.DiaGiaiTrung, 6)
+            .Add(ETierSkill.DiaGiaiHa, 12)
+            .Add(ETierSkill.DiaGiaiTrung, 9.5)
             .Add(ETierSkill.DiaGiaiThuong, 5)
-            .Add(ETierSkill.ThienGiaiHa, 5)
-            .Add(ETierSkill.ThienGiaiTrung, 3.5)
-            .Add(ETierSkill.ThienGiaiThuong, 2.5)
+            .Add(ETierSkill.ThienGiaiHa,2)
+            .Add(ETierSkill.ThienGiaiTrung, 1)
+            .Add(ETierSkill.ThienGiaiThuong, 0.5)
             .Random();
     }
 
