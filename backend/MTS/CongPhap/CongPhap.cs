@@ -1,5 +1,7 @@
+using MTS.Exceptions;
 using MTS.Game.BaseSkill;
 using MTS.Game.Resources;
+using MTS.Localization;
 using MTS.Models;
 using Network;
 using Network.Extensions;
@@ -30,6 +32,19 @@ public class CongPhap : BaseSkill, IMemorySerializable<CongPhap>
     public virtual void LearnCongPhapSuccess(CharacterData statsCurrent, int level)
     {
         
+    }
+
+    protected void TieuHaoThoNguyen(CharacterData statsCurrent, int level,int[] tieuHao)
+    {
+        var stats = statsCurrent.Stats;
+        var thoNguyen = stats.ThoNguyen;
+        var require = tieuHao[level - 1];
+        var newThoNguyen = thoNguyen - require;
+        if (newThoNguyen < stats.GetMinThoNguyen())
+        {
+            throw new InvalidException(Strings.NotEnoughThoNguyen);
+        }
+        stats.SetThoNguyen(newThoNguyen);
     }
     public void Deserialize(IReader reader, ref CongPhap value)
     {

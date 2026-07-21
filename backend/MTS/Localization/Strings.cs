@@ -62,6 +62,7 @@ public static class Strings
     public static string ExceedLimit => _current.ExceedLimit;
     public static string CongPhapNotFound => _current.CongPhapNotFound;
     public static string CongPhapMaxLevelReached => _current.CongPhapMaxLevelReached;
+    public static string NotEnoughThoNguyen => _current.NotEnoughThoNguyen;
     public static string ThanThongNotFound => _current.ThanThongNotFound;
     public static string CongPhapOwned => _current.CongPhapOwned;
     public static string ThanThongOwned => _current.ThanThongOwned;

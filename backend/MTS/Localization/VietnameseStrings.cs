@@ -54,6 +54,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string ExceedLimit => "Thời gian bế quan vượt quá giới hạn cho phép!";
     public override string CongPhapNotFound => "Công pháp không tồn tại!";
     public override string CongPhapMaxLevelReached => "Công pháp đã đạt cấp tối đa!";
+    public override string NotEnoughThoNguyen => "Thọ nguyên không đủ để thực hiện thao tác này!";
     public override string ThanThongNotFound => "Thần thông không tồn tại!";
     public override string CongPhapOwned => "Đã sở hữu công pháp này!";
     public override string ThanThongOwned => "Đã sở hữu thần thông này!";

@@ -1,3 +1,5 @@
+using MTS.Exceptions;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -14,6 +16,16 @@ public class CPTieuHaoThoNguyen : CongPhap, IMemorySerializable<CPTieuHaoThoNguy
     {
         var byteSize = base.ByteSize();
         return byteSize + tieuHao.ByteSize();
+    }
+
+    public override void LearnCongPhapSuccess(CharacterData statsCurrent, int level)
+    {
+        TieuHaoThoNguyen(statsCurrent, level, tieuHao);
+    }
+
+    public override void UpgradeCongPhapSuccess(CharacterData statsCurrent, int level)
+    {
+        TieuHaoThoNguyen(statsCurrent, level, tieuHao);
     }
 
     public override void Serialize(IWriter writer)

@@ -26,28 +26,12 @@ namespace MTS.CP
 
         public override void LearnCongPhapSuccess(CharacterData statsCurrent, int level)
         {
-            var stats = statsCurrent.Stats;
-            var thoNguyen = stats.ThoNguyen;
-            var require = thoNguyens[level - 1];
-            var newThoNguyen = thoNguyen - require;
-            if (newThoNguyen < stats.GetMinThoNguyen())
-            {
-                throw new InvalidException(string.Empty);
-            }
-            stats.SetThoNguyen(newThoNguyen);
+            TieuHaoThoNguyen(statsCurrent, level, thoNguyens);
         }
 
         public override void UpgradeCongPhapSuccess(CharacterData statsCurrent, int level)
         {
-            var stats = statsCurrent.Stats;
-            var thoNguyen = stats.ThoNguyen;
-            var require = thoNguyens[level - 1];
-            var newThoNguyen = thoNguyen - require;
-            if (newThoNguyen < stats.GetMinThoNguyen())
-            {
-                throw new InvalidException(string.Empty);
-            }
-            stats.SetThoNguyen(newThoNguyen);
+            TieuHaoThoNguyen(statsCurrent, level, thoNguyens);
         }
 
         public override int ByteSize()

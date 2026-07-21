@@ -18,7 +18,6 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
     }
     public static Mail CreateWelcomeMail2(CharacterData character)
     {

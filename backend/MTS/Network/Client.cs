@@ -19,11 +19,12 @@ public class Client : ClientConnection, IRequester<MessageTag>
     public UserData? UserData { get; private set; }
     public CharacterData? CharacterData { get; private set; }
     public MailManager MailManager { get; private set; }
-    public IMessageState<MessageTag,MessageState> ClientState => stateModule.State;
+    public IMessageState<MessageTag, MessageState> ClientState => stateModule.State;
     public object StateLock { get; } = new();
     public object CharacterLock { get; } = new();
     public object MailLock { get; } = new();
-    
+    private object SaveChangesLock { get; } = new();
+
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
@@ -80,8 +81,9 @@ public class Client : ClientConnection, IRequester<MessageTag>
 
     protected override void OnError(IProtocol<MessageTag> protocol, Exception ex)
     {
-        Log.Error(ex, "Client protocol error; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
-            Id, UserData?.Id, CharacterData?.Id);
+        Log.Error(ex,
+            "Client protocol error; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
+            Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
     }
 
     protected override async void OnDisconnected(IProtocol<MessageTag> protocol)
@@ -90,15 +92,18 @@ public class Client : ClientConnection, IRequester<MessageTag>
         {
             if (IsCharacterSelected())
             {
-                Log.Information("Player disconnected; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
+                Log.Information(
+                    "Player disconnected; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
                     Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
             }
+
             await SaveChanges();
             TcpServer.Instance.Remove(this);
         }
         catch (Exception e)
         {
-            Log.Error(e, "Failed to handle client disconnect; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
+            Log.Error(e,
+                "Failed to handle client disconnect; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
                 Id, UserData?.Id, CharacterData?.Id);
         }
     }
@@ -113,10 +118,12 @@ public class Client : ClientConnection, IRequester<MessageTag>
         SetUserData(null);
         CharacterData = null;
     }
+
     public void Send(Span<byte> data)
     {
         TcpClient.Send(data);
     }
+
     public async Task<CharacterData> Select(CharacterData characterData)
     {
         characterData.Client = this;
@@ -127,14 +134,14 @@ public class Client : ClientConnection, IRequester<MessageTag>
             .FirstAsync(x => x.CharId == id);
         stats.CharacterData = characterData;
         characterData.Stats = stats;
-        
+
         var equipment = await db.EquipmentManagers
             .AsNoTracking()
             .Include(x => x.ThanThongEquips)
             .Include(x => x.DanCombatUseds)
             .AsSplitQuery()
             .FirstAsync(x => x.CharId == id);
-        
+
         equipment.CharacterData = characterData;
         characterData.EquipmentManager = equipment;
         var social = await db.Socials
@@ -144,14 +151,14 @@ public class Client : ClientConnection, IRequester<MessageTag>
             .FirstAsync(x => x.CharId == id);
         social.CharacterData = characterData;
         characterData.Social = social;
-        
+
         var questManager = await db.QuestManagers
             .AsNoTracking()
             .FirstAsync(x => x.CharId == id);
         questManager.CharData = characterData;
         characterData.QuestManager = questManager;
         await questManager.Load(db);
-        
+
         var arenaManager = await db.ArenaManagers
             .AsNoTracking()
             .Include(x => x.Rewards)
@@ -159,24 +166,25 @@ public class Client : ClientConnection, IRequester<MessageTag>
             .FirstAsync(x => x.CharId == id);
         arenaManager.CharData = characterData;
         characterData.ArenaManager = arenaManager;
-        
+
         var shopManager = await db.ShopManagers
             .AsNoTracking()
             .FirstAsync(x => x.CharId == id);
         shopManager.CharData = characterData;
         characterData.ShopManager = shopManager;
-        
+
         var gachaManager = await db.GachaManagers
             .AsNoTracking()
             .FirstAsync(x => x.CharId == id);
         gachaManager.CharData = characterData;
         characterData.GachaManager = gachaManager;
-        
+
         lock (CharacterLock)
         {
             CharacterData = characterData;
             MailManager = new MailManager(characterData, this);
         }
+
         return characterData;
     }
 
@@ -189,6 +197,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
             shouldLoad = CharacterData.IsInventoryDefault();
             id = CharacterData.Id;
         }
+
         if (shouldLoad)
         {
             await using var db = await Program.CreateDbAsync();
@@ -199,6 +208,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
             {
                 inventoryManager.CharacterData = CharacterData;
             }
+
             await inventoryManager.Load(db);
             lock (CharacterLock)
             {
@@ -208,47 +218,89 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 }
             }
         }
+
         lock (CharacterLock)
         {
             return CharacterData.InventoryManager;
         }
     }
 
-    public async Task SaveChanges()
+    public Task SaveChanges()
     {
-        if (!IsLoggedIn())
+        lock (SaveChangesLock)
         {
-            return;
-        }
-        await using var db = await Program.CreateDbAsync();
-        try
-        {
-            await UserData.SaveChanges(db);
-            if (!IsCharacterSelected()) return;
-            lock (CharacterLock)
+            if (!IsLoggedIn())
             {
-                CharacterData.SaveChanges(db).GetAwaiter().GetResult();
+                return Task.CompletedTask;
             }
-            await db.SaveChangesAsync();
-            lock (CharacterLock)
+
+            using var db = Program.CreateDbAsync().GetAwaiter().GetResult();
+            try
             {
-                CharacterData.AcceptChanges();
+                UserData!.SaveChanges(db).GetAwaiter().GetResult();
+                if (!IsCharacterSelected()) return Task.CompletedTask;
+                lock (CharacterLock)
+                {
+                    CharacterData?.SaveChanges(db).GetAwaiter().GetResult();
+                }
+                try
+                {
+                    db.SaveChangesAsync().GetAwaiter().GetResult();
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    foreach (var entry in ex.Entries)
+                    {
+                        var primaryKey = entry.Metadata.FindPrimaryKey();
+
+                        var keyValues = primaryKey?.Properties
+                            .Select(property =>
+                            {
+                                var value = entry.Property(property.Name).CurrentValue;
+                                return $"{property.Name}={value}";
+                            });
+                        Log.Error(
+                            "Concurrency conflict: Entity={Entity}, State={State}, Keys={Keys}",
+                            entry.Metadata.ClrType.Name,
+                            entry.State,
+                            string.Join(", ", keyValues ?? [])
+                        );
+                        foreach (var property in entry.Properties)
+                        {
+                            Log.Error(
+                                "Property={Property}, Original={Original}, Current={Current}, Modified={Modified}",
+                                property.Metadata.Name,
+                                property.OriginalValue,
+                                property.CurrentValue,
+                                property.IsModified
+                            );
+                        }
+                    }
+                    throw;
+                }
+                lock (CharacterLock)
+                {
+                    CharacterData?.AcceptChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex,
+                    "Failed to save client data; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, Name={Name}",
+                    Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
             }
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to save client data; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}",
-                Id, UserData?.Id, CharacterData?.Id);
-        }
+        return Task.CompletedTask;
     }
+
     public void OnSelectedCharacter()
     {
         var module = CoreModule;
-        
+
         module.RemoveHandler<MailHandler>();
         var mailHandler = new MailHandler(this);
         module.AddHandler(mailHandler);
-        
+
         module.RemoveHandler<InventoryHandler>();
         var inventoryHandler = new InventoryHandler(this);
         module.AddHandler(inventoryHandler);
@@ -259,11 +311,11 @@ public class Client : ClientConnection, IRequester<MessageTag>
             var adminHandler = new AdminHandler(this);
             module.AddHandler(adminHandler);
         }
-        
+
         var sceneManager = new SceneManager(this);
         module.RemoveHandler<SceneManager>();
         module.AddHandler(sceneManager);
-        
+
         var skillHandler = new SkillHandler(this);
         module.RemoveHandler<SkillHandler>();
         module.AddHandler(skillHandler);
@@ -287,7 +339,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var iapHandler = new IapHandler(this);
         module.RemoveHandler<IapHandler>();
         module.AddHandler(iapHandler);
-        
+
         var shopHandler = new ShopHandler(this);
         module.RemoveHandler<ShopHandler>();
         module.AddHandler(shopHandler);
@@ -303,11 +355,11 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var progressionHandler = new ProgressionHandler(this);
         module.RemoveHandler<ProgressionHandler>();
         module.AddHandler(progressionHandler);
-        
+
         var inGameAuthHandler = new InGameAuthHandler(this);
         module.RemoveHandler<InGameAuthHandler>();
         module.AddHandler(inGameAuthHandler);
-        
+
         ChangeState(new AllMaps(this));
     }
 
@@ -315,8 +367,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
     {
         return CoreModule.GetHandler<T>();
     }
-    public void AddRequest(MessageTag tag, Action<IReader> response, int timeoutMilliseconds = 0, Action<Exception> onError = null)
+
+    public void AddRequest(MessageTag tag, Action<IReader> response, int timeoutMilliseconds = 0,
+        Action<Exception> onError = null)
     {
-        AddRequest(TcpClient ,tag, response, timeoutMilliseconds, onError);
+        AddRequest(TcpClient, tag, response, timeoutMilliseconds, onError);
     }
 }
