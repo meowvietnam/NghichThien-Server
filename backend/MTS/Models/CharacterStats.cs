@@ -45,6 +45,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     public CharacterData CharacterData { get; set; }
+
     public CharacterStats()
     {
     }
@@ -100,7 +101,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         if (TocDoBay != value)
         {
             TocDoBay = value;
-            isDirty  = true;
+            isDirty = true;
         }
     }
 
@@ -128,6 +129,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     {
         return -100;
     }
+
     public void SetTamCanh(int tamCanh)
     {
         tamCanh = Math.Max(GetMinTamCanh(), tamCanh);
@@ -142,6 +144,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     {
         return 0;
     }
+
     public void SetThoNguyen(int thoNguyen)
     {
         thoNguyen = Math.Max(GetMinThoNguyen(), thoNguyen);
@@ -151,7 +154,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
-    
+
     public void SetLinhThach(int linhThach)
     {
         if (LinhThach != linhThach)
@@ -160,6 +163,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
+
     public void Apply(StatModifier modifier)
     {
         Apply(modifier.Type, modifier.Action, modifier.Value);
@@ -279,6 +283,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             default:
                 return;
         }
+
         isDirty = true;
     }
 
@@ -370,67 +375,61 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 .SetProperty(x => x.TuoiTac, TuoiTac));
         isDirty = false;
     }
+
     public void Buff(LinhDan linhDan, int count)
     {
         var type = linhDan.EBuffType;
         var value = linhDan.BuffValue * count;
         var danDoc = linhDan.DanDoc * count;
         bool isAddDanDoc = true;
+
         void AddStat(StatType type)
         {
             var currentValue = Convert.ToSingle(GetValue(type));
             SetValue(type, currentValue + value);
         }
+
         void AddTuVi()
         {
             var progression = CharacterData.Progression;
             progression.SetCurrentExp(progression.CurrentExp + value);
-           
         }
+
         ND.ETypeSkill ConvertETypeBuffDanToETypeND(EDanBuffType eDanBuffType)
         {
-            if(eDanBuffType == EDanBuffType.KimChiDao)
+            if (eDanBuffType == EDanBuffType.KimChiDao)
             {
                 return ND.ETypeSkill.Kim;
-            }    
-         
-            else if (eDanBuffType == EDanBuffType.MocChiDao)
+            }
+            if (eDanBuffType == EDanBuffType.MocChiDao)
             {
                 return ND.ETypeSkill.Moc;
-
             }
-
-            else if (eDanBuffType == EDanBuffType.ThuyChiDao)
+            if (eDanBuffType == EDanBuffType.ThuyChiDao)
             {
                 return ND.ETypeSkill.Thuy;
-
             }
-
-            else if (eDanBuffType == EDanBuffType.HoaChiDao)
+            if (eDanBuffType == EDanBuffType.HoaChiDao)
             {
                 return ND.ETypeSkill.Hoa;
-
             }
-
-            else if (eDanBuffType == EDanBuffType.ThoChiDao)
+            if (eDanBuffType == EDanBuffType.ThoChiDao)
             {
                 return ND.ETypeSkill.Tho;
-
             }
-            else if (eDanBuffType == EDanBuffType.KiemChiDao)
+            if (eDanBuffType == EDanBuffType.KiemChiDao)
             {
                 return ND.ETypeSkill.Kiem;
-
             }
-            else if (eDanBuffType == EDanBuffType.ThanThucChiDao)
+            if (eDanBuffType == EDanBuffType.ThanThucChiDao)
             {
                 return ND.ETypeSkill.Than;
             }
             return ND.ETypeSkill.None;
         }
+
         void AddCamNgo(EDanBuffType eDanBuffType)
         {
-
             var camNgoType = ConvertETypeBuffDanToETypeND(eDanBuffType);
             if (camNgoType == ND.ETypeSkill.None) return;
             var userCamNgo = CharacterData.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
@@ -441,8 +440,8 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 Value = value + currentUserCamNgoValue,
             };
             CharacterData.InventoryManager.AddOrUpdate(camNgo);
-
         }
+
         switch (type)
         {
             case EDanBuffType.None:
@@ -480,7 +479,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             case EDanBuffType.KiemChiDao:
                 AddCamNgo(EDanBuffType.KiemChiDao);
                 break;
-                
+
             case EDanBuffType.NgoDaoDiem:
                 var progression = CharacterData.Progression;
                 progression.SetNgoDaoDiem(progression.NgoDaoDiem + value);
@@ -540,10 +539,11 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
-        if(isAddDanDoc)
+
+        if (isAddDanDoc)
         {
             SetValue(StatType.DanDoc, DanDoc + danDoc);
-        }    
+        }
     }
 
     public void ClampHp()

@@ -33,140 +33,180 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [JsonIgnore]
     public CharacterData CharacterData { get; set; }
 
+    [NotMapped]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    private readonly object equipmentLock = new();
+
+    [NotMapped]
+    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
+    public object SyncRoot => equipmentLock;
+
     [NotMapped] private EquipmentTracking tracking = new();
     [NotMapped] private bool isDirty1;
     [NotMapped] private bool isDirty2;
 
     public ushort[] GetAllSlotsCP()
     {
-        return new[] { DonThuatUsed, PhuTu1Used, PhuTu2Used, PhuTu3Used , PhuTu4Used , ChuTu1Used, ChuTu2Used};
+        lock (equipmentLock)
+        {
+            return new[] { DonThuatUsed, PhuTu1Used, PhuTu2Used, PhuTu3Used, PhuTu4Used, ChuTu1Used, ChuTu2Used };
+        }
     }
     // Hoặc nếu muốn viết tường minh, dễ gọi, tách làm 3 hàm như sau cho gọn:
     public void EquipVuKhi(ushort id)
     {
-        VuKhi = id;
-        isDirty2 = true;
+        lock (equipmentLock)
+        {
+            VuKhi = id;
+            isDirty2 = true;
+        }
     }
 
     public void EquipPhongCu(ushort id)
     {
-        PhongCu = id;
-        isDirty2 = true;
+        lock (equipmentLock)
+        {
+            PhongCu = id;
+            isDirty2 = true;
+        }
     }
 
     public void EquipTrangSuc(ushort id)
     {
-        TrangSuc = id;
-        isDirty2 = true;
+        lock (equipmentLock)
+        {
+            TrangSuc = id;
+            isDirty2 = true;
+        }
     }
     public void ClearDanCombat()
     {
-        foreach (var danCombatUsed in DanCombatUseds)
+        lock (equipmentLock)
         {
-            tracking.DanCombatUseds.Delete(danCombatUsed);
+            foreach (var danCombatUsed in DanCombatUseds)
+            {
+                tracking.DanCombatUseds.Delete(danCombatUsed);
+            }
+
+            DanCombatUseds.Clear();
+            isDirty1 = true;
         }
-        DanCombatUseds.Clear();
-        isDirty1 = true;
     }
     public ThanThongEquip EquipThanThong(EquipThanThong request)
     {
-        var thanThong = new ThanThongEquip()
+        lock (equipmentLock)
         {
-            Id = request.Id,
-            CharId = CharId,
-            SlotIndex = request.Index
-        };
-        var oldSlot = ThanThongEquips.FirstOrDefault(x => x.SlotIndex == thanThong.SlotIndex);
-        if (oldSlot != null)
-        {
-            ThanThongEquips.Remove(oldSlot);
-            tracking.ThanThongEquips.Delete(oldSlot);
-            isDirty1 = true;
-        }
-        var add = ThanThongEquips.Add(thanThong);
-        if (add)
-        {
-            tracking.ThanThongEquips.Add(thanThong);
-            isDirty1 = true;
-            return thanThong;
-        }
+            var thanThong = new ThanThongEquip()
+            {
+                Id = request.Id,
+                CharId = CharId,
+                SlotIndex = request.Index
+            };
+            var oldSlot = ThanThongEquips.FirstOrDefault(x => x.SlotIndex == thanThong.SlotIndex);
+            if (oldSlot != null)
+            {
+                ThanThongEquips.Remove(oldSlot);
+                tracking.ThanThongEquips.Delete(oldSlot);
+                isDirty1 = true;
+            }
 
-        return null;
+            var add = ThanThongEquips.Add(thanThong);
+            if (add)
+            {
+                tracking.ThanThongEquips.Add(thanThong);
+                isDirty1 = true;
+                return thanThong;
+            }
+
+            return null;
+        }
     }
 
     public bool UnequipThanThong(ushort id)
     {
-        var thanThong = new ThanThongEquip()
+        lock (equipmentLock)
         {
-            Id = id,
-            CharId = CharId
-        };
-        var remove = ThanThongEquips.Remove(thanThong);
-        if (remove)
-        {
-            tracking.ThanThongEquips.Delete(thanThong);
-            isDirty1 = true;
+            var thanThong = new ThanThongEquip()
+            {
+                Id = id,
+                CharId = CharId
+            };
+            var remove = ThanThongEquips.Remove(thanThong);
+            if (remove)
+            {
+                tracking.ThanThongEquips.Delete(thanThong);
+                isDirty1 = true;
+            }
+
+            return remove;
         }
-        return remove;
     }
 
     public ushort GetSlotCP(ETypeSlotCP slot)
     {
-        switch (slot)
+        lock (equipmentLock)
         {
-            case ETypeSlotCP.ChuTu1:
-                return ChuTu1Used;
-            case ETypeSlotCP.ChuTu2:
-                return ChuTu2Used;
-            case ETypeSlotCP.DonThuat:
-                return DonThuatUsed;
-            case ETypeSlotCP.PhuTu1:
-                return PhuTu1Used;
-            case ETypeSlotCP.PhuTu2:
-                return PhuTu2Used;
-            case ETypeSlotCP.PhuTu3:
-                return PhuTu3Used;
-            case ETypeSlotCP.PhuTu4:
-                return PhuTu4Used;
-            default:
-                throw new InvalidException(Strings.SlotCongPhapInvalid);
+            switch (slot)
+            {
+                case ETypeSlotCP.ChuTu1:
+                    return ChuTu1Used;
+                case ETypeSlotCP.ChuTu2:
+                    return ChuTu2Used;
+                case ETypeSlotCP.DonThuat:
+                    return DonThuatUsed;
+                case ETypeSlotCP.PhuTu1:
+                    return PhuTu1Used;
+                case ETypeSlotCP.PhuTu2:
+                    return PhuTu2Used;
+                case ETypeSlotCP.PhuTu3:
+                    return PhuTu3Used;
+                case ETypeSlotCP.PhuTu4:
+                    return PhuTu4Used;
+                default:
+                    throw new InvalidException(Strings.SlotCongPhapInvalid);
+            }
         }
     }
 
     public void SetSlotCP(ETypeSlotCP slot, ushort value)
     {
-        isDirty2 = true;
-        switch (slot)
+        lock (equipmentLock)
         {
-            case ETypeSlotCP.ChuTu1:
-                ChuTu1Used = value;
-                break;
-            case ETypeSlotCP.ChuTu2:
-                var level = CharacterData.Progression.Level;
-                if (level < 10)
-                {
-                    throw new InvalidException(Strings.SlotCongPhapLevelRequired);
-                }
-                ChuTu2Used = value;
-                break;
-            case ETypeSlotCP.DonThuat:
-                DonThuatUsed = value;
-                break;
-            case ETypeSlotCP.PhuTu1:
-                PhuTu1Used = value;
-                break;
-            case ETypeSlotCP.PhuTu2:
-                PhuTu2Used = value;
-                break;
-            case ETypeSlotCP.PhuTu3:
-                PhuTu3Used = value;
-                break;
-            case ETypeSlotCP.PhuTu4:
-                PhuTu4Used = value;
-                break;
-            default:
-                isDirty2 = false;
-                throw new InvalidException(Strings.SlotCongPhapInvalid);
+            isDirty2 = true;
+            switch (slot)
+            {
+                case ETypeSlotCP.ChuTu1:
+                    ChuTu1Used = value;
+                    break;
+                case ETypeSlotCP.ChuTu2:
+                    var level = CharacterData.Progression.Level;
+                    if (level < 10)
+                    {
+                        throw new InvalidException(Strings.SlotCongPhapLevelRequired);
+                    }
+                    ChuTu2Used = value;
+                    break;
+                case ETypeSlotCP.DonThuat:
+                    DonThuatUsed = value;
+                    break;
+                case ETypeSlotCP.PhuTu1:
+                    PhuTu1Used = value;
+                    break;
+                case ETypeSlotCP.PhuTu2:
+                    PhuTu2Used = value;
+                    break;
+                case ETypeSlotCP.PhuTu3:
+                    PhuTu3Used = value;
+                    break;
+                case ETypeSlotCP.PhuTu4:
+                    PhuTu4Used = value;
+                    break;
+                default:
+                    isDirty2 = false;
+                    throw new InvalidException(Strings.SlotCongPhapInvalid);
+            }
         }
     }
     public bool IsDefault()
@@ -175,104 +215,198 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     }
     public void Deserialize(IReader reader, ref EquipmentManager value)
     {
-        value.ThanThongEquips = reader.ReadArray<ThanThongEquip>().ToHashSet();
-        value.DanCombatUseds = reader.ReadArray<DanCombatUsed>().ToHashSet();
-        value.DonThuatUsed = reader.Read<ushort>();
-        value.PhuTu1Used = reader.Read<ushort>();
-        value.PhuTu2Used = reader.Read<ushort>();
-        value.PhuTu3Used = reader.Read<ushort>();
-        value.PhuTu4Used = reader.Read<ushort>();
-        value.ChuTu1Used = reader.Read<ushort>();
-        value.ChuTu2Used = reader.Read<ushort>();
-        value.VuKhi = reader.Read<ushort>();
-        value.PhongCu = reader.Read<ushort>();
-        value.TrangSuc = reader.Read<ushort>();
+        lock (value.equipmentLock)
+        {
+            value.ThanThongEquips = reader.ReadArray<ThanThongEquip>().ToHashSet();
+            value.DanCombatUseds = reader.ReadArray<DanCombatUsed>().ToHashSet();
+            value.DonThuatUsed = reader.Read<ushort>();
+            value.PhuTu1Used = reader.Read<ushort>();
+            value.PhuTu2Used = reader.Read<ushort>();
+            value.PhuTu3Used = reader.Read<ushort>();
+            value.PhuTu4Used = reader.Read<ushort>();
+            value.ChuTu1Used = reader.Read<ushort>();
+            value.ChuTu2Used = reader.Read<ushort>();
+            value.VuKhi = reader.Read<ushort>();
+            value.PhongCu = reader.Read<ushort>();
+            value.TrangSuc = reader.Read<ushort>();
+        }
     }
 
     public int ByteSize()
     {
-        return ThanThongEquips.ByteSize() + DanCombatUseds.ByteSize() + DonThuatUsed.ByteSize() +
-               PhuTu1Used.ByteSize()
-               + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
-               + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
-               + VuKhi.ByteSize() + PhongCu.ByteSize() + TrangSuc.ByteSize();
+        lock (equipmentLock)
+        {
+            return ThanThongEquips.ByteSize() + DanCombatUseds.ByteSize() + DonThuatUsed.ByteSize() +
+                   PhuTu1Used.ByteSize()
+                   + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
+                   + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
+                   + VuKhi.ByteSize() + PhongCu.ByteSize() + TrangSuc.ByteSize();
+        }
     }
 
     public void Serialize(IWriter writer)
     {
-        writer.WriteArray(ThanThongEquips);
-        writer.WriteArray(DanCombatUseds);
-        writer.Write(DonThuatUsed);
-        writer.Write(PhuTu1Used);
-        writer.Write(PhuTu2Used);
-        writer.Write(PhuTu3Used);
-        writer.Write(PhuTu4Used);
-        writer.Write(ChuTu1Used);
-        writer.Write(ChuTu2Used);
-        writer.Write(VuKhi);
-        writer.Write(PhongCu);
-        writer.Write(TrangSuc);
+        lock (equipmentLock)
+        {
+            writer.WriteArray(ThanThongEquips);
+            writer.WriteArray(DanCombatUseds);
+            writer.Write(DonThuatUsed);
+            writer.Write(PhuTu1Used);
+            writer.Write(PhuTu2Used);
+            writer.Write(PhuTu3Used);
+            writer.Write(PhuTu4Used);
+            writer.Write(ChuTu1Used);
+            writer.Write(ChuTu2Used);
+            writer.Write(VuKhi);
+            writer.Write(PhongCu);
+            writer.Write(TrangSuc);
+        }
     }
 
     public void CopyFrom(EquipmentManager other)
     {
-        ThanThongEquips = new(other.ThanThongEquips);
-        DanCombatUseds = new(other.DanCombatUseds);
-        DonThuatUsed = other.DonThuatUsed;
-        ChuTu1Used = other.ChuTu1Used;
-        ChuTu2Used = other.ChuTu2Used;
-        PhuTu1Used = other.PhuTu1Used;
-        PhuTu2Used = other.PhuTu2Used;
-        PhuTu3Used = other.PhuTu3Used;
-        PhuTu4Used = other.PhuTu4Used;
-        VuKhi = other.VuKhi;
-        PhongCu = other.PhongCu;
-        TrangSuc = other.TrangSuc;
+        HashSet<ThanThongEquip> thanThongEquips;
+        HashSet<DanCombatUsed> danCombatUseds;
+        ushort donThuatUsed;
+        ushort chuTu1Used;
+        ushort chuTu2Used;
+        ushort phuTu1Used;
+        ushort phuTu2Used;
+        ushort phuTu3Used;
+        ushort phuTu4Used;
+        ushort vuKhi;
+        ushort phongCu;
+        ushort trangSuc;
+
+        lock (other.SyncRoot)
+        {
+            thanThongEquips = new(other.ThanThongEquips);
+            danCombatUseds = new(other.DanCombatUseds);
+            donThuatUsed = other.DonThuatUsed;
+            chuTu1Used = other.ChuTu1Used;
+            chuTu2Used = other.ChuTu2Used;
+            phuTu1Used = other.PhuTu1Used;
+            phuTu2Used = other.PhuTu2Used;
+            phuTu3Used = other.PhuTu3Used;
+            phuTu4Used = other.PhuTu4Used;
+            vuKhi = other.VuKhi;
+            phongCu = other.PhongCu;
+            trangSuc = other.TrangSuc;
+        }
+
+        lock (equipmentLock)
+        {
+            ThanThongEquips = thanThongEquips;
+            DanCombatUseds = danCombatUseds;
+            DonThuatUsed = donThuatUsed;
+            ChuTu1Used = chuTu1Used;
+            ChuTu2Used = chuTu2Used;
+            PhuTu1Used = phuTu1Used;
+            PhuTu2Used = phuTu2Used;
+            PhuTu3Used = phuTu3Used;
+            PhuTu4Used = phuTu4Used;
+            VuKhi = vuKhi;
+            PhongCu = phongCu;
+            TrangSuc = trangSuc;
+        }
     }
 
     public void Update(DanCombatUsed danCombatUsed)
     {
-        tracking.DanCombatUseds.Update(danCombatUsed);
+        lock (equipmentLock)
+        {
+            tracking.DanCombatUseds.Update(danCombatUsed);
+            isDirty1 = true;
+        }
     }
 
     public void Add(DanCombatUsed danCombatUsed)
     {
-        danCombatUsed.CharId = CharId;
-        DanCombatUseds.Add(danCombatUsed);
-        tracking.DanCombatUseds.Add(danCombatUsed);
+        lock (equipmentLock)
+        {
+            danCombatUsed.CharId = CharId;
+            DanCombatUseds.Add(danCombatUsed);
+            tracking.DanCombatUseds.Add(danCombatUsed);
+            isDirty1 = true;
+        }
     }
 
     public void Remove(DanCombatUsed danCombatUsed)
     {
-        danCombatUsed.CharId = CharId;
-        DanCombatUseds.Remove(danCombatUsed);
-        tracking.DanCombatUseds.Delete(danCombatUsed);
+        lock (equipmentLock)
+        {
+            danCombatUsed.CharId = CharId;
+            DanCombatUseds.Remove(danCombatUsed);
+            tracking.DanCombatUseds.Delete(danCombatUsed);
+            isDirty1 = true;
+        }
     }
     public async Task SaveChanges(AppDbContext db)
     {
-        if (isDirty1)
+        ushort donThuatUsed;
+        ushort chuTu1Used;
+        ushort chuTu2Used;
+        ushort phuTu1Used;
+        ushort phuTu2Used;
+        ushort phuTu3Used;
+        ushort phuTu4Used;
+        ushort vuKhi;
+        ushort phongCu;
+        ushort trangSuc;
+        bool shouldSaveSlots;
+
+        lock (equipmentLock)
         {
-            tracking.Apply(db);
-            tracking.Clear();
-            isDirty1 = false; // Nên reset cờ sau khi lưu thành công babe nhé
+            if (isDirty1)
+            {
+                tracking.Apply(db);
+                tracking.Clear();
+                isDirty1 = false;
+            }
+
+            shouldSaveSlots = isDirty2;
+            donThuatUsed = DonThuatUsed;
+            chuTu1Used = ChuTu1Used;
+            chuTu2Used = ChuTu2Used;
+            phuTu1Used = PhuTu1Used;
+            phuTu2Used = PhuTu2Used;
+            phuTu3Used = PhuTu3Used;
+            phuTu4Used = PhuTu4Used;
+            vuKhi = VuKhi;
+            phongCu = PhongCu;
+            trangSuc = TrangSuc;
+            if (shouldSaveSlots)
+            {
+                isDirty2 = false;
+            }
         }
 
-        if (isDirty2)
+        if (shouldSaveSlots)
         {
-            await db.EquipmentManagers.Where(x => x.CharId == CharId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(x => x.DonThuatUsed, DonThuatUsed)
-                    .SetProperty(x => x.ChuTu1Used, ChuTu1Used)
-                    .SetProperty(x => x.ChuTu2Used, ChuTu2Used)
-                    .SetProperty(x => x.PhuTu1Used, PhuTu1Used)
-                    .SetProperty(x => x.PhuTu2Used, PhuTu2Used)
-                    .SetProperty(x => x.PhuTu3Used, PhuTu3Used)
-                    .SetProperty(x => x.PhuTu4Used, PhuTu4Used)
-            // --- BỔ SUNG 3 DÒNG LƯU TRANG BỊ MỚI LÊN DATABASE TẠI ĐÂY ---
-                    .SetProperty(x => x.VuKhi, VuKhi)
-                    .SetProperty(x => x.PhongCu, PhongCu)
-                    .SetProperty(x => x.TrangSuc, TrangSuc));
-            isDirty2 = false; // Reset cờ báo thay đổi về false để tránh lưu trùng lặp lần sau
+            try
+            {
+                await db.EquipmentManagers.Where(x => x.CharId == CharId)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.DonThuatUsed, donThuatUsed)
+                        .SetProperty(x => x.ChuTu1Used, chuTu1Used)
+                        .SetProperty(x => x.ChuTu2Used, chuTu2Used)
+                        .SetProperty(x => x.PhuTu1Used, phuTu1Used)
+                        .SetProperty(x => x.PhuTu2Used, phuTu2Used)
+                        .SetProperty(x => x.PhuTu3Used, phuTu3Used)
+                        .SetProperty(x => x.PhuTu4Used, phuTu4Used)
+                        .SetProperty(x => x.VuKhi, vuKhi)
+                        .SetProperty(x => x.PhongCu, phongCu)
+                        .SetProperty(x => x.TrangSuc, trangSuc));
+            }
+            catch
+            {
+                lock (equipmentLock)
+                {
+                    isDirty2 = true;
+                }
+
+                throw;
+            }
         }
     }
 

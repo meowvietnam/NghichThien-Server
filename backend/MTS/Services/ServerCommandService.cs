@@ -9,6 +9,7 @@ public class ServerCommandService : BackgroundService
     private readonly IHostApplicationLifetime lifetime;
     private readonly ILogger<ServerCommandService> logger;
     private readonly DateTime startedAt = DateTime.UtcNow;
+    private readonly CancellationTokenSource shutdownTokenSource = new();
 
     public ServerCommandService(IHostApplicationLifetime lifetime, ILogger<ServerCommandService> logger)
     {
@@ -18,6 +19,10 @@ public class ServerCommandService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        using var linkedTokenSource =
+            CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, shutdownTokenSource.Token);
+        var commandToken = linkedTokenSource.Token;
+
         if (Console.IsInputRedirected)
         {
             ServerConsole.WriteInfo("Server command input is redirected; command loop disabled.");
@@ -25,11 +30,25 @@ public class ServerCommandService : BackgroundService
         }
 
         PrintHeader();
-        while (!stoppingToken.IsCancellationRequested)
+        while (!commandToken.IsCancellationRequested)
         {
-            var command = await Task.Run(ServerConsole.ReadCommand, stoppingToken);
-            await ExecuteCommandAsync(command.Trim(), stoppingToken);
+            try
+            {
+                var command = await Task.Run(ServerConsole.ReadCommand, commandToken);
+                await ExecuteCommandAsync(command.Trim(), commandToken);
+            }
+            catch (OperationCanceledException) when (commandToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
+    }
+
+    public override Task StopAsync(CancellationToken cancellationToken)
+    {
+        shutdownTokenSource.Cancel();
+        logger.LogInformation("Server command service stop requested.");
+        return Task.CompletedTask;
     }
 
     private async Task ExecuteCommandAsync(string command, CancellationToken stoppingToken)

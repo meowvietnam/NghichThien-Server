@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MTS.Models;
 using MTS.Network.ClientState;
 using MTS.Network.Core;
@@ -243,39 +244,205 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 {
                     CharacterData?.SaveChanges(db).GetAwaiter().GetResult();
                 }
+
                 try
                 {
                     db.SaveChangesAsync().GetAwaiter().GetResult();
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
+                    Log.Error(
+                        ex,
+                        "DbUpdateConcurrencyException: {EntryCount} conflicted entries",
+                        ex.Entries.Count
+                    );
                     foreach (var entry in ex.Entries)
                     {
-                        var primaryKey = entry.Metadata.FindPrimaryKey();
+                        var entityType = entry.Metadata;
+                        var primaryKey = entityType.FindPrimaryKey();
 
                         var keyValues = primaryKey?.Properties
                             .Select(property =>
                             {
-                                var value = entry.Property(property.Name).CurrentValue;
-                                return $"{property.Name}={value}";
-                            });
+                                var propertyEntry = entry.Property(property.Name);
+
+                                return $"{property.Name}=" +
+                                       $"{{Current:{FormatValue(propertyEntry.CurrentValue)}, " +
+                                       $"Original:{FormatValue(propertyEntry.OriginalValue)}}}";
+                            })
+                            .ToArray() ?? [];
+
                         Log.Error(
-                            "Concurrency conflict: Entity={Entity}, State={State}, Keys={Keys}",
-                            entry.Metadata.ClrType.Name,
+                            """
+                            Concurrency conflict:
+                            Entity={Entity}
+                            Table={Table}
+                            Schema={Schema}
+                            State={State}
+                            Keys=[{Keys}]
+                            """,
+                            entityType.ClrType.Name,
+                            entityType.GetTableName(),
+                            entityType.GetSchema(),
                             entry.State,
-                            string.Join(", ", keyValues ?? [])
+                            string.Join(", ", keyValues)
                         );
-                        foreach (var property in entry.Properties)
+                        PropertyValues? databaseValues;
+                        try
+                        {
+                            databaseValues = entry.GetDatabaseValuesAsync().GetAwaiter().GetResult();
+                        }
+                        catch (Exception databaseReadException)
                         {
                             Log.Error(
-                                "Property={Property}, Original={Original}, Current={Current}, Modified={Modified}",
-                                property.Metadata.Name,
-                                property.OriginalValue,
-                                property.CurrentValue,
-                                property.IsModified
+                                databaseReadException,
+                                "Failed to read database values for entity {Entity}, Keys=[{Keys}]",
+                                entityType.ClrType.Name,
+                                string.Join(", ", keyValues)
+                            );
+
+                            continue;
+                        }
+
+                        if (databaseValues == null)
+                        {
+                            Log.Error(
+                                """
+                                Concurrency reason: ROW_NOT_FOUND.
+                                Entity={Entity}
+                                Keys=[{Keys}]
+                                The row was deleted, or the primary key no longer exists in the database.
+                                """,
+                                entityType.ClrType.Name,
+                                string.Join(", ", keyValues)
+                            );
+
+                            foreach (var property in entry.Properties)
+                            {
+                                Log.Error(
+                                    """
+                                    Property={Property}
+                                    Type={Type}
+                                    Original={Original}
+                                    Current={Current}
+                                    Database=<ROW_NOT_FOUND>
+                                    Modified={Modified}
+                                    PrimaryKey={PrimaryKey}
+                                    ConcurrencyToken={ConcurrencyToken}
+                                    StoreGenerated={StoreGenerated}
+                                    """,
+                                    property.Metadata.Name,
+                                    property.Metadata.ClrType.Name,
+                                    FormatValue(property.OriginalValue),
+                                    FormatValue(property.CurrentValue),
+                                    property.IsModified,
+                                    property.Metadata.IsPrimaryKey(),
+                                    property.Metadata.IsConcurrencyToken,
+                                    property.Metadata.ValueGenerated
+                                );
+                            }
+
+                            continue;
+                        }
+
+                        var currentMatchesDatabase = true;
+                        var modifiedValuesMatchDatabase = true;
+
+                        foreach (var property in entry.Properties)
+                        {
+                            var propertyMetadata = property.Metadata;
+
+                            var originalValue = property.OriginalValue;
+                            var currentValue = property.CurrentValue;
+                            var databaseValue = databaseValues[propertyMetadata];
+
+                            var originalEqualsDatabase = Equals(originalValue, databaseValue);
+                            var currentEqualsDatabase = Equals(currentValue, databaseValue);
+                            var originalEqualsCurrent = Equals(originalValue, currentValue);
+
+                            if (!currentEqualsDatabase)
+                                currentMatchesDatabase = false;
+
+                            if (property.IsModified && !currentEqualsDatabase)
+                                modifiedValuesMatchDatabase = false;
+
+                            Log.Error(
+                                """
+                                Property={Property}
+                                Type={Type}
+                                Original={Original}
+                                Current={Current}
+                                Database={Database}
+                                Modified={Modified}
+                                OriginalEqualsCurrent={OriginalEqualsCurrent}
+                                OriginalEqualsDatabase={OriginalEqualsDatabase}
+                                CurrentEqualsDatabase={CurrentEqualsDatabase}
+                                PrimaryKey={PrimaryKey}
+                                ForeignKey={ForeignKey}
+                                ConcurrencyToken={ConcurrencyToken}
+                                Nullable={Nullable}
+                                StoreGenerated={StoreGenerated}
+                                """,
+                                propertyMetadata.Name,
+                                propertyMetadata.ClrType.Name,
+                                FormatValue(originalValue),
+                                FormatValue(currentValue),
+                                FormatValue(databaseValue),
+                                property.IsModified,
+                                originalEqualsCurrent,
+                                originalEqualsDatabase,
+                                currentEqualsDatabase,
+                                propertyMetadata.IsPrimaryKey(),
+                                propertyMetadata.IsForeignKey(),
+                                propertyMetadata.IsConcurrencyToken,
+                                propertyMetadata.IsNullable,
+                                propertyMetadata.ValueGenerated
+                            );
+                        }
+
+                        if (modifiedValuesMatchDatabase)
+                        {
+                            Log.Warning(
+                                """
+                                Concurrency classification: DATABASE_ALREADY_HAS_REQUESTED_VALUES.
+                                Entity={Entity}
+                                Keys=[{Keys}]
+                                Every modified property already has the requested value in the database.
+                                This conflict may be safely treated as idempotent success if that matches business rules.
+                                """,
+                                entityType.ClrType.Name,
+                                string.Join(", ", keyValues)
+                            );
+                        }
+                        else if (currentMatchesDatabase)
+                        {
+                            Log.Warning(
+                                """
+                                Concurrency classification: CURRENT_ENTITY_MATCHES_DATABASE.
+                                Entity={Entity}
+                                Keys=[{Keys}]
+                                The complete current entity matches the current database row.
+                                """,
+                                entityType.ClrType.Name,
+                                string.Join(", ", keyValues)
+                            );
+                        }
+                        else
+                        {
+                            Log.Error(
+                                """
+                                Concurrency classification: DATABASE_VALUES_DIFFER.
+                                Entity={Entity}
+                                Keys=[{Keys}]
+                                One or more requested values differ from the current database values.
+                                Do not silently ignore this conflict.
+                                """,
+                                entityType.ClrType.Name,
+                                string.Join(", ", keyValues)
                             );
                         }
                     }
+
                     throw;
                 }
                 lock (CharacterLock)
@@ -290,7 +457,21 @@ public class Client : ClientConnection, IRequester<MessageTag>
                     Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
             }
         }
+
         return Task.CompletedTask;
+    }
+
+    private static string FormatValue(object? value)
+    {
+        return value switch
+        {
+            null => "<null>",
+            string text => $"\"{text}\"",
+            byte[] bytes => Convert.ToHexString(bytes),
+            DateTime dateTime => dateTime.ToString("O"),
+            DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+            _ => value.ToString() ?? "<null>"
+        };
     }
 
     public void OnSelectedCharacter()

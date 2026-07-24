@@ -136,7 +136,7 @@ public partial class CharacterData
         {
             if (!EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
             {
-                throw new InvalidException(Strings.HackerSkillCombat);
+                //throw new InvalidException(Strings.HackerSkillCombat);
             }
         }
 

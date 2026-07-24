@@ -29,16 +29,23 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.LinhDanQuantityInvalid);
         }
+
         var linhDan = GameConfig.LuyenDanResources.LinhDans.FirstOrDefault(x => x.Id == id);
         if (linhDan == null)
         {
             throw new InvalidException(Strings.LinhDanNotFound);
         }
 
+        if (linhDan.ETypeDan == ETypeDan.DanOther)
+        {
+            throw new InvalidException(Strings.NotSupportItemType);
+        }
+
         if (linhDan.ETypeDan == ETypeDan.DanCombat)
         {
             throw new InvalidException(Strings.LinhDanCombatBuffInvalid);
         }
+
         var buffType = linhDan.EBuffType;
         if (buffType != EDanBuffType.None)
         {
@@ -55,11 +62,14 @@ public partial class CharacterData
             {
                 throw new InvalidException(Strings.HasFlagTienThienDiMach);
             }
+
             Stats.Buff(linhDan, count);
             Stats.ClampHp();
         }
+
         InventoryManager.Decrease(linhDanRef);
     }
+
     public UseDanResult UseDan(UseDanRequest request)
     {
         var id = request.Id;
@@ -109,6 +119,11 @@ public partial class CharacterData
         if (remaining < 0)
         {
             throw new InvalidException(Strings.InventoryItemQuantityInvalid);
+        }
+
+        if (type == ETypeDan.DanOther)
+        {
+            throw new InvalidException(Strings.NotSupportItemType);
         }
 
         if (type == ETypeDan.DanCombat)
@@ -164,6 +179,9 @@ public partial class CharacterData
         {
             Success = true,
             Stats = snapshot,
+            Message = $"{linhDan.Description} x{count}",
+            CurrentExp = Progression.CurrentExp,
+            CamNgos = InventoryManager.CamNgos
         };
         return result;
     }

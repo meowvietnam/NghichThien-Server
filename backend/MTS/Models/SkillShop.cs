@@ -137,7 +137,7 @@ public partial class SkillShop : Shop
         return skills.Contains(skill);
     }
 
-    private ETypeSkill MonPhaiToSkill(EMonPhai monPhai)
+    private static ETypeSkill MonPhaiToSkill(EMonPhai monPhai)
     {
         switch (monPhai)
         {

@@ -127,6 +127,8 @@ public class Progression : IMemorySerializable<Progression>
                 throw new InvalidException(Strings.SpecialLevelUpItemNotFound);
             }
         }
+        CurrentExp = 0;
+        SetLevel(Level + 1);
         var buffItems = infoLevel.BuffItem;
         var actualyBuffItems = buffItems.Select(x => new ItemRef()
         {
@@ -159,14 +161,14 @@ public class Progression : IMemorySerializable<Progression>
             }
         }
 
-        CurrentExp = 0;
-        SetLevel(Level + 1);
         dirty = true;
         return new SpecialLevelUpResult()
         {
             Success = true,
             StatsSnapshot = new StatsSnapshot(CharacterData.Stats),
             BuffItems = actualyBuffItems,
+            CurrentExp = CurrentExp,
+            CamNgos = inventory.CamNgos,
         };
     }
 

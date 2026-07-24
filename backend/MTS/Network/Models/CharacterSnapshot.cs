@@ -62,20 +62,30 @@ public partial class CharacterSnapshot
         this.NgoTinh = c.Stats.NgoTinh;
         this.TocDoBay = c.Stats.TocDoBay;
         this.ThanThuc = c.Stats.ThanThuc;
-        this.ChuTu1Used = equipment.ChuTu1Used;
-        this.ChuTu2Used = equipment.ChuTu2Used;
-        this.PhuTu1Used = equipment.PhuTu1Used;
-        this.PhuTu2Used = equipment.PhuTu2Used;
-        this.PhuTu3Used = equipment.PhuTu3Used;
-        this.PhuTu4Used = equipment.PhuTu4Used;
-        this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
-        this.DanCombatUseds = equipment.DanCombatUseds;
+        ushort vuKhi;
+        ushort phongCu;
+        ushort trangSuc;
+        lock (equipment.SyncRoot)
+        {
+            this.ChuTu1Used = equipment.ChuTu1Used;
+            this.ChuTu2Used = equipment.ChuTu2Used;
+            this.PhuTu1Used = equipment.PhuTu1Used;
+            this.PhuTu2Used = equipment.PhuTu2Used;
+            this.PhuTu3Used = equipment.PhuTu3Used;
+            this.PhuTu4Used = equipment.PhuTu4Used;
+            this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
+            this.DanCombatUseds = equipment.DanCombatUseds.ToHashSet();
+            vuKhi = equipment.VuKhi;
+            phongCu = equipment.PhongCu;
+            trangSuc = equipment.TrangSuc;
+        }
+
         lock (c.InventoryManager.SyncRoot)
         {
             this.NgoDaos = c.InventoryManager.NgoDaos.ToHashSet();
-            this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x => x.SelfId == c.EquipmentManager.VuKhi);
-            this.PhongCu = c.InventoryManager.PhongCus.FirstOrDefault(x => x.SelfId == c.EquipmentManager.PhongCu);
-            this.TrangSuc = c.InventoryManager.TrangSucs.FirstOrDefault(x => x.SelfId == c.EquipmentManager.TrangSuc);
+            this.VuKhi = c.InventoryManager.VuKhis.FirstOrDefault(x => x.SelfId == vuKhi);
+            this.PhongCu = c.InventoryManager.PhongCus.FirstOrDefault(x => x.SelfId == phongCu);
+            this.TrangSuc = c.InventoryManager.TrangSucs.FirstOrDefault(x => x.SelfId == trangSuc);
         }
         this.Kim = c.Stats.Kim;
         this.Moc = c.Stats.Moc;
