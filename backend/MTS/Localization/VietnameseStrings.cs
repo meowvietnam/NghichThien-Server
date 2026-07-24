@@ -59,6 +59,11 @@ public class VietnameseStrings : ILanguageStrings
     public override string CongPhapOwned => "Đã sở hữu công pháp này!";
     public override string ThanThongOwned => "Đã sở hữu thần thông này!";
     public override string NotSupportItemType => "Loại vật phẩm không được hỗ trợ!";
+    public override string ConvertElementalSkillItemCountInvalid => "Cần chọn đúng 6 kỹ năng để chuyển đổi!";
+    public override string ConvertElementalSkillItemTypeInvalid => "Chỉ có thể chuyển đổi thần thông hoặc công pháp cùng loại!";
+    public override string ConvertElementalSkillItemQuantityInvalid => "Mỗi kỹ năng chuyển đổi phải có số lượng bằng tối thiểu là 1!";
+    public override string ConvertElementalSkillResourceNotFound => "Kỹ năng chuyển đổi không tồn tại!";
+    public override string ConvertElementalSkillResultNotFound => "Không tìm thấy kỹ năng phù hợp để chuyển đổi!";
     public override string NotCompleteFirstMainQuest => "Cần hoàn thành nhiệm vụ chính đầu tiên!";
     public override string MonPhaiExisted => "Đã gia nhập môn phái!";
     public override string HackerMainQuest => "Dữ liệu nhiệm vụ chính không hợp lệ!";

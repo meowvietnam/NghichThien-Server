@@ -62,6 +62,11 @@ public class EnglishStrings : ILanguageStrings
     public override string CongPhapOwned => "This Cong Phap is already owned!";
     public override string ThanThongOwned => "This Than Thong is already owned!";
     public override string NotSupportItemType => "Item type is not supported!";
+    public override string ConvertElementalSkillItemCountInvalid => "Exactly 6 skills are required for conversion!";
+    public override string ConvertElementalSkillItemTypeInvalid => "Only Than Thong or Cong Phap items of the same type can be converted!";
+    public override string ConvertElementalSkillItemQuantityInvalid => "Each conversion skill must have a quantity of 1!";
+    public override string ConvertElementalSkillResourceNotFound => "Conversion skill does not exist!";
+    public override string ConvertElementalSkillResultNotFound => "No matching skill was found for conversion!";
     public override string NotCompleteFirstMainQuest => "The first main quest must be completed!";
     public override string MonPhaiExisted => "A sect has already been joined!";
     public override string HackerMainQuest => "Main quest data is invalid!";

@@ -12,6 +12,7 @@ public class SceneManager : IClientHandler
     private const string AllMaps = "AllMaps";
     private const string LuyenDan = "LuyenDan";
     private const string LuyenKhi = "LuyenKhi";
+    private const string ConvertElementalSkill = "ConvertElementalSkill";
     public SceneManager(Client client)
     {
         this.client = client;
@@ -54,6 +55,14 @@ public class SceneManager : IClientHandler
                         lock (client.StateLock)
                         {
                             client.ChangeState(new LuyenKhi(client));
+                        }
+                        break;
+                    case ConvertElementalSkill:
+                        result.Success = true;
+                        result.SceneName = sceneName;
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new ConvertElementalSkillState(client));
                         }
                         break;
                     default:

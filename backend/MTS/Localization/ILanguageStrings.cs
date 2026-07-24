@@ -70,6 +70,11 @@ public abstract class ILanguageStrings
     public abstract string CongPhapOwned { get; }
     public abstract string ThanThongOwned { get; }
     public abstract string NotSupportItemType { get; }
+    public abstract string ConvertElementalSkillItemCountInvalid { get; }
+    public abstract string ConvertElementalSkillItemTypeInvalid { get; }
+    public abstract string ConvertElementalSkillItemQuantityInvalid { get; }
+    public abstract string ConvertElementalSkillResourceNotFound { get; }
+    public abstract string ConvertElementalSkillResultNotFound { get; }
 
     // Quest / Mon Phai messages
     public abstract string NotCompleteFirstMainQuest { get; }

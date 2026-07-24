@@ -1,4 +1,5 @@
 using MTS.Game.Resources;
+using MTS.Models;
 using Network;
 using Network.Extensions;
 
@@ -167,5 +168,25 @@ public class BaseSkill : BaseData
         writer.WriteArray(eKeywordSkillHave);
         writer.WriteArray(eKeywordBuffSkillHave);
         writer.Write(baseTimeLearn);
+    }
+    public static ETypeSkill MonPhaiToSkill(EMonPhai monPhai)
+    {
+        switch (monPhai)
+        {
+            case EMonPhai.KimHongKiemPhai:
+                return ETypeSkill.Kim;
+            case EMonPhai.TrucSonTong:
+                return ETypeSkill.Moc;
+            case EMonPhai.TinhHaKiemPhai:
+                return ETypeSkill.Thuy;
+            case EMonPhai.LyHoaMon:
+                return ETypeSkill.Hoa;
+            case EMonPhai.HoaTranGiao:
+                return ETypeSkill.Tho;
+            case EMonPhai.BachDeLau:
+                return ETypeSkill.Kiem;
+            default:
+                return ETypeSkill.None;
+        }
     }
 }

@@ -1,0 +1,24 @@
+2026-07-24 17:09:44.711 +07:00 [INF] Database configured: Server=carrotcoder.online
+2026-07-24 17:09:45.703 +07:00 [INF] MTS server starting on web port 9481
+2026-07-24 17:09:45.715 +07:00 [INF] TCP server is running on port 6785
+2026-07-24 17:09:45.720 +07:00 [INF] DailyService sẽ chạy sau "06:50:14.2821660"
+2026-07-24 17:09:47.440 +07:00 [INF] RechargeRankService sẽ phát thưởng sau "1.06:50:12.5600930"
+2026-07-24 17:09:57.159 +07:00 [INF] TuViRankService sẽ phát thưởng sau "1.06:50:02.8404610"
+2026-07-24 17:09:57.159 +07:00 [INF] ArenaRankService sẽ phát thưởng sau "8.06:50:02.8405460"
+2026-07-24 17:09:57.261 +07:00 [INF] MoneyVipSpendingRankService sẽ phát thưởng sau "1.06:50:02.7383420"
+2026-07-24 17:14:18.514 +07:00 [INF] Player disconnected; ClientId=-2147483647, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 17:28:24.865 +07:00 [INF] Database configured: Server=carrotcoder.online
+2026-07-24 17:28:25.737 +07:00 [INF] MTS server starting on web port 9481
+2026-07-24 17:28:25.749 +07:00 [INF] TCP server is running on port 6785
+2026-07-24 17:28:25.752 +07:00 [INF] DailyService sẽ chạy sau "06:31:34.2482260"
+2026-07-24 17:28:27.231 +07:00 [INF] RechargeRankService sẽ phát thưởng sau "1.06:31:32.7690220"
+2026-07-24 17:28:36.832 +07:00 [INF] ArenaRankService sẽ phát thưởng sau "8.06:31:23.1678630"
+2026-07-24 17:28:37.012 +07:00 [INF] TuViRankService sẽ phát thưởng sau "1.06:31:22.9874500"
+2026-07-24 17:28:37.075 +07:00 [INF] MoneyVipSpendingRankService sẽ phát thưởng sau "1.06:31:22.9245720"
+2026-07-24 17:30:07.621 +07:00 [INF] Player disconnected; ClientId=-2147483647, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 17:35:19.403 +07:00 [INF] Player disconnected; ClientId=-2147483646, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 18:16:29.599 +07:00 [INF] Player disconnected; ClientId=-2147483645, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 18:20:52.229 +07:00 [INF] Player disconnected; ClientId=-2147483644, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 18:21:53.143 +07:00 [INF] Player disconnected; ClientId=-2147483643, UserId=33, CharacterId=28, CharacterName=scn2n1n1nsssss
+2026-07-24 18:23:42.885 +07:00 [INF] Server command service stop requested.
+2026-07-24 18:23:42.895 +07:00 [INF] Lưu thay đổi hoàn tất!; saved 1 online clients

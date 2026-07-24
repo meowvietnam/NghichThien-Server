@@ -178,4 +178,7 @@ public enum MessageTag
     SyncCharacterData = 1062,
     ExperienceReward = 1089,
     DailyReset = 1123,
+    
+    
+    ConvertElementalSkillRequest = 1232,
 }

@@ -67,6 +67,11 @@ public static class Strings
     public static string CongPhapOwned => _current.CongPhapOwned;
     public static string ThanThongOwned => _current.ThanThongOwned;
     public static string NotSupportItemType => _current.NotSupportItemType;
+    public static string ConvertElementalSkillItemCountInvalid => _current.ConvertElementalSkillItemCountInvalid;
+    public static string ConvertElementalSkillItemTypeInvalid => _current.ConvertElementalSkillItemTypeInvalid;
+    public static string ConvertElementalSkillItemQuantityInvalid => _current.ConvertElementalSkillItemQuantityInvalid;
+    public static string ConvertElementalSkillResourceNotFound => _current.ConvertElementalSkillResourceNotFound;
+    public static string ConvertElementalSkillResultNotFound => _current.ConvertElementalSkillResultNotFound;
     public static string NotCompleteFirstMainQuest => _current.NotCompleteFirstMainQuest;
     public static string MonPhaiExisted => _current.MonPhaiExisted;
     public static string HackerMainQuest => _current.HackerMainQuest;

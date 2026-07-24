@@ -12,9 +12,11 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
+using MTS.Game.BaseSkill;
 using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
+using MTS.Utils;
 
 namespace MTS.Models;
 
@@ -586,6 +588,93 @@ public partial class CharacterData
             NewTuoiTac = newTuoiTac,
             CamNgos = camNgoList,
             NewNgoDaoDiem = newNgoDaoDiem,
+        };
+    }
+
+    public ConvertElementalSkillResult ConvertElementalSkill(ConvertElementalSkill request)
+    {
+        var items = request.ItemConverts;
+        var count = items.Sum(x => x.Count);
+        if (count != 6)
+        {
+            throw new InvalidException(Strings.ConvertElementalSkillItemCountInvalid);
+        }
+        if (items.Any(x => x.Count == 0))
+        {
+            throw new InvalidException(Strings.ConvertElementalSkillItemQuantityInvalid);
+        }
+        var supportedType = new[] { ItemType.ThanThong, ItemType.CongPhap };
+        var type = supportedType.FirstOrDefault(x => items.All(y => y.Type == x));
+        if (!supportedType.Contains(type))
+        {
+            throw new InvalidException(Strings.ConvertElementalSkillItemTypeInvalid);
+        }
+        IEnumerable<BaseSkill> skillCollectionEnumerable = type == ItemType.ThanThong
+            ? GameConfig.NDCPTTManager.ThanThongs
+            : GameConfig.NDCPTTManager.CongPhaps;
+        var skillCollection = skillCollectionEnumerable.ToArray();
+        var skills = items.Select(x =>
+        {
+            var skill = skillCollection.FirstOrDefault(y => y.Id == x.Id);
+            if (skill == null)
+            {
+                throw new InvalidException(Strings.ConvertElementalSkillResourceNotFound);
+            }
+
+            return new
+            {
+                Tier = skill.eTierSkill,
+                Count = x.Count
+            };
+        }).ToArray();
+        var oneRate = 100f / count;
+        var tierCounts = skills.GroupBy(x => x.Tier)
+            .Select(x => new { Tier = x.Key, Count = x.Sum(y => y.Count) })
+            .ToArray();
+        var randomItem = new ItemRateRandomizer<ETierSkill>();
+        foreach (var tierCount in tierCounts)
+        {
+            randomItem.Add(tierCount.Tier, tierCount.Count * oneRate);
+        }
+
+        BaseSkill receiverSkill = null!;
+        while (receiverSkill == null && randomItem.Items.Count > 0)
+        {
+            var tier = randomItem.Random();
+            randomItem.Remove(tier);
+            var skillType = BaseSkill.MonPhaiToSkill(MonPhai);
+            var listSkill = skillCollection
+                .Where(x => x.eTierSkill == tier && x.eTypeSkill.Contains(skillType))
+                .ToArray();
+            if (listSkill.Any())
+            {
+                receiverSkill = listSkill.Random();
+            }
+        }
+        if (receiverSkill == null)
+        {
+            throw new InvalidException(Strings.ConvertElementalSkillResultNotFound);
+        }
+        var itemRef = new ItemRef()
+        {
+            Type = type,
+            Id = (ushort)receiverSkill.Id,
+            Count = 1
+        };
+        lock (InventoryManager.SyncRoot)
+        {
+            foreach (var item in items)
+            {
+                InventoryManager.Decrease(item);
+            }
+            InventoryManager.Add(itemRef);
+        }
+        return new ConvertElementalSkillResult()
+        {
+            Success = true,
+            Message = "Chuyển đổi thành công!",
+            ItemConverts = items,
+            ItemResult = itemRef
         };
     }
 }

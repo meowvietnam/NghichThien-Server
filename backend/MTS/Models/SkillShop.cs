@@ -13,7 +13,7 @@ public partial class SkillShop : Shop
     {
         var items = new HashSet<ItemRef>();
         var monPhai = request.MonPhai;
-        var skill = MonPhaiToSkill(monPhai);
+        var skill = BaseSkill.MonPhaiToSkill(monPhai);
         var ndttcp = GameConfig.NDCPTTManager;
         var tierRates = new[]
         {
@@ -137,26 +137,7 @@ public partial class SkillShop : Shop
         return skills.Contains(skill);
     }
 
-    private static ETypeSkill MonPhaiToSkill(EMonPhai monPhai)
-    {
-        switch (monPhai)
-        {
-            case EMonPhai.KimHongKiemPhai:
-                return ETypeSkill.Kim;
-            case EMonPhai.TrucSonTong:
-                return ETypeSkill.Moc;
-            case EMonPhai.TinhHaKiemPhai:
-                return ETypeSkill.Thuy;
-            case EMonPhai.LyHoaMon:
-                return ETypeSkill.Hoa;
-            case EMonPhai.HoaTranGiao:
-                return ETypeSkill.Tho;
-            case EMonPhai.BachDeLau:
-                return ETypeSkill.Kiem;
-            default:
-                return ETypeSkill.None;
-        }
-    }
+
 
     protected override ushort RandomCount()
     {
