@@ -132,13 +132,7 @@ public partial class CharacterData
 
     public ResultCombatResult? ResultCombat(ResultCombat request)
     {
-        foreach (var item in request.ListIdThanThong)
-        {
-            if (!EquipmentManager.ThanThongEquips.Any(x => x.Id == item))
-            {
-                //throw new InvalidException(Strings.HackerSkillCombat);
-            }
-        }
+        request.ListIdThanThong.RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
 
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
