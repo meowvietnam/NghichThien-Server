@@ -60,6 +60,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string ThanThongOwned => "Đã sở hữu thần thông này!";
     public override string NotSupportItemType => "Loại vật phẩm không được hỗ trợ!";
     public override string ConvertElementalSkillItemCountInvalid => "Cần chọn đúng 6 kỹ năng để chuyển đổi!";
+    public override string ConvertElementalSkillTypeSkillInvalid => "Loại hệ kỹ năng chuyển đổi không hợp lệ!";
     public override string ConvertElementalSkillItemTypeInvalid => "Chỉ có thể chuyển đổi thần thông hoặc công pháp cùng loại!";
     public override string ConvertElementalSkillItemQuantityInvalid => "Mỗi kỹ năng chuyển đổi phải có số lượng bằng tối thiểu là 1!";
     public override string ConvertElementalSkillResourceNotFound => "Kỹ năng chuyển đổi không tồn tại!";

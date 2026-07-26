@@ -3,6 +3,7 @@ using MTS.Api.Models;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
+using Serilog;
 using static MTS.Utils.Utils;
 
 namespace MTS.Services;
@@ -18,13 +19,14 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+
     }
     public static Mail CreateWelcomeMail2(CharacterData character)
     {
         var moneyVip = 200_001;
         var mail = new Mail()
         {
-            Title = $"Quà đầu tuần",
+            Title = $"Quà cuối tuần",
             Content = $"Phần thưởng {moneyVip} được đính kèm thư này",
             Rewards = new List<IMailReward>()
             {

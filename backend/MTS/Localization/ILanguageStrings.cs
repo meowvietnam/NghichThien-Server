@@ -71,6 +71,7 @@ public abstract class ILanguageStrings
     public abstract string ThanThongOwned { get; }
     public abstract string NotSupportItemType { get; }
     public abstract string ConvertElementalSkillItemCountInvalid { get; }
+    public abstract string ConvertElementalSkillTypeSkillInvalid { get; }
     public abstract string ConvertElementalSkillItemTypeInvalid { get; }
     public abstract string ConvertElementalSkillItemQuantityInvalid { get; }
     public abstract string ConvertElementalSkillResourceNotFound { get; }

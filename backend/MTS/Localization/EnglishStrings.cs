@@ -63,6 +63,7 @@ public class EnglishStrings : ILanguageStrings
     public override string ThanThongOwned => "This Than Thong is already owned!";
     public override string NotSupportItemType => "Item type is not supported!";
     public override string ConvertElementalSkillItemCountInvalid => "Exactly 6 skills are required for conversion!";
+    public override string ConvertElementalSkillTypeSkillInvalid => "The elemental skill type is invalid for conversion!";
     public override string ConvertElementalSkillItemTypeInvalid => "Only Than Thong or Cong Phap items of the same type can be converted!";
     public override string ConvertElementalSkillItemQuantityInvalid => "Each conversion skill must have a quantity of 1!";
     public override string ConvertElementalSkillResourceNotFound => "Conversion skill does not exist!";

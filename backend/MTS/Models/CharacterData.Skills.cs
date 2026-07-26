@@ -593,6 +593,24 @@ public partial class CharacterData
 
     public ConvertElementalSkillResult ConvertElementalSkill(ConvertElementalSkill request)
     {
+        var typeSkill = request.TypeSkill;
+        var supportedTypeSkill = new[]
+            {
+                ETypeSkill.Kim,
+                ETypeSkill.Moc,
+                ETypeSkill.Thuy,
+                ETypeSkill.Hoa,
+                ETypeSkill.Tho,
+                ETypeSkill.Than,
+                ETypeSkill.The,
+                ETypeSkill.Kiem,
+                ETypeSkill.Khi,
+                ETypeSkill.TranPhap
+        };
+        if (!supportedTypeSkill.Contains(typeSkill))
+        {
+            throw new InvalidException(Strings.ConvertElementalSkillTypeSkillInvalid);
+        }
         var items = request.ItemConverts;
         var count = items.Sum(x => x.Count);
         if (count != 6)
@@ -642,9 +660,8 @@ public partial class CharacterData
         {
             var tier = randomItem.Random();
             randomItem.Remove(tier);
-            var skillType = BaseSkill.MonPhaiToSkill(MonPhai);
             var listSkill = skillCollection
-                .Where(x => x.eTierSkill == tier && x.eTypeSkill.Contains(skillType))
+                .Where(x => x.eTierSkill == tier && x.eTypeSkill.Contains(typeSkill))
                 .ToArray();
             if (listSkill.Any())
             {
