@@ -76,6 +76,7 @@ public abstract class ILanguageStrings
     public abstract string ConvertElementalSkillItemQuantityInvalid { get; }
     public abstract string ConvertElementalSkillResourceNotFound { get; }
     public abstract string ConvertElementalSkillResultNotFound { get; }
+    public abstract string ConvertElementalSkillSuccess { get; }
 
     // Quest / Mon Phai messages
     public abstract string NotCompleteFirstMainQuest { get; }
@@ -99,6 +100,7 @@ public abstract class ILanguageStrings
     public abstract string HackerEquipment { get; }
     public abstract string HackerLevelNpc { get; }
     public abstract string NotEnoughCongPhap { get; }
+    public abstract string CongPhapEquippedCannotBreakthrough { get; }
     public abstract string NpcNotExist { get; }
     public abstract string NpcGiftValueInvalid { get; }
     public abstract string HackerSkillNotExistOnNpc { get; }
@@ -142,4 +144,18 @@ public abstract class ILanguageStrings
 
     // Ads messages
     public abstract string AdsMoneyVipLimitReached { get; }
+
+    // Auction messages
+    public abstract string AuctionNotOpen { get; }
+    public abstract string AuctionServiceNotReady { get; }
+    public abstract string AuctionRewardReceived { get; }
+    public abstract string AuctionBidRefunded { get; }
+    public abstract string AuctionSessionEnded { get; }
+    public abstract string AuctionBidAmountInvalid { get; }
+    public abstract string AuctionInfoContent { get; }
+    public abstract string AuctionAlreadyJoined { get; }
+    public abstract string AuctionHostSessionEnded { get; }
+    public abstract string AuctionHostBidPlaced { get; }
+    public abstract string AuctionHostPlayerJoined { get; }
+    public abstract string[] AuctionHostRandomChats { get; }
 }

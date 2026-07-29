@@ -37,7 +37,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var sessionHandler = new SessionHandler(this);
         CoreModule.RemoveHandler<SessionHandler>();
         CoreModule.AddHandler(sessionHandler);
-        stateModule = new MessageStateHandler<MessageTag, MessageState>();
+        stateModule = new MessageStateHandler();
         AddModule(CoreModule);
         AddModule(stateModule);
         Task.Run(Save);
@@ -97,7 +97,6 @@ public class Client : ClientConnection, IRequester<MessageTag>
                     "Player disconnected; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
                     Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
             }
-
             await SaveChanges();
             TcpServer.Instance.Remove(this);
         }
@@ -118,6 +117,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
         await SaveChanges();
         SetUserData(null);
         CharacterData = null;
+        ChangeState(new AuthState(this));
     }
 
     public void Send(Span<byte> data)
@@ -541,9 +541,16 @@ public class Client : ClientConnection, IRequester<MessageTag>
         module.RemoveHandler<InGameAuthHandler>();
         module.AddHandler(inGameAuthHandler);
 
+        var syncHandler = new SyncHandler(this);
+        module.RemoveHandler<SyncHandler>();
+        module.AddHandler(syncHandler);
+
+        var auctionHandler = new AuctionHandler(this);
+        module.RemoveHandler<AuctionHandler>();
+        module.AddHandler(auctionHandler);
+        
         ChangeState(new AllMaps(this));
     }
-
     public T GetHandler<T>() where T : IClientHandler
     {
         return CoreModule.GetHandler<T>();

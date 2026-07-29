@@ -56,6 +56,29 @@ namespace MTS.Migrations
                     b.ToTable("ArenaManagers");
                 });
 
+            modelBuilder.Entity("MTS.Models.AuctionHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("Sessions")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuctionHistories");
+                });
+
             modelBuilder.Entity("MTS.Models.CamNgo", b =>
                 {
                     b.Property<int>("CharId")

@@ -15,7 +15,7 @@ public class EquipmentTracking
 
     public void Apply(AppDbContext db)
     {
-        ThanThongEquips.Apply(db.ThanThongEquips);
-        DanCombatUseds.Apply(db.DanCombatUseds);
+        ThanThongEquips.Apply(db, db.ThanThongEquips);
+        DanCombatUseds.Apply(db, db.DanCombatUseds);
     }
 }

@@ -69,4 +69,8 @@ public class LuyenKhi : IClientState
     {
     }
     public MessageState State => MessageState.LuyenKhi;
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        
+    }
 }

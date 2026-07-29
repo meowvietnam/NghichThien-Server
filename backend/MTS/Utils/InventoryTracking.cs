@@ -26,13 +26,13 @@ public class InventoryTracking
 
     public void Apply(AppDbContext db)
     {
-        Items.Apply(db.Items);
-        Furnaces.Apply(db.Furnaces);
-        NgoDaos.Apply(db.NgoDaos);
-        CamNgos.Apply(db.CamNgos);
-        CongPhaps.Apply(db.CongPhaps);
-        ThanThongs.Apply(db.ThanThongs);
-        Equipments.Apply(db.Equipments);
+        Items.Apply(db, db.Items);
+        Furnaces.Apply(db, db.Furnaces);
+        NgoDaos.Apply(db, db.NgoDaos);
+        CamNgos.Apply(db, db.CamNgos);
+        CongPhaps.Apply(db, db.CongPhaps);
+        ThanThongs.Apply(db, db.ThanThongs);
+        Equipments.Apply(db, db.Equipments);
     }
 
     public void Apply(InventoryManager inventory,InventoryTracking tracking)

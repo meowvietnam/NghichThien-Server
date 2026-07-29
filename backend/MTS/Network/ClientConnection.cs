@@ -5,7 +5,6 @@ namespace MTS.Network;
 public abstract class ClientConnection : BaseClient<MessageTag> 
 {
     public TcpClient TcpClient { get; protected set; }
-
     public ClientConnection()
     {
         
@@ -15,5 +14,14 @@ public abstract class ClientConnection : BaseClient<MessageTag>
         TcpClient = new TcpClient(client);
         AddProtocol(TcpClient);
         TcpClient.StartRead();
+    }
+    public void AddReconnectedListener(Action onReconnected)
+    {
+        TcpClient.ReconnectedSuccess += onReconnected;
+    }
+
+    public void RemoveReconnectedListener(Action onReconnected)
+    {
+        TcpClient.ReconnectedSuccess -= onReconnected;
     }
 }

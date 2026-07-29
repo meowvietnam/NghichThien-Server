@@ -25,6 +25,7 @@ public class TcpHostedService : IHostedService
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         tcpServer.Stop();
+        
         await tcpServer.SaveClients();
     }
 }

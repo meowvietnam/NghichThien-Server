@@ -129,11 +129,15 @@ namespace MTS.Network.ClientState
                 }
             }
         }
-
+        public void OnDisconnect(IProtocol<MessageTag> protocol)
+        {
+            
+        }
         public void OnLeave()
         {
         }
 
         public MessageState State => MessageState.SelectCharacter;
+ 
     }
 }

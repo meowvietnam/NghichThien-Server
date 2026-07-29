@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Api.Models;
+using MTS.Game.Auction;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -19,14 +20,14 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
     }
+
     public static Mail CreateWelcomeMail2(CharacterData character)
     {
         var moneyVip = 200_001;
         var mail = new Mail()
         {
-            Title = $"Quà cuối tuần",
+            Title = $"Quà đầu tuần",
             Content = $"Phần thưởng {moneyVip} được đính kèm thư này",
             Rewards = new List<IMailReward>()
             {
@@ -38,6 +39,7 @@ public class Startup : BackgroundService
         };
         return mail;
     }
+
     public static Mail CreateWelcomeMail(CharacterData character)
     {
         var moneyVip = 200_000;

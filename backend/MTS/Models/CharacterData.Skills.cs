@@ -533,7 +533,7 @@ public partial class CharacterData
         var slots = EquipmentManager.GetAllSlotsCP();
         if (slots.Contains(cpOwner.Id))
         {
-            throw new InvalidException(string.Empty);
+            throw new InvalidException(Strings.CongPhapEquippedCannotBreakthrough);
         }
 
         if (!InventoryManager.CongPhaps.TryGetValue(itemRef, out var cpRef) || cpRef.Count < require)
@@ -689,7 +689,7 @@ public partial class CharacterData
         return new ConvertElementalSkillResult()
         {
             Success = true,
-            Message = "Chuyển đổi thành công!",
+            Message = Strings.ConvertElementalSkillSuccess,
             ItemConverts = items,
             ItemResult = itemRef
         };

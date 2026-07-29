@@ -73,6 +73,7 @@ public static class Strings
     public static string ConvertElementalSkillItemQuantityInvalid => _current.ConvertElementalSkillItemQuantityInvalid;
     public static string ConvertElementalSkillResourceNotFound => _current.ConvertElementalSkillResourceNotFound;
     public static string ConvertElementalSkillResultNotFound => _current.ConvertElementalSkillResultNotFound;
+    public static string ConvertElementalSkillSuccess => _current.ConvertElementalSkillSuccess;
     public static string NotCompleteFirstMainQuest => _current.NotCompleteFirstMainQuest;
     public static string MonPhaiExisted => _current.MonPhaiExisted;
     public static string HackerMainQuest => _current.HackerMainQuest;
@@ -90,6 +91,7 @@ public static class Strings
     public static string HackerEquipment => _current.HackerEquipment;
     public static string HackerLevelNpc => _current.HackerLevelNpc;
     public static string NotEnoughCongPhap => _current.NotEnoughCongPhap;
+    public static string CongPhapEquippedCannotBreakthrough => _current.CongPhapEquippedCannotBreakthrough;
     public static string NpcNotExist => _current.NpcNotExist;
     public static string NpcGiftValueInvalid => _current.NpcGiftValueInvalid;
     public static string HackerSkillNotExistOnNpc => _current.HackerSkillNotExistOnNpc;
@@ -124,4 +126,16 @@ public static class Strings
     public static string ArenaRewardAlreadyClaimed => _current.ArenaRewardAlreadyClaimed;
     public static string ArenaRankNotReached => _current.ArenaRankNotReached;
     public static string AdsMoneyVipLimitReached => _current.AdsMoneyVipLimitReached;
+    public static string AuctionNotOpen => _current.AuctionNotOpen;
+    public static string AuctionServiceNotReady => _current.AuctionServiceNotReady;
+    public static string AuctionRewardReceived => _current.AuctionRewardReceived;
+    public static string AuctionBidRefunded => _current.AuctionBidRefunded;
+    public static string AuctionSessionEnded => _current.AuctionSessionEnded;
+    public static string AuctionBidAmountInvalid => _current.AuctionBidAmountInvalid;
+    public static string AuctionInfoContent => _current.AuctionInfoContent;
+    public static string AuctionAlreadyJoined => _current.AuctionAlreadyJoined;
+    public static string AuctionHostSessionEnded => _current.AuctionHostSessionEnded;
+    public static string AuctionHostBidPlaced => _current.AuctionHostBidPlaced;
+    public static string AuctionHostPlayerJoined => _current.AuctionHostPlayerJoined;
+    public static string[] AuctionHostRandomChats => _current.AuctionHostRandomChats;
 }

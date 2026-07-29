@@ -157,6 +157,10 @@ public class AllMaps : IClientState
             }
         }
     }
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        
+    }
     public void OnLeave()
     {
     }

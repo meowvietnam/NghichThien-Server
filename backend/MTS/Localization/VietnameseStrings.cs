@@ -65,6 +65,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string ConvertElementalSkillItemQuantityInvalid => "Mỗi kỹ năng chuyển đổi phải có số lượng bằng tối thiểu là 1!";
     public override string ConvertElementalSkillResourceNotFound => "Kỹ năng chuyển đổi không tồn tại!";
     public override string ConvertElementalSkillResultNotFound => "Không tìm thấy kỹ năng phù hợp để chuyển đổi!";
+    public override string ConvertElementalSkillSuccess => "Chuyển đổi thành công!";
     public override string NotCompleteFirstMainQuest => "Cần hoàn thành nhiệm vụ chính đầu tiên!";
     public override string MonPhaiExisted => "Đã gia nhập môn phái!";
     public override string HackerMainQuest => "Dữ liệu nhiệm vụ chính không hợp lệ!";
@@ -82,6 +83,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerEquipment => "Dữ liệu trang bị không hợp lệ!";
     public override string HackerLevelNpc => "Cấp độ NPC không hợp lệ!";
     public override string NotEnoughCongPhap => "Không đủ công pháp!";
+    public override string CongPhapEquippedCannotBreakthrough => "Không thể đột phá công pháp đang được trang bị!";
     public override string NpcNotExist => "NPC không tồn tại!";
     public override string NpcGiftValueInvalid => "Giá trị vật phẩm tặng NPC không hợp lệ!";
     public override string HackerSkillNotExistOnNpc => "Kỹ năng không tồn tại trên NPC!";
@@ -113,4 +115,23 @@ public class VietnameseStrings : ILanguageStrings
     public override string ArenaRewardAlreadyClaimed => "Phần thưởng đấu trường đã được nhận!";
     public override string ArenaRankNotReached => "Chưa đạt đủ điểm xếp hạng để nhận phần thưởng đấu trường!";
     public override string AdsMoneyVipLimitReached => "Đã đạt giới hạn nhận Tiên ngọc miễn phí từ quảng cáo!";
+    public override string AuctionNotOpen => "Đấu giá chưa mở!";
+    public override string AuctionServiceNotReady => "Dịch vụ đấu giá chưa sẵn sàng!";
+    public override string AuctionRewardReceived => "Bạn đã thắng đấu giá và nhận được vật phẩm!";
+    public override string AuctionBidRefunded => "Tiên ngọc đấu giá đã được hoàn lại!";
+    public override string AuctionSessionEnded => "Phiên đấu giá đã kết thúc!";
+    public override string AuctionBidAmountInvalid => "Giá đấu không nằm trong khoảng cho phép!";
+    public override string AuctionInfoContent => "<b><color=#B45309>Đấu giá đang diễn ra</color></b>\n<color=#C2410C>Ra giá trong khoảng cho phép để giành vật phẩm.</color>";
+    public override string AuctionAlreadyJoined => "Bạn đã tham gia đấu giá!";
+    public override string AuctionHostSessionEnded => "<b><color=#B91C1C>Phiên đấu giá kết thúc!</color></b> <color=#C2410C>{0}</color> thắng với giá <color=#D97706>{1}</color> <color=#B45309>Tiên ngọc</color>.";
+    public override string AuctionHostBidPlaced => "<color=#C2410C>{0}</color> vừa ra giá <b><color=#D97706>{1}</color></b> <color=#B45309>Tiên ngọc</color>!";
+    public override string AuctionHostPlayerJoined => "<color=#B45309>Chào mừng</color> <b><color=#C2410C>{0}</color></b> <color=#B45309>tham gia buổi đấu giá!</color>";
+    public override string[] AuctionHostRandomChats =>
+    [
+        "<color=#C2410C>Không khí đang nóng lên rồi, các đạo hữu giữ tay chắc nhé!</color>",
+        "<color=#B45309>Vật phẩm hiếm trước mắt, cơ hội không đợi người chậm tay.</color>",
+        "<color=#B91C1C>Ai còn giấu Tiên ngọc thì đây là lúc đem ra dùng đấy.</color>",
+        "<color=#C2410C>Một lần ra giá có thể đổi cả vận số tu hành.</color>",
+        "<color=#D97706>Chủ sàn xin nhắc nhẹ: giá đẹp thường không ở lại lâu.</color>",
+    ];
 }

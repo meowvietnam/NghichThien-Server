@@ -46,7 +46,10 @@ public class ConvertElementalSkillState : IClientState
             }
         }
     }
-
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        
+    }
     public void OnLeave()
     {
     }

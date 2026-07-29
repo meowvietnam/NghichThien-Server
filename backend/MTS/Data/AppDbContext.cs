@@ -1,6 +1,7 @@
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using MTS.Game.Auction;
 using MTS.Game.LuyenKhi;
 using MTS.IAP;
 using MTS.Models;
@@ -42,6 +43,7 @@ public class AppDbContext : DbContext
     public DbSet<RankReward> RankRewards { get; private set; }
     public DbSet<SpendingMoneyVip> SpendingMoneyVips { get; private set; }
     public DbSet<GachaManager> GachaManagers { get; private set; }
+    public DbSet<AuctionHistory> AuctionHistories { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -409,8 +411,26 @@ public class AppDbContext : DbContext
                 .HasForeignKey<GachaManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);;
         });
+        modelBuilder.Entity<AuctionHistory>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Sessions)
+                .HasColumnType(blob)
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => ParseSessions(v)
+                );
+        });
     }
 
+    private AuctionSession[] ParseSessions(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return null;
+        }
+        return MemoryPackSerializer.Deserialize<AuctionSession[]>(data);
+    }
     private Shop ParseShop(byte[] data)
     {
         if (data == null || data.Length == 0)

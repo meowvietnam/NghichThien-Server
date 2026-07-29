@@ -88,7 +88,7 @@ public partial class Social
     {
         lock (modifyRelationships)
         {
-            modifyRelationships.Apply(db.Relationships);
+            modifyRelationships.Apply(db, db.Relationships);
             modifyRelationships.Clear();
         }
         return Task.CompletedTask;

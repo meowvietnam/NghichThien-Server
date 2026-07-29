@@ -134,6 +134,7 @@ public static class Program
             builder.Services.AddHostedService<TuViRankService>();
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
+            builder.Services.AddHostedService<AuctionService>();
             App = builder.Build();
             Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
             GameConfig.Init();

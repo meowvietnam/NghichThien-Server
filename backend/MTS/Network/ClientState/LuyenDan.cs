@@ -62,10 +62,12 @@ public class LuyenDan : IClientState
             }
         }
     }
-
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        
+    }
     public void OnLeave()
     {
     }
-
     public MessageState State => MessageState.LuyenDan;
 }

@@ -8,6 +8,7 @@ namespace MTS.Network.ClientState
         AllMaps,
         LuyenDan,
         LuyenKhi,
-        ConvertElementalSkill
+        ConvertElementalSkill,
+        AuctionState,
     }
 }

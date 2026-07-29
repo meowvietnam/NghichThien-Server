@@ -176,9 +176,29 @@ public enum MessageTag
     Ping = 1029,
     Pong = 1030,
     SyncCharacterData = 1062,
+    SyncCharacterDataResult = 1063,
+    
     ExperienceReward = 1089,
     DailyReset = 1123,
     
-    
     ConvertElementalSkillRequest = 1232,
+    
+    JoinAuction = 1234,
+    JoinAuctionResult = 1235,
+    GetAuctionData = 1256,
+    GetAuctionDataResult = 1268,
+    AuctionBid = 1291,
+    AuctionBidResult = 1292,
+    ReplaceAuctionPlayer = 1304,
+    GetAuctionInfo = 1315,
+    GetAuctionInfoResult = 1316,
+    HighestBidChanged = 1331,
+    RefundAuctionBid = 1339,
+    HostChat = 1346,
+    AuctionReward = 1357,
+    NewAuctionSession = 1362,
+    
+    GetAuctionInfo2Request = 1366,
+    
+    Notify = 1595,
 }

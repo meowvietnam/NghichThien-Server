@@ -132,10 +132,12 @@ public class CreateCharacter : IClientState
             }
         }
     }
-
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        
+    }
     public void OnLeave()
     {
     }
-
     public MessageState State => MessageState.CreateCharacter;
 }

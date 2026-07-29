@@ -68,6 +68,7 @@ public class EnglishStrings : ILanguageStrings
     public override string ConvertElementalSkillItemQuantityInvalid => "Each conversion skill must have a quantity of 1!";
     public override string ConvertElementalSkillResourceNotFound => "Conversion skill does not exist!";
     public override string ConvertElementalSkillResultNotFound => "No matching skill was found for conversion!";
+    public override string ConvertElementalSkillSuccess => "Conversion successful!";
     public override string NotCompleteFirstMainQuest => "The first main quest must be completed!";
     public override string MonPhaiExisted => "A sect has already been joined!";
     public override string HackerMainQuest => "Main quest data is invalid!";
@@ -85,6 +86,7 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerEquipment => "Equipment data is invalid!";
     public override string HackerLevelNpc => "NPC level is invalid!";
     public override string NotEnoughCongPhap => "Not enough Cong Phap!";
+    public override string CongPhapEquippedCannotBreakthrough => "Equipped Cong Phap cannot be upgraded through breakthrough!";
     public override string NpcNotExist => "NPC does not exist!";
     public override string NpcGiftValueInvalid => "NPC gift item value is invalid!";
     public override string HackerSkillNotExistOnNpc => "Skill does not exist on this NPC!";
@@ -116,4 +118,23 @@ public class EnglishStrings : ILanguageStrings
     public override string ArenaRewardAlreadyClaimed => "Arena reward has already been claimed!";
     public override string ArenaRankNotReached => "The required arena rank has not been reached!";
     public override string AdsMoneyVipLimitReached => "The free Tien Ngoc ad reward limit has been reached!";
+    public override string AuctionNotOpen => "Auction is not open yet!";
+    public override string AuctionServiceNotReady => "Auction service is not ready!";
+    public override string AuctionRewardReceived => "You won the auction and received the item!";
+    public override string AuctionBidRefunded => "Your auction bid has been refunded!";
+    public override string AuctionSessionEnded => "The auction session has ended!";
+    public override string AuctionBidAmountInvalid => "Bid amount is outside the allowed range!";
+    public override string AuctionInfoContent => "<b><color=#B45309>Auction is in progress</color></b>\n<color=#C2410C>Place a bid within the allowed range to win the item.</color>";
+    public override string AuctionAlreadyJoined => "You have already joined the auction!";
+    public override string AuctionHostSessionEnded => "<b><color=#B91C1C>Auction session ended!</color></b> <color=#C2410C>{0}</color> won with <color=#D97706>{1}</color> <color=#B45309>Tien Ngoc</color>.";
+    public override string AuctionHostBidPlaced => "<color=#C2410C>{0}</color> placed a bid of <b><color=#D97706>{1}</color></b> <color=#B45309>Tien Ngoc</color>!";
+    public override string AuctionHostPlayerJoined => "<color=#B45309>Welcome</color> <b><color=#C2410C>{0}</color></b> <color=#B45309>to the auction!</color>";
+    public override string[] AuctionHostRandomChats =>
+    [
+        "<color=#C2410C>The room is heating up. Keep your bids steady!</color>",
+        "<color=#B45309>A rare item is on the stage. Slow hands rarely win.</color>",
+        "<color=#B91C1C>If you have Tien Ngoc saved away, this may be the moment.</color>",
+        "<color=#C2410C>One decisive bid can shift the path of cultivation.</color>",
+        "<color=#D97706>Host reminder: good prices do not wait for long.</color>",
+    ];
 }

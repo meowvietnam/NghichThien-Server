@@ -168,10 +168,13 @@ namespace MTS.Network.ClientState
                 Success = true,
             };
         }
+        public void OnDisconnect(IProtocol<MessageTag> protocol)
+        {
+            
+        }
         public void OnLeave()
         {
         }
-
         public MessageState State => MessageState.AuthState;
     }
 }

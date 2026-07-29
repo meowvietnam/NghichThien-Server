@@ -1,4 +1,6 @@
 using MTS.Exceptions;
+using MTS.Game.Auction;
+using MTS.Localization;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
 using Network;
@@ -13,6 +15,7 @@ public class SceneManager : IClientHandler
     private const string LuyenDan = "LuyenDan";
     private const string LuyenKhi = "LuyenKhi";
     private const string ConvertElementalSkill = "ConvertElementalSkill";
+    private const string Auction = "Auction";
     public SceneManager(Client client)
     {
         this.client = client;
@@ -63,6 +66,32 @@ public class SceneManager : IClientHandler
                         lock (client.StateLock)
                         {
                             client.ChangeState(new ConvertElementalSkillState(client));
+                        }
+                        break;
+                    case Auction:
+                        var auctionManager = AuctionManager.Instance;
+                        if (auctionManager != null)
+                        {
+                            var isOpen = auctionManager.ThisState == AuctionManager.State.Started;
+                            if (isOpen)
+                            {
+                                result.Success = true;
+                                result.SceneName = sceneName;
+                                lock (client.StateLock)
+                                {
+                                    client.ChangeState(new AuctionState(client));
+                                }
+                            }
+                            else
+                            {
+                                result.Success = false;
+                                result.Message = Strings.AuctionNotOpen;
+                            }
+                        }
+                        else
+                        {
+                            result.Success = false;
+                            result.Message = Strings.AuctionServiceNotReady;
                         }
                         break;
                     default:
