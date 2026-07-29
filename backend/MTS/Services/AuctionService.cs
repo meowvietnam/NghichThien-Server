@@ -8,7 +8,7 @@ public class AuctionService : BackgroundService
 {
     private AuctionManager? auctionManager;
     private DayOfWeek[] dayOpens = [DayOfWeek.Wednesday, DayOfWeek.Friday, DayOfWeek.Thursday];
-    private TimeOnly hourOpen = new(21, 00);
+    private TimeOnly hourOpen = new(23, 40);
 
     private string DefaultContent()
     {
@@ -18,7 +18,9 @@ public class AuctionService : BackgroundService
             .ToArray();
         var hour = Color(hourOpen.ToString("HH:mm"), "#D97706");
         return $"{Bold(Color("Lịch đấu giá", "#B91C1C"))}\n" +
-               $"{Color("Đấu giá được tổ chức vào", "#B45309")} {hour} {string.Join(", ", days)} {Color("hàng tuần", "#B45309")}";
+               $"{Color("Đấu giá được tổ chức vào", "#B45309")} {hour} {string.Join(", ", days)} {Color("hàng tuần", "#B45309")}" +
+               "\n" +
+               "Tại Hội Đấu Giá (Thiên Cơ Các)";
     }
 
     private static string Color(string value, string color)
@@ -141,6 +143,7 @@ public class AuctionService : BackgroundService
         {
             await auctionManager.ForceStop();
         }
+
         await base.StopAsync(cancellationToken);
     }
 }
