@@ -283,7 +283,7 @@ public class AuctionManager
                 var newIndex = CurrentSessionIndex + 1;
                 lock (currentSessionLock)
                 {
-                    if (newIndex >= PlayerModels.Length)
+                    if (newIndex >= Sessions.Length)
                     {
                         ThisState = State.Ended;
                         OnEnded().GetAwaiter().GetResult();
