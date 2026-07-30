@@ -7,8 +7,8 @@ namespace MTS.Services;
 public class AuctionService : BackgroundService
 {
     private AuctionManager? auctionManager;
-    private DayOfWeek[] dayOpens = [DayOfWeek.Wednesday, DayOfWeek.Friday, DayOfWeek.Thursday];
-    private TimeOnly hourOpen = new(23, 40);
+    private DayOfWeek[] dayOpens = [DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
+    private TimeOnly hourOpen = new(12, 00);
 
     private string DefaultContent()
     {

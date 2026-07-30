@@ -5,6 +5,7 @@ using MTS.Network.ClientState;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Network.Core;
 
@@ -32,6 +33,7 @@ public class SceneManager : IClientHandler
         {
             var sceneName = reader.Read();
             var result = new ChangeSceneResult();
+            result.SceneName = sceneName;
             try
             {
                 switch (sceneName)
@@ -42,7 +44,6 @@ public class SceneManager : IClientHandler
                             client.ChangeState(new AllMaps(client));
                         }
                         result.Success = true;
-                        result.SceneName = sceneName;
                         break;
                     case LuyenDan:
                         lock (client.StateLock)
@@ -50,11 +51,9 @@ public class SceneManager : IClientHandler
                             client.ChangeState(new LuyenDan(client));
                         }
                         result.Success = true;
-                        result.SceneName = sceneName;
                         break;
                     case LuyenKhi:
                         result.Success = true;
-                        result.SceneName = sceneName;
                         lock (client.StateLock)
                         {
                             client.ChangeState(new LuyenKhi(client));
@@ -62,7 +61,6 @@ public class SceneManager : IClientHandler
                         break;
                     case ConvertElementalSkill:
                         result.Success = true;
-                        result.SceneName = sceneName;
                         lock (client.StateLock)
                         {
                             client.ChangeState(new ConvertElementalSkillState(client));
@@ -76,7 +74,6 @@ public class SceneManager : IClientHandler
                             if (isOpen)
                             {
                                 result.Success = true;
-                                result.SceneName = sceneName;
                                 lock (client.StateLock)
                                 {
                                     client.ChangeState(new AuctionState(client));
@@ -105,7 +102,7 @@ public class SceneManager : IClientHandler
                 result.Success = false;
                 result.Message = e.Message;
             }
-            client.Send(MessageTag.ChangeSceneResult, result);
+            client.MemSend(MessageTag.ChangeSceneResult, result);
         }
     }
 
