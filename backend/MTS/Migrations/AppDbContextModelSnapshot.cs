@@ -423,7 +423,7 @@ namespace MTS.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
@@ -432,7 +432,7 @@ namespace MTS.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.HasIndex("UserName")
+                    b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("GuestAccounts");
@@ -504,6 +504,39 @@ namespace MTS.Migrations
                     b.HasKey("CharId", "Id", "Type");
 
                     b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("MTS.Models.LocalAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("LocalAccounts");
                 });
 
             modelBuilder.Entity("MTS.Models.Mail", b =>
@@ -962,6 +995,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("Inventory");
+                });
+
+            modelBuilder.Entity("MTS.Models.LocalAccount", b =>
+                {
+                    b.HasOne("MTS.Models.UserData", "UserData")
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.LocalAccount", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserData");
                 });
 
             modelBuilder.Entity("MTS.Models.Mail", b =>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.Data;
 using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Localization;
@@ -57,6 +58,7 @@ namespace MTS.Network.ClientState
                 }
                 finally
                 {
+                    result.Provider = login.GetSignInProvider();
                     client.MemSend(MessageTag.LoginRequest, result);
                 }
             }
@@ -150,8 +152,65 @@ namespace MTS.Network.ClientState
                     client.MemSend(MessageTag.DeleteAccountRequest, result);
                 }
             }
+            else if (tag == MessageTag.RegisterRequest)
+            {
+                RegisterResult result = null;
+                var request = reader.MemRead<RegisterModel>();
+                try
+                {
+                    lock (client.StateLock)
+                    {
+                        if (client.IsLoggedIn())
+                        {
+                            throw new InvalidException(Strings.ClientOnline);
+                        }
+                        result = RegisterService.Register(request).GetAwaiter().GetResult();
+                        client.SetUserData(result.UserData.User);
+                    }
+                }
+                catch (InvalidException e)
+                {
+                    result = new RegisterResult
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.RegisterRequest, result);
+                }
+            }
+            else if (tag == MessageTag.GuestRegisterRequest)
+            {
+                RegisterResult result = null;
+                var request = reader.MemRead<GuestRegister>();
+                try
+                {
+                    lock (client.StateLock)
+                    {
+                        if (!client.IsLoggedIn())
+                        {
+                            throw new InvalidException(Strings.NotLoggedIn);
+                        }
+                        result = RegisterService.GuestRegister(request,client.UserData).GetAwaiter().GetResult();
+                        client.SetUserData(result.UserData.User);
+                    }
+                }
+                catch (InvalidException e)
+                {
+                    result = new RegisterResult
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                }
+                finally
+                {
+                    client.MemSend(MessageTag.GuestRegisterRequest, result);
+                }
+            }
         }
-
         private async Task<DeleteAccountResult> DeleteAccount(int userId)
         {
             await using var db = await Program.CreateDbAsync();

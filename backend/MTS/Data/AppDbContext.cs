@@ -44,6 +44,7 @@ public class AppDbContext : DbContext
     public DbSet<SpendingMoneyVip> SpendingMoneyVips { get; private set; }
     public DbSet<GachaManager> GachaManagers { get; private set; }
     public DbSet<AuctionHistory> AuctionHistories { get; private set; }
+    public DbSet<LocalAccount> LocalAccounts { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -88,7 +89,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<GuestAccount>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.UserName).IsUnique();
+            e.HasIndex(x => x.Username).IsUnique();
             e.HasOne(x => x.UserData)
                 .WithOne()
                 .HasForeignKey<GuestAccount>(x => x.UserId)
@@ -421,6 +422,18 @@ public class AppDbContext : DbContext
                     v => ParseSessions(v)
                 );
         });
+
+        modelBuilder.Entity<LocalAccount>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Username).IsUnique();
+            e.HasOne(x => x.UserData)
+                .WithOne()
+                .HasForeignKey<LocalAccount>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        
     }
 
     private AuctionSession[] ParseSessions(byte[] data)

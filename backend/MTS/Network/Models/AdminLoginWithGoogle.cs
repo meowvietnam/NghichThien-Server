@@ -14,7 +14,7 @@ namespace MTS.Network.Models
 
         public SignInProvider GetSignInProvider()
         {
-            return SignInProvider.Google;
+            return SignInProvider.AdminGoogle;
         }
 
         public async Task<LoginResult> Login()

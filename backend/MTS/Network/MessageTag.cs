@@ -201,4 +201,7 @@ public enum MessageTag
     GetAuctionInfo2Request = 1366,
     
     Notify = 1595,
+    
+    RegisterRequest = 1634,
+    GuestRegisterRequest = 1683,
 }

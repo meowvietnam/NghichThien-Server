@@ -11,6 +11,19 @@ public abstract class ILanguageStrings
     public abstract string DeleteAccountFailed { get; }
     public abstract string ClientOnline { get; }
     public abstract string ReconnectClientNotFound { get; }
+    public abstract string UsernameRequired { get; }
+    public abstract string UsernameTooShort { get; }
+    public abstract string UsernameTooLong { get; }
+    public abstract string UsernameContainsWhitespace { get; }
+    public abstract string PasswordRequired { get; }
+    public abstract string PasswordTooShort { get; }
+    public abstract string PasswordTooLong { get; }
+    public abstract string UsernameAlreadyExists { get; }
+    public abstract string RegisterSuccess { get; }
+    public abstract string UserDataInvalid { get; }
+    public abstract string GuestAccountNotFound { get; }
+    public abstract string UsernameOrPasswordInvalid { get; }
+    public abstract string LoginWithAccountSuccess { get; }
 
     // Connection messages
     public abstract string ConnectSuccess { get; }

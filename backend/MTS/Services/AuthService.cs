@@ -12,7 +12,7 @@ public class AuthService
         var account = await db.GuestAccounts
             .AsNoTracking()
             .Include(x => x.UserData)
-            .FirstOrDefaultAsync(x => x.UserName == username);
+            .FirstOrDefaultAsync(x => x.Username == username);
         if (account != null)
         {
             var userId = account.UserId;
@@ -28,7 +28,7 @@ public class AuthService
         }
         account = new GuestAccount()
         {
-            UserName = username,
+            Username = username,
             UserData = new UserData()
         };
         db.GuestAccounts.Add(account);
