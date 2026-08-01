@@ -181,7 +181,8 @@ public partial class CharacterData
             Stats = snapshot,
             Message = $"{linhDan.Description} x{count}",
             CurrentExp = Progression.CurrentExp,
-            CamNgos = InventoryManager.CamNgos
+            CamNgos = InventoryManager.CamNgos,
+            NgoDaoDiem = Progression.NgoDaoDiem
         };
         return result;
     }
