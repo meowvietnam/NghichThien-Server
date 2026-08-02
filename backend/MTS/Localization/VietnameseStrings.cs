@@ -107,6 +107,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "Dữ liệu tặng quà NPC không hợp lệ!";
     public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
     public override string IapStoreNotSupported => "Cửa hàng IAP không được hỗ trợ!";
+    public override string IapProductNotFound => "Gói IAP không tồn tại hoặc đã ngừng bán!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
     public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
     public override string ShopTypeInvalid => "Loại cửa hàng không hợp lệ!";

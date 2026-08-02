@@ -115,6 +115,7 @@ public static class Strings
     public static string HackerTangQuaNPC => _current.HackerTangQuaNPC;
     public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
     public static string IapStoreNotSupported => _current.IapStoreNotSupported;
+    public static string IapProductNotFound => _current.IapProductNotFound;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
     public static string NotEnoughMoneyVip => _current.NotEnoughMoneyVip;
     public static string ShopTypeInvalid => _current.ShopTypeInvalid;

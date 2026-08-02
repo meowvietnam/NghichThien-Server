@@ -108,7 +108,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CharacterData>((e) =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => x.Name)
+                .IsUnique();
+            e.Property(x => x.Name)
+                .HasMaxLength(50)
+                .UseCollation("utf8mb4_0900_as_cs");
             e.HasOne(x => x.User)
                 .WithMany(x => x.CharacterDatas)
                 .HasForeignKey(x => x.UserId)
@@ -427,6 +431,9 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Username).IsUnique();
+            e.Property(x => x.Username)
+                .HasMaxLength(50)
+                .UseCollation("utf8mb4_bin");
             e.HasOne(x => x.UserData)
                 .WithOne()
                 .HasForeignKey<LocalAccount>(x => x.UserId)

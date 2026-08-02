@@ -1,4 +1,5 @@
 ﻿using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -41,10 +42,11 @@ namespace MTS.Network.Core
                 IapResult result = null;
                 try
                 {
+                    var verifiedPurchase = CharacterData.VerifyIapPurchase(request).GetAwaiter().GetResult();
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;
-                        result = charData.IapPurchase(request).GetAwaiter().GetResult();
+                        result = charData.CompleteIapPurchase(verifiedPurchase).GetAwaiter().GetResult();
                     }
                 }
                 catch (InvalidException e)

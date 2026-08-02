@@ -110,6 +110,7 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerTangQuaNPC => "NPC gift data is invalid!";
     public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
     public override string IapStoreNotSupported => "IAP store is not supported!";
+    public override string IapProductNotFound => "IAP product does not exist or is no longer available!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
     public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
     public override string ShopTypeInvalid => "Shop type is invalid!";

@@ -183,6 +183,7 @@ namespace MTS.Network.Core
                             throw new InvalidException(Strings.NotEnoughMoneyVip);
                         }
                         charData.SetMoneyVip(remainingMoneyVip);
+                        charData.AddSpendMoneyVipOnline(cost, SpendFor.Arena);
                     }
                     var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
                     var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);

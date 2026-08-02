@@ -19,7 +19,7 @@ public class UnauthenticatedClient : ClientConnection
 
     private class CheckVersionState(UnauthenticatedClient client) : IMessageState<MessageTag, MessageState>
     {
-        private static readonly string[] acceptVersions = ["apk_v1.1.7", "apk_v1.1.8"];
+        private static readonly string[] acceptVersions = ["apk_v1.2.1", "ios_v1.2.1"];
 
         public void OnEnter()
         {

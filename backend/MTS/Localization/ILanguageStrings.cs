@@ -126,6 +126,7 @@ public abstract class ILanguageStrings
     // IAP messages
     public abstract string IapPurchaseAlreadyProcessed { get; }
     public abstract string IapStoreNotSupported { get; }
+    public abstract string IapProductNotFound { get; }
     public abstract string MoneyVipInvalid { get; }
     public abstract string NotEnoughMoneyVip { get; }
 

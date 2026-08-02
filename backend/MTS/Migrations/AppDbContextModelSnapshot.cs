@@ -132,7 +132,9 @@ namespace MTS.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .UseCollation("utf8mb4_0900_as_cs");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -540,7 +542,9 @@ namespace MTS.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .UseCollation("utf8mb4_bin");
 
                     b.HasKey("Id");
 

@@ -1,20 +1,10 @@
 using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
-using MTS.Game;
-using MTS.Game.ItemProvider;
-using MTS.Game.LuyenDan;
-using MTS.Game.Resources;
-using MTS.Game.Social;
 using MTS.Localization;
 using MTS.Network.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using MemoryPack;
+
 using MTS.IAP;
-using MTS.Game.Combat;
-using MTS.Network;
 using MTS.Services;
 using Serilog;
 
@@ -24,100 +14,176 @@ public partial class CharacterData
 {
     public async Task<IapResult> IapPurchase(IapModel request)
     {
+        var verifiedPurchase = await VerifyIapPurchase(request);
+        return await CompleteIapPurchase(verifiedPurchase);
+    }
+
+    public static async Task<VerifiedIapPurchase> VerifyIapPurchase(IapModel request)
+    {
         var store = request.Store;
         var productId = request.ProductId;
-        var purchaseToken = request.PurchaseToken;
-        Log.Information("IAP purchase requested; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
-            Id, store, productId);
-        var purchaseTokenHash = Utils.Utils.HashSHA256(purchaseToken);
+        if (!Enum.IsDefined(typeof(Store), store))
+        {
+            throw new InvalidException(Strings.IapStoreNotSupported);
+        }
+
         await using var db = await Program.CreateDbAsync();
         var product = await db.IapProducts
             .AsNoTracking()
-            .FirstAsync(x => x.Store == store
-                             && x.StoreProductId == productId
-                             && x.IsActive);
-        var hasPurchased = await db.IapPurchases
-            .AnyAsync(x => x.Store == store
-                           && x.ProductId == product.Id
-                           && x.PurchaseTokenHash == purchaseTokenHash);
-        if (hasPurchased)
+            .FirstOrDefaultAsync(x => x.Store == store
+                                      && x.StoreProductId == productId
+                                      && x.IsActive);
+        if (product == null)
         {
-            Log.Information("IAP purchase already processed; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
-                Id, store, productId);
-            return new IapResult()
-            {
-                Success = true,
-                Reward = null,
-                Store = store,
-                ProductId = productId
-            };
+            throw new InvalidException(Strings.IapProductNotFound);
         }
 
-        if (product.ActualProductType == IapProductType.NonConsumable)
+        var cancelToken = CancellationToken.None;
+        var verify = await IapService.VerifyAsync(
+            store,
+            productId,
+            request.ReceiptJson,
+            product.ProductType,
+            cancelToken);
+        if (!verify.IsValid)
         {
-            hasPurchased = await db.IapPurchases.AnyAsync(x => x.Store == store && x.ProductId == product.Id);
+            throw new InvalidException(verify.Error ?? Strings.IapStoreNotSupported);
+        }
+
+        var purchaseTokenHash = Utils.Utils.HashSHA256(verify.PurchaseToken);
+        var hasPurchased = await db.IapPurchases
+            .AnyAsync(x => x.Store == store
+                           && x.PurchaseTokenHash == purchaseTokenHash,
+                cancelToken);
+        if (hasPurchased)
+        {
+            Log.Information(
+                "IAP purchase already processed; Store={Store}, ProductId={ProductId}",
+                store, productId);
+            return new VerifiedIapPurchase(product, verify, purchaseTokenHash, true);
+        }
+
+        if (product.ProductType == IapProductType.NonConsumable)
+        {
+            hasPurchased = await db.IapPurchases.AnyAsync(
+                x => x.Store == store && x.ProductId == product.Id,
+                cancelToken);
             if (hasPurchased)
             {
                 throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
             }
         }
 
-        var cancelToken = CancellationToken.None;
-        if (store == Store.GooglePlay)
+        return new VerifiedIapPurchase(product, verify, purchaseTokenHash, false);
+    }
+
+    public async Task<IapResult> CompleteIapPurchase(VerifiedIapPurchase verifiedPurchase)
+    {
+        var product = verifiedPurchase.Product;
+        Log.Information("IAP purchase requested; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
+            Id, product.Store, product.StoreProductId);
+        if (verifiedPurchase.IsAlreadyProcessed)
         {
-            var verify = await GooglePlayIap.VerifyAsync(productId, purchaseToken, cancelToken);
-            if (!verify.IsValid)
-            {
-                throw new InvalidException(verify.Error);
-            }
-
-            var productType = product.ProductType;
-            if (productType == IapProductType.Consumable)
-            {
-                await GooglePlayIap.ConsumeAsync(productId, purchaseToken, cancelToken);
-            }
-            else if (productType == IapProductType.NonConsumable)
-            {
-                await GooglePlayIap.AcknowledgeAsync(productId, purchaseToken, cancelToken);
-            }
-
-            var purchase = new IapPurchase()
-            {
-                CharId = Id,
-                ProductId = product.Id,
-                Store = store,
-                PurchaseTokenHash = purchaseTokenHash,
-            };
-            var reward = product.Reward;
-            reward.Execute(this);
-            reward.Edit(purchase);
-            await db.IapPurchases.AddAsync(purchase, cancelToken);
-            await db.SaveChangesAsync(cancelToken);
+            Log.Information(
+                "IAP purchase already processed; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
+                Id, product.Store, product.StoreProductId);
             return new IapResult()
             {
                 Success = true,
-                Store = store,
-                ProductId = productId,
-                Reward = product.Reward,
+                Reward = null,
+                Store = product.Store,
+                ProductId = product.StoreProductId
             };
         }
 
-        throw new InvalidException($"{Strings.IapStoreNotSupported}: {store}");
+        var cancelToken = CancellationToken.None;
+        await using var db = await Program.CreateDbAsync();
+        var hasPurchased = await db.IapPurchases
+            .AnyAsync(x => x.Store == product.Store
+                           && x.PurchaseTokenHash == verifiedPurchase.PurchaseTokenHash,
+                cancelToken);
+        if (hasPurchased)
+        {
+            Log.Information(
+                "IAP purchase became processed before completion; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}",
+                Id, product.Store, product.StoreProductId);
+            return new IapResult()
+            {
+                Success = true,
+                Reward = null,
+                Store = product.Store,
+                ProductId = product.StoreProductId
+            };
+        }
+
+        if (product.ProductType == IapProductType.NonConsumable)
+        {
+            hasPurchased = await db.IapPurchases.AnyAsync(
+                x => x.Store == product.Store && x.ProductId == product.Id,
+                cancelToken);
+            if (hasPurchased)
+            {
+                throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
+            }
+        }
+
+        var purchase = new IapPurchase()
+        {
+            CharId = Id,
+            ProductId = product.Id,
+            Store = product.Store,
+            PurchaseTokenHash = verifiedPurchase.PurchaseTokenHash,
+            PurchaseDate = verifiedPurchase.Verify.PurchaseTime?.UtcDateTime ?? DateTime.UtcNow,
+        };
+        var reward = product.Reward;
+        reward.Execute(this);
+        reward.Edit(purchase);
+        await db.IapPurchases.AddAsync(purchase, cancelToken);
+        await db.SaveChangesAsync(cancelToken);
+        try
+        {
+            await IapService.FinalizeAsync(
+                product.Store,
+                product.StoreProductId,
+                verifiedPurchase.Verify.PurchaseToken,
+                product.ProductType,
+                cancelToken);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "IAP finalize failed after purchase was saved; CharacterId={CharacterId}, Store={Store}, ProductId={ProductId}, TransactionId={TransactionId}",
+                Id,
+                product.Store,
+                product.StoreProductId,
+                verifiedPurchase.Verify.TransactionId);
+        }
+
+        return new IapResult()
+        {
+            Success = true,
+            Store = product.Store,
+            ProductId = product.StoreProductId,
+            Reward = product.Reward,
+        };
     }
 
     public async Task<List<OwnerIapProduct>> GetProducts()
     {
         await using var db = await Program.CreateDbAsync();
         var iapProducts = await db.IapProducts.Where(x => x.IsActive).ToArrayAsync();
+        var purchasedProductIds = await db.IapPurchases
+            .Where(x => x.CharId == Id)
+            .Select(x => x.ProductId)
+            .ToHashSetAsync();
         var ownerProducts = iapProducts
             .Select(x =>
             {
-                var hasPurchased = db.IapPurchases
-                    .Any(p => p.CharId == Id && p.Store == x.Store && p.ProductId == x.Id);
                 return new OwnerIapProduct()
                 {
                     Product = x,
-                    HasPurchased = hasPurchased
+                    HasPurchased = purchasedProductIds.Contains(x.Id)
                 };
             }).ToList();
         return ownerProducts;
@@ -157,6 +223,7 @@ public partial class CharacterData
         };
         addedSpendingMoneyVips.Add(spendingMoneyVip);
     }
+
     public async Task AddSpendMoneyVipOffline(long moneyVip, SpendFor spendFor, AppDbContext db)
     {
         var spendingMoneyVip = new SpendingMoneyVip
@@ -167,6 +234,7 @@ public partial class CharacterData
         };
         await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
     }
+
     public async Task<long> GetTongNapInRank()
     {
         await using var db = await Program.CreateDbAsync();
@@ -187,3 +255,9 @@ public partial class CharacterData
             .SumAsync(x => x.MoneyVip);
     }
 }
+
+public sealed record VerifiedIapPurchase(
+    IapProduct Product,
+    IapVerifyResult Verify,
+    byte[] PurchaseTokenHash,
+    bool IsAlreadyProcessed);
