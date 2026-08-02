@@ -276,13 +276,19 @@ namespace MTS.Network.Core
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
-            var matchPointPlayers =
+            var enemyCharId =
                 await db.ArenaManagers
-                    .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId && x.CharData.Progression.Level >= level)
-                    .OrderBy(_ => EF.Functions.Random())
+                    .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
+                    .OrderBy(x => x.CharData.Progression.Level >= level ? 0 : 1)
+                    .ThenBy(x => Math.Abs(x.CharData.Progression.Level - level))
+                    .ThenBy(_ => EF.Functions.Random())
                     .Select(x => x.CharId)
-                    .Take(10)
-                    .ToListAsync();
+                    .FirstOrDefaultAsync();
+            if (enemyCharId == 0)
+            {
+                return null;
+            }
+
             var matchPlayerProgression =
                 await db.Progressions
                     .AsNoTracking()
@@ -302,7 +308,7 @@ namespace MTS.Network.Core
                     .Include(x => x.CharacterData)
                     .ThenInclude(x => x.Appearance)
                     .AsSplitQuery()
-                    .FirstOrDefaultAsync(x => matchPointPlayers.Contains(x.CharId));
+                    .FirstOrDefaultAsync(x => x.CharId == enemyCharId);
             if (matchPlayerProgression == null)
             {
                 return null;
