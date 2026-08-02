@@ -60,7 +60,7 @@ namespace MTS.Network.Models
             message = string.Empty;
             return true;
         }
-        public async Task<LoginResult> Login()
+        public async Task<LoginResult> Login(Client client)
         {
             if (!TryValidateLogin(Username, Password, out var message))
             {

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using Network;
 using Network.Extensions;
@@ -13,6 +14,7 @@ public class UserData : IMemorySerializable<UserData>
     public List<CharacterData> CharacterDatas { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastLogin { get; set; } = DateTime.UtcNow;
     [NotMapped] private bool dirty;
     public UserData()
     {
@@ -34,7 +36,6 @@ public class UserData : IMemorySerializable<UserData>
         value.CharacterDatas = reader.ReadArray<CharacterData>().ToList();
         value.CreatedAt = reader.Read<DateTime>();
     }
-
     public async Task SaveChanges(AppDbContext db)
     {
         if (!dirty)
@@ -42,5 +43,12 @@ public class UserData : IMemorySerializable<UserData>
             return;
         }
         dirty = false;
+    }
+
+    public async Task UpdateLogin()
+    {
+        LastLogin = DateTime.UtcNow;
+        await using var db = await Program.CreateDbAsync();
+        await db.Users.ExecuteUpdateAsync(x => x.SetProperty(u => u.LastLogin, LastLogin));
     }
 }

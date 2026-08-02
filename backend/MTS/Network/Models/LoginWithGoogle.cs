@@ -16,7 +16,7 @@ public partial class LoginWithGoogle : ILogin
         return SignInProvider.Google;
     }
 
-    public async Task<LoginResult> Login()
+    public async Task<LoginResult> Login(Client client)
     {
         GoogleJsonWebSignature.Payload payload;
         try

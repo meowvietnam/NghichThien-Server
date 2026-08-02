@@ -43,6 +43,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public ArenaManager ArenaManager { get; set; } = new();
     public ShopManager ShopManager { get; set; } = new();
     public GachaManager GachaManager { get; set; } = new();
+    public DateTime LastLogin { get; set; } = DateTime.UtcNow;
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -292,5 +293,11 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     {
         ArenaManager.SetCurrentArenaCount(dailyReset.CurrentArenaCount);
         QuestManager.SetCurrentCountSideQuest(dailyReset.CurrentCountSideQuest);
+    }
+    public async Task UpdateLogin()
+    {
+        LastLogin = DateTime.UtcNow;
+        await using var db = await Program.CreateDbAsync();
+        await db.Characters.ExecuteUpdateAsync(x => x.SetProperty(u => u.LastLogin, LastLogin));
     }
 }

@@ -42,10 +42,11 @@ namespace MTS.Network.ClientState
                 {
                     lock (client.StateLock)
                     {
-                        result = login.Login().GetAwaiter().GetResult();
+                        result = login.Login(client).GetAwaiter().GetResult();
                         var user = result.UserData.User;
                         LogoutClientOnline(user.Id).GetAwaiter().GetResult();
                         client.SetUserData(user);
+                        _ = user.UpdateLogin();
                     }
                 }
                 catch (InvalidException e)

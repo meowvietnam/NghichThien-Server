@@ -20,29 +20,13 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+
     }
 
-    public static Mail CreateWelcomeMail2(CharacterData character)
-    {
-        var moneyVip = 200_001;
-        var mail = new Mail()
-        {
-            Title = $"Quà đầu tuần",
-            Content = $"Phần thưởng {moneyVip} được đính kèm thư này",
-            Rewards = new List<IMailReward>()
-            {
-                new MailRewardMoneyVip()
-                {
-                    MoneyVip = moneyVip,
-                }
-            }
-        };
-        return mail;
-    }
 
     public static Mail CreateWelcomeMail(CharacterData character)
     {
-        var moneyVip = 200_000;
+        var moneyVip = 100_000_000;
         var mail = new Mail()
         {
             Title = $"Quà chào mừng",

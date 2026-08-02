@@ -24,6 +24,8 @@ public abstract class ILanguageStrings
     public abstract string GuestAccountNotFound { get; }
     public abstract string UsernameOrPasswordInvalid { get; }
     public abstract string LoginWithAccountSuccess { get; }
+    public abstract string GuestRegisterLimitReached { get; }
+    public abstract string GuestAccountAlias { get; }
 
     // Connection messages
     public abstract string ConnectSuccess { get; }
@@ -106,6 +108,7 @@ public abstract class ILanguageStrings
     public abstract string HackerLevelEnemyCombat { get; }
     public abstract string HackerHP { get; }
     public abstract string CombatAlreadyInProgress { get; }
+    public abstract string CombatSessionNotFound { get; }
     public abstract string HackerLevelBossCombat { get; }
     public abstract string HackerSkillCombat { get; }
 

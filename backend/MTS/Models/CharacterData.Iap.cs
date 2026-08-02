@@ -147,7 +147,7 @@ public partial class CharacterData
         return Client != null;
     }
 
-    public async void AddSpendMoneyVip(long moneyVip, SpendFor spendFor)
+    public void AddSpendMoneyVipOnline(long moneyVip, SpendFor spendFor)
     {
         var spendingMoneyVip = new SpendingMoneyVip
         {
@@ -155,18 +155,18 @@ public partial class CharacterData
             SpendFor = spendFor,
             MoneyVip = moneyVip,
         };
-        if (IsOnline())
-        {
-            addedSpendingMoneyVips.Add(spendingMoneyVip);
-        }
-        else
-        {
-            await using var db = await Program.CreateDbAsync();
-            await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
-            await db.SaveChangesAsync();
-        }
+        addedSpendingMoneyVips.Add(spendingMoneyVip);
     }
-
+    public async Task AddSpendMoneyVipOffline(long moneyVip, SpendFor spendFor, AppDbContext db)
+    {
+        var spendingMoneyVip = new SpendingMoneyVip
+        {
+            CharId = Id,
+            SpendFor = spendFor,
+            MoneyVip = moneyVip,
+        };
+        await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
+    }
     public async Task<long> GetTongNapInRank()
     {
         await using var db = await Program.CreateDbAsync();

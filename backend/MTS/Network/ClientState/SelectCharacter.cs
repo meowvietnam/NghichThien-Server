@@ -85,6 +85,7 @@ namespace MTS.Network.ClientState
                         Success = true,
                         CharacterData = character,
                     };
+                    _ = character.UpdateLogin();
                     client.Send(MessageTag.SelectCharacterResult, result);
                     lock (client.StateLock)
                     {

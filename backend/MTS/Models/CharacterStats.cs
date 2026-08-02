@@ -486,6 +486,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
                 break;
             case EDanBuffType.DanDoc:
                 SetValue(StatType.DanDoc, DanDoc - value);
+                ClampDanDoc();
                 break;
             case EDanBuffType.Hp:
                 SetHp(Math.Clamp(Hp + value, 0, SinhMenh));
@@ -543,9 +544,15 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         if (isAddDanDoc)
         {
             SetValue(StatType.DanDoc, DanDoc + danDoc);
+            ClampDanDoc();
         }
     }
 
+    public void ClampDanDoc()
+    {
+        DanDoc = Math.Max(0, DanDoc);
+        isDirty = true;
+    }
     public void ClampHp()
     {
         Hp = Math.Clamp(Hp, 0, SinhMenh);

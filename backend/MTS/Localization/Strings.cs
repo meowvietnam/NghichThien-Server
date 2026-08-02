@@ -31,6 +31,8 @@ public static class Strings
     public static string GuestAccountNotFound => _current.GuestAccountNotFound;
     public static string UsernameOrPasswordInvalid => _current.UsernameOrPasswordInvalid;
     public static string LoginWithAccountSuccess => _current.LoginWithAccountSuccess;
+    public static string GuestRegisterLimitReached => _current.GuestRegisterLimitReached;
+    public static string GuestAccountAlias => _current.GuestAccountAlias;
     public static string ConnectSuccess => _current.ConnectSuccess;
     public static string SaveChangesCompleted => _current.SaveChangesCompleted;
     public static string LimitCharacter => _current.LimitCharacter;
@@ -99,6 +101,7 @@ public static class Strings
     public static string HackerLevelEnemyCombat => _current.HackerLevelEnemyCombat;
     public static string HackerHP => _current.HackerHP;
     public static string CombatAlreadyInProgress => _current.CombatAlreadyInProgress;
+    public static string CombatSessionNotFound => _current.CombatSessionNotFound;
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
     public static string HackerSkillCombat => _current.HackerSkillCombat;
     public static string HackerEquipment => _current.HackerEquipment;

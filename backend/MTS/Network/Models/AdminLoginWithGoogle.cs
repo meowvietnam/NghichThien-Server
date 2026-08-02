@@ -17,7 +17,7 @@ namespace MTS.Network.Models
             return SignInProvider.AdminGoogle;
         }
 
-        public async Task<LoginResult> Login()
+        public async Task<LoginResult> Login(Client client)
         {
             if (SecretKey != Key)
             {

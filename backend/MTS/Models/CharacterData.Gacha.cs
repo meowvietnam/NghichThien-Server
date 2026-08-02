@@ -83,7 +83,7 @@ public partial class CharacterData
         var rewardItems = InventoryManager.AddToInventory(listItemRef);
         GachaManager.Set(type, totalGacha);
         SetMoneyVip(newTienNgoc);
-        AddSpendMoneyVip(require, SpendFor.Gacha);
+        AddSpendMoneyVipOnline(require, SpendFor.Gacha);
         return new GachaResult()
         {
             Success = true,

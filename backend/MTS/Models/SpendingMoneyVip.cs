@@ -8,6 +8,7 @@ namespace MTS.Models;
 public enum SpendFor
 {
     Gacha = 1,
+    Auction = 8
 }
 [MemoryPackable]
 public partial class SpendingMoneyVip

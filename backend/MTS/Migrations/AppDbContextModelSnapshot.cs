@@ -121,6 +121,9 @@ namespace MTS.Migrations
                     b.Property<bool>("IsNoAds")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<DateTime>("LastLogin")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("MonPhai")
                         .HasColumnType("int");
 
@@ -419,6 +422,17 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -773,6 +787,9 @@ namespace MTS.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastLogin")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Role")

@@ -42,6 +42,10 @@ namespace MTS.Network.Core
                 ResultCombatResult result = null;
                 try
                 {
+                    if (combatSession == null)
+                    {
+                        throw new InvalidException(Strings.CombatSessionNotFound);
+                    }
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;

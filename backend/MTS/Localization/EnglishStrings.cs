@@ -23,6 +23,8 @@ public class EnglishStrings : ILanguageStrings
     public override string GuestAccountNotFound => "Guest account was not found!";
     public override string UsernameOrPasswordInvalid => "Username or password is incorrect!";
     public override string LoginWithAccountSuccess => "Login successful with account {0}!";
+    public override string GuestRegisterLimitReached => "The daily guest account creation limit has been reached!";
+    public override string GuestAccountAlias => "Guest";
     public override string ConnectSuccess => "Connected to server successfully!";
     public override string SaveChangesCompleted => "Save changes completed!";
     public override string LimitCharacter => "Character limit reached!";
@@ -94,6 +96,7 @@ public class EnglishStrings : ILanguageStrings
     public override string HackerLevelEnemyCombat => "Enemy level in combat is invalid!";
     public override string HackerHP => "Post-combat HP is invalid!";
     public override string CombatAlreadyInProgress => "A combat session is already in progress!";
+    public override string CombatSessionNotFound => "No active combat session was found!";
     public override string HackerLevelBossCombat => "Boss level in combat is invalid!";
     public override string HackerSkillCombat => "Skill used in combat is invalid!";
     public override string HackerEquipment => "Equipment data is invalid!";

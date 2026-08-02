@@ -9,5 +9,5 @@ namespace MTS.Network.Models;
 public partial interface ILogin
 {
     SignInProvider GetSignInProvider();
-    Task<LoginResult> Login();
+    Task<LoginResult> Login(Client client);
 }

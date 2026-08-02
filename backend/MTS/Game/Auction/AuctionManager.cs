@@ -71,6 +71,7 @@ public class AuctionManager
         ThisState = State.Started;
         _ = Run();
     }
+
     private ItemRef RandomThanThongThienGiai()
     {
         var thanThongs = GameConfig.NDCPTTManager.ThanThongs;
@@ -86,6 +87,7 @@ public class AuctionManager
             Count = 1,
         };
     }
+
     private ItemRef RandomThanThongDiaGiai()
     {
         var thanThongs = GameConfig.NDCPTTManager.ThanThongs;
@@ -101,6 +103,7 @@ public class AuctionManager
             Count = 1,
         };
     }
+
     private ItemRef RandomCongPhapThienGiai()
     {
         var congPhaps = GameConfig.NDCPTTManager.CongPhaps;
@@ -116,6 +119,7 @@ public class AuctionManager
             Count = 1,
         };
     }
+
     private ItemRef RandomCongPhapDiaGiai()
     {
         var congPhaps = GameConfig.NDCPTTManager.CongPhaps;
@@ -143,6 +147,7 @@ public class AuctionManager
             Count = 1,
         };
     }
+
     private void CreateSessions()
     {
         var start = Utils.Utils.Now();
@@ -306,7 +311,8 @@ public class AuctionManager
 
     public async void SendResultToLeading(PlayerAuctionModel player, AuctionSession session)
     {
-        CharacterData charData = null!;
+        var amount = player.Amount;
+        CharacterData? charData = null!;
         if (Players.TryGetValue(player.PlayerId, out var onlinePlayer))
         {
             charData = onlinePlayer.GetCharacterData();
@@ -322,16 +328,21 @@ public class AuctionManager
             try
             {
                 await using var db = await Program.CreateDbAsync();
-                var inventory = await db.InventoryManagers
+                charData = await db.Characters
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.CharId == player.CharId);
-                if (inventory != null)
+                    .Include(x => x.InventoryManager)
+                    .FirstOrDefaultAsync(x => x.Id == player.CharId);
+                if (charData == null)
                 {
-                    await inventory.Load(db);
-                    AddToInventory(session.ItemRef, inventory);
-                    await inventory.SaveChanges(db);
-                    await db.SaveChangesAsync();
+                    return;
                 }
+
+                var inventory = charData.InventoryManager;
+                await inventory.Load(db);
+                AddToInventory(session.ItemRef, inventory);
+                await inventory.SaveChanges(db);
+                await charData.AddSpendMoneyVipOffline(amount, SpendFor.Auction, db);
+                await db.SaveChangesAsync();
             }
             catch (Exception ex)
             {
