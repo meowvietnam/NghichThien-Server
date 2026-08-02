@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Models;
+using Serilog;
 
 namespace MTS.Network.Models;
 [MemoryPackable]
@@ -38,8 +39,10 @@ public partial class LoginGuest : ILogin
         var now = Utils.Utils.Now();
         var today = new DateTimeOffset(now.Date, Utils.Utils.Utc7).ToUniversalTime().DateTime;
         var tomorrow = new DateTimeOffset(now.Date.AddDays(1), Utils.Utils.Utc7).ToUniversalTime().DateTime;
-        var count = await db.GuestAccounts.CountAsync(x => x.CreatedAt >= today && x.CreatedAt <= tomorrow);
-        if (count > 10)
+        var count = await db.GuestAccounts
+            .Where(x => x.DeviceId == DeviceId)
+            .CountAsync(x => x.CreatedAt >= today && x.CreatedAt <= tomorrow);
+        if (count >= 10)
         {
             throw new InvalidException(Strings.GuestRegisterLimitReached);
         }
