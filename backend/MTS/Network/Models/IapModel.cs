@@ -12,7 +12,7 @@ namespace MTS.Network.Models
 
         public override string ToString()
         {
-            return $"Store: {Store}, ProductId: {ProductId}, HasReceipt: {!string.IsNullOrWhiteSpace(ReceiptJson)}";
+            return $"Store: {Store}, ProductId: {ProductId}, Receipt: {ReceiptJson}";
         }
     }
 }

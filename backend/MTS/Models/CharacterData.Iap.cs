@@ -20,6 +20,7 @@ public partial class CharacterData
 
     public static async Task<VerifiedIapPurchase> VerifyIapPurchase(IapModel request)
     {
+        Log.Information(request.ToString());
         var store = request.Store;
         var productId = request.ProductId;
         if (!Enum.IsDefined(typeof(Store), store))
@@ -169,10 +170,12 @@ public partial class CharacterData
         };
     }
 
-    public async Task<List<OwnerIapProduct>> GetProducts()
+    public async Task<List<OwnerIapProduct>> GetProducts(Store store)
     {
         await using var db = await Program.CreateDbAsync();
-        var iapProducts = await db.IapProducts.Where(x => x.IsActive).ToArrayAsync();
+        var iapProducts = await db.IapProducts
+            .Where(x => x.IsActive && x.Store == store)
+            .ToArrayAsync();
         var purchasedProductIds = await db.IapPurchases
             .Where(x => x.CharId == Id)
             .Select(x => x.ProductId)
