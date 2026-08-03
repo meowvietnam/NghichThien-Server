@@ -79,14 +79,7 @@ namespace MTS.Network.Models
             }
             var userId = account.UserId;
             var user = await db.Users.FirstAsync(x => x.Id == userId);
-            var characterDatas = await db.Characters
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Progression)
-                .Include(x => x.Appearance)
-                .AsSplitQuery()
-                .ToListAsync();
-            user.CharacterDatas = characterDatas;
+            await user.LoadCharacterDatas(db);
             return new LoginResult()
             {
                 Success = true,

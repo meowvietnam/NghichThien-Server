@@ -7,5 +7,6 @@ namespace MTS.Network.Models
         AdminGoogle = 6,
         Google = 10,
         Facebook = 20,
+        AdminName = 50,
     }
 }

@@ -48,15 +48,7 @@ public partial class LoginWithGoogle : ILogin
             .FirstOrDefaultAsync(x => x.Email == email);
         if (account != null)
         {
-            var userId = account.UserId;
-            var characterDatas =  await db.Characters
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Progression)
-                .Include(x => x.Appearance)
-                .AsSplitQuery()
-                .ToListAsync();
-            account.UserData.CharacterDatas = characterDatas;
+            await account.UserData.LoadCharacterDatas(db);
             return account.UserData;
         }
         account = new GoogleAccount()

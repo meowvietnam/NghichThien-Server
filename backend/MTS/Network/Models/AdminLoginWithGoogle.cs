@@ -10,7 +10,6 @@ namespace MTS.Network.Models
     {
         public string Email { get; set; }
         public string SecretKey { get; set; }
-        [MemoryPackIgnore] private const string Key = "qnn22n2us7g2bbna-aql11.e22111m1m";
 
         public SignInProvider GetSignInProvider()
         {
@@ -19,7 +18,7 @@ namespace MTS.Network.Models
 
         public async Task<LoginResult> Login(Client client)
         {
-            if (SecretKey != Key)
+            if (SecretKey != ILogin.Key)
             {
                 throw new InvalidException(Strings.AdminSecretKeyInvalid);
             }
@@ -33,16 +32,7 @@ namespace MTS.Network.Models
             {
                 throw new InvalidException(Strings.AdminGoogleAccountNotFound);
             }
-
-            var userId = account.UserId;
-            var characterDatas = await db.Characters
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Progression)
-                .Include(x => x.Appearance)
-                .AsSplitQuery()
-                .ToListAsync();
-            account.UserData.CharacterDatas = characterDatas;
+            await account.UserData.LoadCharacterDatas(db);
             var userData = account.UserData;
             return new LoginResult()
             {

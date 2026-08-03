@@ -24,15 +24,7 @@ public partial class LoginGuest : ILogin
             .FirstOrDefaultAsync(x => x.Username == Username);
         if (account != null)
         {
-            var userId = account.UserId;
-            var characterDatas =  await db.Characters
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Progression)
-                .Include(x => x.Appearance)
-                .AsSplitQuery()
-                .ToListAsync();
-            account.UserData.CharacterDatas = characterDatas;
+            await account.UserData.LoadCharacterDatas(db);
             return account.UserData;
         }
 

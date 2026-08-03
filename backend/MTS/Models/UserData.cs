@@ -44,7 +44,18 @@ public class UserData : IMemorySerializable<UserData>
         }
         dirty = false;
     }
-
+    public async Task<List<CharacterData>> LoadCharacterDatas(AppDbContext db)
+    {
+        var characterDatas = await db.Characters
+            .AsNoTracking()
+            .Where(x => x.UserId == Id)
+            .Include(x => x.Progression)
+            .Include(x => x.Appearance)
+            .AsSplitQuery()
+            .ToListAsync();
+        CharacterDatas = characterDatas;
+        return characterDatas;
+    }
     public async Task UpdateLogin()
     {
         LastLogin = DateTime.UtcNow;
