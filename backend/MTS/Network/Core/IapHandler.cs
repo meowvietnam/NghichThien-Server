@@ -87,13 +87,13 @@ namespace MTS.Network.Core
             }
             else if (tag == MessageTag.ExchangeMoneyVipRequest)
             {
+                var amount = reader.Read<int>();
                 ExchangeMoneyVipResult result = null!;
                 try
                 {
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;
-                        var amount = reader.Read<int>();
                         result = charData.ExchangeMoneyVipForLinhThach(amount);
                     }
                 }

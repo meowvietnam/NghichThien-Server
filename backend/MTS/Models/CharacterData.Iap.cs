@@ -198,8 +198,8 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.MoneyVipInvalid);
         }
-
-        var linhThach = Stats.LinhThach + amount * 100;
+        
+        var linhThach = (int)Math.Min(int.MaxValue, Stats.LinhThach + amount * 100L);
         Stats.SetLinhThach(linhThach);
         var moneyVip = MoneyVip - amount;
         SetMoneyVip(moneyVip);

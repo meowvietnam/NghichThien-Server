@@ -334,6 +334,7 @@ namespace MTS.Network.Core
 
         private async Task<CharacterData> LoadEnemyCombat()
         {
+            
             int point;
             int level;
             int charId;
@@ -348,7 +349,8 @@ namespace MTS.Network.Core
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
-            var enemyCharId =
+
+            var enemyCharId = 
                 await db.ArenaManagers
                     .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
                     .OrderBy(x => x.CharData.Progression.Level >= level ? 0 : 1)
