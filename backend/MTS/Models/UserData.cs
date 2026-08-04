@@ -60,6 +60,8 @@ public class UserData : IMemorySerializable<UserData>
     {
         LastLogin = DateTime.UtcNow;
         await using var db = await Program.CreateDbAsync();
-        await db.Users.ExecuteUpdateAsync(x => x.SetProperty(u => u.LastLogin, LastLogin));
+        await db.Users
+            .Where(x => x.Id == Id)
+            .ExecuteUpdateAsync(x => x.SetProperty(u => u.LastLogin, LastLogin));
     }
 }
