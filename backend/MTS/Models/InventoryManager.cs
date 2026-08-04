@@ -348,6 +348,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
 
     public RewardItems AddToInventory(List<ItemRef> rewards)
     {
+        rewards = rewards.Select(x => x.DeepClone()).ToList();
         lock (inventoryLock)
         {
             var result = new RewardItems();

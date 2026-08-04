@@ -62,8 +62,8 @@ namespace MTS.Network.Core
                 finally
                 {
                     Log.Information(
-                        "IAP purchase handled; ClientId={ClientId}, CharacterId={CharacterId}, Success={Success}, Store={Store}, ProductId={ProductId}",
-                        client.Id, client.CharacterData?.Id, result?.Success, request.Store, request.ProductId);
+                        "IAP purchase handled; ClientId={ClientId}, CharacterId={CharacterId}, Success={Success}, Store={Store}, ProductId={ProductId}, Message={Message}",
+                        client.Id, client.CharacterData?.Id, result?.Success, request.Store, request.ProductId, result?.Message);
                     client.Send(MessageTag.PurchaseIapResult, result);
                 }
             }

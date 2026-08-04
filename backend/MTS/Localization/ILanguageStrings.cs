@@ -103,12 +103,16 @@ public abstract class ILanguageStrings
     public abstract string MainQuestNotCompleted { get; }
     public abstract string DailyQuestRewardAlreadyClaimed { get; }
     public abstract string DailyQuestNotFound { get; }
+    public abstract string SideQuestAdRewardNotAvailable { get; }
+    public abstract string SideQuestAdRewardAlreadyClaimed { get; }
 
     // Combat validation messages
     public abstract string HackerLevelEnemyCombat { get; }
     public abstract string HackerHP { get; }
     public abstract string CombatAlreadyInProgress { get; }
     public abstract string CombatSessionNotFound { get; }
+    public abstract string CombatSessionInvalid { get; }
+    public abstract string CombatAdRewardNotAvailable { get; }
     public abstract string HackerLevelBossCombat { get; }
     public abstract string HackerSkillCombat { get; }
 

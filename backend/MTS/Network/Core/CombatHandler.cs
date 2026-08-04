@@ -20,17 +20,32 @@ namespace MTS.Network.Core
         [
             MessageTag.ResultCombat, MessageTag.LoadCharCombat,
             MessageTag.LoadCharCombatArena, MessageTag.LoadRankRequest,
-            MessageTag.ClaimRankRewardRequest
+            MessageTag.ClaimRankRewardRequest,
+            MessageTag.WatchAdsCombat
         ];
 
         private readonly object combatLock = new();
         private CombatSession? combatSession;
+
         public CombatHandler(Client client)
         {
             this.client = client;
         }
 
         public MessageTag[] HandleTag => handler;
+
+        private void EnsureInCombat()
+        {
+            if (combatSession == null)
+            {
+                throw new InvalidException(Strings.CombatSessionNotFound);
+            }
+
+            if (combatSession.Status != CombatStatus.InCombat)
+            {
+                throw new InvalidException(Strings.CombatSessionInvalid);
+            }
+        }
 
         public void Handle(Message<MessageTag> message)
         {
@@ -42,15 +57,12 @@ namespace MTS.Network.Core
                 ResultCombatResult result = null;
                 try
                 {
-                    if (combatSession == null)
-                    {
-                        throw new InvalidException(Strings.CombatSessionNotFound);
-                    }
+                    EnsureInCombat();
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;
                         result = charData.ResultCombat(request);
-                        EndCombat();
+                        EndCombat(result.Reward);
                     }
                 }
                 catch (InvalidException e)
@@ -66,6 +78,7 @@ namespace MTS.Network.Core
                     client.Send(MessageTag.ResultCombatResult, result);
                 }
             }
+
             else if (tag == MessageTag.LoadCharCombat)
             {
                 LoadCharCombatResult result = null;
@@ -114,6 +127,7 @@ namespace MTS.Network.Core
                             adsHandler.SendAds(ads);
                             return;
                         }
+
                         SendLoadCharCombatArena();
                     }
                 }
@@ -163,6 +177,56 @@ namespace MTS.Network.Core
                     client.MemSend(MessageTag.ClaimRankRewardRequest, result);
                 }
             }
+            else if (tag == MessageTag.WatchAdsCombat)
+            {
+                try
+                {
+                    lock (client.CharacterLock)
+                    {
+                        if (combatSession == null)
+                        {
+                            throw new InvalidException(Strings.CombatSessionNotFound);
+                        }
+
+                        if (!combatSession.CanClaim())
+                        {
+                            throw new InvalidException(Strings.CombatAdRewardNotAvailable);
+                        }
+
+                        if (client.CharacterData.IsNoAds)
+                        {
+                            ClaimCombatAds();
+                        }
+                        else
+                        {
+                            var adsHandler = client.GetHandler<AdsHandler>();
+                            var ads = new RewardCombatAds("RewardCombatAds", "Xem quảng cáo để nhận thưởng x2", client);
+                            adsHandler.SendAds(ads);
+                        }
+                    }
+                }
+                catch (InvalidException e)
+                {
+                    client.MemSend(MessageTag.WatchAdsCombatResult, new WatchAdsCombatResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    });
+                }
+            }
+        }
+
+        public void ClaimCombatAds()
+        {
+            combatSession.HasClaimedAdReward = true;
+            var reward = combatSession.RewardSnapshot;
+            var charData = client.CharacterData;
+            charData.Claim(reward);
+            client.MemSend(MessageTag.WatchAdsCombatResult, new WatchAdsCombatResult()
+            {
+                Success = true,
+                Reward = reward,
+            });
         }
 
         public void SendLoadCharCombatArena()
@@ -182,9 +246,11 @@ namespace MTS.Network.Core
                         {
                             throw new InvalidException(Strings.NotEnoughMoneyVip);
                         }
+
                         charData.SetMoneyVip(remainingMoneyVip);
                         charData.AddSpendMoneyVipOnline(cost, SpendFor.Arena);
                     }
+
                     var enemyData = LoadEnemyCombat().GetAwaiter().GetResult();
                     var enemy = enemyData == null ? null : new CharacterSnapshot(enemyData);
                     var arena = charData.ArenaManager;
@@ -215,6 +281,7 @@ namespace MTS.Network.Core
                 client.Send(MessageTag.LoadCharCombatArenaResult, result);
             }
         }
+
         private (MatchMakingState state, int cost) GetMatchMakingState(CharacterData charData)
         {
             var cost = 0;
@@ -236,8 +303,10 @@ namespace MTS.Network.Core
                     cost = GameConfig.MatchMakingCost;
                     break;
             }
+
             return (matchMakingState, cost);
         }
+
         private LoadRankResult LoadRank()
         {
             var nextReload = ArenaRankService.GetDelayToGrantRewards();
@@ -250,6 +319,7 @@ namespace MTS.Network.Core
                 var charData = client.CharacterData;
                 (matchMakingState, cost) = GetMatchMakingState(charData);
             }
+
             var result = new LoadRankResult()
             {
                 Success = true,
@@ -261,6 +331,7 @@ namespace MTS.Network.Core
             };
             return result;
         }
+
         private async Task<CharacterData> LoadEnemyCombat()
         {
             int point;
@@ -273,6 +344,7 @@ namespace MTS.Network.Core
                 level = charData.Progression.Level;
                 charId = charData.Id;
             }
+
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
@@ -322,13 +394,10 @@ namespace MTS.Network.Core
         {
             lock (combatLock)
             {
-                if (combatSession != null)
-                {
-                    throw new InvalidException(Strings.CombatAlreadyInProgress);
-                }
-
+                EnsureNoCombatSession();
                 combatSession = new CombatSession()
                 {
+                    Status = CombatStatus.InCombat,
                     Type = type,
                     Level = level,
                 };
@@ -339,20 +408,22 @@ namespace MTS.Network.Core
         {
             lock (combatLock)
             {
-                if (combatSession != null)
+                if (combatSession is { Status: CombatStatus.InCombat })
                 {
                     throw new InvalidException(Strings.CombatAlreadyInProgress);
                 }
             }
         }
 
-        private void EndCombat()
+        private void EndCombat(RewardSnapshot resultReward)
         {
             lock (combatLock)
             {
-                combatSession = null;
+                combatSession.Status = CombatStatus.End;
+                combatSession.RewardSnapshot = resultReward;
             }
         }
+
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
             lock (client.CharacterLock)
@@ -362,6 +433,7 @@ namespace MTS.Network.Core
                 {
                     return;
                 }
+
                 CombatSession session;
                 lock (combatLock)
                 {
@@ -372,6 +444,7 @@ namespace MTS.Network.Core
 
                     session = combatSession;
                 }
+
                 try
                 {
                     var stats = charData.Stats;
@@ -389,12 +462,13 @@ namespace MTS.Network.Core
                 }
                 catch (InvalidException e)
                 {
-                    Log.Warning(e, "Failed to resolve combat on disconnect; ClientId={ClientId}, CharacterId={CharacterId}, CombatType={CombatType}, CombatLevel={CombatLevel}",
+                    Log.Warning(e,
+                        "Failed to resolve combat on disconnect; ClientId={ClientId}, CharacterId={CharacterId}, CombatType={CombatType}, CombatLevel={CombatLevel}",
                         client.Id, charData.Id, session.Type, session.Level);
                 }
                 finally
                 {
-                    EndCombat();
+                    EndCombat(null);
                 }
             }
         }

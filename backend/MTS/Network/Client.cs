@@ -91,12 +91,6 @@ public class Client : ClientConnection, IRequester<MessageTag>
     {
         try
         {
-            if (IsCharacterSelected())
-            {
-                Log.Information(
-                    "Player disconnected; ClientId={ClientId}, UserId={UserId}, CharacterId={CharacterId}, CharacterName={CharacterName}",
-                    Id, UserData?.Id, CharacterData?.Id, CharacterData?.Name);
-            }
             await SaveChanges();
             TcpServer.Instance.Remove(this);
         }
@@ -185,7 +179,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
             CharacterData = characterData;
             MailManager = new MailManager(characterData, this);
         }
-
+        Log.Information("Player online: {Name}", CharacterData.Name);
         return characterData;
     }
 

@@ -1,20 +1,10 @@
 using MTS.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using MTS.Data;
 using MTS.Game;
-using MTS.Game.ItemProvider;
 using MTS.Game.LuyenDan;
-using MTS.Game.Resources;
-using MTS.Game.Social;
+
 using MTS.Localization;
 using MTS.Network.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using MemoryPack;
-using MTS.IAP;
 using MTS.Game.Combat;
-using MTS.Network;
 
 namespace MTS.Models;
 
@@ -59,30 +49,16 @@ public partial class CharacterData
             throw new InvalidException(Strings.HackerMainQuest);
         }
 
-        int linhThach = questRS.rewardRef.Money;
-        int moneyVip = questRS.rewardRef.MoneyVip;
-        var itemRefs = questRS.rewardRef.ItemRefs;
-        if (linhThach > 0)
-        {
-            Stats.SetLinhThach(Stats.LinhThach + linhThach);
-        }
-
-        if (moneyVip > 0)
-        {
-            SetMoneyVip(moneyVip + MoneyVip);
-        }
-
-        if (itemRefs.Count > 0)
-        {
-            InventoryManager.AddToInventory(itemRefs);
-        }
-
+        Claim(questRS.rewardRef);
         int newMainQuest = QuestManager.CurrentMainQuest + 1;
         QuestManager.SetCurrentMainQuest(newMainQuest);
         return new CompleteMainQuestResult()
         {
             Success = true,
             CurrentMainQuest = newMainQuest,
+            Money = Stats.LinhThach,
+            MoneyVip = MoneyVip,
+            RewardItems = questRS.rewardRef.RewardItems
         };
     }
 
@@ -199,12 +175,13 @@ public partial class CharacterData
                 int monsterLevel = request.CurrentLevelEnemy;
                 var listItemRef = GenerateMonsterRewards(monsterLevel);
                 listItemRef = ConsolidateItemRefs(listItemRef);
-                InventoryManager.AddToInventory(listItemRef);
+                var rewardItems = InventoryManager.AddToInventory(listItemRef);
                 newReward = new RewardSnapshot
                 {
                     Money = linhThach,
                     MoneyVip = 0,
-                    ItemRefs = listItemRef
+                    RewardItems = rewardItems,
+                    ItemRefs = listItemRef,
                 };
             }
             else if (request.TypeResultCombat == ETypeResultCombat.LoseByRun)
@@ -385,5 +362,16 @@ public partial class CharacterData
         }
 
         return weights.Keys.Last();
+    }
+
+    public void Claim(RewardSnapshot reward)
+    {
+        SetMoneyVip(reward.MoneyVip + MoneyVip);
+        Stats.SetLinhThach(reward.Money + Stats.LinhThach);
+        if (reward.ItemRefs != null)
+        {
+            var rewardItems = InventoryManager.AddToInventory(reward.ItemRefs);
+            reward.RewardItems = rewardItems;
+        }
     }
 }

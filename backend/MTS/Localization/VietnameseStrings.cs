@@ -90,10 +90,14 @@ public class VietnameseStrings : ILanguageStrings
     public override string MainQuestNotCompleted => "Nhiệm vụ chính chưa hoàn thành!";
     public override string DailyQuestRewardAlreadyClaimed => "Phần thưởng nhiệm vụ hằng ngày đã được nhận!";
     public override string DailyQuestNotFound => "Nhiệm vụ hằng ngày không tồn tại!";
+    public override string SideQuestAdRewardNotAvailable => "Phần thưởng quảng cáo của nhiệm vụ phụ chưa sẵn sàng!";
+    public override string SideQuestAdRewardAlreadyClaimed => "Phần thưởng quảng cáo của nhiệm vụ phụ đã được nhận!";
     public override string HackerLevelEnemyCombat => "Cấp độ quái trong trận đấu không hợp lệ!";
     public override string HackerHP => "Sinh mệnh sau trận đấu không hợp lệ!";
     public override string CombatAlreadyInProgress => "Đang trong trận chiến, không thể bắt đầu trận mới!";
     public override string CombatSessionNotFound => "Không tìm thấy phiên chiến đấu đang diễn ra!";
+    public override string CombatSessionInvalid => "Trạng thái phiên chiến đấu không hợp lệ!";
+    public override string CombatAdRewardNotAvailable => "Phần thưởng quảng cáo của trận chiến chưa sẵn sàng hoặc đã được nhận!";
     public override string HackerLevelBossCombat => "Cấp độ Boss trong trận đấu không hợp lệ!";
     public override string HackerSkillCombat => "Thần thông sử dụng trong trận đấu không hợp lệ!";
     public override string HackerEquipment => "Dữ liệu trang bị không hợp lệ!";

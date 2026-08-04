@@ -93,10 +93,14 @@ public class EnglishStrings : ILanguageStrings
     public override string MainQuestNotCompleted => "The main quest is not completed!";
     public override string DailyQuestRewardAlreadyClaimed => "The daily quest reward has already been claimed!";
     public override string DailyQuestNotFound => "Daily quest does not exist!";
+    public override string SideQuestAdRewardNotAvailable => "Side quest ad reward is not available yet!";
+    public override string SideQuestAdRewardAlreadyClaimed => "Side quest ad reward has already been claimed!";
     public override string HackerLevelEnemyCombat => "Enemy level in combat is invalid!";
     public override string HackerHP => "Post-combat HP is invalid!";
     public override string CombatAlreadyInProgress => "A combat session is already in progress!";
     public override string CombatSessionNotFound => "No active combat session was found!";
+    public override string CombatSessionInvalid => "Combat session state is invalid!";
+    public override string CombatAdRewardNotAvailable => "Combat ad reward is not available or has already been claimed!";
     public override string HackerLevelBossCombat => "Boss level in combat is invalid!";
     public override string HackerSkillCombat => "Skill used in combat is invalid!";
     public override string HackerEquipment => "Equipment data is invalid!";

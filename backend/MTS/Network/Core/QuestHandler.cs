@@ -1,4 +1,5 @@
 ﻿using MTS.Exceptions;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
 using Network;
@@ -6,6 +7,12 @@ using Network.Extensions;
 
 namespace MTS.Network.Core
 {
+    public class QuestCompleted
+    {
+        public bool HasClaimAds { get; set; }
+        public int Money { get; set; }
+        public int MoneyVip { get; set; }
+    }
     public class QuestHandler : IClientHandler
     {
         private Client client;
@@ -19,11 +26,11 @@ namespace MTS.Network.Core
         [
             MessageTag.CompleteMainQuest, MessageTag.CompleteSideQuest,
             MessageTag.GetDailyQuestRequest, MessageTag.DoneDailyQuestRequest,
-            MessageTag.ReloadDailyQuest,
+            MessageTag.ReloadDailyQuest, MessageTag.WatchAdsSideQuest
         ];
 
         public MessageTag[] HandleTag => handler;
-
+        private QuestCompleted lastQuestCompleted;
         public void Handle(Message<MessageTag> message)
         {
             var tag = message.Tag;
@@ -63,6 +70,11 @@ namespace MTS.Network.Core
                     {
                         var charData = client.CharacterData;
                         result = charData.CompleteSideQuest(request);
+                        lastQuestCompleted = new QuestCompleted()
+                        {
+                            Money = result.LinhThachRandom,
+                            MoneyVip = result.MoneyVipRandom,
+                        };
                     }
                 }
                 catch (InvalidException e)
@@ -138,8 +150,57 @@ namespace MTS.Network.Core
                     adsHandler.SendAds(ads);
                 }
             }
-        }
+            else if (tag == MessageTag.WatchAdsSideQuest)
+            {
+                try
+                {
+                    if (lastQuestCompleted == null)
+                    {
+                        throw new InvalidException(Strings.SideQuestAdRewardNotAvailable);
+                    }
+                    if (lastQuestCompleted.HasClaimAds)
+                    {
+                        throw new InvalidException(Strings.SideQuestAdRewardAlreadyClaimed);
+                    }
 
+                    if (client.CharacterData.IsNoAds)
+                    {
+                        ClaimSideQuestAds();
+                    }
+                    else
+                    {
+                        var showAds = new WatchAdsSideQuest("AdsSideQuest", "Xem quảng cáo để nhận thưởng x2", client);
+                        var adsHandler = client.GetHandler<AdsHandler>();
+                        adsHandler.SendAds(showAds);
+                    }
+                }
+                catch (InvalidException e)
+                {
+                    var result = new WatchAdsSideQuestResult()
+                    {
+                        Success = false,
+                        Message = e.Message
+                    };
+                    client.MemSend(MessageTag.WatchAdsSideQuestResult, result);
+                }
+            }
+        }
+        public void ClaimSideQuestAds()
+        {
+            lastQuestCompleted.HasClaimAds = true;
+            var charData = client.CharacterData;
+            charData.SetMoneyVip(lastQuestCompleted.MoneyVip + charData.MoneyVip);
+            charData.Stats.SetLinhThach(lastQuestCompleted.Money + charData.Stats.LinhThach);
+            var result = new WatchAdsSideQuestResult()
+            {
+                Success = true,
+                AddMoney =  lastQuestCompleted.Money,
+                AddMoneyVip =  lastQuestCompleted.MoneyVip,
+                MoneyVip =  charData.MoneyVip,
+                Money = charData.Stats.LinhThach,
+            };
+            client.MemSend(MessageTag.WatchAdsSideQuestResult, result);
+        }
         public void SendReloadDailyQuest(EDailyQuest eDailyQuest)
         {
             ReloadDailyQuestResult result = null;
@@ -181,5 +242,6 @@ namespace MTS.Network.Core
         public void OnLeave()
         {
         }
+
     }
 }

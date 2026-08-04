@@ -98,10 +98,14 @@ public static class Strings
     public static string MainQuestNotCompleted => _current.MainQuestNotCompleted;
     public static string DailyQuestRewardAlreadyClaimed => _current.DailyQuestRewardAlreadyClaimed;
     public static string DailyQuestNotFound => _current.DailyQuestNotFound;
+    public static string SideQuestAdRewardNotAvailable => _current.SideQuestAdRewardNotAvailable;
+    public static string SideQuestAdRewardAlreadyClaimed => _current.SideQuestAdRewardAlreadyClaimed;
     public static string HackerLevelEnemyCombat => _current.HackerLevelEnemyCombat;
     public static string HackerHP => _current.HackerHP;
     public static string CombatAlreadyInProgress => _current.CombatAlreadyInProgress;
     public static string CombatSessionNotFound => _current.CombatSessionNotFound;
+    public static string CombatSessionInvalid => _current.CombatSessionInvalid;
+    public static string CombatAdRewardNotAvailable => _current.CombatAdRewardNotAvailable;
     public static string HackerLevelBossCombat => _current.HackerLevelBossCombat;
     public static string HackerSkillCombat => _current.HackerSkillCombat;
     public static string HackerEquipment => _current.HackerEquipment;

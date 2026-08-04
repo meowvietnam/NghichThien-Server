@@ -7,8 +7,9 @@ namespace MTS.Game
     [MemoryPackable]
     public partial class RewardSnapshot
     {
-        public List<ItemRef> ItemRefs = new();
-        public int Money = 0;
-        public int MoneyVip = 0;
+        public RewardItems RewardItems;
+        public List<ItemRef> ItemRefs;
+        public int Money;
+        public int MoneyVip;
     }
 }

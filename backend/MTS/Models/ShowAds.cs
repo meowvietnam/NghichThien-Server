@@ -1,5 +1,6 @@
 using MemoryPack;
 using MTS.Network;
+using MTS.Network.Models;
 
 namespace MTS.Models
 {
@@ -8,13 +9,17 @@ namespace MTS.Models
         Arena,
         MoneyVip,
         ReloadTask,
-        ReloadShop
+        ReloadShop,
+        RewardCombat,
+        SideQuest
     }
     [MemoryPackable]
     [MemoryPackUnion(0, typeof(MTS.Models.ArenaAds))]
     [MemoryPackUnion(1, typeof(MoneyVipAds))]
     [MemoryPackUnion(2, typeof(ReloadTaskAds))]
     [MemoryPackUnion(3, typeof(ReloadShopAds))]
+    [MemoryPackUnion(4, typeof(RewardCombatAds))]
+    [MemoryPackUnion(5, typeof(WatchAdsSideQuest))]
     public abstract partial class ShowAds
     {
         [MemoryPackConstructor]
