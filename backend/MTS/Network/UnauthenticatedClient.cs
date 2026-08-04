@@ -19,7 +19,9 @@ public class UnauthenticatedClient : ClientConnection
 
     private class CheckVersionState(UnauthenticatedClient client) : IMessageState<MessageTag, MessageState>
     {
-        private static readonly string[] acceptVersions = ["apk_v1.2.1", "ios_v1.2.1"];
+        private static readonly string[] acceptVersions = [
+            "apk_v1.2.2", "ios_v1.2.2"
+        ];
 
         public void OnEnter()
         {
@@ -33,7 +35,7 @@ public class UnauthenticatedClient : ClientConnection
             {
                 var version = reader.Read();
                 var success = acceptVersions.Contains(version);
-                var msg = success ? $"Phiên bản hợp lệ" : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
+                var msg = success ? $"[3] Game đang trong giai đoạn Thử nghiệm (Beta). Dữ liệu nhân vật sẽ được Reset khi ra mắt bản chính thức (Theo dõi trang Nghịch Thiên đễ nhận những thông báo mới nhát về game)" : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {
                     Success = success,
