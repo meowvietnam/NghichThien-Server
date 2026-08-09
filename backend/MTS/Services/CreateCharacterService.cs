@@ -25,7 +25,7 @@ public class CreateCharacterService
 
     public async Task SetName(string name)
     {
-        await ValidateName(name);
+        name = await ValidateName(name);
         Char.Name = name;
     }
 
@@ -84,7 +84,7 @@ public class CreateCharacterService
         Char.Appearance.Colors = newColors;
     }
 
-    private async Task ValidateName(string name)
+    private async Task<string> ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -108,6 +108,7 @@ public class CreateCharacterService
         {
             throw new InvalidException(Strings.NameExisted);
         }
+        return name;
     }
 
     private List<SelectionModel> Clean(List<SelectionModel> models)
@@ -341,7 +342,7 @@ public class CreateCharacterService
 
         var userId = user.Id;
         await using var db = await Program.CreateDbAsync();
-        await ValidateName(Char.Name);
+        Char.Name = await ValidateName(Char.Name);
         Char.UserId = userId;
         Char.CreatedAt = DateTime.UtcNow;
         Char.QuestManager.InitDailyQuests();
@@ -428,12 +429,10 @@ public class CreateCharacterService
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;
-        await Startup.SendMailWelcome(Char);
         var inventoryManager = Char.InventoryManager;
         inventoryManager.CharacterData = Char;
         inventoryManager.Init();
         await inventoryManager.Load(db);
-
         user.CharacterDatas.Add(Char);
         return Char;
     }

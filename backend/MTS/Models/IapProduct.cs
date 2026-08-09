@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using MemoryPack;
 using MTS.IAP;
 
@@ -14,6 +15,12 @@ public partial class IapProduct
     [MemoryPackIgnore]
     public IapProductType ActualProductType { get; set; }
     public Store Store { get; set; }
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public IIapReward Reward { get; set; }
     public bool IsActive { get; set; }
+    [MemoryPackIgnore]
+    public string? Name { get; set; }
+    [MemoryPackIgnore]
+    public string? Description { get; set; }
 }

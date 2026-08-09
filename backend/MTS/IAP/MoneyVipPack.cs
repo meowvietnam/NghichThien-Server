@@ -21,4 +21,15 @@ public partial class MoneyVipPack : IIapReward
     {
         purchase.MoneyVipSnapshot += MoneyVip; 
     }
+
+    public List<IMailReward> GetMailRewards()
+    {
+        return new List<IMailReward>()
+        {
+            new MailRewardMoneyVip()
+            {
+                MoneyVip = MoneyVip,
+            }
+        };
+    }
 }

@@ -4,6 +4,7 @@ public class VietnameseStrings : ILanguageStrings
 {
     public override string LoginSuccess => "Đăng nhập thành công!";
     public override string GoogleLoginInvalid => "Đăng nhập Google không hợp lệ hoặc đã hết hạn!";
+    public override string GoogleAccountNotFound => "Không tìm thấy tài khoản Google!";
     public override string AdminSecretKeyInvalid => "Khóa bí mật admin không hợp lệ!";
     public override string AdminGoogleAccountNotFound => "Không tìm thấy tài khoản Google admin!";
     public override string NotLoggedIn => "Bạn chưa đăng nhập!";
@@ -112,6 +113,9 @@ public class VietnameseStrings : ILanguageStrings
     public override string IapPurchaseAlreadyProcessed => "Giao dịch IAP đã được xử lý!";
     public override string IapStoreNotSupported => "Cửa hàng IAP không được hỗ trợ!";
     public override string IapProductNotFound => "Gói IAP không tồn tại hoặc đã ngừng bán!";
+    public override string PaymentOrderNotFound => "Không tìm thấy đơn thanh toán!";
+    public override string PaymentAmountInvalid => "Số tiền thanh toán không hợp lệ!";
+    public override string PaymentOrderStatusInvalid => "Trạng thái đơn thanh toán không hợp lệ!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
     public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
     public override string ShopTypeInvalid => "Loại cửa hàng không hợp lệ!";
@@ -123,6 +127,14 @@ public class VietnameseStrings : ILanguageStrings
     public override string RetreatDurationInvalid => "Thời gian tu luyện phải ít nhất 30 ngày!";
     public override string TamCanhBelowMinimum => "Tâm cảnh đã xuống dưới giới hạn cho phép!";
     public override string GiftItemQuantityInvalid => "Số lượng vật phẩm tặng không hợp lệ!";
+    public override string GiftcodeInvalid => "Giftcode không hợp lệ!";
+    public override string GiftcodeOutOfUses => "Giftcode đã hết lượt sử dụng!";
+    public override string GiftcodeExpired => "Giftcode đã hết hạn!";
+    public override string GiftcodeAlreadyUsed => "Bạn đã sử dụng giftcode này rồi!";
+    public override string GiftcodeUnavailable => "Giftcode hiện không thể sử dụng!";
+    public override string GiftcodeClaimSuccess => "Nhận giftcode thành công!";
+    public override string GiftcodeMailTitle => "Quà giftcode: {0}";
+    public override string GiftcodeMailContent => "Bạn đã nhận quà từ giftcode {0}.\n{1}";
     public override string LinhDanQuantityInvalid => "Số lượng đan dược sử dụng không hợp lệ!";
     public override string LinhDanNotFound => "Đan dược không tồn tại!";
     public override string LinhDanCombatBuffInvalid => "Không thể dùng đan chiến đấu để tăng thuộc tính trực tiếp!";

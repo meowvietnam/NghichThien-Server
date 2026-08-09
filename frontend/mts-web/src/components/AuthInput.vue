@@ -93,15 +93,14 @@ const messageId = computed(() => (message.value ? `${inputId.value}-message` : u
   display: grid;
   gap: 6px;
   color: #f9e9b8;
-  font-family: var(--font-cloud-shui-zhu);
+  font-family: var(--font-alegreya);
 }
 
 .auth-input__label {
   padding-inline: 10px;
   color: #424242;
-  font-size: clamp(15px, 1.3vw, 20px);
+  font-size: clamp(19px, 1.3vw, 26px);
   line-height: 1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
 }
 
 .auth-input__shell {
@@ -161,6 +160,7 @@ const messageId = computed(() => (message.value ? `${inputId.value}-message` : u
 
 .auth-input__control--password {
   letter-spacing: 0.08em;
+  -webkit-text-security: disc;
 }
 
 .auth-input__control::placeholder {
@@ -183,14 +183,14 @@ const messageId = computed(() => (message.value ? `${inputId.value}-message` : u
 .auth-input__message {
   min-height: 1em;
   padding-inline: 10px;
-  color: rgba(255, 239, 190, 0.82);
+  color: rgba(72, 72, 72, 0.82);
   font-size: clamp(12px, 1vw, 15px);
   line-height: 1.2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .auth-input__message--error {
-  color: #ffb9ad;
+  color: #f3421e;
+  font-size: clamp(14px, 1.2vw, 18px);
 }
 
 </style>

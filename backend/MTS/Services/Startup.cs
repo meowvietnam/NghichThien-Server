@@ -13,31 +13,6 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
-    }
-
-
-    public static Mail CreateWelcomeMail(CharacterData character)
-    {
-        var moneyVip = 100_000_000;
-        var mail = new Mail()
-        {
-            Title = $"Quà chào mừng",
-            Content = $"Chào mừng {character.Name} tham gia Nghịch Thiên!",
-            Rewards = new List<IMailReward>()
-            {
-                new MailRewardMoneyVip()
-                {
-                    MoneyVip = moneyVip,
-                }
-            }
-        };
-        return mail;
-    }
-
-    public static async Task SendMailWelcome(CharacterData characterData)
-    {
-        var mailManager = new MailManager(characterData, characterData.Client);
-        await mailManager.SendMail(CreateWelcomeMail(characterData));
+        await using var db = await Program.CreateDbAsync();
     }
 }

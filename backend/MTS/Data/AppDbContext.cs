@@ -45,6 +45,11 @@ public class AppDbContext : DbContext
     public DbSet<GachaManager> GachaManagers { get; private set; }
     public DbSet<AuctionHistory> AuctionHistories { get; private set; }
     public DbSet<LocalAccount> LocalAccounts { get; private set; }
+    public DbSet<Order> Orders { get; private set; }
+    public DbSet<Giftcode> GiftCodes { get; private set; }
+    public DbSet<GiftcodeUsed> GiftcodeUseds { get; private set; }
+    public DbSet<ReleaseDailyRewardClaim> ReleaseDailyRewardClaims { get; private set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -328,8 +333,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<IapPurchase>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.Store, x.PurchaseTokenHash })
-                .IsUnique();
             e.Property(x => x.PurchaseTokenHash)
                 .HasMaxLength(32);
             e.HasOne(x => x.Product)
@@ -414,7 +417,8 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.CharData)
                 .WithOne(x => x.GachaManager)
                 .HasForeignKey<GachaManager>(x => x.CharId)
-                .OnDelete(DeleteBehavior.Cascade);;
+                .OnDelete(DeleteBehavior.Cascade);
+            ;
         });
         modelBuilder.Entity<AuctionHistory>(e =>
         {
@@ -439,8 +443,60 @@ public class AppDbContext : DbContext
                 .HasForeignKey<LocalAccount>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        
-        
+
+        modelBuilder.Entity<Order>(e =>
+        {
+            e.HasKey(x => x.OrderId);
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId);
+            e.HasOne(x => x.Purchase)
+                .WithOne()
+                .HasForeignKey<Order>(x => x.PurchaseId);
+        });
+        modelBuilder.Entity<Giftcode>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Code).IsUnique();
+            e.Property(x => x.Rewards)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => ParseMailRewards(x));
+        });
+        modelBuilder.Entity<GiftcodeUsed>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.CodeId });
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Giftcode)
+                .WithMany()
+                .HasForeignKey(x => x.CodeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ReleaseDailyRewardClaim>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.RewardDay });
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private List<IMailReward> ParseMailRewards(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return null;
+        }
+
+        return MemoryPackSerializer.Deserialize<List<IMailReward>>(data);
     }
 
     private AuctionSession[] ParseSessions(byte[] data)
@@ -449,14 +505,17 @@ public class AppDbContext : DbContext
         {
             return null;
         }
+
         return MemoryPackSerializer.Deserialize<AuctionSession[]>(data);
     }
+
     private Shop ParseShop(byte[] data)
     {
         if (data == null || data.Length == 0)
         {
             return null;
         }
+
         return MemoryPackSerializer.Deserialize<Shop>(data);
     }
 }

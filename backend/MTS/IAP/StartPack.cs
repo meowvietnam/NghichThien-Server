@@ -49,4 +49,28 @@ public partial class StartPack : IIapReward
     {
         purchase.MoneyVipSnapshot += MoneyVip;
     }
+
+    public List<IMailReward> GetMailRewards()
+    {
+        return new List<IMailReward>()
+        {
+            new MailRewardMoneyVip()
+            {
+                MoneyVip = MoneyVip,
+            },
+            new MailRewardMoney()
+            {
+                Money = Money,
+            },
+            new MailRewardItem()
+            {
+                Item = new ItemRef()
+                {
+                    Type = ItemType.CongPhap,
+                    Id = CongPhapId,
+                    Count = 1,
+                }
+            }
+        };
+    }
 }

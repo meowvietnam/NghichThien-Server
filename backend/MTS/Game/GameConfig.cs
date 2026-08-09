@@ -19,7 +19,7 @@ namespace MTS.Game;
 
 public static class GameConfig
 {
-    public static readonly DateTimeOffset GameReleaseDate = new(2026, 7, 5, 0, 0, 0, Utc7);
+    public static readonly DateTimeOffset GameReleaseDate = new(2026, 8, 9, 0, 0, 0, Utc7);
     public static CharacterData CharacterTemplate { get; private set; }
     public static StepConfig StepConfig { get; private set; }
     public static SkinResources SkinResources { get; private set; }

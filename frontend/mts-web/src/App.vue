@@ -14,6 +14,7 @@
 import Footer from './components/Footer.vue'
 import Header from './components/Header.vue'
 import MainLogo from './components/MainLogo.vue'
+
 </script>
 
 <style scoped>
@@ -28,6 +29,7 @@ import MainLogo from './components/MainLogo.vue'
   background-position: center top;
   background-repeat: no-repeat;
   background-size: cover;
+  border-radius: 16px;
 }
 
 .content {

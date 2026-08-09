@@ -3,5 +3,6 @@ namespace MTS.IAP;
 public enum Store
 {
     GooglePlay,
-    AppStore
+    AppStore,
+    Web
 }

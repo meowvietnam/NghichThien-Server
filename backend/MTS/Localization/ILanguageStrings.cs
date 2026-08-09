@@ -5,6 +5,7 @@ public abstract class ILanguageStrings
     // Auth messages
     public abstract string LoginSuccess { get; }
     public abstract string GoogleLoginInvalid { get; }
+    public abstract string GoogleAccountNotFound { get; }
     public abstract string AdminSecretKeyInvalid { get; }
     public abstract string AdminGoogleAccountNotFound { get; }
     public abstract string NotLoggedIn { get; }
@@ -131,6 +132,9 @@ public abstract class ILanguageStrings
     public abstract string IapPurchaseAlreadyProcessed { get; }
     public abstract string IapStoreNotSupported { get; }
     public abstract string IapProductNotFound { get; }
+    public abstract string PaymentOrderNotFound { get; }
+    public abstract string PaymentAmountInvalid { get; }
+    public abstract string PaymentOrderStatusInvalid { get; }
     public abstract string MoneyVipInvalid { get; }
     public abstract string NotEnoughMoneyVip { get; }
 
@@ -146,6 +150,14 @@ public abstract class ILanguageStrings
     public abstract string RetreatDurationInvalid { get; }
     public abstract string TamCanhBelowMinimum { get; }
     public abstract string GiftItemQuantityInvalid { get; }
+    public abstract string GiftcodeInvalid { get; }
+    public abstract string GiftcodeOutOfUses { get; }
+    public abstract string GiftcodeExpired { get; }
+    public abstract string GiftcodeAlreadyUsed { get; }
+    public abstract string GiftcodeUnavailable { get; }
+    public abstract string GiftcodeClaimSuccess { get; }
+    public abstract string GiftcodeMailTitle { get; }
+    public abstract string GiftcodeMailContent { get; }
 
     // Linh Dan messages
     public abstract string LinhDanQuantityInvalid { get; }

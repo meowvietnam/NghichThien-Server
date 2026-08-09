@@ -13,11 +13,13 @@ using Newtonsoft.Json.Converters;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
 using MemoryPack;
+using MTS.Api.Services;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network.Models;
 using MTS.Services;
 using MTS.Utils;
+using PayOS;
 using Serilog;
 using Serilog.Events;
 
@@ -35,7 +37,7 @@ public static class Program
         Console.Title = "MTS Server";
         try
         {
-            bool enableSwagger = true;
+            bool enableSwagger = false;
             Console.OutputEncoding = Encoding.UTF8;
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
@@ -81,7 +83,6 @@ public static class Program
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                     };
                 });
-
             builder.Services.AddAuthorization();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -135,6 +136,17 @@ public static class Program
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();
+            builder.Services.AddSingleton(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                return new PayOSClient(
+                    configuration["PayOS:ClientID"]!,
+                    configuration["PayOS:ApiKey"]!,
+                    configuration["PayOS:ChecksumKey"]!
+                );
+            });
+            builder.Services.AddSingleton(new SnowflakeIdGenerator(1));
+            builder.Services.AddScoped<JwtService>();
             App = builder.Build();
             Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
             GameConfig.Init();

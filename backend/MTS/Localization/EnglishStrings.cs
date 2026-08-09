@@ -4,6 +4,7 @@ public class EnglishStrings : ILanguageStrings
 {
     public override string LoginSuccess => "Login successful!";
     public override string GoogleLoginInvalid => "Google login is invalid or expired!";
+    public override string GoogleAccountNotFound => "Google account was not found!";
     public override string AdminSecretKeyInvalid => "Admin secret key is invalid!";
     public override string AdminGoogleAccountNotFound => "Admin Google account was not found!";
     public override string NotLoggedIn => "You are not logged in!";
@@ -115,6 +116,9 @@ public class EnglishStrings : ILanguageStrings
     public override string IapPurchaseAlreadyProcessed => "IAP purchase has already been processed!";
     public override string IapStoreNotSupported => "IAP store is not supported!";
     public override string IapProductNotFound => "IAP product does not exist or is no longer available!";
+    public override string PaymentOrderNotFound => "Payment order was not found!";
+    public override string PaymentAmountInvalid => "Payment amount is invalid!";
+    public override string PaymentOrderStatusInvalid => "Payment order status is invalid!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
     public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
     public override string ShopTypeInvalid => "Shop type is invalid!";
@@ -126,6 +130,14 @@ public class EnglishStrings : ILanguageStrings
     public override string RetreatDurationInvalid => "Retreat duration must be at least 30 days!";
     public override string TamCanhBelowMinimum => "Mental state is below the allowed minimum!";
     public override string GiftItemQuantityInvalid => "Gift item quantity is invalid!";
+    public override string GiftcodeInvalid => "Giftcode is invalid!";
+    public override string GiftcodeOutOfUses => "Giftcode usage limit has been reached!";
+    public override string GiftcodeExpired => "Giftcode has expired!";
+    public override string GiftcodeAlreadyUsed => "You have already used this giftcode!";
+    public override string GiftcodeUnavailable => "Giftcode is currently unavailable!";
+    public override string GiftcodeClaimSuccess => "Giftcode claimed successfully!";
+    public override string GiftcodeMailTitle => "Giftcode reward: {0}";
+    public override string GiftcodeMailContent => "You received a reward from giftcode {0}.\n{1}";
     public override string LinhDanQuantityInvalid => "The Linh Dan quantity is invalid!";
     public override string LinhDanNotFound => "Linh Dan does not exist!";
     public override string LinhDanCombatBuffInvalid => "Combat pills cannot be used for direct stat buffs!";

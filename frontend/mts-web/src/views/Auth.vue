@@ -1,15 +1,4 @@
-<script setup lang="ts">
-import type { CSSProperties } from 'vue'
-import formImage from '../assets/sprites/sprite_01.png'
-import titleImage from '../assets/sprites/sprite_05.png'
-import orImage from '../assets/sprites/sprite_37.png'
-import GoogleSignInButton from '../components/GoogleSignInButton.vue'
-import AuthInput from '../components/AuthInput.vue'
-import Button from '../components/Button.vue'
-const formFrameStyle = {
-  '--form-frame': `url(${formImage})`,
-} as CSSProperties
-</script>
+
 
 <template>
   <section class="auth-view">
@@ -21,27 +10,110 @@ const formFrameStyle = {
         </div>
       </div>
 
-      <div class="form-content">
+      <form class="form-content" @submit.prevent="handleLogin">
         <AuthInput
+          v-model="username"
           label="Tài khoản"
-          type="email"
-          placeholder="Nhập email"
+          type="text"
+          placeholder="Nhập tài khoản"
+          autocomplete="username"
+          :disabled="isLoading"
         />
         <AuthInput
+          v-model="password"
           label="Mật khẩu"
           type="password"
           placeholder="Nhập mật khẩu"
+          autocomplete="current-password"
+          :disabled="isLoading"
         />
-        <Button type="submit">
-          Đăng nhập
+        <Button type="submit" :disabled="isLoading">
+          {{ isLoading ? 'Đang nhập' : 'Đăng nhập' }}
         </Button>
         <img :src="orImage" alt="" class="or-image" />
-        <GoogleSignInButton />
-      </div>
+        <GoogleSignInButton @loading-change="setLoading" />
+      </form>
     </div>
   </section>
+  <NotifyStack ref="notifyStack" />
+  <LoadingOverlay :visible="isLoading" />
 </template>
+<script setup lang="ts">
+import type { CSSProperties } from 'vue'
+import { ref } from 'vue'
+import api from '../api/axios'
+import formImage from '../assets/sprites/sprite_01.png'
+import titleImage from '../assets/sprites/sprite_05.png'
+import orImage from '../assets/sprites/sprite_37.png'
+import GoogleSignInButton from '../components/GoogleSignInButton.vue'
+import AuthInput from '../components/AuthInput.vue'
+import Button from '../components/Button.vue'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
+import NotifyStack from '../components/NotifyStack.vue'
 
+const formFrameStyle = {
+  '--form-frame': `url(${formImage})`,
+} as CSSProperties
+
+const username = ref('')
+const password = ref('')
+const isLoading = ref(false)
+const notifyStack = ref<InstanceType<typeof NotifyStack> | null>(null)
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const setLoading = (loading: boolean) => {
+  isLoading.value = loading
+}
+
+const handleLogin = async () => {
+  if (isLoading.value) {
+    return
+  }
+
+  if (!username.value.trim() || !password.value) {
+    notifyStack.value?.push({
+      title: 'Thông báo',
+      message: 'Vui lòng nhập đầy đủ tài khoản và mật khẩu.',
+    })
+    return
+  }
+
+  isLoading.value = true
+
+  try {
+    const res = (await api.post('/auth/login', {
+      username: username.value.trim(),
+      password: password.value,
+    })).data
+
+    if (!res.success) {
+      notifyStack.value?.push({
+        title: 'Thông báo',
+        message: res.message,
+      })
+      return
+    }
+
+    const data = res.data
+    notifyStack.value?.push({
+      title: 'Thông báo',
+      message: data.message,
+    })
+    localStorage.setItem('accessToken', data.token)
+    await delay(900)
+    window.location.href = '/'
+  } catch (error) {
+    console.error(error)
+    notifyStack.value?.push({
+      title: 'Thông báo',
+      message: 'Không thể đăng nhập, vui lòng thử lại.',
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+</script>
 <style scoped>
 .auth-view {
   flex: 1 1 auto;
@@ -107,14 +179,13 @@ const formFrameStyle = {
   overflow-wrap: anywhere;
   text-align: center;
   white-space: nowrap;
-  -webkit-text-stroke: 1px rgb(195, 149, 149);
   font-size: clamp(18px, 2.1vw, 32px);
   line-height: 1;
   font-family: var(--font-cloud-shui-zhu);
   color: #e3e01a;
   text-shadow:
-    0 2px 3px rgba(151, 75, 53, 0.7),
-    0 0 10px rgba(85, 82, 56, 0.34);
+    0 2px 3px rgba(99, 98, 98, 0.7),
+    0 0 10px rgba(255, 255, 255, 0.34);
 }
 .or-image {
   width: clamp(160px, 28vw, 300px);

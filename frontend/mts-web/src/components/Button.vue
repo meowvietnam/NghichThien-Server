@@ -51,7 +51,6 @@ const buttonStyle = {
   cursor: pointer;
   color: #fff7bd;
   font-family: var(--font-cloud-shui-zhu);
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.28));
   transition:
     filter 160ms ease,
     transform 160ms ease;
@@ -84,7 +83,7 @@ const buttonStyle = {
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: clamp(16px, 1.7vw, 24px);
+  font-size: clamp(11px, 1.7vw, 24px);
   line-height: 1;
   letter-spacing: 0;
 }

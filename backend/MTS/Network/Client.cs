@@ -5,6 +5,7 @@ using MTS.Models;
 using MTS.Network.ClientState;
 using MTS.Network.Core;
 using MTS.Network.Models;
+using MTS.Services;
 using Network;
 using Network.Extensions;
 using Serilog;
@@ -179,6 +180,20 @@ public class Client : ClientConnection, IRequester<MessageTag>
             CharacterData = characterData;
             MailManager = new MailManager(characterData, this);
         }
+
+        try
+        {
+            await ReleaseDailyRewardService.TrySendLoginRewardAsync(characterData, this);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "Failed to send release daily login reward; CharacterId={CharacterId}, CharacterName={CharacterName}",
+                characterData.Id,
+                characterData.Name);
+        }
+
         Log.Information("Player online: {Name}", CharacterData.Name);
         return characterData;
     }

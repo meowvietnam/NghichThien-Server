@@ -46,14 +46,18 @@ public class MailManager
 
     public async Task<Mail> SendMail(Mail mail)
     {
-        mail.CharId = characterData.Id;
         await using var db = await Program.CreateDbAsync();
+        return await SendMail(mail, db);
+    }
+
+    public async Task<Mail> SendMail(Mail mail, AppDbContext db)
+    {
+        mail.CharId = characterData.Id;
         var entity = await db.Mails.AddAsync(mail);
         await db.SaveChangesAsync();
         sender?.Send(MessageTag.NewMail, entity.Entity);
         return entity.Entity;
     }
-
     public async Task<long> ReadMail(long id)
     {
         try

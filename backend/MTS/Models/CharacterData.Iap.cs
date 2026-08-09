@@ -63,11 +63,12 @@ public partial class CharacterData
                 store, productId);
             return new VerifiedIapPurchase(product, verify, purchaseTokenHash, true);
         }
-
-        if (product.ProductType == IapProductType.NonConsumable)
+        var actualProductType = product.ActualProductType;
+        if (actualProductType == IapProductType.NonConsumable)
         {
+            
             hasPurchased = await db.IapPurchases.AnyAsync(
-                x => x.Store == store && x.ProductId == product.Id,
+                x => x.Product.ActualProductType == actualProductType,
                 cancelToken);
             if (hasPurchased)
             {
@@ -170,9 +171,8 @@ public partial class CharacterData
         };
     }
 
-    public async Task<List<OwnerIapProduct>> GetProducts(Store store)
+    public async Task<List<OwnerIapProduct>> GetProducts(Store store, AppDbContext db)
     {
-        await using var db = await Program.CreateDbAsync();
         var iapProducts = await db.IapProducts
             .Where(x => x.IsActive && x.Store == store)
             .ToArrayAsync();
@@ -180,16 +180,25 @@ public partial class CharacterData
             .Where(x => x.CharId == Id)
             .Select(x => x.ProductId)
             .ToHashSetAsync();
+        var startPackHasPurchased = db.IapPurchases
+            .Where(x => x.CharId == Id)
+            .Any(x => x.Product.ActualProductType == IapProductType.NonConsumable);
         var ownerProducts = iapProducts
             .Select(x =>
             {
                 return new OwnerIapProduct()
                 {
                     Product = x,
-                    HasPurchased = purchasedProductIds.Contains(x.Id)
+                    HasPurchased = x.ActualProductType == IapProductType.NonConsumable ?
+                        startPackHasPurchased : purchasedProductIds.Contains(x.Id),
                 };
             }).ToList();
         return ownerProducts;
+    }
+    public async Task<List<OwnerIapProduct>> GetProducts(Store store)
+    {
+        await using var db = await Program.CreateDbAsync();
+        return await GetProducts(store, db);
     }
 
     public ExchangeMoneyVipResult ExchangeMoneyVipForLinhThach(int amount)

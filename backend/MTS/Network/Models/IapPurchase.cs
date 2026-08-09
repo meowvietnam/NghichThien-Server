@@ -15,7 +15,6 @@ public class IapPurchase
     public byte[] PurchaseTokenHash { get; set; }
     [ForeignKey(nameof(ProductId))]
     public IapProduct Product { get; set; }
-
     public long MoneyVipSnapshot { get; set; } = 0;
     public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
 }

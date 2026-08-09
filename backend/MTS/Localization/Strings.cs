@@ -12,6 +12,7 @@ public static class Strings
 
     public static string LoginSuccess => _current.LoginSuccess;
     public static string GoogleLoginInvalid => _current.GoogleLoginInvalid;
+    public static string GoogleAccountNotFound => _current.GoogleAccountNotFound;
     public static string AdminSecretKeyInvalid => _current.AdminSecretKeyInvalid;
     public static string AdminGoogleAccountNotFound => _current.AdminGoogleAccountNotFound;
     public static string NotLoggedIn => _current.NotLoggedIn;
@@ -120,6 +121,9 @@ public static class Strings
     public static string IapPurchaseAlreadyProcessed => _current.IapPurchaseAlreadyProcessed;
     public static string IapStoreNotSupported => _current.IapStoreNotSupported;
     public static string IapProductNotFound => _current.IapProductNotFound;
+    public static string PaymentOrderNotFound => _current.PaymentOrderNotFound;
+    public static string PaymentAmountInvalid => _current.PaymentAmountInvalid;
+    public static string PaymentOrderStatusInvalid => _current.PaymentOrderStatusInvalid;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
     public static string NotEnoughMoneyVip => _current.NotEnoughMoneyVip;
     public static string ShopTypeInvalid => _current.ShopTypeInvalid;
@@ -131,6 +135,14 @@ public static class Strings
     public static string RetreatDurationInvalid => _current.RetreatDurationInvalid;
     public static string TamCanhBelowMinimum => _current.TamCanhBelowMinimum;
     public static string GiftItemQuantityInvalid => _current.GiftItemQuantityInvalid;
+    public static string GiftcodeInvalid => _current.GiftcodeInvalid;
+    public static string GiftcodeOutOfUses => _current.GiftcodeOutOfUses;
+    public static string GiftcodeExpired => _current.GiftcodeExpired;
+    public static string GiftcodeAlreadyUsed => _current.GiftcodeAlreadyUsed;
+    public static string GiftcodeUnavailable => _current.GiftcodeUnavailable;
+    public static string GiftcodeClaimSuccess => _current.GiftcodeClaimSuccess;
+    public static string GiftcodeMailTitle => _current.GiftcodeMailTitle;
+    public static string GiftcodeMailContent => _current.GiftcodeMailContent;
     public static string LinhDanQuantityInvalid => _current.LinhDanQuantityInvalid;
     public static string HasFlagTienThienDiMach => "Sở hữu tiên thiên dị mạch";
     public static string HackerThanThucEndCombat => "Bạn đã hack vui lòng liên hệ Admin";
