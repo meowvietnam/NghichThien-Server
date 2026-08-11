@@ -33,7 +33,7 @@ import ToggleGroup from '../components/ToggleGroup.vue'
 import DownloadTab from './tabs/DownloadTab.vue'
 import GiftCodeTab from './tabs/GiftCodeTab.vue'
 import HomeTab from './tabs/HomeTab.vue'
-// import PaymentTab from './tabs/PaymentTab.vue'
+import PaymentTab from './tabs/PaymentTab.vue'
 const route = useRoute()
 const router = useRouter()
 const notify = (event: string) => {
@@ -89,7 +89,6 @@ const tab = computed<Tab>({
     set(value) {
         router.replace({
             query: {
-                ...route.query,
                 tab: value,
             },
         })
@@ -105,7 +104,7 @@ const currentTabComponent = computed(() => {
             return DownloadTab
 
         case 'purchase':
-            return null
+            return PaymentTab
 
         case 'giftcode':
             return GiftCodeTab

@@ -2,15 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Game;
 using MTS.Models;
 using MTS.Network;
-using MTS.Network.Models;
-using Network.Extensions;
 using static MTS.Utils.Utils;
 
 namespace MTS.Services;
 
 public static class ReleaseDailyRewardService
 {
-    private const int RewardDays = 8;
+    private const int RewardDays = 7;
     private const int MoneyVipReward = 1000;
     private static readonly TimeSpan Interval = TimeSpan.FromDays(1);
 
@@ -97,9 +95,9 @@ public static class ReleaseDailyRewardService
         return new Mail
         {
             CharId = charId,
-            Title = $"Quà release ngày {rewardDayIndex + 1}/{RewardDays}",
-            Content = $"Cảm ơn đạo hữu đã đăng nhập trong sự kiện release.\n"
-                      + $"Phần thưởng ngày {rewardDayIndex + 1}/{RewardDays}: {MoneyVipReward:N0} Tiên ngọc.",
+            Title = $"Quà phát hành ngày {rewardDayIndex + 1}",
+            Content = $"Cảm ơn đạo hữu đã đăng nhập trong sự kiện phát hành. "
+                      + $"Phần thưởng ngày {rewardDayIndex + 1}: {FormatCount(MoneyVipReward)} Tiên ngọc.",
             CreatedAt = DateTime.UtcNow,
             Rewards =
             [

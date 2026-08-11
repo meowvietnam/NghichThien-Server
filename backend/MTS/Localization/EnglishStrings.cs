@@ -119,6 +119,9 @@ public class EnglishStrings : ILanguageStrings
     public override string PaymentOrderNotFound => "Payment order was not found!";
     public override string PaymentAmountInvalid => "Payment amount is invalid!";
     public override string PaymentOrderStatusInvalid => "Payment order status is invalid!";
+    public override string PaymentOrderExpired => "Payment order has expired!";
+    public override string PaymentConfigInvalid => "Payment configuration is invalid!";
+    public override string PaymentWebhookInvalid => "Payment verification data is invalid!";
     public override string MoneyVipInvalid => "Invalid Tien Ngoc amount!";
     public override string NotEnoughMoneyVip => "Not enough Tien Ngoc!";
     public override string ShopTypeInvalid => "Shop type is invalid!";

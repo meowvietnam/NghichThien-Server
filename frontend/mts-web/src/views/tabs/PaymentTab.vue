@@ -5,6 +5,15 @@
             <h2 class="payment-title">Nạp tiên ngọc</h2>
         </div>
 
+        <div
+            v-if="paymentResultMessage"
+            class="payment-result-message"
+            :class="`payment-result-message--${paymentResultType}`"
+            role="status"
+        >
+            {{ paymentResultMessage }}
+        </div>
+
         <div v-if="latestOrder" class="payment-order-info" role="status">
             <div class="payment-order-main">
                 <span class="payment-order-status">
@@ -24,6 +33,21 @@
             <button class="payment-order-link" type="button" @click="openPaymentLink(latestOrder.link)">
                 Thanh toán
             </button>
+        </div>
+
+        <div v-if="activePromotions.length" class="promotion-strip" aria-label="Khuyến mãi">
+            <article
+                v-for="(promotion, index) in activePromotions"
+                :key="getPromotionKey(promotion, index)"
+                class="promotion-card"
+            >
+                <span class="promotion-label">Khuyến mãi</span>
+                <div class="promotion-copy">
+                    <strong class="promotion-name">{{ getPromotionName(promotion) }}</strong>
+                    <span class="promotion-description">{{ getPromotionDescription(promotion) }}</span>
+                </div>
+                <span class="promotion-time">{{ getPromotionTimeText(promotion) }}</span>
+            </article>
         </div>
 
         <div v-if="isLoading" class="payment-state">
@@ -107,8 +131,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CSSProperties } from 'vue'
+import { useRoute } from 'vue-router'
 
 import api from '../../api/axios'
 import NotifyStack from '../../components/NotifyStack.vue'
@@ -128,7 +153,7 @@ interface ApiResponse<T> {
     message?: string
 }
 
-interface PaymentPack {
+interface Product {
     id: number
     storeProductId: string
     price: number
@@ -139,7 +164,28 @@ interface PaymentPack {
     name: string
     description: string
 }
-
+interface Promotion {
+    id?: number
+    Id?: number
+    name?: string
+    Name?: string
+    description?: string
+    Description?: string
+    store?: string
+    Store?: string
+    active?: boolean
+    Active?: boolean
+    startDate?: string
+    StartDate?: string
+    endDate?: string
+    EndDate?: string
+}
+interface ProductData {
+    products?: Product[]
+    Products?: Product[]
+    promotions?: Promotion[]
+    Promotions?: Promotion[]
+}
 interface PaymentOrder {
     orderId: number | string
     productId: number
@@ -147,8 +193,9 @@ interface PaymentOrder {
     amount: number
     purchaseId: number | null
     link: string
-    status: string
+    status: string | number
     date: string
+    expireAt?: string
 }
 
 interface PaymentOrderInfo extends PaymentOrder {
@@ -179,26 +226,33 @@ const paymentStyle = {
     '--pack-card-background': `url(${packBackgroundImage})`,
 } as CSSProperties
 
-const packs = ref<PaymentPack[]>([])
+const packs = ref<Product[]>([])
+const promotions = ref<Promotion[]>([])
 const isLoading = ref(true)
 const errorMessage = ref('')
 const payingId = ref<number | null>(null)
 const latestOrder = ref<PaymentOrderInfo | null>(null)
+const paymentResultMessage = ref('')
+const paymentResultType = ref<'success' | 'error'>('success')
 const expandedDescriptions = ref<Record<number, boolean>>({})
 const notifyStack = ref<InstanceType<typeof NotifyStack> | null>(null)
+const route = useRoute()
+let paymentResultTimer: ReturnType<typeof setTimeout> | undefined
 
 const sortedPacks = computed(() =>
     [...packs.value].sort((a, b) => getProductOrder(a) - getProductOrder(b)),
 )
 
-const getProductOrder = (product: PaymentPack) => {
+const activePromotions = computed(() => promotions.value.filter(isPromotionVisible))
+
+const getProductOrder = (product: Product) => {
     const index = productOrder.indexOf(product.storeProductId)
     return index === -1 ? productOrder.length : index
 }
 
-const getPackImage = (product: PaymentPack) => packImages[product.storeProductId] ?? startPackImage
+const getPackImage = (product: Product) => packImages[product.storeProductId] ?? startPackImage
 
-const getRewardItems = (product: PaymentPack) =>
+const getRewardItems = (product: Product) =>
     product.description
         .split(',')
         .map((reward) => reward.trim())
@@ -208,7 +262,7 @@ const collapsedRewardCount = () => 1
 
 const isDescriptionExpanded = (productId: number) => Boolean(expandedDescriptions.value[productId])
 
-const getVisibleRewardItems = (product: PaymentPack) => {
+const getVisibleRewardItems = (product: Product) => {
     const rewards = getRewardItems(product)
 
     if (isDescriptionExpanded(product.id)) {
@@ -218,15 +272,15 @@ const getVisibleRewardItems = (product: PaymentPack) => {
     return rewards.slice(0, collapsedRewardCount())
 }
 
-const getHiddenRewardCount = (product: PaymentPack) =>
+const getHiddenRewardCount = (product: Product) =>
     Math.max(0, getRewardItems(product).length - collapsedRewardCount())
 
-const hasHiddenRewards = (product: PaymentPack) => getHiddenRewardCount(product) > 0
+const hasHiddenRewards = (product: Product) => getHiddenRewardCount(product) > 0
 
-const getDescriptionToggleLabel = (product: PaymentPack) =>
+const getDescriptionToggleLabel = (product: Product) =>
     isDescriptionExpanded(product.id) ? '-' : `+${getHiddenRewardCount(product)}`
 
-const getDescriptionToggleAriaLabel = (product: PaymentPack) =>
+const getDescriptionToggleAriaLabel = (product: Product) =>
     isDescriptionExpanded(product.id)
         ? `Thu gọn mô tả ${product.name}`
         : `Xem thêm mô tả ${product.name}`
@@ -238,35 +292,122 @@ const toggleDescription = (productId: number) => {
     }
 }
 
+const getResponseProducts = (data?: ProductData) => data?.products ?? data?.Products ?? []
+
+const getResponsePromotions = (data?: ProductData) => data?.promotions ?? data?.Promotions ?? []
+
+const getPromotionKey = (promotion: Promotion, index: number) =>
+    `${promotion.id ?? promotion.Id ?? 'promotion'}-${index}`
+
+const getPromotionName = (promotion: Promotion) => promotion.name ?? promotion.Name ?? 'Khuyến mãi'
+
+const getPromotionDescription = (promotion: Promotion) =>
+    promotion.description ?? promotion.Description ?? 'Ưu đãi đang diễn ra.'
+
+const getPromotionStartDate = (promotion: Promotion) => promotion.startDate ?? promotion.StartDate
+
+const getPromotionEndDate = (promotion: Promotion) => promotion.endDate ?? promotion.EndDate
+
+const hasTimezoneSuffix = (date: string) => /(?:z|[+-]\d{2}:?\d{2})$/i.test(date)
+
+const normalizeServerUtcDate = (date: string) => {
+    const trimmedDate = date.trim()
+    const normalizedFraction = trimmedDate.replace(/(\.\d{3})\d+/, '$1')
+    const normalizedOffset = normalizedFraction.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')
+
+    return hasTimezoneSuffix(normalizedOffset) ? normalizedOffset : `${normalizedOffset}Z`
+}
+
+const parseServerUtcDate = (date?: string) => {
+    if (!date) {
+        return null
+    }
+
+    const value = new Date(normalizeServerUtcDate(date))
+
+    return Number.isNaN(value.getTime()) ? null : value
+}
+
+const isPromotionVisible = (promotion: Promotion) => {
+    const isActive = promotion.active ?? promotion.Active ?? true
+
+    if (!isActive) {
+        return false
+    }
+
+    const now = Date.now()
+    const startDate = parseServerUtcDate(getPromotionStartDate(promotion))
+    const endDate = parseServerUtcDate(getPromotionEndDate(promotion))
+
+    if (startDate && now < startDate.getTime()) {
+        return false
+    }
+
+    if (endDate && now > endDate.getTime()) {
+        return false
+    }
+
+    return true
+}
+
 const formatPrice = (price: number) => `${FormatUtil.number(price)} đ`
 
-const formatOrderStatus = (status: string) => {
-    switch (status.toLowerCase()) {
+const formatPromotionDate = (date?: string) => {
+    const value = parseServerUtcDate(date)
+
+    if (!value) {
+        return ''
+    }
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(value)
+}
+
+const getPromotionTimeText = (promotion: Promotion) => {
+    const endDate = formatPromotionDate(getPromotionEndDate(promotion))
+
+    return endDate ? `Đến ${endDate}` : 'Đang mở'
+}
+
+const formatOrderStatus = (status: string | number) => {
+    switch (String(status).toLowerCase()) {
+        case '0':
         case 'processing':
             return 'Đang xử lý'
+        case '1':
         case 'complete':
         case 'completed':
             return 'Hoàn tất'
+        case '2':
         case 'cancelled':
         case 'canceled':
             return 'Đã hủy'
+        case '3':
         case 'failed':
             return 'Thất bại'
         default:
-            return status
+            return String(status)
     }
 }
 
 const formatOrderDate = (date: string) => {
-    const value = new Date(date)
+    const value = parseServerUtcDate(date)
 
-    if (Number.isNaN(value.getTime())) {
+    if (!value) {
         return date
     }
 
     return new Intl.DateTimeFormat('vi-VN', {
-        dateStyle: 'short',
-        timeStyle: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     }).format(value)
 }
 
@@ -285,14 +426,39 @@ const pushNotify = (title: string, message: string) => {
     })
 }
 
-const openPaymentLink = (checkoutUrl: string) => {
-    const paymentWindow = window.open(checkoutUrl, '_blank')
-
-    if (paymentWindow) {
-        paymentWindow.opener = null
+const clearPaymentResultTimer = () => {
+    if (!paymentResultTimer) {
         return
     }
 
+    clearTimeout(paymentResultTimer)
+    paymentResultTimer = undefined
+}
+
+const normalizeQueryValue = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return value[0]
+    }
+
+    return typeof value === 'string' ? value : undefined
+}
+
+const showPaymentResult = (success: boolean) => {
+    clearPaymentResultTimer()
+    paymentResultType.value = success ? 'success' : 'error'
+    paymentResultMessage.value = success
+        ? 'Thanh toán thành công, hãy kiểm tra hòm thư!'
+        : 'Thanh toán thất bại'
+
+    pushNotify('Thanh toán', paymentResultMessage.value)
+
+    paymentResultTimer = setTimeout(() => {
+        paymentResultMessage.value = ''
+        paymentResultTimer = undefined
+    }, 15000)
+}
+
+const openPaymentLink = (checkoutUrl: string) => {
     window.location.assign(checkoutUrl)
 }
 
@@ -301,13 +467,14 @@ const loadPacks = async () => {
     errorMessage.value = ''
 
     try {
-        const res = (await api.get<ApiResponse<PaymentPack[]>>('/pay/pack')).data
+        const res = (await api.get<ApiResponse<ProductData>>('/pay/pack')).data
 
         if (!res.success) {
             throw new Error(res.message || 'Không tải được danh sách gói nạp.')
         }
-
-        packs.value = (res.data ?? []).filter((product) => product.isActive)
+        const data = res.data
+        packs.value = getResponseProducts(data).filter((product) => product.isActive)
+        promotions.value = getResponsePromotions(data)
     } catch (error) {
         errorMessage.value = getErrorMessage(error, 'Không tải được danh sách gói nạp.')
         pushNotify('Nạp tiền', errorMessage.value)
@@ -316,7 +483,7 @@ const loadPacks = async () => {
     }
 }
 
-const createPaymentLink = async (product: PaymentPack) => {
+const createPaymentLink = async (product: Product) => {
     if (payingId.value !== null) {
         return
     }
@@ -354,6 +521,24 @@ const createPaymentLink = async (product: PaymentPack) => {
 onMounted(() => {
     void loadPacks()
 })
+
+watch(
+    () => route.query.success,
+    (successQuery) => {
+        const successValue = normalizeQueryValue(successQuery)
+
+        if (successValue === undefined) {
+            return
+        }
+
+        showPaymentResult(successValue.toLowerCase() === 'true' || successValue === '1')
+    },
+    { immediate: true },
+)
+
+onBeforeUnmount(() => {
+    clearPaymentResultTimer()
+})
 </script>
 
 <style scoped>
@@ -378,9 +563,9 @@ onMounted(() => {
 
 .payment-kicker {
     color: #8a5624;
-    font-family: var(--font-alegreya);
-    font-size: clamp(10px, 1.5cqw, 17px);
-    font-weight: 700;
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(14px, 1.95cqw, 22px);
+    font-weight: 400;
     line-height: 1;
 }
 
@@ -396,6 +581,34 @@ onMounted(() => {
     text-shadow:
         0 1px 0 rgba(255, 249, 217, 0.74),
         0 3px 6px rgba(91, 51, 18, 0.24);
+}
+
+.payment-result-message {
+    flex: 0 0 auto;
+    width: min(100%, 620px);
+    align-self: center;
+    padding: clamp(8px, 1.25cqw, 12px) clamp(12px, 1.8cqw, 18px);
+    border: 1px solid rgba(137, 96, 40, 0.28);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 251, 228, 0.9), rgba(235, 224, 184, 0.72)),
+        rgba(255, 248, 224, 0.72);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        0 5px 12px rgba(85, 51, 18, 0.14);
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(15px, 2.05cqw, 22px);
+    line-height: 1.15;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(255, 250, 220, 0.72);
+}
+
+.payment-result-message--success {
+    color: #2f7062;
+}
+
+.payment-result-message--error {
+    color: #9b321f;
 }
 
 .payment-order-info {
@@ -453,7 +666,7 @@ onMounted(() => {
     gap: clamp(5px, 0.9cqw, 10px);
     color: #6f4a24;
     font-family: var(--font-alegreya);
-    font-size: clamp(11px, 1.45cqw, 15px);
+    font-size: clamp(13px, 1.75cqw, 18px);
     font-weight: 700;
     line-height: 1.1;
     text-align: center;
@@ -490,6 +703,132 @@ onMounted(() => {
     transition:
         filter 150ms ease,
         transform 150ms ease;
+}
+
+.promotion-strip {
+    flex: 0 0 auto;
+    width: min(100%, 780px);
+    align-self: center;
+    display: flex;
+    gap: clamp(8px, 1.3cqw, 14px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 3px 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 91, 37, 0.48) transparent;
+}
+
+.promotion-strip::-webkit-scrollbar {
+    height: 5px;
+}
+
+.promotion-strip::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.promotion-strip::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(140, 91, 37, 0.48);
+}
+
+.promotion-card {
+    position: relative;
+    flex: 0 0 min(100%, clamp(255px, 43cqw, 370px));
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: clamp(4px, 0.7cqw, 7px) clamp(8px, 1.2cqw, 12px);
+    padding: clamp(8px, 1.2cqw, 12px) clamp(10px, 1.6cqw, 16px);
+    overflow: hidden;
+    border: 1px solid rgba(152, 96, 33, 0.32);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(255, 249, 218, 0.94), rgba(225, 241, 218, 0.84) 56%, rgba(249, 212, 146, 0.86)),
+        rgba(255, 248, 224, 0.78);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.52),
+        0 5px 12px rgba(85, 51, 18, 0.13);
+}
+
+.promotion-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.36), transparent 46%),
+        linear-gradient(180deg, rgba(255, 244, 190, 0.34), transparent 64%);
+}
+
+.promotion-label {
+    position: relative;
+    grid-row: 1 / span 2;
+    padding: clamp(5px, 0.7cqw, 8px) clamp(9px, 1.15cqw, 13px);
+    border: 1px solid rgba(112, 65, 22, 0.22);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(255, 239, 176, 0.95), rgba(205, 137, 55, 0.88)),
+        #d28b31;
+    color: #65340d;
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(13px, 1.75cqw, 18px);
+    line-height: 1;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 rgba(255, 247, 203, 0.58);
+}
+
+.promotion-copy {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.promotion-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #704116;
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(14px, 1.95cqw, 20px);
+    font-weight: 400;
+    line-height: 1.05;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 0 rgba(255, 250, 220, 0.72);
+}
+
+.promotion-description {
+    min-width: 0;
+    overflow: hidden;
+    color: #6f4a24;
+    display: -webkit-box;
+    font-family: var(--font-alegreya);
+    font-size: clamp(11px, 1.45cqw, 14px);
+    font-weight: 700;
+    line-height: 1.12;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.promotion-time {
+    position: relative;
+    justify-self: start;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding: clamp(2px, 0.35cqw, 4px) clamp(6px, 0.85cqw, 9px);
+    border: 1px solid rgba(52, 105, 81, 0.18);
+    border-radius: 999px;
+    background: rgba(230, 247, 222, 0.66);
+    color: #2f7062;
+    font-family: var(--font-alegreya);
+    font-size: clamp(12px, 1.6cqw, 16px);
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .payment-state {
@@ -899,11 +1238,16 @@ onMounted(() => {
     }
 
     .payment-kicker {
-        font-size: clamp(9px, 2.2cqw, 12px);
+        font-size: clamp(12px, 3.1cqw, 16px);
     }
 
     .payment-title {
         font-size: clamp(18px, 5.4cqw, 28px);
+    }
+
+    .payment-result-message {
+        padding: 7px 10px;
+        font-size: clamp(12px, 3.35cqw, 15px);
     }
 
     .payment-order-info {
@@ -916,7 +1260,7 @@ onMounted(() => {
         grid-column: 1 / -1;
         grid-row: 2;
         justify-content: flex-start;
-        font-size: clamp(9px, 2.6cqw, 12px);
+        font-size: clamp(12px, 3.2cqw, 15px);
         text-align: left;
     }
 
@@ -932,6 +1276,38 @@ onMounted(() => {
         min-width: 62px;
         padding: 6px 8px;
         font-size: clamp(9px, 2.5cqw, 11px);
+    }
+
+    .promotion-strip {
+        width: 100%;
+        gap: 8px;
+        padding: 0 2px 4px;
+    }
+
+    .promotion-card {
+        flex-basis: min(88%, 320px);
+        grid-template-columns: minmax(0, 1fr);
+        gap: 5px;
+        padding: 8px 10px;
+    }
+
+    .promotion-label {
+        grid-row: auto;
+        justify-self: start;
+        font-size: clamp(12px, 3cqw, 14px);
+    }
+
+    .promotion-name {
+        font-size: clamp(12px, 3.3cqw, 15px);
+    }
+
+    .promotion-description {
+        font-size: clamp(10px, 2.75cqw, 12px);
+        -webkit-line-clamp: 1;
+    }
+
+    .promotion-time {
+        font-size: clamp(11px, 3cqw, 14px);
     }
 
     .pack-grid {

@@ -116,6 +116,9 @@ public class VietnameseStrings : ILanguageStrings
     public override string PaymentOrderNotFound => "Không tìm thấy đơn thanh toán!";
     public override string PaymentAmountInvalid => "Số tiền thanh toán không hợp lệ!";
     public override string PaymentOrderStatusInvalid => "Trạng thái đơn thanh toán không hợp lệ!";
+    public override string PaymentOrderExpired => "Đơn thanh toán đã hết hạn!";
+    public override string PaymentConfigInvalid => "Cấu hình thanh toán chưa hợp lệ!";
+    public override string PaymentWebhookInvalid => "Dữ liệu xác thực thanh toán không hợp lệ!";
     public override string MoneyVipInvalid => "Số lượng Tiên ngọc không hợp lệ!";
     public override string NotEnoughMoneyVip => "Không đủ Tiên ngọc!";
     public override string ShopTypeInvalid => "Loại cửa hàng không hợp lệ!";

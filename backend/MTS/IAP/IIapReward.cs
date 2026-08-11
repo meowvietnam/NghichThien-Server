@@ -12,4 +12,9 @@ public partial interface IIapReward
     void Refund(CharacterData charData);
     void Edit(IapPurchase purchase);
     List<IMailReward> GetMailRewards();
+    public static IIapReward Clone(IIapReward reward)
+    {
+        var bytes = MemoryPackSerializer.Serialize(reward);
+        return MemoryPackSerializer.Deserialize<IIapReward>(bytes);
+    }
 }

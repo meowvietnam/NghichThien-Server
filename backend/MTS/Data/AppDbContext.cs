@@ -49,6 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<Giftcode> GiftCodes { get; private set; }
     public DbSet<GiftcodeUsed> GiftcodeUseds { get; private set; }
     public DbSet<ReleaseDailyRewardClaim> ReleaseDailyRewardClaims { get; private set; }
+    public DbSet<Promotion> Promotions { get; private set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -487,6 +488,24 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<Promotion>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PromotionApplicable)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => ParsePromotionApplicable(x));
+        });
+    }
+
+    private IPromotionApplicable ParsePromotionApplicable(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return null;
+        }
+
+        return MemoryPackSerializer.Deserialize<IPromotionApplicable>(data);
     }
 
     private List<IMailReward> ParseMailRewards(byte[] data)

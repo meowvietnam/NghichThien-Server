@@ -8,11 +8,12 @@ using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
 using MTS.Services;
-using Newtonsoft.Json;
+using MTS.Utils;
 using PayOS;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
 using Serilog;
+using static MTS.Utils.Utils;
 
 namespace MTS.Controllers;
 
@@ -24,12 +25,14 @@ public class PaymentController : Controller
     private readonly PayOSClient payOS;
     private readonly SnowflakeIdGenerator idGenerator;
     private readonly AppDbContext db;
+    private readonly IConfiguration config;
 
-    public PaymentController(PayOSClient payOS, SnowflakeIdGenerator idGenerator, AppDbContext db)
+    public PaymentController(PayOSClient payOS, SnowflakeIdGenerator idGenerator, AppDbContext db, IConfiguration config)
     {
         this.payOS = payOS;
         this.idGenerator = idGenerator;
         this.db = db;
+        this.config = config;
     }
 
     [HttpPost("create-link")]
@@ -71,15 +74,26 @@ public class PaymentController : Controller
             }
 
             var orderCode = idGenerator.NextId();
+            var now = DateTime.UtcNow;
+            var expireTime = now.AddHours(1);
+            var expireUnixTime = new DateTimeOffset(expireTime).ToUnixTimeSeconds();
+            var cancelUrl = config["PayOS:CancelUrl"];
+            var returnUrl = config["PayOS:ReturnUrl"];
+            if (string.IsNullOrWhiteSpace(cancelUrl) || string.IsNullOrWhiteSpace(returnUrl))
+            {
+                throw new InvalidException(Strings.PaymentConfigInvalid);
+            }
+
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
                 Amount = product.Price,
-                Description = "thanh toan",
-                CancelUrl = "https://nghichthien.online/payment",
-                ReturnUrl = "https://nghichthien.online/payment"
+                CancelUrl = cancelUrl,
+                ReturnUrl = returnUrl,
+                ExpiredAt = expireUnixTime,
             };
             var paymentLink = await payOS.PaymentRequests.CreateAsync(paymentRequest);
+
             var oder = new Order()
             {
                 CharId = charId,
@@ -87,6 +101,7 @@ public class PaymentController : Controller
                 OrderId = orderCode,
                 Link = paymentLink.CheckoutUrl,
                 Amount = product.Price,
+                ExpireAt = expireTime
             };
             var entry = await db.Orders.AddAsync(oder);
             await db.SaveChangesAsync();
@@ -94,6 +109,7 @@ public class PaymentController : Controller
         }
         catch (Exception ex)
         {
+            Log.Error(ex.ToString());
             return Fail(ex.Message);
         }
     }
@@ -119,7 +135,12 @@ public class PaymentController : Controller
             ownerProducts.RemoveAll(x =>
                 x.Product.ActualProductType == IapProductType.NonConsumable && x.HasPurchased);
             var products = ownerProducts.Select(x => x.Product).ToList();
-            return Success(products);
+            var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
+            return Success(new
+            {
+                Products = products,
+                Promotions = promotions,
+            });
         }
         catch (Exception ex)
         {
@@ -132,7 +153,7 @@ public class PaymentController : Controller
     {
         try
         {
-            var data = await payOS.Webhooks.VerifyAsync(webhook);
+            var data = await VerifyWebhook(webhook);
             var order = await db.Orders
                 .Include(o => o.CharData)
                 .Include(o => o.Product)
@@ -143,6 +164,10 @@ public class PaymentController : Controller
                 throw new InvalidException(Strings.PaymentOrderNotFound);
             }
 
+            if (order.ExpireAt < DateTime.UtcNow)
+            {
+                throw new InvalidException(Strings.PaymentOrderExpired);
+            }
             if (order.Amount != data.Amount)
             {
                 throw new InvalidException(Strings.PaymentAmountInvalid);
@@ -161,9 +186,15 @@ public class PaymentController : Controller
                 Store = Store.Web,
                 PurchaseTokenHash = Array.Empty<byte>(),
             };
-            order.Product.Reward.Edit(purchase);
             order.Purchase = purchase;
-            var rewards = order.Product.Reward.GetMailRewards();
+            var productReward = IIapReward.Clone(order.Product.Reward);
+            var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
+            foreach (var promotion in promotions)
+            {
+                promotion.PromotionApplicable.Apply(productReward);
+            }
+            productReward.Edit(purchase);
+            var rewards = productReward.GetMailRewards();
             var mailManager = new MailManager(order.CharData, null);
             await mailManager.SendMail(new Mail()
             {
@@ -178,6 +209,19 @@ public class PaymentController : Controller
         {
             Log.Error(ex.ToString());
             return Fail(ex.Message);
+        }
+    }
+
+    private async Task<WebhookData> VerifyWebhook(Webhook webhook)
+    {
+        try
+        {
+            return await payOS.Webhooks.VerifyAsync(webhook);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Invalid PayOS webhook verification data");
+            throw new InvalidException(Strings.PaymentWebhookInvalid);
         }
     }
 }

@@ -450,22 +450,6 @@ namespace MTS.Migrations
                     b.ToTable("GiftcodeUseds");
                 });
 
-            modelBuilder.Entity("MTS.Models.ReleaseDailyRewardClaim", b =>
-                {
-                    b.Property<int>("CharId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RewardDay")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ClaimedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("CharId", "RewardDay");
-
-                    b.ToTable("ReleaseDailyRewardClaims");
-                });
-
             modelBuilder.Entity("MTS.Models.GoogleAccount", b =>
                 {
                     b.Property<int>("Id")
@@ -707,6 +691,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("ExpireAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Link")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -755,6 +742,43 @@ namespace MTS.Migrations
                     b.HasKey("CharId");
 
                     b.ToTable("Progressions");
+                });
+
+            modelBuilder.Entity("MTS.Models.Promotion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PromotionApplicable")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Store")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Promotions");
                 });
 
             modelBuilder.Entity("MTS.Models.QuestManager", b =>
@@ -811,6 +835,22 @@ namespace MTS.Migrations
                     b.HasKey("CharId", "Npc");
 
                     b.ToTable("Relationships");
+                });
+
+            modelBuilder.Entity("MTS.Models.ReleaseDailyRewardClaim", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RewardDay")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ClaimedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("CharId", "RewardDay");
+
+                    b.ToTable("ReleaseDailyRewardClaims");
                 });
 
             modelBuilder.Entity("MTS.Models.ShopManager", b =>
@@ -1113,17 +1153,6 @@ namespace MTS.Migrations
                     b.Navigation("Giftcode");
                 });
 
-            modelBuilder.Entity("MTS.Models.ReleaseDailyRewardClaim", b =>
-                {
-                    b.HasOne("MTS.Models.CharacterData", "CharData")
-                        .WithMany()
-                        .HasForeignKey("CharId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CharData");
-                });
-
             modelBuilder.Entity("MTS.Models.GoogleAccount", b =>
                 {
                     b.HasOne("MTS.Models.UserData", "UserData")
@@ -1268,6 +1297,17 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("Social");
+                });
+
+            modelBuilder.Entity("MTS.Models.ReleaseDailyRewardClaim", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
                 });
 
             modelBuilder.Entity("MTS.Models.ShopManager", b =>

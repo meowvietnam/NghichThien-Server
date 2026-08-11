@@ -124,6 +124,9 @@ public static class Strings
     public static string PaymentOrderNotFound => _current.PaymentOrderNotFound;
     public static string PaymentAmountInvalid => _current.PaymentAmountInvalid;
     public static string PaymentOrderStatusInvalid => _current.PaymentOrderStatusInvalid;
+    public static string PaymentOrderExpired => _current.PaymentOrderExpired;
+    public static string PaymentConfigInvalid => _current.PaymentConfigInvalid;
+    public static string PaymentWebhookInvalid => _current.PaymentWebhookInvalid;
     public static string MoneyVipInvalid => _current.MoneyVipInvalid;
     public static string NotEnoughMoneyVip => _current.NotEnoughMoneyVip;
     public static string ShopTypeInvalid => _current.ShopTypeInvalid;

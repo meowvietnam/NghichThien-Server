@@ -32,6 +32,30 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "GiftCodes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Rewards = table.Column<byte[]>(type: "blob", nullable: false),
+                    CanUse = table.Column<int>(type: "int", nullable: false),
+                    TotalUsed = table.Column<int>(type: "int", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ExpireDate = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GiftCodes", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "IapProducts",
                 columns: table => new
                 {
@@ -53,6 +77,28 @@ namespace MTS.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_IapProducts", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Promotions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Active = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    Store = table.Column<int>(type: "int", nullable: false),
+                    PromotionApplicable = table.Column<byte[]>(type: "blob", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Promotions", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -332,6 +378,31 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "GiftcodeUseds",
+                columns: table => new
+                {
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    CodeId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GiftcodeUseds", x => new { x.CharId, x.CodeId });
+                    table.ForeignKey(
+                        name: "FK_GiftcodeUseds_Characters_CharId",
+                        column: x => x.CharId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GiftcodeUseds_GiftCodes_CodeId",
+                        column: x => x.CodeId,
+                        principalTable: "GiftCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "InventoryManagers",
                 columns: table => new
                 {
@@ -362,7 +433,8 @@ namespace MTS.Migrations
                     Link = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    Date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ExpireAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -423,6 +495,26 @@ namespace MTS.Migrations
                     table.PrimaryKey("PK_QuestManagers", x => x.CharId);
                     table.ForeignKey(
                         name: "FK_QuestManagers_Characters_CharId",
+                        column: x => x.CharId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ReleaseDailyRewardClaims",
+                columns: table => new
+                {
+                    CharId = table.Column<int>(type: "int", nullable: false),
+                    RewardDay = table.Column<int>(type: "int", nullable: false),
+                    ClaimedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReleaseDailyRewardClaims", x => new { x.CharId, x.RewardDay });
+                    table.ForeignKey(
+                        name: "FK_ReleaseDailyRewardClaims_Characters_CharId",
                         column: x => x.CharId,
                         principalTable: "Characters",
                         principalColumn: "Id",
@@ -790,6 +882,17 @@ namespace MTS.Migrations
                 column: "CharId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_GiftCodes_Code",
+                table: "GiftCodes",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GiftcodeUseds_CodeId",
+                table: "GiftcodeUseds",
+                column: "CodeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GoogleAccounts_Email",
                 table: "GoogleAccounts",
                 column: "Email",
@@ -902,6 +1005,9 @@ namespace MTS.Migrations
                 name: "GachaManagers");
 
             migrationBuilder.DropTable(
+                name: "GiftcodeUseds");
+
+            migrationBuilder.DropTable(
                 name: "GoogleAccounts");
 
             migrationBuilder.DropTable(
@@ -926,10 +1032,16 @@ namespace MTS.Migrations
                 name: "Progressions");
 
             migrationBuilder.DropTable(
+                name: "Promotions");
+
+            migrationBuilder.DropTable(
                 name: "RankRewards");
 
             migrationBuilder.DropTable(
                 name: "Relationships");
+
+            migrationBuilder.DropTable(
+                name: "ReleaseDailyRewardClaims");
 
             migrationBuilder.DropTable(
                 name: "ShopManagers");
@@ -945,6 +1057,9 @@ namespace MTS.Migrations
 
             migrationBuilder.DropTable(
                 name: "QuestManagers");
+
+            migrationBuilder.DropTable(
+                name: "GiftCodes");
 
             migrationBuilder.DropTable(
                 name: "IapPurchases");

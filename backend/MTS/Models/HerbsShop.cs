@@ -80,7 +80,7 @@ public partial class HerbsShop : Shop
                 Tier = x.Tier,
                 Ref = new ItemRef()
                 {
-                    Type = ItemType.Herb,
+                    Type = ItemType.Furnace,
                     Id = (ushort)x.Id,
                     Count = RandomCount()
                 }

@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Localization;
 using MTS.Network.Models;
-
 using MTS.IAP;
 using MTS.Services;
 using Serilog;
@@ -63,10 +62,10 @@ public partial class CharacterData
                 store, productId);
             return new VerifiedIapPurchase(product, verify, purchaseTokenHash, true);
         }
+
         var actualProductType = product.ActualProductType;
         if (actualProductType == IapProductType.NonConsumable)
         {
-            
             hasPurchased = await db.IapPurchases.AnyAsync(
                 x => x.Product.ActualProductType == actualProductType,
                 cancelToken);
@@ -137,7 +136,12 @@ public partial class CharacterData
             PurchaseTokenHash = verifiedPurchase.PurchaseTokenHash,
             PurchaseDate = verifiedPurchase.Verify.PurchaseTime?.UtcDateTime ?? DateTime.UtcNow,
         };
-        var reward = product.Reward;
+        var reward = IIapReward.Clone(product.Reward);
+        var promotions = await PromotionService.GetActivePromotions(product.Store, db);
+        foreach (var promotion in promotions)
+        {
+            promotion.PromotionApplicable.Apply(reward);
+        }
         reward.Execute(this);
         reward.Edit(purchase);
         await db.IapPurchases.AddAsync(purchase, cancelToken);
@@ -167,7 +171,7 @@ public partial class CharacterData
             Success = true,
             Store = product.Store,
             ProductId = product.StoreProductId,
-            Reward = product.Reward,
+            Reward = reward,
         };
     }
 
@@ -189,12 +193,14 @@ public partial class CharacterData
                 return new OwnerIapProduct()
                 {
                     Product = x,
-                    HasPurchased = x.ActualProductType == IapProductType.NonConsumable ?
-                        startPackHasPurchased : purchasedProductIds.Contains(x.Id),
+                    HasPurchased = x.ActualProductType == IapProductType.NonConsumable
+                        ? startPackHasPurchased
+                        : purchasedProductIds.Contains(x.Id),
                 };
             }).ToList();
         return ownerProducts;
     }
+
     public async Task<List<OwnerIapProduct>> GetProducts(Store store)
     {
         await using var db = await Program.CreateDbAsync();
@@ -207,7 +213,7 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.MoneyVipInvalid);
         }
-        
+
         var linhThach = (int)Math.Min(int.MaxValue, Stats.LinhThach + amount * 100L);
         Stats.SetLinhThach(linhThach);
         var moneyVip = MoneyVip - amount;

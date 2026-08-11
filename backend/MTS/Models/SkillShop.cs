@@ -136,14 +136,10 @@ public partial class SkillShop : Shop
 
         return skills.Contains(skill);
     }
-
-
-
     protected override ushort RandomCount()
     {
         return 1;
     }
-
     public override EShopType GetTypeShop()
     {
         return EShopType.Skill;

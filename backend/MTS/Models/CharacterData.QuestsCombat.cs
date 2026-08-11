@@ -21,8 +21,12 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.MonPhaiExisted);
         }
-
         SetMonPhai(request);
+        ShopManager.ShopSkill.Reload(new ReloadShopRequest()
+        {
+            ShopType = EShopType.Skill,
+            MonPhai = MonPhai
+        });
         return new JoinMonPhaiResult()
         {
             Success = true,

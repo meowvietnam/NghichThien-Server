@@ -9,16 +9,9 @@ using Microsoft.OpenApi.Models;
 using MTS.Data;
 using MTS.Game;
 using MTS.Network;
-using Newtonsoft.Json.Converters;
 using System.Text;
-using Google.Apis.Auth.OAuth2;
-using MemoryPack;
 using MTS.Api.Services;
-using MTS.IAP;
-using MTS.Models;
-using MTS.Network.Models;
 using MTS.Services;
-using MTS.Utils;
 using PayOS;
 using Serilog;
 using Serilog.Events;
@@ -64,8 +57,7 @@ public static class Program
                     });
             });
             builder.Services
-                .AddControllers()
-                .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });
+                .AddControllers();
 
             var jwtKey = builder.Configuration["Jwt:Key"]
                          ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
@@ -118,11 +110,14 @@ public static class Program
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
-                    policy.SetIsOriginAllowed(_ => true)
+                options.AddPolicy("GameCors", policy =>
+                {
+                    policy
+                        .WithOrigins("https://play.nghichthien.online","http://localhost:5173")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials());
+                        .AllowCredentials();
+                });
             });
 
             builder.Services.AddHostedService<TcpHostedService>();
@@ -160,9 +155,8 @@ public static class Program
                 });
             }
 
-            App.UseCors("AllowAll");
+            App.UseCors("GameCors");
             App.UseAuthentication();
-            App.UseHttpsRedirection();
             App.UseAuthorization();
             App.MapControllers();
             Log.Information("MTS server starting on web port {WebPort}", webPort);

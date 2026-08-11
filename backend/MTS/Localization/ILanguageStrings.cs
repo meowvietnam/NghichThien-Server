@@ -135,6 +135,9 @@ public abstract class ILanguageStrings
     public abstract string PaymentOrderNotFound { get; }
     public abstract string PaymentAmountInvalid { get; }
     public abstract string PaymentOrderStatusInvalid { get; }
+    public abstract string PaymentOrderExpired { get; }
+    public abstract string PaymentConfigInvalid { get; }
+    public abstract string PaymentWebhookInvalid { get; }
     public abstract string MoneyVipInvalid { get; }
     public abstract string NotEnoughMoneyVip { get; }
 
