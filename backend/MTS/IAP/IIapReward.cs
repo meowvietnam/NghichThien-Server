@@ -11,6 +11,7 @@ public partial interface IIapReward
     void Execute(CharacterData charData);
     void Refund(CharacterData charData);
     void Edit(IapPurchase purchase);
+    void ClaimNow(CharacterData charData);
     List<IMailReward> GetMailRewards();
     public static IIapReward Clone(IIapReward reward)
     {

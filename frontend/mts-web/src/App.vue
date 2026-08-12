@@ -6,14 +6,33 @@
       <router-view />
     </main>
     <Footer />
+    <div v-if="isDownloadButtonVisible" class="button-download">
+      <Button @click="download">
+        Tải game
+      </Button>
+    </div>
   </div>
 </template>
 
 
 <script setup lang="ts">
+import { provide, ref } from 'vue'
+import Button from './components/Button.vue';
 import Footer from './components/Footer.vue'
 import Header from './components/Header.vue'
 import MainLogo from './components/MainLogo.vue'
+
+const isDownloadButtonVisible = ref(true)
+
+const setDownloadButtonVisible = (isVisible: boolean) => {
+  isDownloadButtonVisible.value = isVisible
+}
+
+provide('setDownloadButtonVisible', setDownloadButtonVisible)
+
+const download = () => {
+  window.open('https://play.google.com/store/apps/details?id=com.DreamCultivationGame.NghchThinSkyBreaker', '_blank')
+}
 
 </script>
 
@@ -31,7 +50,13 @@ import MainLogo from './components/MainLogo.vue'
   background-size: cover;
   border-radius: 16px;
 }
-
+.button-download {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  min-width: clamp(120px, 20vw, 200px);
+}
 .content {
   flex: 1 1 auto;
   width: 100%;

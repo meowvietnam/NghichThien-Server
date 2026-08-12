@@ -50,6 +50,11 @@ public partial class StartPack : IIapReward
         purchase.MoneyVipSnapshot += MoneyVip;
     }
 
+    public void ClaimNow(CharacterData charData)
+    {
+        
+    }
+
     public List<IMailReward> GetMailRewards()
     {
         return new List<IMailReward>()

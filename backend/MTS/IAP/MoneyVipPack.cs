@@ -22,6 +22,12 @@ public partial class MoneyVipPack : IIapReward
         purchase.MoneyVipSnapshot += MoneyVip; 
     }
 
+    public void ClaimNow(CharacterData charData)
+    {
+        charData.SetIsInfiniteEnergy(true);
+        charData.SetNoAds(true);
+    }
+
     public List<IMailReward> GetMailRewards()
     {
         return new List<IMailReward>()

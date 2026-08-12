@@ -193,6 +193,7 @@ public class PaymentController : Controller
             {
                 promotion.PromotionApplicable.Apply(productReward);
             }
+            productReward.ClaimNow(order.CharData);
             productReward.Edit(purchase);
             var rewards = productReward.GetMailRewards();
             var mailManager = new MailManager(order.CharData, null);

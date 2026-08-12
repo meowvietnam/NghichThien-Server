@@ -35,6 +35,12 @@
             </button>
         </div>
 
+        <div v-if="!isLoading && !errorMessage && sortedPacks.length" class="pack-entry-panel">
+            <button class="pack-open-button" type="button" @click="openPackPanel">
+                Xem gói nạp
+            </button>
+        </div>
+
         <div v-if="activePromotions.length" class="promotion-strip" aria-label="Khuyến mãi">
             <article
                 v-for="(promotion, index) in activePromotions"
@@ -65,77 +71,103 @@
             Chưa có gói nạp khả dụng.
         </div>
 
-        <div v-else class="pack-grid">
-            <article
-                v-for="product in sortedPacks"
-                :key="product.id"
-                class="pack-card"
-                :class="{ 'pack-card--featured': product.storeProductId === 'start_pack' }"
-            >
-                <div class="pack-art">
-                    <span v-if="product.storeProductId === 'start_pack'" class="pack-badge">
-                        Khởi đầu
-                    </span>
-                    <img :src="getPackImage(product)" :alt="product.name" class="pack-image" />
+        <div
+            v-if="isPackPanelOpen"
+            class="pack-panel-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pack-panel-title"
+            @click.self="closePackPanel"
+        >
+            <section class="pack-panel">
+                <div class="pack-panel-header">
+                    <div class="pack-panel-title-group">
+                        <span class="pack-panel-kicker">Cửa hàng</span>
+                        <h3 id="pack-panel-title" class="pack-panel-title">Gói nạp</h3>
+                    </div>
+
+                    <button class="pack-panel-close-button" type="button" @click="closePackPanel">
+                        Đóng
+                    </button>
                 </div>
 
-                <div class="pack-info">
-                    <h3 class="pack-name">{{ product.name }}</h3>
-
-                    <div
-                        class="pack-description"
-                        :class="{ 'pack-description--expanded': isDescriptionExpanded(product.id) }"
+                <div class="pack-grid pack-panel-grid">
+                    <article
+                        v-for="product in sortedPacks"
+                        :key="product.id"
+                        class="pack-card"
+                        :class="{ 'pack-card--featured': product.storeProductId === 'start_pack' }"
                     >
-                        <ul class="pack-rewards">
-                            <li
-                                v-for="reward in getVisibleRewardItems(product)"
-                                :key="`${product.id}-${reward}`"
-                                class="pack-reward"
-                            >
-                                {{ reward }}
-                            </li>
-                        </ul>
-
-                        <button
-                            v-if="hasHiddenRewards(product)"
-                            class="pack-description-button"
-                            type="button"
-                            :aria-expanded="isDescriptionExpanded(product.id)"
-                            :aria-label="getDescriptionToggleAriaLabel(product)"
-                            @click="toggleDescription(product.id)"
-                        >
-                            {{ getDescriptionToggleLabel(product) }}
-                        </button>
-                    </div>
-
-                    <div class="pack-footer">
-                        <div class="pack-price-box" aria-label="Giá gói nạp">
-                            <span class="pack-price-label">Giá</span>
-                            <strong class="pack-price">{{ formatPrice(product.price) }}</strong>
+                        <div class="pack-art">
+                            <span v-if="product.storeProductId === 'start_pack'" class="pack-badge">
+                                Khởi đầu
+                            </span>
+                            <img :src="getPackImage(product)" :alt="product.name" class="pack-image" />
                         </div>
-                        <button
-                            class="pack-buy-button"
-                            type="button"
-                            :disabled="payingId !== null"
-                            @click="createPaymentLink(product)"
-                        >
-                            {{ payingId === product.id ? 'Đang tạo' : 'Mua' }}
-                        </button>
-                    </div>
+
+                        <div class="pack-info">
+                            <h3 class="pack-name">{{ product.name }}</h3>
+
+                            <div
+                                class="pack-description"
+                                :class="{ 'pack-description--expanded': isDescriptionExpanded(product.id) }"
+                            >
+                                <ul class="pack-rewards">
+                                    <li
+                                        v-for="reward in getVisibleRewardItems(product)"
+                                        :key="`${product.id}-${reward}`"
+                                        class="pack-reward"
+                                    >
+                                        {{ reward }}
+                                    </li>
+                                </ul>
+
+                                <button
+                                    v-if="hasHiddenRewards(product)"
+                                    class="pack-description-button"
+                                    type="button"
+                                    :aria-expanded="isDescriptionExpanded(product.id)"
+                                    :aria-label="getDescriptionToggleAriaLabel(product)"
+                                    @click="toggleDescription(product.id)"
+                                >
+                                    {{ getDescriptionToggleLabel(product) }}
+                                </button>
+                            </div>
+
+                            <div class="pack-footer">
+                                <div class="pack-price-box" aria-label="Giá gói nạp">
+                                    <span class="pack-price-label">Giá</span>
+                                    <strong class="pack-price">{{ formatPrice(product.price) }}</strong>
+                                </div>
+                                <button
+                                    class="pack-buy-button"
+                                    :class="{ 'pack-buy-button--loading': payingId === product.id }"
+                                    type="button"
+                                    :disabled="payingId !== null"
+                                    :aria-busy="payingId === product.id"
+                                    @click="createPaymentLink(product)"
+                                >
+                                    {{ payingId === product.id ? 'Đang tạo' : 'Mua' }}
+                                </button>
+                            </div>
+                        </div>
+                    </article>
                 </div>
-            </article>
+            </section>
         </div>
 
+        <LoadingOverlay :visible="isCreatingPaymentLink" message="Đang tạo link thanh toán..." />
         <NotifyStack ref="notifyStack" />
     </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CSSProperties } from 'vue'
 import { useRoute } from 'vue-router'
 
 import api from '../../api/axios'
+import LoadingOverlay from '../../components/LoadingOverlay.vue'
 import NotifyStack from '../../components/NotifyStack.vue'
 import { FormatUtil } from '../../utils/utils'
 import packBackgroundImage from '../../assets/packs/pack_background.png'
@@ -234,8 +266,10 @@ const payingId = ref<number | null>(null)
 const latestOrder = ref<PaymentOrderInfo | null>(null)
 const paymentResultMessage = ref('')
 const paymentResultType = ref<'success' | 'error'>('success')
+const isPackPanelOpen = ref(false)
 const expandedDescriptions = ref<Record<number, boolean>>({})
 const notifyStack = ref<InstanceType<typeof NotifyStack> | null>(null)
+const setDownloadButtonVisible = inject<(isVisible: boolean) => void>('setDownloadButtonVisible')
 const route = useRoute()
 let paymentResultTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -244,6 +278,8 @@ const sortedPacks = computed(() =>
 )
 
 const activePromotions = computed(() => promotions.value.filter(isPromotionVisible))
+
+const isCreatingPaymentLink = computed(() => payingId.value !== null)
 
 const getProductOrder = (product: Product) => {
     const index = productOrder.indexOf(product.storeProductId)
@@ -289,6 +325,22 @@ const toggleDescription = (productId: number) => {
     expandedDescriptions.value = {
         ...expandedDescriptions.value,
         [productId]: !expandedDescriptions.value[productId],
+    }
+}
+
+const openPackPanel = () => {
+    isPackPanelOpen.value = true
+    setDownloadButtonVisible?.(false)
+}
+
+const closePackPanel = () => {
+    isPackPanelOpen.value = false
+    setDownloadButtonVisible?.(true)
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && isPackPanelOpen.value) {
+        closePackPanel()
     }
 }
 
@@ -465,6 +517,7 @@ const openPaymentLink = (checkoutUrl: string) => {
 const loadPacks = async () => {
     isLoading.value = true
     errorMessage.value = ''
+    closePackPanel()
 
     try {
         const res = (await api.get<ApiResponse<ProductData>>('/pay/pack')).data
@@ -489,6 +542,7 @@ const createPaymentLink = async (product: Product) => {
     }
 
     payingId.value = product.id
+    let shouldResetPaying = true
 
     try {
         const res = (await api.post<ApiResponse<PaymentOrder>>('/pay/create-link', {
@@ -510,16 +564,20 @@ const createPaymentLink = async (product: Product) => {
             'Đã tạo đơn thanh toán',
             `#${order.orderId} - ${formatPrice(order.amount)} - ${formatOrderStatus(order.status)}.`,
         )
+        shouldResetPaying = false
         openPaymentLink(order.link)
     } catch (error) {
         pushNotify('Thanh toán', getErrorMessage(error, 'Không tạo được link thanh toán.'))
     } finally {
-        payingId.value = null
+        if (shouldResetPaying) {
+            payingId.value = null
+        }
     }
 }
 
 onMounted(() => {
     void loadPacks()
+    window.addEventListener('keydown', handleKeydown)
 })
 
 watch(
@@ -538,11 +596,14 @@ watch(
 
 onBeforeUnmount(() => {
     clearPaymentResultTimer()
+    setDownloadButtonVisible?.(true)
+    window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
 <style scoped>
 .payment-tab {
+    position: relative;
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -551,7 +612,23 @@ onBeforeUnmount(() => {
     gap: clamp(8px, 1.4cqh, 14px);
     padding: clamp(8px, 1.8cqw, 18px) clamp(8px, 2.2cqw, 22px) clamp(12px, 2.4cqh, 24px);
     container-type: size;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 91, 37, 0.46) transparent;
+}
+
+.payment-tab::-webkit-scrollbar {
+    width: 6px;
+}
+
+.payment-tab::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.payment-tab::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(140, 91, 37, 0.46);
 }
 
 .payment-header {
@@ -853,7 +930,17 @@ onBeforeUnmount(() => {
     color: #80311f;
 }
 
+.pack-entry-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: clamp(5px, 0.9cqh, 9px) clamp(8px, 1.2cqw, 14px);
+}
+
 .payment-retry-button,
+.pack-open-button,
+.pack-panel-close-button,
 .pack-buy-button {
     border: 1px solid rgba(104, 61, 20, 0.28);
     border-radius: 6px;
@@ -882,6 +969,94 @@ onBeforeUnmount(() => {
     font-size: clamp(13px, 2.1cqw, 18px);
 }
 
+.pack-open-button {
+    min-width: clamp(150px, 21cqw, 230px);
+    padding: clamp(10px, 1.35cqw, 14px) clamp(18px, 2.4cqw, 28px);
+    font-size: clamp(18px, 2.7cqw, 30px);
+    filter:
+        drop-shadow(0 6px 11px rgba(82, 44, 15, 0.2))
+        drop-shadow(0 0 8px rgba(255, 217, 105, 0.18));
+}
+
+.pack-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: clamp(10px, 2.2vw, 26px);
+    background: rgba(45, 29, 12, 0.42);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.pack-panel {
+    width: min(1180px, 96vw);
+    height: min(840px, 92vh);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    container-type: inline-size;
+    border: 1px solid rgba(135, 86, 32, 0.34);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 251, 229, 0.94), rgba(237, 224, 184, 0.9)),
+        rgba(255, 248, 224, 0.96);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.58),
+        0 18px 40px rgba(49, 30, 12, 0.32);
+}
+
+.pack-panel-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(10px, 1.8vw, 22px);
+    padding: clamp(10px, 1.7vw, 18px) clamp(14px, 2.3vw, 26px);
+    border-bottom: 1px solid rgba(144, 96, 42, 0.24);
+    background:
+        linear-gradient(90deg, rgba(255, 246, 207, 0.78), rgba(222, 238, 214, 0.52)),
+        rgba(255, 248, 224, 0.62);
+}
+
+.pack-panel-title-group {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.pack-panel-kicker {
+    color: #8a5624;
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(12px, 1.45vw, 18px);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.pack-panel-title {
+    min-width: 0;
+    overflow: hidden;
+    color: #704116;
+    font-family: var(--font-cloud-shui-zhu);
+    font-size: clamp(22px, 3.2vw, 38px);
+    font-weight: 400;
+    line-height: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-shadow:
+        0 1px 0 rgba(255, 249, 217, 0.74),
+        0 3px 6px rgba(91, 51, 18, 0.2);
+}
+
+.pack-panel-close-button {
+    flex: 0 0 auto;
+    min-width: clamp(70px, 9vw, 104px);
+    padding: clamp(7px, 0.9vw, 10px) clamp(12px, 1.4vw, 18px);
+    font-size: clamp(13px, 1.55vw, 18px);
+}
+
 .pack-grid {
     flex: 1 1 auto;
     min-height: 0;
@@ -906,6 +1081,13 @@ onBeforeUnmount(() => {
 .pack-grid::-webkit-scrollbar-thumb {
     border-radius: 999px;
     background: rgba(140, 91, 37, 0.56);
+}
+
+.pack-panel-grid {
+    flex: 1 1 auto;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 16vw, 210px), 1fr));
+    gap: clamp(20px, 2vw, 34px);
+    padding: clamp(16px, 2vw, 26px) clamp(18px, 2.4vw, 30px) clamp(20px, 2.7vw, 32px);
 }
 
 .pack-card {
@@ -1199,12 +1381,28 @@ onBeforeUnmount(() => {
 
 .pack-buy-button {
     min-width: clamp(58px, 8.5cqw, 82px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(5px, 0.7cqw, 8px);
     padding: clamp(6px, 0.85cqw, 9px) clamp(10px, 1.3cqw, 14px);
     font-size: clamp(13px, 1.7cqw, 17px);
 }
 
+.pack-buy-button--loading::before {
+    content: '';
+    width: clamp(11px, 1.4cqw, 15px);
+    aspect-ratio: 1;
+    border: 2px solid rgba(95, 46, 10, 0.28);
+    border-top-color: #5f2e0a;
+    border-radius: 50%;
+    animation: pack-buy-spin 760ms linear infinite;
+}
+
 .payment-retry-button:hover,
 .payment-order-link:hover,
+.pack-open-button:hover,
+.pack-panel-close-button:hover,
 .pack-buy-button:hover:not(:disabled) {
     filter:
         drop-shadow(0 4px 7px rgba(82, 44, 15, 0.22))
@@ -1214,12 +1412,16 @@ onBeforeUnmount(() => {
 
 .payment-retry-button:active,
 .payment-order-link:active,
+.pack-open-button:active,
+.pack-panel-close-button:active,
 .pack-buy-button:active:not(:disabled) {
     transform: translateY(0) scale(0.98);
 }
 
 .payment-retry-button:focus-visible,
 .payment-order-link:focus-visible,
+.pack-open-button:focus-visible,
+.pack-panel-close-button:focus-visible,
 .pack-buy-button:focus-visible {
     outline: 2px solid #fff0a6;
     outline-offset: 2px;
@@ -1278,6 +1480,44 @@ onBeforeUnmount(() => {
         font-size: clamp(9px, 2.5cqw, 11px);
     }
 
+    .pack-entry-panel {
+        padding: 4px 8px;
+    }
+
+    .pack-open-button {
+        min-width: clamp(132px, 46cqw, 180px);
+        padding: 9px 16px;
+        font-size: clamp(15px, 4.4cqw, 20px);
+    }
+
+    .pack-panel-backdrop {
+        padding: 8px;
+    }
+
+    .pack-panel {
+        width: calc(100vw - 16px);
+        height: calc(100vh - 16px);
+    }
+
+    .pack-panel-header {
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .pack-panel-kicker {
+        font-size: clamp(10px, 3cqw, 13px);
+    }
+
+    .pack-panel-title {
+        font-size: clamp(18px, 5.4cqw, 26px);
+    }
+
+    .pack-panel-close-button {
+        min-width: 62px;
+        padding: 6px 9px;
+        font-size: clamp(11px, 3.2cqw, 14px);
+    }
+
     .promotion-strip {
         width: 100%;
         gap: 8px;
@@ -1314,6 +1554,12 @@ onBeforeUnmount(() => {
         grid-template-columns: repeat(auto-fit, minmax(clamp(132px, 42cqw, 176px), 1fr));
         gap: clamp(24px, 7cqw, 48px);
         padding: clamp(10px, 2.7cqw, 14px) clamp(12px, 3.2cqw, 16px) clamp(14px, 3.5cqw, 20px);
+    }
+
+    .pack-panel-grid {
+        grid-template-columns: repeat(auto-fit, minmax(clamp(132px, 42vw, 168px), 1fr));
+        gap: clamp(22px, 7vw, 36px);
+        padding: clamp(12px, 3.5vw, 18px) clamp(12px, 4vw, 18px) clamp(16px, 5vw, 22px);
     }
 
     .pack-card {
@@ -1378,10 +1624,18 @@ onBeforeUnmount(() => {
 
     .payment-retry-button:hover,
     .payment-order-link:hover,
+    .pack-open-button:hover,
+    .pack-panel-close-button:hover,
     .pack-description-button:hover,
     .pack-buy-button:hover:not(:disabled) {
         filter: none;
         transform: none;
+    }
+}
+
+@keyframes pack-buy-spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 </style>
