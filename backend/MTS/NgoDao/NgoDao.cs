@@ -20,6 +20,11 @@ public class NgoDao : BaseData, IMemorySerializable<NgoDao>
     {
         return new NgoDaoBuff();
     }
+
+    public virtual void UnBuff(CharacterData charData)
+    {
+        
+    }
     public void Deserialize(IReader reader, ref NgoDao value)
     {
         BaseData baseValue = value;

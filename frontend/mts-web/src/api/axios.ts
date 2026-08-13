@@ -1,36 +1,35 @@
 // src/api/axios.ts
 
 import axios from 'axios';
-
+const downloadUrls = {
+  android: "https://play.google.com/store/apps/details?id=com.DreamCultivationGame.NghchThinSkyBreaker",
+  ios: "https://apps.apple.com/app/id1545432101",
+}
+const hostnameMap = {
+  'localhost': {
+    download: downloadUrls.android,
+    api: 'http://localhost:9481'
+  },
+  '127.0.0.1': {
+    download: downloadUrls.android,
+    api: 'http://127.0.0.1:9481'
+  },
+  'play.nghichthien.online': {
+    download: downloadUrls.android,
+    api: 'https://api.nghichthien.online'
+  },
+  'ios.nghichthien.online': {
+    download: downloadUrls.ios,
+    api: 'https://api-ios.nghichthien.online'
+  },
+}
+const getDownloadUrl = () => {
+  const downloadUrl = hostnameMap[window.location.hostname as keyof typeof hostnameMap].download
+  return downloadUrl
+}
 const createApiBaseUrl = () => {
-  const url = new URL(window.location.origin);
-  const isIpAddress = /^\d{1,3}(\.\d{1,3}){3}$/.test(url.hostname) || url.hostname.includes(':');
-  const isLocalHost =
-    url.hostname === 'localhost' ||
-    url.hostname === '127.0.0.1' ||
-    url.hostname === '0.0.0.0' ||
-    url.hostname === '::1' ||
-    isIpAddress;
-
-  if (isLocalHost) {
-    url.port = '9481';
-    return url.origin;
-  }
-
-  url.port = '';
-
-  if (!url.hostname.startsWith('api.')) {
-    const hostnameParts = url.hostname.split('.').filter(Boolean);
-
-    if (hostnameParts.length > 2) {
-      hostnameParts[0] = 'api';
-      url.hostname = hostnameParts.join('.');
-    } else {
-      url.hostname = `api.${url.hostname}`;
-    }
-  }
-
-  return url.origin;
+  const apiUrl = hostnameMap[window.location.hostname as keyof typeof hostnameMap].api
+  return apiUrl
 };
 
 const api = axios.create({
@@ -69,4 +68,7 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export {
+  api,
+  getDownloadUrl
+}

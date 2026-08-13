@@ -16,7 +16,7 @@ public class SkillHandler : IClientHandler
     [
         MessageTag.LearnNgoDao, MessageTag.EquipThanThong, MessageTag.UnequipThanThong,
         MessageTag.EquipCongPhap, MessageTag.UnequipCongPhap, MessageTag.TuLuyen, MessageTag.LinhNgo,
-        MessageTag.DotPhaCongPhap, MessageTag.UseDanRequest
+        MessageTag.DotPhaCongPhap, MessageTag.UseDanRequest, MessageTag.ResetNgoDaoRequest
     ];
 
     public MessageTag[] HandleTag => handler;
@@ -257,6 +257,30 @@ public class SkillHandler : IClientHandler
             finally
             {
                 client.MemSend(MessageTag.UseDanRequest, result);
+            }
+        }
+        else if (tag == MessageTag.ResetNgoDaoRequest)
+        {
+            ResetNgoDaoResult result = null;
+            try
+            {
+                lock (client.CharacterLock)
+                {
+                    var charData = client.CharacterData;
+                    result = charData.ResetNgoDao();
+                }
+            }
+            catch (InvalidException e)
+            {
+                result = new ResetNgoDaoResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.ResetNgoDaoRequest, result);
             }
         }
     }

@@ -18,6 +18,7 @@ namespace MTS.ND
 
         public EBuffStats currentEBuffStat;
         public Int32 buff;
+
         public override int ByteSize()
         {
             var byteSize = base.ByteSize();
@@ -32,23 +33,23 @@ namespace MTS.ND
             value.buff = reader.Read<Int32>();
         }
 
-        public override NgoDaoBuff Buff(CharacterData charData)
+        private NgoDaoBuff Buff(CharacterData charData, int value)
         {
             var stats = charData.Stats;
             switch (currentEBuffStat)
             {
                 case EBuffStats.ThanThuc:
-                    var thanThuc = stats.ThanThuc + buff;
+                    var thanThuc = stats.ThanThuc + value;
                     stats.SetThanThuc(thanThuc);
                     break;
                 case EBuffStats.HP:
-                    var sinhMenh = stats.SinhMenh + buff;
-                    var hp = stats.Hp + buff;
+                    var sinhMenh = stats.SinhMenh + value;
+                    var hp = stats.Hp + value;
                     stats.SetSinhMenh(sinhMenh);
                     stats.SetHp(hp);
                     break;
                 case EBuffStats.DonToc:
-                    var dontoc = stats.TocDoBay;
+                    var dontoc = stats.TocDoBay + value;
                     stats.SetTocDoBay(dontoc);
                     break;
             }
@@ -56,8 +57,17 @@ namespace MTS.ND
             return new NgoDaoBuff()
             {
                 BuffStat = currentEBuffStat,
-                BuffValue = buff
+                BuffValue = value
             };
+        }
+        public override NgoDaoBuff Buff(CharacterData charData)
+        {
+            return Buff(charData, buff);
+        }
+
+        public override void UnBuff(CharacterData charData)
+        {
+            Buff(charData, -buff);
         }
 
         public override void Serialize(IWriter writer)

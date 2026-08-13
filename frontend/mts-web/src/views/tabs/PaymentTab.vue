@@ -166,7 +166,7 @@ import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CSSProperties } from 'vue'
 import { useRoute } from 'vue-router'
 
-import api from '../../api/axios'
+import {api} from '../../api/axios'
 import LoadingOverlay from '../../components/LoadingOverlay.vue'
 import NotifyStack from '../../components/NotifyStack.vue'
 import { FormatUtil } from '../../utils/utils'

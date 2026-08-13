@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import Account from '../../components/Account.vue'
 import { onMounted, ref, reactive } from 'vue'
-import api from '../../api/axios'
+import {api} from '../../api/axios'
 import NotifyStack from '../../components/NotifyStack.vue'
 import titlePlateImage from '../../assets/sprites/sprite_05.png'
 const notifyStack = ref<InstanceType<typeof NotifyStack> | null>(null)

@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import api from '../../api/axios'
+import {api} from '../../api/axios'
 import NotifyStack from '../../components/NotifyStack.vue'
 
 interface ApiResponse<T> {

@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import { ref } from 'vue'
-import api from '../api/axios'
+import {api} from '../api/axios'
 import formImage from '../assets/sprites/sprite_01.png'
 import titleImage from '../assets/sprites/sprite_05.png'
 import orImage from '../assets/sprites/sprite_37.png'

@@ -1,7 +1,9 @@
 using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
+using LuyenDanConfig = MTS.Network.Models.LuyenDanConfig;
 
 namespace MTS.Network.ClientState;
 
@@ -10,6 +12,12 @@ public class LuyenDan : IClientState
     private Client client;
     private bool isLuyenDan;
     private readonly object luyenDanLock = new();
+
+    public static LuyenDanConfig Config { get; } = new()
+    {
+        MinRate = 25f,
+        RatePerTier = 20f
+    };
     public LuyenDan(Client client)
     {
         this.client = client;
@@ -60,6 +68,10 @@ public class LuyenDan : IClientState
                     isLuyenDan = false;
                 }
             }
+        }
+        else if (tag == MessageTag.GetLuyenDanConfigRequest)
+        {
+            client.MemSend(MessageTag.GetLuyenDanConfigRequest, Config);
         }
     }
     public void OnDisconnect(IProtocol<MessageTag> protocol)

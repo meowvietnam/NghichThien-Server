@@ -124,6 +124,15 @@ public class AdminHandler : IClientHandler
             }
             client.Send(MessageTag.SetExpRequest, currentExp);
         }
+        else if (tag == MessageTag.AdminNotify)
+        {
+            var msg = reader.Read();
+            var charDatas = TcpServer.Instance.GetCharsOnline();
+            foreach (var charData in charDatas)
+            {
+                charData?.Client.MemSend(MessageTag.Notify, msg);
+            }
+        }
     }
 
     public void OnLeave()
@@ -134,7 +143,7 @@ public class AdminHandler : IClientHandler
     [
         MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo,
         MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney, MessageTag.TestRequest,
-        MessageTag.SetExpRequest
+        MessageTag.SetExpRequest, MessageTag.AdminNotify
     ];
 
     public MessageTag[] HandleTag => handler;

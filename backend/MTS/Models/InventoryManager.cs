@@ -9,6 +9,7 @@ using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Resources;
 using MTS.Localization;
+using MTS.Network.ClientState;
 using MTS.Network.Models;
 using MTS.Utils;
 using Newtonsoft.Json;
@@ -48,9 +49,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
     public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
 
-    [NotMapped]
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
+    [NotMapped] [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
     private readonly object inventoryLock = new();
 
     [NotMapped]
@@ -201,6 +200,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             CongPhapOwners = congPhapOwners;
             ThanThongOwners = thanThongOwners;
         }
+
         Init();
     }
 
@@ -418,158 +418,162 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-        var main1 = request.ChuDuoc;
-        var sub1 = request.PhuDuoc1;
-        var sub2 = request.PhuDuoc2;
-        var primer = request.DuocDan;
-        var furnaceId = request.FurnaceId;
-        var count = request.Count;
-        var actualCount = count;
-        var furnace = Furnaces.FirstOrDefault(x => x.SelfId == furnaceId);
-        if (furnace == null)
-        {
-            throw new InvalidException(RefineMessage.FurnaceNotFound);
-        }
-
-        ItemRef? Get(LuyenDanRequest.Herbs herbs)
-        {
-            if (herbs.IsDefault()) return null;
-            if (herbs.Count <= 0) throw new InvalidException(RefineMessage.QuantityInvalid);
-            var myHerb = Herbs.FirstOrDefault(x => x.Id == herbs.Id);
-            if (myHerb == null)
+            var main1 = request.ChuDuoc;
+            var sub1 = request.PhuDuoc1;
+            var sub2 = request.PhuDuoc2;
+            var primer = request.DuocDan;
+            var furnaceId = request.FurnaceId;
+            var count = request.Count;
+            var actualCount = count;
+            var furnace = Furnaces.FirstOrDefault(x => x.SelfId == furnaceId);
+            if (furnace == null)
             {
-                throw new InvalidException(RefineMessage.HerbsNotFound);
+                throw new InvalidException(RefineMessage.FurnaceNotFound);
             }
 
-            var myCount = myHerb.Count;
-            if (myCount - herbs.Count * count < 0) throw new InvalidException(RefineMessage.NotEnoughQuantity);
-            return myHerb;
-        }
-
-        (RecipeData? dataRes, RecipeData.Recipe? recipeRes) FindResRecipe()
-        {
-            var recipes = GameConfig.LuyenDanResources.Recipes;
-            foreach (var recipeData in recipes)
+            ItemRef? Get(LuyenDanRequest.Herbs herbs)
             {
-                foreach (var r in recipeData.Recipes)
+                if (herbs.IsDefault()) return null;
+                if (herbs.Count <= 0) throw new InvalidException(RefineMessage.QuantityInvalid);
+                var myHerb = Herbs.FirstOrDefault(x => x.Id == herbs.Id);
+                if (myHerb == null)
                 {
-                    if (r.IsValid(main1, sub1, sub2, primer))
+                    throw new InvalidException(RefineMessage.HerbsNotFound);
+                }
+
+                var myCount = myHerb.Count;
+                if (myCount - herbs.Count * count < 0) throw new InvalidException(RefineMessage.NotEnoughQuantity);
+                return myHerb;
+            }
+
+            (RecipeData? dataRes, RecipeData.Recipe? recipeRes) FindResRecipe()
+            {
+                var recipes = GameConfig.LuyenDanResources.Recipes;
+                foreach (var recipeData in recipes)
+                {
+                    foreach (var r in recipeData.Recipes)
                     {
-                        return (recipeData, r);
+                        if (r.IsValid(main1, sub1, sub2, primer))
+                        {
+                            return (recipeData, r);
+                        }
+                    }
+                }
+
+                return (null, null);
+            }
+
+            var chuDuoc = Get(main1);
+            var phuDuoc1 = Get(sub1);
+            var phuDuoc2 = Get(sub2);
+            var duocDan = Get(primer);
+            var modify = new InventoryModify();
+
+            void Decrease(ItemRef? itemRef, LuyenDanRequest.Herbs herbs)
+            {
+                if (itemRef != null)
+                {
+                    int itemCount = itemRef.Count;
+                    itemCount -= herbs.Count * count;
+                    if (itemCount <= 0)
+                    {
+                        Herbs.Remove(itemRef);
+                        Tracking.Items.Delete(itemRef);
+                        modify.Items.Delete(itemRef);
+                    }
+                    else
+                    {
+                        itemRef.Count = (ushort)itemCount;
+                        Tracking.Items.Update(itemRef);
+                        modify.Items.Update(itemRef);
                     }
                 }
             }
 
-            return (null, null);
-        }
-
-        var chuDuoc = Get(main1);
-        var phuDuoc1 = Get(sub1);
-        var phuDuoc2 = Get(sub2);
-        var duocDan = Get(primer);
-        var modify = new InventoryModify();
-
-        void Decrease(ItemRef? itemRef, LuyenDanRequest.Herbs herbs)
-        {
-            if (itemRef != null)
+            Decrease(chuDuoc, main1);
+            Decrease(phuDuoc1, sub1);
+            Decrease(phuDuoc2, sub2);
+            Decrease(duocDan, sub1);
+            var (dataRes, recipeRes) = FindResRecipe();
+            var baseTime = 3;
+            var tuoiTac = characterData.Stats.TuoiTac;
+            if (dataRes != null)
             {
-                int itemCount = itemRef.Count;
-                itemCount -= herbs.Count * count;
-                if (itemCount <= 0)
+                var linhDan = dataRes.LinhDan;
+                var tier = linhDan.Tier;
+                var furnaceData = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Id == furnace.Id);
+                var tierDiff = tier - furnaceData.Tier;
+                var myRecipe = Recipes.FirstOrDefault(x => x.Id == dataRes.Id);
+                if (myRecipe == null)
                 {
-                    Herbs.Remove(itemRef);
-                    Tracking.Items.Delete(itemRef);
-                    modify.Items.Delete(itemRef);
-                }
-                else
-                {
-                    itemRef.Count = (ushort)itemCount;
-                    Tracking.Items.Update(itemRef);
-                    modify.Items.Update(itemRef);
-                }
-            }
-        }
-
-        Decrease(chuDuoc, main1);
-        Decrease(phuDuoc1, sub1);
-        Decrease(phuDuoc2, sub2);
-        Decrease(duocDan, sub1);
-        var (dataRes, recipeRes) = FindResRecipe();
-        var baseTime = 3;
-        var tuoiTac = characterData.Stats.TuoiTac;
-        if (dataRes != null)
-        {
-            var myRecipe = Recipes.FirstOrDefault(x => x.Id == dataRes.Id);
-            if (myRecipe == null)
-            {
-                actualCount = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    if (RandomUtils.RandomChance(25))
+                    var config = LuyenDan.Config;
+                    var furnaceTierDiff = -tierDiff;
+                    var rateFloat = furnaceTierDiff > 0 ? config.MinRate + furnaceTierDiff * config.RatePerTier : config.MinRate;
+                    var rate = Mathf.RoundToInt(rateFloat);
+                    actualCount = 0;
+                    for (int i = 0; i < count; i++)
                     {
-                        actualCount++;
+                        if (RandomUtils.RandomChance(rate))
+                        {
+                            actualCount++;
+                        }
+                    }
+
+                    var success = actualCount > 0;
+                    if (!success)
+                    {
+                        return new LuyenDanResult()
+                        {
+                            Success = true,
+                            Message = RefineMessage.ThereNoRecipeRefineFail,
+                            ItemRefs = new(),
+                            Modify = modify,
+                            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                        };
                     }
                 }
 
-                var success = actualCount > 0;
-                if (!success)
+                var baseLossDurability = tierDiff > 0 ? tierDiff * 50 : 2;
+                var loss = baseLossDurability * count;
+                baseTime = (int)tier + 3;
+                int dur = furnace.Durability;
+                dur -= loss;
+                if (dur <= 0)
                 {
+                    Furnaces.Remove(furnace);
+                    furnaceIdAllocator.ReleaseId(furnace.SelfId);
+                    Tracking.Furnaces.Delete(furnace);
+                    modify.Furnaces.Delete(furnace);
                     return new LuyenDanResult()
                     {
                         Success = true,
-                        Message = RefineMessage.ThereNoRecipeRefineFail,
+                        Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
                         ItemRefs = new(),
                         Modify = modify,
                         NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
                     };
                 }
-            }
 
-            var linhDan = dataRes.LinhDan;
-            var tier = linhDan.Tier;
-            var furnaceData = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Id == furnace.Id);
-            var tierDiff = tier - furnaceData.Tier;
-            var baseLossDurability = tierDiff > 0 ? tierDiff * 50 : 2;
-            var loss = baseLossDurability * count;
-            baseTime = (int)tier + 3;
-            int dur = furnace.Durability;
-            dur -= loss;
-            if (dur <= 0)
-            {
-                Furnaces.Remove(furnace);
-                furnaceIdAllocator.ReleaseId(furnace.SelfId);
-                Tracking.Furnaces.Delete(furnace);
-                modify.Furnaces.Delete(furnace);
+                furnace.Durability = (sbyte)dur;
+                Tracking.Furnaces.Update(furnace);
+                modify.Furnaces.Update(furnace);
+                var linhDanRef = new ItemRef()
+                {
+                    Id = (ushort)linhDan.Id,
+                    Count = (ushort)actualCount,
+                    Type = ItemType.LinhDan
+                };
+                Add(LinhDans, linhDanRef);
+                modify.Items.Add(linhDanRef);
                 return new LuyenDanResult()
                 {
                     Success = true,
-                    Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
-                    ItemRefs = new(),
+                    Message = RefineMessage.Success,
+                    ItemRefs = new() { linhDanRef },
                     Modify = modify,
                     NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
                 };
             }
-
-            furnace.Durability = (sbyte)dur;
-            Tracking.Furnaces.Update(furnace);
-            modify.Furnaces.Update(furnace);
-            var linhDanRef = new ItemRef()
-            {
-                Id = (ushort)linhDan.Id,
-                Count = (ushort)actualCount,
-                Type = ItemType.LinhDan
-            };
-            Add(LinhDans, linhDanRef);
-            modify.Items.Add(linhDanRef);
-            return new LuyenDanResult()
-            {
-                Success = true,
-                Message = RefineMessage.Success,
-                ItemRefs = new() { linhDanRef },
-                Modify = modify,
-                NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
-            };
-        }
 
             return new LuyenDanResult()
             {
@@ -947,137 +951,137 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-        var ids = request.MaterialIds;
-        var res = LuyenKhiResources.Instance;
-        var materials = ids.Select(x =>
-        {
-            var material = res.Materials.FirstOrDefault(y => y.Id == x);
-            if (material == null)
+            var ids = request.MaterialIds;
+            var res = LuyenKhiResources.Instance;
+            var materials = ids.Select(x =>
             {
-                throw new InvalidException(LuyenKhiMessage.MaterialNotFound);
-            }
-
-            return material;
-        }).ToArray();
-        var g = materials.GroupBy(x => x.Id)
-            .Select(x => new
-            {
-                Material = x.First(),
-                Count = (ushort)x.Count()
-            })
-            .ToArray();
-        var itemRefs = g.Select(x =>
-        {
-            var itemRef = new ItemRef()
-            {
-                Id = (ushort)x.Material.Id,
-                Type = ItemType.Material,
-                Count = x.Count
-            };
-            if (Materials.TryGetValue(itemRef, out var material))
-            {
-                var newCount = material.Count - itemRef.Count;
-                if (newCount < 0)
+                var material = res.Materials.FirstOrDefault(y => y.Id == x);
+                if (material == null)
                 {
-                    throw new InvalidException(LuyenKhiMessage.NotEnoughMaterials);
+                    throw new InvalidException(LuyenKhiMessage.MaterialNotFound);
                 }
 
-                return new
+                return material;
+            }).ToArray();
+            var g = materials.GroupBy(x => x.Id)
+                .Select(x => new
                 {
-                    Material = material,
-                    x.Count
-                };
-            }
-
-            throw new InvalidException(LuyenKhiMessage.DoesNotOwnMaterial);
-        });
-        var modify = new InventoryModify();
-        var matConfigs = res.MaterialGradeConfigs;
-        var grade = 0;
-        foreach (var material in materials)
-        {
-            var matConfig = matConfigs.First(x => x.Tier == material.Tier);
-            grade += matConfig.Grade;
-        }
-
-        var equipmentGradeConfig = res.EquipmentGrades.Last(x => x.MinGrade <= grade);
-        var tier = equipmentGradeConfig.Tier;
-        var selectedType = request.SelectedType;
-        var lianQiEffects = res.LianQiEffects;
-        var sumGroup = materials
-            .GroupBy(x => new
+                    Material = x.First(),
+                    Count = (ushort)x.Count()
+                })
+                .ToArray();
+            var itemRefs = g.Select(x =>
             {
-                x.CultivationElement,
-                x.YinYangType,
-            })
-            .Select(k => new
-            {
-                Materials = k.ToList(),
-                Effect = lianQiEffects.First(i =>
-                        i.CultivationElement == k.Key.CultivationElement && i.YinYangType == k.Key.YinYangType)
-                    .Effects.First(i => i.ArtifactType == selectedType),
-            })
-            .GroupBy(x => x.Effect.EffectType)
-            .Select(group => new
-            {
-                Sum = group.SelectMany(x => x.Materials).Sum(x => matConfigs.First(i => i.Tier == x.Tier).Grade),
-                group.First().Effect,
-            })
-            .ToArray();
-        var effects = sumGroup
-            .Select(x =>
-            {
-                var sum = x.Sum;
-                var effect = x.Effect;
-                var max = (int)Math.Round(1.0f * sum / effect.Value, MidpointRounding.AwayFromZero);
-                var min = (int)Math.Round(0.5f * max, MidpointRounding.AwayFromZero);
-                var value = (byte)new Random().Next(min, max + 1);
-                return new Effect()
+                var itemRef = new ItemRef()
                 {
-                    Type = effect.EffectType,
-                    Value = value,
+                    Id = (ushort)x.Material.Id,
+                    Type = ItemType.Material,
+                    Count = x.Count
                 };
-            })
-            .Where(x => x.Value != 0)
-            .ToArray();
-        var random = new Random();
-        var item = res.RewardItems
-            .Where(x => x.Tier == tier & x.Type == selectedType)
-            .OrderBy(x => random.Next())
-            .First();
+                if (Materials.TryGetValue(itemRef, out var material))
+                {
+                    var newCount = material.Count - itemRef.Count;
+                    if (newCount < 0)
+                    {
+                        throw new InvalidException(LuyenKhiMessage.NotEnoughMaterials);
+                    }
 
-        var equipmentTier = res.EquipmentTiers.First(x => x.Tier == tier);
-        var dayCost = equipmentTier.DayCost;
-        var stats = CharacterData.Stats;
-        var newTuoiTac = stats.TuoiTac.Add(TimeSpan.FromDays(dayCost));
-        stats.SetTuoiTac(newTuoiTac);
-        var equipment = new Equipment()
-        {
-            Id = (ushort)item.Id,
-            Effects = effects,
-            Name = CharacterData.Name,
-            MaterialIds = ids
-        };
-        foreach (var i in itemRefs)
-        {
-            var itemRef = i.Material;
-            var originalCount = itemRef.Count;
-            var newCount = originalCount - i.Count;
-            if (newCount <= 0)
-            {
-                Remove(itemRef);
-                modify.Items.Delete(itemRef);
-            }
-            else
-            {
-                itemRef.Count = (ushort)newCount;
-                Update(itemRef);
-                modify.Items.Update(itemRef);
-            }
-        }
+                    return new
+                    {
+                        Material = material,
+                        x.Count
+                    };
+                }
 
-        Add(equipment);
-        modify.Equipments.Add(equipment);
+                throw new InvalidException(LuyenKhiMessage.DoesNotOwnMaterial);
+            });
+            var modify = new InventoryModify();
+            var matConfigs = res.MaterialGradeConfigs;
+            var grade = 0;
+            foreach (var material in materials)
+            {
+                var matConfig = matConfigs.First(x => x.Tier == material.Tier);
+                grade += matConfig.Grade;
+            }
+
+            var equipmentGradeConfig = res.EquipmentGrades.Last(x => x.MinGrade <= grade);
+            var tier = equipmentGradeConfig.Tier;
+            var selectedType = request.SelectedType;
+            var lianQiEffects = res.LianQiEffects;
+            var sumGroup = materials
+                .GroupBy(x => new
+                {
+                    x.CultivationElement,
+                    x.YinYangType,
+                })
+                .Select(k => new
+                {
+                    Materials = k.ToList(),
+                    Effect = lianQiEffects.First(i =>
+                            i.CultivationElement == k.Key.CultivationElement && i.YinYangType == k.Key.YinYangType)
+                        .Effects.First(i => i.ArtifactType == selectedType),
+                })
+                .GroupBy(x => x.Effect.EffectType)
+                .Select(group => new
+                {
+                    Sum = group.SelectMany(x => x.Materials).Sum(x => matConfigs.First(i => i.Tier == x.Tier).Grade),
+                    group.First().Effect,
+                })
+                .ToArray();
+            var effects = sumGroup
+                .Select(x =>
+                {
+                    var sum = x.Sum;
+                    var effect = x.Effect;
+                    var max = (int)Math.Round(1.0f * sum / effect.Value, MidpointRounding.AwayFromZero);
+                    var min = (int)Math.Round(0.5f * max, MidpointRounding.AwayFromZero);
+                    var value = (byte)new Random().Next(min, max + 1);
+                    return new Effect()
+                    {
+                        Type = effect.EffectType,
+                        Value = value,
+                    };
+                })
+                .Where(x => x.Value != 0)
+                .ToArray();
+            var random = new Random();
+            var item = res.RewardItems
+                .Where(x => x.Tier == tier & x.Type == selectedType)
+                .OrderBy(x => random.Next())
+                .First();
+
+            var equipmentTier = res.EquipmentTiers.First(x => x.Tier == tier);
+            var dayCost = equipmentTier.DayCost;
+            var stats = CharacterData.Stats;
+            var newTuoiTac = stats.TuoiTac.Add(TimeSpan.FromDays(dayCost));
+            stats.SetTuoiTac(newTuoiTac);
+            var equipment = new Equipment()
+            {
+                Id = (ushort)item.Id,
+                Effects = effects,
+                Name = CharacterData.Name,
+                MaterialIds = ids
+            };
+            foreach (var i in itemRefs)
+            {
+                var itemRef = i.Material;
+                var originalCount = itemRef.Count;
+                var newCount = originalCount - i.Count;
+                if (newCount <= 0)
+                {
+                    Remove(itemRef);
+                    modify.Items.Delete(itemRef);
+                }
+                else
+                {
+                    itemRef.Count = (ushort)newCount;
+                    Update(itemRef);
+                    modify.Items.Update(itemRef);
+                }
+            }
+
+            Add(equipment);
+            modify.Equipments.Add(equipment);
             return new LuyenKhiResult()
             {
                 Success = true,
@@ -1134,6 +1138,18 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             }
 
             return newNgoDaoDiem;
+        }
+    }
+
+    public void ClearNgoDao()
+    {
+        lock (inventoryLock)
+        {
+            foreach (var ngoDao in NgoDaos)
+            {
+                Tracking.NgoDaos.Delete(ngoDao);
+            }
+            NgoDaos.Clear();
         }
     }
 }

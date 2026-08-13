@@ -119,6 +119,42 @@ public partial class CharacterData
         };
     }
 
+    public ResetNgoDaoResult ResetNgoDao()
+    {
+        var remaining = Stats.LinhThach - 500;
+        if (remaining < 0)
+        {
+            throw new InvalidException(Strings.NotEnoughMoney);
+        }
+        var owners = InventoryManager.NgoDaos;
+        if (!owners.Any())
+        {
+            throw new InvalidException("Đạo hữu chưa có Ngộ Đạo nào để Tái Ngộ.");
+        }   
+        var ngoDaos = GameConfig.NDCPTTManager.NgoDaos;
+        var point = 0;
+        foreach (var owner in owners)
+        {
+            var ngoDao = ngoDaos.FirstOrDefault(x => x.Id == owner.Id);
+            if (ngoDao == null)
+            {
+                continue;
+            }
+            ngoDao.UnBuff(this);
+            point += ngoDao.Require;
+        }
+        Progression.SetNgoDaoDiem(Progression.NgoDaoDiem + point);
+        Stats.SetLinhThach(remaining);
+        InventoryManager.ClearNgoDao();
+        return new ResetNgoDaoResult()
+        {
+            Success = true,
+            Message = "Tái Ngộ Đạo thành công!",
+            NewNgoDaoDiem = Progression.NgoDaoDiem,
+            NgoDaos = InventoryManager.NgoDaos,
+            Stats = new StatsSnapshot(Stats)
+        };
+    }
     public EquipThanThongResult EquipThanThong(EquipThanThong request)
     {
         var thanThongOwner = new ThanThong()
