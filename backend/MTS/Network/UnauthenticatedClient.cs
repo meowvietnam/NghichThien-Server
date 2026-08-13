@@ -21,7 +21,7 @@ public class UnauthenticatedClient : ClientConnection
     {
         private static readonly string[] acceptVersions =
         [
-            "apk_v1.2.8", "apk_v1.2.7", "ios_v1.2.7"
+            "apk_v1.2.9", "apk_v1.2.8", "ios_v1.2.7"
         ];
 
         public void OnEnter()
@@ -37,7 +37,7 @@ public class UnauthenticatedClient : ClientConnection
                 var version = reader.Read();
                 var success = acceptVersions.Contains(version);
                 var msg = success
-                    ? $"Phiên bản hợp lệ!"
+                    ? $"[3] Server test sẽ reset dữ liệu khi bản chính thức ra mắt. Nạp Tiên Ngọc trong server test sẽ được hoàn lại x2 khi game chính thức ra mắt. Chúc các đạo hữu trải nghiệm vui vẻ!"
                     : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {
