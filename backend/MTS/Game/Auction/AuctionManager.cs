@@ -357,8 +357,8 @@ public class AuctionManager
             {
                 reward = AddToInventory(session.ItemRef, charData.InventoryManager);
             }
-
             reward.Content = Strings.AuctionRewardReceived;
+            charData.AddSpendMoneyVipOnline(amount, SpendFor.Auction);
             client.MemSend(MessageTag.AuctionReward, reward);
             client.MemSend(MessageTag.Notify, Strings.AuctionRewardReceived);
         }

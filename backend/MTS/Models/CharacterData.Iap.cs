@@ -17,7 +17,7 @@ public partial class CharacterData
         return await CompleteIapPurchase(verifiedPurchase);
     }
 
-    public static async Task<VerifiedIapPurchase> VerifyIapPurchase(IapModel request)
+    public async Task<VerifiedIapPurchase> VerifyIapPurchase(IapModel request)
     {
         Log.Information(request.ToString());
         var store = request.Store;
@@ -67,7 +67,7 @@ public partial class CharacterData
         if (actualProductType == IapProductType.NonConsumable)
         {
             hasPurchased = await db.IapPurchases.AnyAsync(
-                x => x.Product.ActualProductType == actualProductType,
+                x => x.CharId == Id && x.Product.ActualProductType == actualProductType,
                 cancelToken);
             if (hasPurchased)
             {
@@ -142,6 +142,7 @@ public partial class CharacterData
         {
             promotion.PromotionApplicable.Apply(reward);
         }
+
         reward.Execute(this);
         reward.Edit(purchase);
         await db.IapPurchases.AddAsync(purchase, cancelToken);
@@ -252,7 +253,17 @@ public partial class CharacterData
         };
         await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
     }
-
+    public async Task AddSpendMoneyVipOffline(long moneyVip, SpendFor spendFor, DateTime time,AppDbContext db)
+    {
+        var spendingMoneyVip = new SpendingMoneyVip
+        {
+            CharId = Id,
+            SpendFor = spendFor,
+            MoneyVip = moneyVip,
+            Time = time,
+        };
+        await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
+    }
     public async Task<long> GetTongNapInRank()
     {
         await using var db = await Program.CreateDbAsync();

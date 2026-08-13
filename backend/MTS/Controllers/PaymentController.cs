@@ -6,6 +6,7 @@ using MTS.Exceptions;
 using MTS.IAP;
 using MTS.Localization;
 using MTS.Models;
+using MTS.Network;
 using MTS.Network.Models;
 using MTS.Services;
 using MTS.Utils;
@@ -177,7 +178,6 @@ public class PaymentController : Controller
             {
                 throw new InvalidException(Strings.PaymentOrderStatusInvalid);
             }
-
             order.Status = OrderStatus.Complete;
             var purchase = new IapPurchase()
             {
@@ -193,10 +193,12 @@ public class PaymentController : Controller
             {
                 promotion.PromotionApplicable.Apply(productReward);
             }
-            productReward.ClaimNow(order.CharData);
+            var charData = TcpServer.Instance.GetCharsOnline().FirstOrDefault(c => c.Id == order.CharId);
+            charData ??= order.CharData;
+            productReward.ClaimNow(charData);
             productReward.Edit(purchase);
             var rewards = productReward.GetMailRewards();
-            var mailManager = new MailManager(order.CharData, null);
+            var mailManager = new MailManager(charData, charData.Client);
             await mailManager.SendMail(new Mail()
             {
                 Title = "Nạp tiền thành công!",

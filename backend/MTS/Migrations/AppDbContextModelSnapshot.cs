@@ -967,6 +967,22 @@ namespace MTS.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("MTS.Models.WelcomeReward", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClaimCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ClaimDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("WelcomeRewards");
+                });
+
             modelBuilder.Entity("MTS.Network.Models.IapPurchase", b =>
                 {
                     b.Property<int>("Id")
@@ -996,6 +1012,8 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CharId");
 
                     b.HasIndex("ProductId");
 
@@ -1365,13 +1383,32 @@ namespace MTS.Migrations
                     b.Navigation("EquipmentManager");
                 });
 
+            modelBuilder.Entity("MTS.Models.WelcomeReward", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.WelcomeReward", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Network.Models.IapPurchase", b =>
                 {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MTS.Models.IapProduct", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("CharData");
 
                     b.Navigation("Product");
                 });

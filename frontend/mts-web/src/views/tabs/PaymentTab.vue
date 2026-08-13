@@ -170,7 +170,7 @@ import api from '../../api/axios'
 import LoadingOverlay from '../../components/LoadingOverlay.vue'
 import NotifyStack from '../../components/NotifyStack.vue'
 import { FormatUtil } from '../../utils/utils'
-import packBackgroundImage from '../../assets/packs/pack_background.png'
+import packBackgroundImage from '../../assets/packs/pack_background_responsive.png'
 import startPackImage from '../../assets/packs/start_pack.png'
 import tienNgoc1Image from '../../assets/packs/tien_ngoc_1.png'
 import tienNgoc2Image from '../../assets/packs/tien_ngoc_2.png'
@@ -984,7 +984,10 @@ onBeforeUnmount(() => {
     z-index: 60;
     display: grid;
     place-items: center;
-    padding: clamp(10px, 2.2vw, 26px);
+    padding:
+        clamp(10px, 2.2vw, 26px)
+        clamp(10px, 2.2vw, 26px)
+        calc(clamp(10px, 2.2vw, 26px) + env(safe-area-inset-bottom));
     background: rgba(45, 29, 12, 0.42);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
@@ -1066,8 +1069,10 @@ onBeforeUnmount(() => {
     gap: clamp(24px, 3.4cqw, 40px);
     overflow: auto;
     padding: clamp(12px, 1.8cqw, 18px) clamp(18px, 2.8cqw, 28px) clamp(18px, 2.7cqh, 28px);
+    scroll-padding-bottom: clamp(40px, 9cqh, 88px);
     scrollbar-width: thin;
     scrollbar-color: rgba(140, 91, 37, 0.56) transparent;
+    overscroll-behavior: contain;
 }
 
 .pack-grid::-webkit-scrollbar {
@@ -1085,19 +1090,23 @@ onBeforeUnmount(() => {
 
 .pack-panel-grid {
     flex: 1 1 auto;
-    grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 16vw, 210px), 1fr));
-    gap: clamp(20px, 2vw, 34px);
-    padding: clamp(16px, 2vw, 26px) clamp(18px, 2.4vw, 30px) clamp(20px, 2.7vw, 32px);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(220px, 27cqw, 285px)), 1fr));
+    gap: clamp(26px, 3cqw, 44px);
+    padding:
+        clamp(20px, 2.5vw, 32px)
+        clamp(22px, 3vw, 38px)
+        calc(clamp(52px, 8vw, 92px) + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(clamp(52px, 8vw, 92px) + env(safe-area-inset-bottom));
 }
 
 .pack-card {
     position: relative;
     isolation: isolate;
     min-width: 0;
-    aspect-ratio: 940 / 1320;
+    aspect-ratio: 2 / 3;
     display: grid;
-    grid-template-rows: 45% minmax(0, 1fr);
-    padding: clamp(18px, 2.7cqw, 30px) clamp(15px, 2.3cqw, 25px) clamp(16px, 2.4cqw, 26px);
+    grid-template-rows: 38% minmax(0, 1fr);
+    padding: clamp(30px, 4cqw, 44px) clamp(22px, 3.1cqw, 34px) clamp(22px, 3.1cqw, 34px);
     overflow: visible;
     filter: drop-shadow(0 7px 11px rgba(72, 43, 18, 0.22));
     transition:
@@ -1108,7 +1117,7 @@ onBeforeUnmount(() => {
 .pack-card::before {
     content: '';
     position: absolute;
-    inset: -8% -10% -9%;
+    inset: 0;
     z-index: -1;
     background-image: var(--pack-card-background);
     background-position: center;
@@ -1134,11 +1143,11 @@ onBeforeUnmount(() => {
     min-width: 0;
     display: grid;
     place-items: center;
-    padding-top: clamp(6px, 1cqw, 12px);
+    padding-top: clamp(8px, 1.2cqw, 14px);
 }
 
 .pack-image {
-    width: min(70%, 94px);
+    width: min(62%, 106px);
     aspect-ratio: 1;
     display: block;
     object-fit: contain;
@@ -1148,7 +1157,7 @@ onBeforeUnmount(() => {
 }
 
 .pack-card--featured .pack-image {
-    width: min(60%, 82px);
+    width: min(54%, 94px);
 }
 
 .pack-badge {
@@ -1174,9 +1183,9 @@ onBeforeUnmount(() => {
 .pack-info {
     min-height: 0;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(38px, 1fr) auto;
     gap: clamp(6px, 0.9cqw, 10px);
-    padding: 0 clamp(2px, 0.4cqw, 5px);
+    padding: clamp(2px, 0.4cqw, 5px) clamp(5px, 0.8cqw, 9px) 0;
 }
 
 .pack-name {
@@ -1491,12 +1500,13 @@ onBeforeUnmount(() => {
     }
 
     .pack-panel-backdrop {
-        padding: 8px;
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
     }
 
     .pack-panel {
         width: calc(100vw - 16px);
-        height: calc(100vh - 16px);
+        height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+        max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
     }
 
     .pack-panel-header {
@@ -1557,27 +1567,31 @@ onBeforeUnmount(() => {
     }
 
     .pack-panel-grid {
-        grid-template-columns: repeat(auto-fit, minmax(clamp(132px, 42vw, 168px), 1fr));
-        gap: clamp(22px, 7vw, 36px);
-        padding: clamp(12px, 3.5vw, 18px) clamp(12px, 4vw, 18px) clamp(16px, 5vw, 22px);
+        grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 44vw, 190px), 1fr));
+        gap: clamp(20px, 6vw, 34px);
+        padding:
+            clamp(12px, 3.5vw, 18px)
+            clamp(12px, 4vw, 18px)
+            calc(clamp(96px, 22vw, 132px) + env(safe-area-inset-bottom));
+        scroll-padding-bottom: calc(clamp(96px, 22vw, 132px) + env(safe-area-inset-bottom));
     }
 
     .pack-card {
-        aspect-ratio: 940 / 1360;
-        grid-template-rows: 43% minmax(0, 1fr);
-        padding: clamp(14px, 3.8cqw, 18px) clamp(11px, 3cqw, 14px) clamp(13px, 3.5cqw, 16px);
+        aspect-ratio: 2 / 3;
+        grid-template-rows: 37% minmax(0, 1fr);
+        padding: clamp(19px, 5.2cqw, 25px) clamp(13px, 3.8cqw, 18px) clamp(14px, 4cqw, 20px);
     }
 
     .pack-card::before {
-        inset: -7% -8% -8%;
+        inset: 0;
     }
 
     .pack-image {
-        width: min(66%, 62px);
+        width: min(58%, 70px);
     }
 
     .pack-card--featured .pack-image {
-        width: min(56%, 54px);
+        width: min(50%, 62px);
     }
 
     .pack-badge {
@@ -1589,7 +1603,13 @@ onBeforeUnmount(() => {
     }
 
     .pack-reward {
-        font-size: clamp(9px, 2.65cqw, 11px);
+        font-size: clamp(10px, 2.85cqw, 12px);
+    }
+
+    .pack-info {
+        grid-template-rows: auto minmax(34px, 1fr) auto;
+        gap: clamp(5px, 1.4cqw, 8px);
+        padding-inline: clamp(4px, 1.4cqw, 8px);
     }
 
     .pack-description-button {
@@ -1598,10 +1618,12 @@ onBeforeUnmount(() => {
     }
 
     .pack-price {
-        font-size: clamp(13px, 3.4cqw, 15px);
+        font-size: clamp(14px, 3.8cqw, 17px);
     }
 
     .pack-price-box {
+        width: 100%;
+        justify-items: center;
         padding: 4px 6px;
     }
 
@@ -1610,9 +1632,24 @@ onBeforeUnmount(() => {
     }
 
     .pack-buy-button {
-        min-width: clamp(48px, 14cqw, 62px);
+        width: 100%;
+        min-width: 0;
         padding: 6px 8px;
         font-size: clamp(11px, 3cqw, 13px);
+    }
+
+    .pack-footer {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 5px;
+    }
+}
+
+@supports not (height: 100dvh) {
+    @media (max-width: 720px) {
+        .pack-panel {
+            height: calc(100vh - 16px - env(safe-area-inset-bottom));
+            max-height: calc(100vh - 16px - env(safe-area-inset-bottom));
+        }
     }
 }
 

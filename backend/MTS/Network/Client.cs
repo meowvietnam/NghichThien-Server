@@ -183,13 +183,13 @@ public class Client : ClientConnection, IRequester<MessageTag>
 
         try
         {
-            await ReleaseDailyRewardService.TrySendLoginRewardAsync(characterData, this);
+            await WelcomeRewardService.ClaimWelcomeReward(CharacterData, db);
         }
         catch (Exception ex)
         {
             Log.Error(
                 ex,
-                "Failed to send release daily login reward; CharacterId={CharacterId}, CharacterName={CharacterName}",
+                "Failed to send welcome reward; CharacterId={CharacterId}, CharacterName={CharacterName}",
                 characterData.Id,
                 characterData.Name);
         }

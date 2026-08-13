@@ -52,7 +52,8 @@ public partial class StartPack : IIapReward
 
     public void ClaimNow(CharacterData charData)
     {
-        
+        charData.SetIsInfiniteEnergy(true);
+        charData.SetNoAds(true);
     }
 
     public List<IMailReward> GetMailRewards()

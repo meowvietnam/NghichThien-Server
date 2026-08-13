@@ -119,18 +119,43 @@ const claimGiftCode = async () => {
     width: 100%;
     height: 100%;
     min-height: 0;
-    display: grid;
-    place-items: center;
-    padding: clamp(12px, 3vw, 34px);
+    display: flex;
+    align-items: center;
+    justify-content: safe center;
+    padding:
+        clamp(12px, 3vw, 34px)
+        clamp(12px, 3vw, 34px)
+        calc(clamp(12px, 3vw, 34px) + env(safe-area-inset-bottom));
     container-type: size;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 91, 37, 0.46) transparent;
+}
+
+.giftcode-tab::-webkit-scrollbar {
+    width: 6px;
+}
+
+.giftcode-tab::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.giftcode-tab::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(140, 91, 37, 0.46);
 }
 
 .giftcode-card {
-    width: min(78%, 520px);
+    width: min(100%, 520px);
+    max-height: 100%;
     display: grid;
     justify-items: center;
     gap: clamp(10px, 2cqh, 18px);
     padding: clamp(14px, 3.2cqw, 30px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border: 1px solid rgba(148, 94, 37, 0.28);
     border-radius: 8px;
     background:
@@ -245,6 +270,7 @@ const claimGiftCode = async () => {
 .giftcode-message {
     min-height: 1.2em;
     max-width: min(100%, 420px);
+    overflow-wrap: anywhere;
     color: #2f7062;
     font-family: var(--font-alegreya);
     font-size: clamp(12px, 1.55cqw, 16px);
@@ -272,6 +298,7 @@ const claimGiftCode = async () => {
     font-family: var(--font-cloud-shui-zhu);
     font-size: clamp(15px, 2.1cqw, 22px);
     line-height: 1;
+    white-space: nowrap;
     text-shadow: 0 1px 0 rgba(255, 246, 195, 0.52);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -305,11 +332,16 @@ const claimGiftCode = async () => {
 
 @media (max-width: 720px) {
     .giftcode-tab {
-        padding: clamp(8px, 2.8vw, 16px);
+        align-items: flex-start;
+        padding:
+            clamp(8px, 2.8vw, 16px)
+            clamp(8px, 2.8vw, 16px)
+            calc(clamp(18px, 5vw, 28px) + env(safe-area-inset-bottom));
     }
 
     .giftcode-card {
-        width: min(88%, 360px);
+        width: min(100%, 360px);
+        max-height: none;
         gap: clamp(8px, 1.8cqh, 14px);
         padding: clamp(12px, 4cqw, 18px);
     }
@@ -331,11 +363,11 @@ const claimGiftCode = async () => {
     }
 
     .giftcode-input {
-        font-size: clamp(15px, 4.5cqw, 19px);
+        font-size: clamp(16px, 4.5cqw, 19px);
     }
 
     .giftcode-message {
-        font-size: clamp(10px, 3cqw, 13px);
+        font-size: clamp(11px, 3cqw, 13px);
     }
 
     .giftcode-button {

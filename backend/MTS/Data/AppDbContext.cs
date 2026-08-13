@@ -50,11 +50,17 @@ public class AppDbContext : DbContext
     public DbSet<GiftcodeUsed> GiftcodeUseds { get; private set; }
     public DbSet<ReleaseDailyRewardClaim> ReleaseDailyRewardClaims { get; private set; }
     public DbSet<Promotion> Promotions { get; private set; }
-
+    public DbSet<WelcomeReward> WelcomeRewards { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
 
+    public static AppDbContext FromConnection(string connectionString)
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>();
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        return new AppDbContext(options.Options);
+    }
     private static string SerializeObject<T>(T value)
     {
         return JsonConvert.SerializeObject(value);
@@ -340,6 +346,10 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ArenaManager>(e =>
@@ -495,6 +505,14 @@ public class AppDbContext : DbContext
                 .HasColumnType(blob)
                 .HasConversion(x => MemoryPackSerializer.Serialize(x),
                     x => ParsePromotionApplicable(x));
+        });
+        modelBuilder.Entity<WelcomeReward>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharData)
+                .WithOne()
+                .HasForeignKey<WelcomeReward>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

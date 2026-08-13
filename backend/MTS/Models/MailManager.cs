@@ -50,14 +50,18 @@ public class MailManager
         return await SendMail(mail, db);
     }
 
-    public async Task<Mail> SendMail(Mail mail, AppDbContext db)
+    public async Task<Mail> SendMail(Mail mail, AppDbContext db, bool update = true)
     {
         mail.CharId = characterData.Id;
         var entity = await db.Mails.AddAsync(mail);
-        await db.SaveChangesAsync();
+        if (update)
+        {
+            await db.SaveChangesAsync();
+        }
         sender?.Send(MessageTag.NewMail, entity.Entity);
         return entity.Entity;
     }
+
     public async Task<long> ReadMail(long id)
     {
         try
@@ -103,7 +107,7 @@ public class MailManager
             .Where(x => x.IsRead && x.CharId == charId)
             .ToListAsync();
 
-        var removeIds =  mails
+        var removeIds = mails
             .Where(x => x.IsClaim || !x.Rewards.Any())
             .Select(x => x.Id)
             .ToList();
@@ -147,6 +151,7 @@ public class MailManager
         {
             mailReward.ClaimReward(characterData);
         }
+
         foreach (var mail in neverClaims) mail.IsClaim = true;
         await db.SaveChangesAsync();
         return new RewardResult { Mails = mailIds, Rewards = rewards };

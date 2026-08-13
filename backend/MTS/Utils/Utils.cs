@@ -68,4 +68,10 @@ public static class Utils
     {
         return DateTimeOffset.UtcNow.ToOffset(Utc7);
     }
+    public static bool IsToday(DateTime dateTimeUtc)
+    {
+        var now = Now();
+        var dateTime = new DateTimeOffset(DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Utc)).ToOffset(Utc7);
+        return now.Date == dateTime.Date;
+    }
 }

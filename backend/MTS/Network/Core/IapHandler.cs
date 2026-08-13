@@ -44,10 +44,10 @@ namespace MTS.Network.Core
                 IapResult result = null;
                 try
                 {
-                    var verifiedPurchase = CharacterData.VerifyIapPurchase(request).GetAwaiter().GetResult();
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;
+                        var verifiedPurchase = charData.VerifyIapPurchase(request).GetAwaiter().GetResult();
                         result = charData.CompleteIapPurchase(verifiedPurchase).GetAwaiter().GetResult();
                     }
                 }

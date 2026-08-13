@@ -1,10 +1,10 @@
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
-using MTS.Game;
 using MTS.IAP;
 using MTS.Models;
-using MTS.Promotions;
+using MTS.Network.Models;
+using Serilog;
 
 namespace MTS.Services;
 
@@ -20,84 +20,47 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-        // await CreateData(db, stoppingToken);
+
     }
 
-    private async Task CreateData(AppDbContext db, CancellationToken stoppingToken)
+    private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
     {
-        if (!await db.IapProducts.AnyAsync(stoppingToken))
+        return await db.Characters.FirstAsync(x => x.Name == name);
+    }
+
+    private async Task<IapProduct> FindProduct(int id, AppDbContext db)
+    {
+        var product = await db.IapProducts.FirstAsync(x => x.Id == id);
+        return product;
+    }
+
+    public async Task Buy(CharacterData charData, IapProduct product, AppDbContext db)
+    {
+        var purchase = new IapPurchase()
         {
-            var products = MemoryPackSerializer.Deserialize<List<IapProduct>>(File.ReadAllBytes("products.bin"));
-            if (products != null) db.IapProducts.AddRange(products);
-            await db.SaveChangesAsync(stoppingToken);
+            CharId = charData.Id,
+            ProductId = product.Id,
+            Store = product.Store,
+            PurchaseTokenHash = Array.Empty<byte>(),
+        };
+        var productReward = IIapReward.Clone(product.Reward);
+        var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
+        foreach (var promotion in promotions)
+        {
+            promotion.PromotionApplicable.Apply(productReward);
         }
 
-        if (!await db.Promotions.AnyAsync(stoppingToken))
+        productReward.ClaimNow(charData);
+        productReward.Edit(purchase);
+        await db.IapPurchases.AddAsync(purchase);
+        var rewards = productReward.GetMailRewards();
+        var mailManager = new MailManager(charData, null);
+        await mailManager.SendMail(new Mail()
         {
-            var startDate = GameConfig.GameReleaseDate.ToOffset(TimeSpan.Zero).DateTime;
-            var endDate = startDate.AddYears(99);
-            var promotion = new Promotion()
-            {
-                Name = "Ưu đãi nạp web",
-                Description = "Nhận thêm 30% Tiên ngọc khi nạp qua web.",
-                Store = Store.Web,
-                PromotionApplicable = new MoneyVipPromotionApplicable()
-                {
-                    Percent = 30
-                },
-                StartDate = startDate,
-                EndDate = endDate,
-            };
-            await db.Promotions.AddAsync(promotion, stoppingToken);
-            await db.SaveChangesAsync(stoppingToken);
-        }
-        if (!await db.GiftCodes.AnyAsync(stoppingToken))
-        {
-            var giftcodes = new Giftcode[]
-            {
-                new ()
-                {
-                    Code = "nghichthienopenandroid",
-                    Name = "Nghịch Thiên Open Android",
-                    Description = "Quà mừng mở server dành cho người chơi Android.",
-                    Rewards = new List<IMailReward>()
-                    {
-                        new MailRewardMoneyVip()
-                        {
-                            MoneyVip = 500
-                        }
-                    }
-                },
-                new ()
-                {
-                    Code = "nghichthienopenios",
-                    Name = "Nghịch Thiên Open iOS",
-                    Description = "Quà mừng mở server dành cho người chơi iOS.",
-                    Rewards = new List<IMailReward>()
-                    {
-                        new MailRewardMoneyVip()
-                        {
-                            MoneyVip = 500
-                        }
-                    }
-                },
-                new ()
-                {
-                    Code = "nghichthienxinloi",
-                    Name = "Nghịch Thiên Xin Lỗi",
-                    Description = "Quà xin lỗi và cảm ơn đạo hữu đã thông cảm.",
-                    Rewards = new List<IMailReward>()
-                    {
-                        new MailRewardMoneyVip()
-                        {
-                            MoneyVip = 1000
-                        }
-                    }
-                }
-            };
-            await db.GiftCodes.AddRangeAsync(giftcodes, stoppingToken);
-            await db.SaveChangesAsync(stoppingToken);
-        }
-
+            Title = "Nạp tiền thành công!",
+            Content =
+                $"Bạn vừa nạp thành công gói {product.Name}.\nCảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
+            Rewards = rewards
+        }, db);
     }
 }
