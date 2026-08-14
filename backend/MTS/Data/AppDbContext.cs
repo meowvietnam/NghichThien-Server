@@ -349,7 +349,7 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.CharData)
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<ArenaManager>(e =>
