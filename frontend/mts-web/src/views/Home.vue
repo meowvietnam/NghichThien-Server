@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { provide, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {getDownloadUrl} from '../api/axios'
+import { downloadUrls} from '../api/axios'
 import homePanelImage from '../assets/images/home-panel.png'
 import NotifyStack from '../components/NotifyStack.vue'
 import ToggleGroup from '../components/ToggleGroup.vue'
@@ -57,7 +57,7 @@ const payClick = () => {
     tab.value = 'purchase'
 }
 const downloadClick = () => {
-    window.open(getDownloadUrl(), '_blank')
+    window.open(downloadUrls.android, '_blank')
 }
 const giftCodeClick = () => {
     tab.value = 'giftcode'

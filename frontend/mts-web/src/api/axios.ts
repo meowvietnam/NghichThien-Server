@@ -3,7 +3,7 @@
 import axios from 'axios';
 const downloadUrls = {
   android: "https://play.google.com/store/apps/details?id=com.DreamCultivationGame.NghchThinSkyBreaker",
-  ios: "https://apps.apple.com/app/id1545432101",
+  ios: "https://testflight.apple.com/join/uaemyD25",
 }
 const hostnameMap = {
   'localhost': {
@@ -70,5 +70,6 @@ api.interceptors.response.use(
 
 export {
   api,
-  getDownloadUrl
+  getDownloadUrl,
+  downloadUrls,
 }
