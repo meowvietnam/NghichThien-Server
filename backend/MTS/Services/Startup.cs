@@ -20,6 +20,7 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
+
     }
 
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
