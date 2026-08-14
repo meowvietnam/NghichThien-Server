@@ -2,6 +2,8 @@
   "Id": 0,
   "Gender": 0,
   "Name": "",
+  "IsNoAds": true,
+  "IsInfiniteEnergy": true,
   "Stats": {
     "Kim": 20.0,
     "Moc": 20.0,
