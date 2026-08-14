@@ -25,7 +25,7 @@ public static class Program
     {
         return await Db.CreateDbContextAsync();
     }
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Console.Title = "MTS Server";
         try
@@ -113,7 +113,7 @@ public static class Program
                 options.AddPolicy("GameCors", policy =>
                 {
                     policy
-                        .WithOrigins("https://play.nghichthien.online","http://localhost:5173")
+                        .WithOrigins("https://play.nghichthien.online","http://localhost:5173","https://ios.nghichthien.online")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();

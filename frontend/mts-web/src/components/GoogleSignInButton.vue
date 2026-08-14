@@ -9,7 +9,7 @@
 import { GoogleLogin } from 'vue3-google-login'
 import NotifyStack from './NotifyStack.vue'
 import { ref } from 'vue'
-import api from '../api/axios'
+import {api} from '../api/axios'
 const notifyStack = ref<InstanceType<typeof NotifyStack> | null>(null)
 const emit = defineEmits<{
   'loading-change': [loading: boolean]

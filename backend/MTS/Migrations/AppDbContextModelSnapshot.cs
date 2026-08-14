@@ -1399,7 +1399,7 @@ namespace MTS.Migrations
                     b.HasOne("MTS.Models.CharacterData", "CharData")
                         .WithMany()
                         .HasForeignKey("CharId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MTS.Models.IapProduct", "Product")
