@@ -2,10 +2,8 @@ using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
-using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
-using Network.Extensions;
-using Network.Extensions.MemoryPack;
+
 
 namespace MTS.Network;
 
@@ -37,7 +35,7 @@ public class UnauthenticatedClient : ClientConnection
                 var version = reader.Read();
                 var success = acceptVersions.Contains(version);
                 var msg = success
-                    ? $"[3] Server test sẽ reset dữ liệu khi bản chính thức ra mắt. Nạp Tiên Ngọc trong server test sẽ được hoàn lại x2 khi game chính thức ra mắt. Chúc các đạo hữu trải nghiệm vui vẻ!"
+                    ? $"[5] Server test sẽ reset dữ liệu khi bản chính thức ra mắt. Nạp Tiên Ngọc trong server test sẽ được hoàn lại x2 khi game chính thức ra mắt. Chúc các đạo hữu trải nghiệm vui vẻ!"
                     : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {

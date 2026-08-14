@@ -21,7 +21,7 @@ import Button from './components/Button.vue';
 import Footer from './components/Footer.vue'
 import Header from './components/Header.vue'
 import MainLogo from './components/MainLogo.vue'
-
+import { getDownloadUrl } from './api/axios'
 const isDownloadButtonVisible = ref(true)
 
 const setDownloadButtonVisible = (isVisible: boolean) => {
@@ -31,7 +31,7 @@ const setDownloadButtonVisible = (isVisible: boolean) => {
 provide('setDownloadButtonVisible', setDownloadButtonVisible)
 
 const download = () => {
-  window.open('https://play.google.com/store/apps/details?id=com.DreamCultivationGame.NghchThinSkyBreaker', '_blank')
+  window.open(getDownloadUrl(), '_blank')
 }
 
 </script>
