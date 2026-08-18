@@ -194,7 +194,8 @@ interface Product {
     store: string
     isActive: boolean
     name: string
-    description: string
+    description: string,
+    priority: number
 }
 interface Promotion {
     id?: number
@@ -234,15 +235,6 @@ interface PaymentOrderInfo extends PaymentOrder {
     productName: string
 }
 
-const productOrder = [
-    'start_pack',
-    'tien_ngoc_1',
-    'tien_ngoc_2',
-    'tien_ngoc_3',
-    'tien_ngoc_4',
-    'tien_ngoc_5',
-    'tien_ngoc_6',
-]
 
 const packImages: Record<string, string> = {
     start_pack: startPackImage,
@@ -274,17 +266,12 @@ const route = useRoute()
 let paymentResultTimer: ReturnType<typeof setTimeout> | undefined
 
 const sortedPacks = computed(() =>
-    [...packs.value].sort((a, b) => getProductOrder(a) - getProductOrder(b)),
+    [...packs.value],
 )
 
 const activePromotions = computed(() => promotions.value.filter(isPromotionVisible))
 
 const isCreatingPaymentLink = computed(() => payingId.value !== null)
-
-const getProductOrder = (product: Product) => {
-    const index = productOrder.indexOf(product.storeProductId)
-    return index === -1 ? productOrder.length : index
-}
 
 const getPackImage = (product: Product) => packImages[product.storeProductId] ?? startPackImage
 

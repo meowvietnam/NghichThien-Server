@@ -285,6 +285,24 @@ public partial class ShopManager
                 var sellPrice = provider.GetPriceItemSell(id) * count;
                 totalSellAmount += sellPrice;
             }
+            else if (itemCollection.Collection is HashSet<Equipment> equipments)
+            {
+                var equipmentRef = new Equipment()
+                {
+                    SelfId = id
+                };
+                if (!equipments.TryGetValue(equipmentRef, out var equipment))
+                {
+                    throw new InvalidException(Strings.InventoryItemNotFound);
+                }
+                if (!providers.TryGetValue(type, out var provider))
+                {
+                    provider = ItemProviderFactory.GetProvider(type, inventory)!;
+                    providers[type] = provider;
+                }
+                var sellPrice = provider.GetPriceItemSell(id);
+                totalSellAmount += sellPrice;
+            }
         }
 
         var money = CharData.Stats.LinhThach + totalSellAmount - totalBuyAmount;
@@ -377,6 +395,20 @@ public partial class ShopManager
                         tracking.Update(myItem);
                         result.Items.Update(myItem);
                     }
+                }
+            }
+            else if (itemCollection.Collection is HashSet<Equipment> equipments)
+            {
+                var tracking = itemCollection.Tracking as Modify<Equipment>;
+                var equipmentRef = new Equipment()
+                {
+                    SelfId = id
+                };
+                if (equipments.TryGetValue(equipmentRef, out var equipment))
+                {
+                    equipments.Remove(equipment);
+                    tracking.Delete(equipment);
+                    result.Equipment.Delete(equipment);
                 }
             }
         }

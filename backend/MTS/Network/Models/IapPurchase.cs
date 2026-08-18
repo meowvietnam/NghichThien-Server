@@ -9,14 +9,14 @@ public class IapPurchase
 {
     [Key]
     public int Id { get; set; }
-    public int CharId { get; set; }
-    public int ProductId { get; set; }
+    public int? CharId { get; set; }
+    public int? ProductId { get; set; }
     public Store Store { get; set; }
     public byte[] PurchaseTokenHash { get; set; }
     [ForeignKey(nameof(ProductId))]
     public IapProduct Product { get; set; }
     [ForeignKey(nameof(CharId))]
-    public CharacterData CharData { get; set; }
+    public CharacterData? CharData { get; set; }
     public long MoneyVipSnapshot { get; set; } = 0;
     public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
 }

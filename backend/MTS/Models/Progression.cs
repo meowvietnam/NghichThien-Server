@@ -127,6 +127,16 @@ public class Progression : IMemorySerializable<Progression>
                 throw new InvalidException(Strings.SpecialLevelUpItemNotFound);
             }
         }
+        var requires = itemRequireds.Select(x => new ItemRef()
+        {
+            Id = x.Id,
+            Type = x.Type,
+            Count = x.Count,
+        }).ToArray();
+        foreach (var itemRef in requires)
+        {
+            inventory.Decrease(itemRef);
+        }
         CurrentExp = 0;
         SetLevel(Level + 1);
         var buffItems = infoLevel.BuffItem;
@@ -231,7 +241,7 @@ public class Progression : IMemorySerializable<Progression>
         Level = level;
         var newInfoLevel = infoLevels[level - 1];
         var stats = CharacterData.Stats;
-        var maxHp = stats.SinhMenh + newInfoLevel.hpMaxBuff;
+        var maxHp = stats.SinhMenh + oldLevelInfo.hpMaxBuff;
         if (stats.Ability.HasFlag(Ability.ThanMaHuyetMach))
         {
             maxHp += (int)MathF.Ceiling(maxHp * 0.2f);
@@ -291,5 +301,12 @@ public class Progression : IMemorySerializable<Progression>
             };
             client.MemSend(MessageTag.ExperienceReward, reward);
         }
+    }
+
+    public void ResetLevel(int targetLevel)
+    {
+        Level = targetLevel;
+        CurrentExp = 0;
+        dirty = true;
     }
 }

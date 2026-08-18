@@ -7,8 +7,14 @@ namespace MTS.Services;
 public class AuctionService : BackgroundService
 {
     private AuctionManager? auctionManager;
-    private DayOfWeek[] dayOpens = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
-    private TimeOnly hourOpen = new(21, 00);
+
+    private DayOfWeek[] dayOpens =
+    [
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday,
+        DayOfWeek.Saturday, DayOfWeek.Sunday
+    ];
+
+    private TimeOnly[] hourOpen = [new(12, 00), new(21, 00)];
 
     private string DefaultContent()
     {
@@ -16,9 +22,12 @@ public class AuctionService : BackgroundService
             .Select(x => Utils.Utils.GetDayOfWeek(x))
             .Select(day => Color(day, "#C2410C"))
             .ToArray();
-        var hour = Color(hourOpen.ToString("HH:mm"), "#D97706");
+        var hours = hourOpen
+            .OrderBy(h => h)
+            .Select(h => Color(h.ToString("HH:mm"), "#D97706"))
+            .ToArray();
         return $"{Bold(Color("Lịch đấu giá", "#B91C1C"))}\n" +
-               $"{Color("Đấu giá được tổ chức vào", "#B45309")} {hour} {string.Join(", ", days)} {Color("hàng tuần", "#B45309")}" +
+               $"{Color("Đấu giá được tổ chức vào", "#B45309")} {string.Join(", ", hours)} {string.Join(", ", days)} {Color("hàng tuần", "#B45309")}" +
                "\n" +
                "Tại Hội Đấu Giá (Thiên Cơ Các)";
     }
@@ -65,22 +74,23 @@ public class AuctionService : BackgroundService
         var now = Utils.Utils.Now();
         var currentDay = now.DayOfWeek;
         var currentDate = now.Date;
-        var openTime = hourOpen.ToTimeSpan();
 
-        var nextOpenTime = dayOpens
-            .Distinct()
-            .Select(day =>
+        var distinctDays = dayOpens.Distinct().ToArray();
+        var distinctHours = hourOpen.Distinct().OrderBy(h => h).ToArray();
+
+        var nextOpenTime = distinctDays
+            .SelectMany(day =>
             {
                 var dayOffset = ((int)day - (int)currentDay + 7) % 7;
                 var date = currentDate.AddDays(dayOffset);
-                return new DateTimeOffset(
+                return distinctHours.Select(hour => new DateTimeOffset(
                     date.Year,
                     date.Month,
                     date.Day,
-                    openTime.Hours,
-                    openTime.Minutes,
-                    openTime.Seconds,
-                    now.Offset);
+                    hour.Hour,
+                    hour.Minute,
+                    hour.Second,
+                    now.Offset));
             })
             .Where(openAt => openAt > now)
             .OrderBy(openAt => openAt)
@@ -91,7 +101,8 @@ public class AuctionService : BackgroundService
             return nextOpenTime;
         }
 
-        var firstOpenDay = dayOpens.Distinct().OrderBy(day => (int)day).First();
+        var firstOpenDay = distinctDays.OrderBy(day => (int)day).First();
+        var firstOpenHour = distinctHours.First();
         var daysToNextWeek = ((int)firstOpenDay - (int)currentDay + 7) % 7;
         if (daysToNextWeek == 0)
         {
@@ -103,9 +114,9 @@ public class AuctionService : BackgroundService
             nextWeekDate.Year,
             nextWeekDate.Month,
             nextWeekDate.Day,
-            openTime.Hours,
-            openTime.Minutes,
-            openTime.Seconds,
+            firstOpenHour.Hour,
+            firstOpenHour.Minute,
+            firstOpenHour.Second,
             now.Offset);
     }
 

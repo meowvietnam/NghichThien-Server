@@ -48,9 +48,11 @@ public class AppDbContext : DbContext
     public DbSet<Order> Orders { get; private set; }
     public DbSet<Giftcode> GiftCodes { get; private set; }
     public DbSet<GiftcodeUsed> GiftcodeUseds { get; private set; }
-    public DbSet<ReleaseDailyRewardClaim> ReleaseDailyRewardClaims { get; private set; }
     public DbSet<Promotion> Promotions { get; private set; }
     public DbSet<WelcomeReward> WelcomeRewards { get; private set; }
+    public DbSet<ProductLinker> ProductLinkers { get; private set; }
+    public DbSet<DailyRewardMonthlyPass> DailyRewardMonthlyPasses { get; private set; }
+    public DbSet<UseDan> UseDans { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -330,6 +332,10 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.StoreProductId, x.Store })
                 .IsUnique();
+            e.HasOne(x => x.Linker)
+                .WithMany(x => x.Products)
+                .HasForeignKey(x => x.LinkerId)
+                .OnDelete(DeleteBehavior.SetNull);
             e.Property(x => x.Reward)
                 .HasColumnType(blob)
                 .HasConversion(
@@ -345,11 +351,11 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.Product)
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.CharData)
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<ArenaManager>(e =>
@@ -512,6 +518,32 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.CharData)
                 .WithOne()
                 .HasForeignKey<WelcomeReward>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ProductLinker>(e =>
+        {
+            e.HasKey(x => x.Id);
+        });
+        modelBuilder.Entity<DailyRewardMonthlyPass>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.Rewards)
+                .HasColumnType(blob)
+                .HasConversion(
+                    v => MemoryPackSerializer.Serialize(v),
+                    v => MemoryPackSerializer.Deserialize<List<IMailReward>>(v)
+                );
+        });
+        modelBuilder.Entity<UseDan>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

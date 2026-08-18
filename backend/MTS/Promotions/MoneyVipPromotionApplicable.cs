@@ -21,5 +21,15 @@ public partial class MoneyVipPromotionApplicable : IPromotionApplicable
             var moneyVip = startPack.MoneyVip;
             startPack.MoneyVip = Mathf.RoundToInt(moneyVip * (1 + Percent / 100f));
         }
+        else if (reward is MonthlyPassPack monthlyPassPack)
+        {
+            var moneyVip = monthlyPassPack.MoneyVipPerDay;
+            monthlyPassPack.MoneyVipPerDay = Mathf.RoundToInt(moneyVip * (1 + Percent / 100f));
+        }
+        else if (reward is MonthlyPassVipPack monthlyPassVipPack)
+        {
+            var moneyVip = monthlyPassVipPack.MoneyVipPerDay;
+            monthlyPassVipPack.MoneyVipPerDay = Mathf.RoundToInt(moneyVip * (1 + Percent / 100f));
+        }
     }
 }

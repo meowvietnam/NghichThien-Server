@@ -10,5 +10,6 @@ namespace MTS.Network.ClientState
         LuyenKhi,
         ConvertElementalSkill,
         AuctionState,
+        TrungSinh
     }
 }

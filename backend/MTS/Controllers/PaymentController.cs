@@ -56,24 +56,9 @@ public class PaymentController : Controller
 
             var productId = request.ProductId;
             var product = await db.IapProducts
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Store == Store.Web && x.IsActive && x.Id == productId);
-            if (product == null)
-            {
-                throw new InvalidException(Strings.IapProductNotFound);
-            }
-
-            var actualProductType = product.ActualProductType;
-            if (actualProductType == IapProductType.NonConsumable)
-            {
-                var hasPurchased =
-                    await db.IapPurchases
-                        .AnyAsync(x => x.CharId == charId && x.Product.ActualProductType == actualProductType);
-                if (hasPurchased)
-                {
-                    throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
-                }
-            }
-
+            await charData.CanBuyProduct(product, db);
             var orderCode = idGenerator.NextId();
             var now = DateTime.UtcNow;
             var expireTime = now.AddHours(1);
@@ -133,8 +118,7 @@ public class PaymentController : Controller
             }
 
             var ownerProducts = await charData.GetProducts(Store.Web, db);
-            ownerProducts.RemoveAll(x =>
-                x.Product.ActualProductType == IapProductType.NonConsumable && x.HasPurchased);
+            ownerProducts.RemoveAll(x => x.HasPurchased);
             var products = ownerProducts.Select(x => x.Product).ToList();
             var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
             return Success(new
@@ -193,9 +177,9 @@ public class PaymentController : Controller
             {
                 promotion.PromotionApplicable.Apply(productReward);
             }
-            var charData = TcpServer.Instance.GetCharsOnline().FirstOrDefault(c => c.Id == order.CharId);
+            var charData = TcpServer.Instance.GetCharsOnline()
+                .FirstOrDefault(c => c.Id == order.CharId);
             charData ??= order.CharData;
-            productReward.ClaimNow(charData);
             productReward.Edit(purchase);
             var rewards = productReward.GetMailRewards();
             var mailManager = new MailManager(charData, charData.Client);

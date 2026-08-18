@@ -22,6 +22,7 @@ public static class GameConfig
     public static readonly DateTimeOffset GameReleaseDate = new(2026, 8, 12, 0, 0, 0, Utc7);
     public static CharacterData CharacterTemplate { get; private set; }
     public static StepConfig StepConfig { get; private set; }
+    public static StepConfig StepConfigTrungSinh { get; private set; }
     public static SkinResources SkinResources { get; private set; }
     public static MapManager MapManager { get; private set; }
     public static LuyenDanResources LuyenDanResources { get; private set; }
@@ -33,9 +34,10 @@ public static class GameConfig
     public static NpcData[] NpcDatas { get; private set; }
     public static LevelResource LevelResource { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
+    public static int[] TrungSinhPrices = new[] { 500, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
 
-    public static readonly string[] tamCanh = new string[]
+    public static readonly string[] tamCanh = new[]
     {
         "Tâm phiền ý loạn",
         "Thần tĩnh khí an",
@@ -201,8 +203,10 @@ public static class GameConfig
                 return rank.Key;
             }
         }
+
         return ETypeArenaRank.None;
     }
+
     public static Dictionary<ETypeArenaRank, int> TypeRankArenaWithValue = new Dictionary<ETypeArenaRank, int>
     {
         { ETypeArenaRank.ThanhGiai, 2100 },
@@ -212,6 +216,7 @@ public static class GameConfig
         { ETypeArenaRank.HuyenGiai, 400 },
         { ETypeArenaRank.HoangGiai, 1 },
     };
+
     public static Dictionary<ETypeArenaRank, int> TypeRankArenaWithReward = new Dictionary<ETypeArenaRank, int>
     {
         { ETypeArenaRank.ThanhGiai, 3000 },
@@ -221,6 +226,7 @@ public static class GameConfig
         { ETypeArenaRank.HuyenGiai, 300 },
         { ETypeArenaRank.HoangGiai, 100 },
     };
+
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
     {
         var reader = new Reader(File.ReadAllBytes(filePath));
@@ -243,6 +249,7 @@ public static class GameConfig
     {
         CharacterTemplate = Json.Deserialize<CharacterData>(File.ReadAllText("Data/character-template.json"));
         StepConfig = Read<StepConfig>("Data/step-config.bin");
+        StepConfigTrungSinh = Read<StepConfig>("Data/step-config-trung-sinh.bin");
         SkinResources = Read<SkinResources>("Data/skin-resources.bin");
         MapManager = Read<MapManager>("Data/maps.bin");
         LuyenDanResources = Read<LuyenDanResources>("Data/LuyenDanResources.bin");

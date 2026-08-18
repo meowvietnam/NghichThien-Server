@@ -57,7 +57,10 @@ public class TcpServer : BaseTcpServer
         clients.TryRemove(client.Id, out _);
         disconnectedClients.TryAdd(client.Id, client);
         await Task.Delay(TimeSpan.FromMinutes(5));
-        disconnectedClients.TryRemove(client.Id, out _);
+        if (disconnectedClients.TryRemove(client.Id, out _))
+        {
+            client.InvokeRemoveDisconnectedSession();
+        }
     }
     public void AuthenticatedSuccess(UnauthenticatedClient client)
     {
@@ -117,7 +120,10 @@ public class TcpServer : BaseTcpServer
     }
     public void RemoveDisconnectClient(Client client)
     {
-        disconnectedClients.TryRemove(client.Id, out _);
+        if (disconnectedClients.TryRemove(client.Id, out _))
+        {
+            client.InvokeRemoveDisconnectedSession();
+        }
     }
 
     public void OnReconnected(Client client)

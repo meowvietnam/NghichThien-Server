@@ -1,4 +1,5 @@
 using MemoryPack;
+using MTS.Data;
 
 namespace MTS.Models;
 
@@ -7,7 +8,10 @@ namespace MTS.Models;
 [MemoryPackUnion(1, typeof(MailRewardFurnace))]
 [MemoryPackUnion(2, typeof(MailRewardMoney))]
 [MemoryPackUnion(3, typeof(MailRewardMoneyVip))]
+[MemoryPackUnion(4, typeof(MailSetAds))]
+[MemoryPackUnion(5, typeof(MailSetInfinityEnergy))]
+[MemoryPackUnion(6, typeof(MailMonthlyPass))]
 public partial interface IMailReward
 {
-    public void ClaimReward(CharacterData characterData);
+    public Task ClaimReward(CharacterData characterData, AppDbContext db);
 }

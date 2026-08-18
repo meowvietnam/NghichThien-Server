@@ -99,6 +99,10 @@
         <None Update="Data\level-resources.bin">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Remove="Data\step-config-trung-sinh.bin" />
+        <Content Include="Data\step-config-trung-sinh.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

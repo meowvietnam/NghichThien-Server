@@ -23,7 +23,7 @@ public class InGameAuthHandler : IClientHandler
             throw new InvalidException(Strings.CharacterNotSelected);
         }
         await client.SaveChanges();
-        client.SetUserData(null);
+        client.InvokeLogout();
         client.SetUserData(null);
         client.ChangeState(new AuthState(client));
         return new LogoutResult()

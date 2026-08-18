@@ -19,8 +19,20 @@ public partial class IapProduct
     [Newtonsoft.Json.JsonIgnore]
     public IIapReward Reward { get; set; }
     public bool IsActive { get; set; }
-    [MemoryPackIgnore]
-    public string? Name { get; set; }
+    public string Name { get; set; }
     [MemoryPackIgnore]
     public string? Description { get; set; }
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    public int? LinkerId { get; set; }
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    public int Priority { get; set; }
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
+    public ProductLinker? Linker { get; set; }
+    
 }

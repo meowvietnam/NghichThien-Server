@@ -30,7 +30,12 @@ namespace MTS.Network.Core
         public CombatHandler(Client client)
         {
             this.client = client;
+            client.OnLogout += OnLogout;
+            client.OnOtherClientLogin += OnOtherClientLogin;
+            client.OnReconnectedSuccess += OnReconnectedSuccess;
+            client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
         }
+
 
         public MessageTag[] HandleTag => handler;
 
@@ -426,7 +431,7 @@ namespace MTS.Network.Core
             }
         }
 
-        public void OnDisconnect(IProtocol<MessageTag> protocol)
+        private void FinalNow()
         {
             lock (client.CharacterLock)
             {
@@ -447,6 +452,14 @@ namespace MTS.Network.Core
                     session = combatSession;
                 }
 
+                if (session == null)
+                {
+                    return;
+                }
+                if (session.Status == CombatStatus.End)
+                {
+                    return;
+                }
                 try
                 {
                     var stats = charData.Stats;
@@ -471,8 +484,28 @@ namespace MTS.Network.Core
                 finally
                 {
                     EndCombat(null);
+                    client.SaveChanges().GetAwaiter().GetResult();
                 }
             }
+        }
+        private void OnOtherClientLogin()
+        {
+            
+        }
+        private void OnLogout()
+        {
+            FinalNow();
+        }
+        private void OnReconnectedSuccess()
+        {
+            
+        }
+        private void OnRemoveDisconnectedSession()
+        {
+            FinalNow();
+        }
+        public void OnDisconnect(IProtocol<MessageTag> protocol)
+        {
         }
 
         public void OnEnter()
@@ -481,6 +514,10 @@ namespace MTS.Network.Core
 
         public void OnLeave()
         {
+            client.OnLogout -= OnLogout;
+            client.OnOtherClientLogin -= OnOtherClientLogin;
+            client.OnReconnectedSuccess -= OnReconnectedSuccess;
+            client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
         }
     }
 }

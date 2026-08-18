@@ -15,7 +15,7 @@ public partial class BuyAndSellResult
     public EMonPhai MonPhai { get; set; }
     public Modify<FurnaceData> Furnaces { get; set; } = new();
     public Modify<ItemRef> Items { get; set; } = new();
-
+    public Modify<Equipment> Equipment { get; set; } = new();
     public long GetTotalAmount()
     {
         return TotalSellAmount - TotalBuyAmount;

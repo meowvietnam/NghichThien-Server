@@ -78,7 +78,6 @@ namespace MTS.Network.ClientState
                     {
                         throw new(Strings.CharacterNotFound);
                     }
-
                     character = await client.Select(character);
                     var result = new SelectCharacterResult()
                     {

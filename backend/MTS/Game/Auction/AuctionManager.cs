@@ -31,6 +31,15 @@ public class AuctionManager
     private CancellationTokenSource cts;
     private string content;
     public event Action OnAuctionEnded;
+    private readonly TimeSpan DeltaTime = TimeSpan.FromMinutes(5);
+
+    private static string[] numbers =
+    {
+        "nhất", "hai", "ba", "tư", "năm",
+        "sáu", "bảy", "tám", "chín", "mười",
+        "mười một", "mười hai", "mười ba", "mười bốn", "mười lăm",
+        "mười sáu", "mười bảy", "mười tám", "mười chín", "hai mươi"
+    };
 
     public AuctionManager(string content)
     {
@@ -70,6 +79,27 @@ public class AuctionManager
         poolPlayerModels = PlayerModels.ToArray();
         ThisState = State.Started;
         _ = Run();
+    }
+
+    private ItemRef GetFurnace(Tier tier)
+    {
+        var furnace = GameConfig.LuyenDanResources.TempFurnaceDatas.First(f => f.Tier == tier);
+        return new ItemRef()
+        {
+            Id = (ushort)furnace.Id,
+            Type = ItemType.Furnace,
+            Count = 1,
+        };
+    }
+
+    private TempFurnaceData RandomFurnace()
+    {
+        var tiers = new[] { Tier.TuPham, Tier.NguPham, Tier.LucPham };
+        var furnaces = GameConfig.LuyenDanResources.TempFurnaceDatas
+            .Where(x => tiers.Contains(x.Tier))
+            .ToArray();
+        var furnace = furnaces.Random();
+        return furnace;
     }
 
     private ItemRef RandomThanThongThienGiai()
@@ -148,70 +178,166 @@ public class AuctionManager
         };
     }
 
+    private RecipeData RandomRecipe()
+    {
+        var tiers = new[] { Tier.TuPham, Tier.NguPham, Tier.LucPham };
+        var recipe = GameConfig.LuyenDanResources.Recipes
+            .Where(i => tiers.Contains(i.Tier))
+            .ToArray().Random();
+        return recipe;
+    }
+
     private void CreateSessions()
     {
         var start = Utils.Utils.Now();
-        var deltaTime = TimeSpan.FromMinutes(5);
+        var linhDanPrices = new Dictionary<Tier, int>()
+        {
+            { Tier.TuPham, 2_000 },
+            { Tier.NguPham, 5_000 },
+            { Tier.LucPham, 10_000 },
+        };
+        var furnaces = Enumerable.Range(0, 3).Select(_ => RandomFurnace()).ToArray();
+        var furnaceItems = furnaces.Select(x => new ItemRef()
+        {
+            Id = (ushort)x.Id,
+            Type = ItemType.Furnace,
+            Count = 1,
+        }).ToArray();
+        var recipes = Enumerable.Range(0, 3).Select(_ => RandomRecipe()).ToArray();
+        var recipesItems = recipes.Select(x => new ItemRef()
+        {
+            Id = (ushort)x.Id,
+            Type = ItemType.Recipe,
+            Count = 1,
+        }).ToArray();
         var sessionConfigs = new[]
         {
+            // 1. Khởi đầu - giá thấp
             new
             {
-                Title = "Phiên thứ nhất",
                 Status = AuctionSessionStatus.InProgress,
+                Price = 4_000,
+                Item = RandomCongPhapDiaGiai()
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[Tier.TuPham],
+                Item = RandomLinhDan(Tier.TuPham)
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[furnaces[0].Tier] * 2,
+                Item = furnaceItems[0]
+            },
+
+            // 2. Bắt đầu tăng giá trị
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
                 Price = 4_000,
                 Item = RandomThanThongDiaGiai()
             },
             new
             {
-                Title = "Phiên thứ hai",
-                Status = AuctionSessionStatus.NotStarted,
-                Price = 2_000,
-                Item = RandomLinhDan(Tier.TuPham)
-            },
-            new
-            {
-                Title = "Phiên thứ ba",
                 Status = AuctionSessionStatus.NotStarted,
                 Price = 5_000,
                 Item = RandomCongPhapDiaGiai()
             },
             new
             {
-                Title = "Phiên thứ tư",
                 Status = AuctionSessionStatus.NotStarted,
-                Price = 5_000,
+                Price = linhDanPrices[Tier.NguPham],
                 Item = RandomLinhDan(Tier.NguPham)
             },
             new
             {
-                Title = "Phiên thứ năm",
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[furnaces[1].Tier] * 2,
+                Item = furnaceItems[1]
+            },
+
+            // 3. Mid game
+            new
+            {
                 Status = AuctionSessionStatus.NotStarted,
                 Price = 8_000,
                 Item = RandomThanThongThienGiai()
             },
             new
             {
-                Title = "Phiên thứ sáu",
                 Status = AuctionSessionStatus.NotStarted,
-                Price = 10_000,
+                Price = linhDanPrices[Tier.LucPham],
                 Item = RandomLinhDan(Tier.LucPham)
             },
             new
             {
-                Title = "Phiên thứ bảy",
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[furnaces[2].Tier] * 2,
+                Item = furnaceItems[2]
+            },
+
+            // 4. Đồ cao cấp
+            new
+            {
                 Status = AuctionSessionStatus.NotStarted,
                 Price = 10_000,
                 Item = RandomCongPhapThienGiai()
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = 5_000,
+                Item = RandomCongPhapDiaGiai()
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = 10_000,
+                Item = RandomCongPhapThienGiai()
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = 5_000,
+                Item = RandomCongPhapDiaGiai()
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = 10_000,
+                Item = RandomCongPhapThienGiai()
+            },
+
+            // 5. Công thức - cuối chuỗi
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[recipes[0].Tier] * 2,
+                Item = recipesItems[0]
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[recipes[1].Tier] * 2,
+                Item = recipesItems[1]
+            },
+            new
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                Price = linhDanPrices[recipes[2].Tier] * 2,
+                Item = recipesItems[2]
             },
         };
         Sessions = new AuctionSession[sessionConfigs.Length];
         for (var i = 0; i < sessionConfigs.Length; i++)
         {
             var config = sessionConfigs[i];
-            var end = start + deltaTime;
+            var end = start + DeltaTime;
             Sessions[i] = new AuctionSession()
             {
-                SessionTitle = config.Title,
+                SessionTitle = $"Phiên thứ {numbers[i]}",
                 Status = config.Status,
                 ItemRef = config.Item,
                 DefaultPrice = config.Price,
@@ -222,6 +348,167 @@ public class AuctionManager
                 EndTime = end.TimeOfDay,
             };
             start = end;
+        }
+    }
+
+    public Result CreateNewAuctionSession(CreateNewAuctionSession newSession)
+    {
+        if (ThisState == State.Ended)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        if (Sessions == null)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        if (Sessions.Length >= numbers.Length)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        lock (currentSessionLock)
+        {
+            var current = CurrentSession;
+            var time = GetRemainingTimeSession(current);
+            if (time < TimeSpan.FromSeconds(5))
+            {
+                throw new InvalidException(string.Empty);
+            }
+
+            var item = newSession.Item;
+            ValidateItem(item);
+            if (newSession.Price < 100)
+            {
+                throw new InvalidException(string.Empty);
+            }
+
+            var sessionNumber = numbers[Sessions.Length];
+            var session = new AuctionSession()
+            {
+                Status = AuctionSessionStatus.NotStarted,
+                SessionTitle = $"Phiên thứ {sessionNumber}",
+                ItemRef = item,
+                DefaultPrice = newSession.Price,
+                CurrentPrice = newSession.Price,
+                MinPrice = MinPriceOf(newSession.Price),
+                MaxPrice = MaxPriceOf(newSession.Price),
+                StartTime = current.EndTime,
+                EndTime = current.EndTime + DeltaTime,
+            };
+            Sessions = Sessions.Concat([session]).ToArray();
+
+            return new Result()
+            {
+                Success = true,
+                Message = $"Tạo thành công {session.SessionTitle}"
+            };
+        }
+    }
+
+    private DateTime lastRemoveTime = DateTime.MinValue;
+
+    public Result RemoveLastAuctionSession()
+    {
+        if (ThisState == State.Ended)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        if (Sessions == null)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        var delta = DateTime.UtcNow - lastRemoveTime;
+        if (delta < TimeSpan.FromSeconds(5))
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        var current = CurrentSession;
+        var time = GetRemainingTimeSession(current);
+        if (time < TimeSpan.FromSeconds(5))
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        lock (currentSessionLock)
+        {
+            var lastSession = Sessions[^1];
+            var sessionClone = Sessions.ToList();
+            sessionClone.RemoveAt(Sessions.Length - 1);
+            Sessions = sessionClone.ToArray();
+            lastRemoveTime = DateTime.UtcNow;
+            return new Result()
+            {
+                Success = true,
+                Message = $"Xóa thành công {lastSession.SessionTitle}"
+            };
+        }
+    }
+
+    private void ValidateItem(ItemRef item)
+    {
+        var supportedItemTypes = new[]
+        {
+            ItemType.Furnace, ItemType.Herb, ItemType.LinhDan,
+            ItemType.Material, ItemType.ThanThong, ItemType.CongPhap,
+            ItemType.Recipe
+        };
+        var type = item.Type;
+        if (!supportedItemTypes.Contains(type))
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        if (item.Count <= 0)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        if (type == ItemType.Furnace)
+        {
+            if (GameConfig.LuyenDanResources.TempFurnaceDatas.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
+        }
+        else if (type == ItemType.Herb)
+        {
+            if (GameConfig.LuyenDanResources.HerbDatas.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
+        }
+        else if (type == ItemType.LinhDan)
+        {
+            if (GameConfig.LuyenDanResources.LinhDans.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
+        }
+        else if (type == ItemType.Material)
+        {
+            if (GameConfig.LuyenKhiResources.Materials.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
+        }
+        else if (type == ItemType.ThanThong)
+        {
+            if (GameConfig.NDCPTTManager.ThanThongs.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
+        }
+        else if (type == ItemType.CongPhap)
+        {
+            if (GameConfig.NDCPTTManager.CongPhaps.All(x => x.Id != item.Id))
+            {
+                throw new InvalidException(string.Empty);
+            }
         }
     }
 
@@ -357,6 +644,7 @@ public class AuctionManager
             {
                 reward = AddToInventory(session.ItemRef, charData.InventoryManager);
             }
+
             reward.Content = Strings.AuctionRewardReceived;
             charData.AddSpendMoneyVipOnline(amount, SpendFor.Auction);
             client.MemSend(MessageTag.AuctionReward, reward);
@@ -456,9 +744,9 @@ public class AuctionManager
                 .FirstOrDefault(x => x.Id == playerModel.CharId);
         }
 
+        await using var db = await Program.CreateDbAsync();
         if (charData == null)
         {
-            await using var db = await Program.CreateDbAsync();
             charData = await db.Characters.FirstOrDefaultAsync(x => x.Id == playerModel.CharId);
             if (charData != null)
             {
@@ -478,6 +766,7 @@ public class AuctionManager
                     RefundMoney = amount,
                     NewMoneyVip = charData.MoneyVip
                 });
+                charData.SaveChanges(db).GetAwaiter().GetResult();
             }
         }
     }

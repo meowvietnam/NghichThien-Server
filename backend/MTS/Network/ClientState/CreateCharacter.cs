@@ -1,4 +1,5 @@
 using MTS.Exceptions;
+using MTS.Game;
 using MTS.Game.CreateCharacter;
 using MTS.Models;
 using MTS.Network.Models;
@@ -18,7 +19,7 @@ public class CreateCharacter : IClientState
     public CreateCharacter(Client client)
     {
         this.client = client;
-        service = new CreateCharacterService();
+        service = new CreateCharacterService(GameConfig.OriginalMoney, GameConfig.StepConfig);
     }
 
     public void OnEnter()
@@ -46,6 +47,7 @@ public class CreateCharacter : IClientState
                 {
                     service.SetName(name).GetAwaiter().GetResult();
                 }
+
                 var result = new SetCharNameResult()
                 {
                     Success = true,
@@ -71,6 +73,7 @@ public class CreateCharacter : IClientState
                 {
                     service.SetSkin(request);
                 }
+
                 var result = new SetSkinResult()
                 {
                     Success = true,
@@ -99,13 +102,16 @@ public class CreateCharacter : IClientState
                     {
                         throw new InvalidException("Đang tạo nhân vật, vui lòng chờ");
                     }
-                    service.ApplyStats(models);
+
+                    service.ApplyStats(models, GameConfig.CharacterTemplate.Stats);
                     isCompleting = true;
                 }
+
                 lock (client.StateLock)
                 {
                     userData = client.UserData;
                 }
+
                 await service.Completed(userData);
                 var result = new ApplyStatsResult()
                 {
@@ -123,6 +129,7 @@ public class CreateCharacter : IClientState
                 {
                     isCompleting = false;
                 }
+
                 var result = new ApplyStatsResult()
                 {
                     Success = false,
@@ -132,12 +139,14 @@ public class CreateCharacter : IClientState
             }
         }
     }
+
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
-        
     }
+
     public void OnLeave()
     {
     }
+
     public MessageState State => MessageState.CreateCharacter;
 }

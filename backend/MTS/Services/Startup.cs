@@ -1,9 +1,11 @@
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Game;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network.Models;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace MTS.Services;
@@ -20,7 +22,44 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
+        var purchases = await db.IapPurchases
+            .Include(x => x.Product)
+            .ToListAsync(stoppingToken);
+        var total = purchases
+            .Sum(x => x.Product.Price);
+        var estimate = purchases.Sum(x =>
+        {
+            if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+            {
+                return (int)(x.Product.Price * 0.7f);
+            }
 
+            return x.Product.Price;
+        });
+        Log.Information("Total: {Total} VNĐ, Estimate: {Estimate}", Utils.Utils.FormatCount(total),
+            Utils.Utils.FormatCount(estimate));
+        //await SendMails(db);
+    }
+
+    private async Task SendMails(AppDbContext db)
+    {
+        var charDatas = await db.Characters.ToArrayAsync();
+        for (var i = 0; i < charDatas.Length; i++)
+        {
+            var charData = charDatas[i];
+            var mail = new Mail()
+            {
+                CharId = charData.Id,
+                Title = "Nạp Web Nhận Thêm 30% Tiên Ngọc!",
+                Content =
+                    "Nạp tiền tự động tại https://play.nghichthien.online và nhận ngay +30% Tiên Ngọc. Nạp nhanh – cộng tự động – ưu đãi hấp dẫn.",
+                Rewards = new List<IMailReward>()
+            };
+            await db.Mails.AddAsync(mail);
+            Log.Information("[{i}/{j}] Send mail to {Name}", i + 1, charDatas.Length, charData.Name);
+        }
+
+        await db.SaveChangesAsync();
     }
 
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
@@ -50,7 +89,6 @@ public class Startup : BackgroundService
             promotion.PromotionApplicable.Apply(productReward);
         }
 
-        productReward.ClaimNow(charData);
         productReward.Edit(purchase);
         await db.IapPurchases.AddAsync(purchase);
         var rewards = productReward.GetMailRewards();

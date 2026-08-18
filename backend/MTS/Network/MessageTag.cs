@@ -67,7 +67,7 @@ public enum MessageTag
     SetMoneyResult = 241,
     SetExpRequest = 243,
     TestRequest = 245,
-    
+
     ChangeScene = 256,
     ChangeSceneResult = 257,
     LuyenKhi = 310,
@@ -82,21 +82,21 @@ public enum MessageTag
     EquipThanThongResult = 341,
     UnequipThanThong = 342,
     UnequipThanThongResult = 343,
-    
+
     EquipCongPhap = 352,
     EquipCongPhapResult = 353,
     UnequipCongPhap = 354,
     UnequipCongPhapResult = 355,
-    
+
     TuLuyen = 370,
     TuLuyenResult = 371,
-    
+
     LinhNgo = 382,
     LinhNgoResult = 383,
     DotPhaCongPhap = 384,
     DotPhaCongPhapResult = 385,
     UseDanRequest = 386,
-    
+
     JoinMonPhai = 392,
     JoinMonPhaiResult = 393,
 
@@ -108,7 +108,7 @@ public enum MessageTag
     DoneDailyQuestRequest = 407,
     ReloadDailyQuest = 408,
     ReloadDailyQuestResult = 409,
-    
+
     ResultCombat = 413,
     ResultCombatResult = 414,
 
@@ -116,9 +116,9 @@ public enum MessageTag
     LoadCharCombatResult = 416,
     LoadCharCombatArena = 417,
     LoadCharCombatArenaResult = 418,
-    LoadRankRequest = 419,   
+    LoadRankRequest = 419,
     ClaimRankRewardRequest = 420,
-    
+
     WatchAdsForEnergy = 450,
     WatchAdsForEnergyResult = 451,
 
@@ -133,47 +133,47 @@ public enum MessageTag
     TangQuaNpcResult = 613,
     Gacha = 614,
     GachaResult = 615,
-    
-    
+
+
     LoadShopRequest = 635,
-          
+
     ReloadShop = 636,
     ReloadShopResult = 637,
-    
-    
+
+
     BuyAndSellRequest = 647,
-    
-    
+
+
     LevelUpdated = 783,
     SpecialLevelUpRequest = 789,
-    
+
     GetAdsMoneyVipConfigRequest = 843,
-    
+
     WatchAdsMoneyVip = 854,
     WatchAdsMoneyVipResult = 855,
-    
+
     ActiveAdsMoneyVip = 856,
     WatchAdsCombat = 858,
     WatchAdsCombatResult = 859,
     WatchAds = 861,
-    
+
     WatchAdsSideQuest = 872,
     WatchAdsSideQuestResult = 873,
-    
+
     GetRankRequest = 887,
     CompleteAds = 912,
     CloseAds = 913,
     LoadAdsFail = 914,
     ResetArenaRank = 923,
-    
-    
+
+
     LoginRequest = 934,
-    
+
     LogoutRequest = 948,
     PlayRequest = 959,
     DeleteAccountRequest = 969,
-    
-    
+
+
     InGameLogout = 987,
     InGameLogoutResult = 988,
     BackToMainMenuRequest = 992,
@@ -181,12 +181,12 @@ public enum MessageTag
     Pong = 1030,
     SyncCharacterData = 1062,
     SyncCharacterDataResult = 1063,
-    
+
     ExperienceReward = 1089,
     DailyReset = 1123,
-    
+
     ConvertElementalSkillRequest = 1232,
-    
+
     JoinAuction = 1234,
     JoinAuctionResult = 1235,
     GetAuctionData = 1256,
@@ -201,14 +201,19 @@ public enum MessageTag
     HostChat = 1346,
     AuctionReward = 1357,
     NewAuctionSession = 1362,
-    
+
     GetAuctionInfo2Request = 1366,
-    
+
     Notify = 1595,
     AdminNotify = 1597,
-    
+
     RegisterRequest = 1634,
     GuestRegisterRequest = 1683,
-    ResetNgoDaoRequest = 1752
-    
+    ResetNgoDaoRequest = 1752,
+    CreateNewAuctionSessionRequest = 1812,
+    RemoveLastAuctionSessionRequest = 1816,
+    CanBuyProductRequest = 1921,
+    GetTrungSinhConfigRequest = 1933,
+    ToTrungSinhRequest = 1954,
+    TrungSinhRequest = 1996,
 }
