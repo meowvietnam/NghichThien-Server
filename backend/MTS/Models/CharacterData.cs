@@ -32,6 +32,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public bool CanFly { get; private set; } = false;
     public int CurrentFreeAdsMoneyVipCount { get; private set; }
     public int TrungSinhCount { get; private set; } = 0;
+    public int BonusPoint { get; private set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -215,6 +216,15 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         return InventoryManager.IsDefault();
     }
 
+    public void SetBonusPoints(int bonusPoints)
+    {
+        if (BonusPoint != bonusPoints)
+        {
+            BonusPoint = bonusPoints;
+            dirty = true;
+        }
+    }
+
     public TrungSinhConfig GetTrungSinhConfig()
     {
         var infoLevels = GameConfig.LevelResource.infoLevels;
@@ -224,7 +234,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         var prices = GameConfig.TrungSinhPrices;
         var index = Math.Clamp(TrungSinhCount, 0, prices.Length - 1);
         var price = prices[index];
-        var thienPhu = GameConfig.OriginalMoney + daiCanhGioi * daiCanhGioi;
+        var thienPhu = GameConfig.OriginalMoney + BonusPoint + daiCanhGioi * daiCanhGioi;
         var stats = GetReset();
         return new()
         {
@@ -281,6 +291,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         Progression.ResetLevel(config.TargetLevel);
         Stats.CopyFrom(newStats);
         SetMoneyVip(remaining);
+        SetBonusPoints(BonusPoint + config.DaiCanhGioi * config.DaiCanhGioi);
         AddSpendMoneyVipOnline(config.MoneyVip, SpendFor.TrungSinh);
     }
 
@@ -316,7 +327,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.IsNoAds, IsNoAds)
                         .SetProperty(x => x.CanFly, CanFly)
                         .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount)
-                        .SetProperty(x => x.TrungSinhCount, TrungSinhCount));
+                        .SetProperty(x => x.TrungSinhCount, TrungSinhCount)
+                        .SetProperty(x => x.BonusPoint, BonusPoint));
             dirty = false;
         }
 

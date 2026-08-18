@@ -5,7 +5,6 @@ using MTS.Game;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network.Models;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace MTS.Services;
@@ -36,11 +35,26 @@ public class Startup : BackgroundService
 
             return x.Product.Price;
         });
-        Log.Information("Total: {Total} VNĐ, Estimate: {Estimate}", Utils.Utils.FormatCount(total),
+        Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
-        //await SendMails(db);
+        // await SendMails(db);
+        // await TopSpending(db);
     }
 
+    private async Task TopSpending(AppDbContext db)
+    {
+        var service = new MoneyVipSpendingRankService(null);
+        var token = CancellationToken.None;
+        var start = GameConfig.GameReleaseDate;
+        var end = start + MoneyVipSpendingRankService.RankInterval;
+        var tops = await service.GetTopsAsync(start, end, token);
+        for (var i = 0; i < tops.Count; i++)
+        {
+            Log.Information("Top: {top}, Name: {name}, MoneyVip: {moneyVip}", i+1, tops[i].CharacterWrapper.Character.Name, Utils.Utils.FormatCount(tops[i].TotalSpent));
+        }
+        // await service.GrantRewards(tops, token);
+        Log.Information("Xong");
+    }
     private async Task SendMails(AppDbContext db)
     {
         var charDatas = await db.Characters.ToArrayAsync();
@@ -54,6 +68,12 @@ public class Startup : BackgroundService
                 Content =
                     "Nạp tiền tự động tại https://play.nghichthien.online và nhận ngay +30% Tiên Ngọc. Nạp nhanh – cộng tự động – ưu đãi hấp dẫn.",
                 Rewards = new List<IMailReward>()
+                {
+                    new MailRewardMoneyVip()
+                    {
+                        MoneyVip = 1
+                    }
+                }
             };
             await db.Mails.AddAsync(mail);
             Log.Information("[{i}/{j}] Send mail to {Name}", i + 1, charDatas.Length, charData.Name);

@@ -103,6 +103,9 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BonusPoint")
+                        .HasColumnType("int");
+
                     b.Property<bool>("CanFly")
                         .HasColumnType("tinyint(1)");
 
