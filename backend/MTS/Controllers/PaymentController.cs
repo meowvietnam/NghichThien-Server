@@ -70,12 +70,9 @@ public class PaymentController : Controller
             {
                 throw new InvalidException(Strings.PaymentConfigInvalid);
             }
-            var name = RemoveVietnameseDiacritics(charData.Name);
-            name = ChineseToPinyin(name);
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
-                Description = $"{name} chuyen tien",
                 Amount = product.Price,
                 CancelUrl = cancelUrl,
                 ReturnUrl = returnUrl,

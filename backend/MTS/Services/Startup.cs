@@ -37,6 +37,7 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
+
     }
 
     private async Task TopSpending(AppDbContext db)
