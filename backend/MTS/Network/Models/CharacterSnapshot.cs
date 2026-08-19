@@ -73,7 +73,10 @@ public partial class CharacterSnapshot
             this.PhuTu2Used = equipment.PhuTu2Used;
             this.PhuTu3Used = equipment.PhuTu3Used;
             this.PhuTu4Used = equipment.PhuTu4Used;
-            this.ThanThongEquip = equipment.ThanThongEquips.Select(x => (int)x.Id).ToList();
+            this.ThanThongEquip = equipment.ThanThongEquips
+                .OrderBy(x => x.SlotIndex)
+                .Select(x => (int)x.Id)
+                .ToList();
             this.DanCombatUseds = equipment.DanCombatUseds.ToHashSet();
             vuKhi = equipment.VuKhi;
             phongCu = equipment.PhongCu;

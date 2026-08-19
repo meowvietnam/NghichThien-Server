@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using NPinyin;
 
 namespace MTS.Utils;
 
@@ -16,6 +17,35 @@ public static class Utils
         return DayOfWeeks[(int)dayOfWeek];
     }
 
+    public static string RemoveVietnameseDiacritics(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return name;
+
+        string normalized = name.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder();
+
+        foreach (char c in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb
+            .ToString()
+            .Normalize(NormalizationForm.FormC)
+            .Replace("Đ", "D")
+            .Replace("đ", "d");
+    }
+    public static string ChineseToPinyin(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return name;
+        var pinyin = Pinyin.GetPinyin(name);
+        return pinyin;
+    }
     public static string GenerateSecureString(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

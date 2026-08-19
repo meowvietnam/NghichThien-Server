@@ -28,7 +28,8 @@ public class PaymentController : Controller
     private readonly AppDbContext db;
     private readonly IConfiguration config;
 
-    public PaymentController(PayOSClient payOS, SnowflakeIdGenerator idGenerator, AppDbContext db, IConfiguration config)
+    public PaymentController(PayOSClient payOS, SnowflakeIdGenerator idGenerator, AppDbContext db,
+        IConfiguration config)
     {
         this.payOS = payOS;
         this.idGenerator = idGenerator;
@@ -69,10 +70,12 @@ public class PaymentController : Controller
             {
                 throw new InvalidException(Strings.PaymentConfigInvalid);
             }
-
+            var name = RemoveVietnameseDiacritics(charData.Name);
+            name = ChineseToPinyin(name);
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
+                Description = $"{name} chuyen tien",
                 Amount = product.Price,
                 CancelUrl = cancelUrl,
                 ReturnUrl = returnUrl,
@@ -153,6 +156,7 @@ public class PaymentController : Controller
             {
                 throw new InvalidException(Strings.PaymentOrderExpired);
             }
+
             if (order.Amount != data.Amount)
             {
                 throw new InvalidException(Strings.PaymentAmountInvalid);
@@ -162,6 +166,7 @@ public class PaymentController : Controller
             {
                 throw new InvalidException(Strings.PaymentOrderStatusInvalid);
             }
+
             order.Status = OrderStatus.Complete;
             var purchase = new IapPurchase()
             {
@@ -177,6 +182,7 @@ public class PaymentController : Controller
             {
                 promotion.PromotionApplicable.Apply(productReward);
             }
+
             var charData = TcpServer.Instance.GetCharsOnline()
                 .FirstOrDefault(c => c.Id == order.CharId);
             charData ??= order.CharData;
@@ -190,6 +196,8 @@ public class PaymentController : Controller
                     $"Bạn vừa nạp thành công gói {order.Product.Name}.\nCảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
                 Rewards = rewards
             }, db);
+            Log.Information("{Name} vừa mua gói {ProductName}: {Price} VNĐ", charData.Name, order.Product.Name,
+                FormatCount(order.Amount));
             return Success(order);
         }
         catch (Exception ex)
