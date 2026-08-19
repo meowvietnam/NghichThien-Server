@@ -38,7 +38,9 @@ public class AuctionManager
         "nhất", "hai", "ba", "tư", "năm",
         "sáu", "bảy", "tám", "chín", "mười",
         "mười một", "mười hai", "mười ba", "mười bốn", "mười lăm",
-        "mười sáu", "mười bảy", "mười tám", "mười chín", "hai mươi"
+        "mười sáu", "mười bảy", "mười tám", "mười chín", "hai mươi",
+        "hai mươi mốt", "hai mươi hai", "hai mươi ba", "hai mươi tư", "hai mươi lăm",
+        "hai mươi sáu", "hai mươi bảy", "hai mươi tám", "hai mươi chín", "ba mươi"
     };
 
     public AuctionManager(string content)
@@ -385,6 +387,7 @@ public class AuctionManager
             }
 
             var sessionNumber = numbers[Sessions.Length];
+            var endSession = Sessions.Last();
             var session = new AuctionSession()
             {
                 Status = AuctionSessionStatus.NotStarted,
@@ -394,8 +397,8 @@ public class AuctionManager
                 CurrentPrice = newSession.Price,
                 MinPrice = MinPriceOf(newSession.Price),
                 MaxPrice = MaxPriceOf(newSession.Price),
-                StartTime = current.EndTime,
-                EndTime = current.EndTime + DeltaTime,
+                StartTime = endSession.EndTime,
+                EndTime = endSession.EndTime + DeltaTime,
             };
             Sessions = Sessions.Concat([session]).ToArray();
 
