@@ -200,7 +200,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             CongPhapOwners = congPhapOwners;
             ThanThongOwners = thanThongOwners;
         }
-
         Init();
     }
 

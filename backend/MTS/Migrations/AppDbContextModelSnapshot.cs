@@ -103,6 +103,9 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BonusPoint")
+                        .HasColumnType("int");
+
                     b.Property<bool>("CanFly")
                         .HasColumnType("tinyint(1)");
 
@@ -135,6 +138,9 @@ namespace MTS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)")
                         .UseCollation("utf8mb4_0900_as_cs");
+
+                    b.Property<int>("TrungSinhCount")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -261,6 +267,37 @@ namespace MTS.Migrations
                     b.HasIndex("CharId");
 
                     b.ToTable("DailyQuests");
+                });
+
+            modelBuilder.Entity("MTS.Models.DailyRewardMonthlyPass", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastClaim")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("Rewards")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("DailyRewardMonthlyPasses");
                 });
 
             modelBuilder.Entity("MTS.Models.DanCombatUsed", b =>
@@ -530,11 +567,18 @@ namespace MTS.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int?>("LinkerId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<long>("Price")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductType")
                         .HasColumnType("int");
@@ -551,6 +595,8 @@ namespace MTS.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LinkerId");
 
                     b.HasIndex("StoreProductId", "Store")
                         .IsUnique();
@@ -719,6 +765,29 @@ namespace MTS.Migrations
                     b.ToTable("Orders");
                 });
 
+            modelBuilder.Entity("MTS.Models.ProductLinker", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CanBuyAgain")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("NextDayCanBuy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductLinkers");
+                });
+
             modelBuilder.Entity("MTS.Models.Progression", b =>
                 {
                     b.Property<int>("CharId")
@@ -850,7 +919,7 @@ namespace MTS.Migrations
 
                     b.HasKey("CharId", "RewardDay");
 
-                    b.ToTable("ReleaseDailyRewardClaims");
+                    b.ToTable("ReleaseDailyRewardClaim");
                 });
 
             modelBuilder.Entity("MTS.Models.ShopManager", b =>
@@ -945,6 +1014,30 @@ namespace MTS.Migrations
                     b.ToTable("ThanThongEquips");
                 });
 
+            modelBuilder.Entity("MTS.Models.UseDan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("DanId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("UseDans");
+                });
+
             modelBuilder.Entity("MTS.Models.UserData", b =>
                 {
                     b.Property<int>("Id")
@@ -991,13 +1084,13 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CharId")
+                    b.Property<int?>("CharId")
                         .HasColumnType("int");
 
                     b.Property<long>("MoneyVipSnapshot")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("PurchaseDate")
@@ -1097,6 +1190,17 @@ namespace MTS.Migrations
                     b.Navigation("QuestManager");
                 });
 
+            modelBuilder.Entity("MTS.Models.DailyRewardMonthlyPass", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.DanCombatUsed", b =>
                 {
                     b.HasOne("MTS.Models.EquipmentManager", "EquipmentManager")
@@ -1191,6 +1295,16 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("UserData");
+                });
+
+            modelBuilder.Entity("MTS.Models.IapProduct", b =>
+                {
+                    b.HasOne("MTS.Models.ProductLinker", "Linker")
+                        .WithMany("Products")
+                        .HasForeignKey("LinkerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Linker");
                 });
 
             modelBuilder.Entity("MTS.Models.InventoryManager", b =>
@@ -1383,6 +1497,17 @@ namespace MTS.Migrations
                     b.Navigation("EquipmentManager");
                 });
 
+            modelBuilder.Entity("MTS.Models.UseDan", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.WelcomeReward", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", "CharData")
@@ -1399,14 +1524,12 @@ namespace MTS.Migrations
                     b.HasOne("MTS.Models.CharacterData", "CharData")
                         .WithMany()
                         .HasForeignKey("CharId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MTS.Models.IapProduct", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CharData");
 
@@ -1471,6 +1594,11 @@ namespace MTS.Migrations
                     b.Navigation("NgoDaos");
 
                     b.Navigation("ThanThongOwners");
+                });
+
+            modelBuilder.Entity("MTS.Models.ProductLinker", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("MTS.Models.Social", b =>

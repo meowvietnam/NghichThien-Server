@@ -122,7 +122,6 @@ public static class Program
 
             builder.Services.AddHostedService<TcpHostedService>();
             builder.Services.AddHostedService<ServerCommandService>();
-            builder.Services.AddHostedService<Startup>();
             builder.Services.AddHostedService<DailyService>();
             builder.Services.AddHostedService<ReloadShopService>();
             builder.Services.AddHostedService<ReloadDailyQuestService>();
@@ -131,6 +130,7 @@ public static class Program
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();
+            builder.Services.AddHostedService<Startup>();
             builder.Services.AddSingleton(sp =>
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();

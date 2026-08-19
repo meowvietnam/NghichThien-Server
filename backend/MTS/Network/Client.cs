@@ -26,7 +26,14 @@ public class Client : ClientConnection, IRequester<MessageTag>
     public object CharacterLock { get; } = new();
     public object MailLock { get; } = new();
     private object SaveChangesLock { get; } = new();
-
+    public event Action OnReconnectedSuccess
+    {
+        add => TcpClient.ReconnectedSuccess += value;
+        remove => TcpClient.ReconnectedSuccess -= value;
+    }
+    public event Action OnOtherClientLogin;
+    public event Action OnLogout;
+    public event Action OnRemoveDisconnectedSession;
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
@@ -43,6 +50,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
         AddModule(stateModule);
         Task.Run(Save);
     }
+
+
 
     private async Task Save()
     {
@@ -102,7 +111,18 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 Id, UserData?.Id, CharacterData?.Id);
         }
     }
-
+    public void InvokeOtherClientLogin()
+    {
+        OnOtherClientLogin?.Invoke();
+    }
+    public void InvokeLogout()
+    {
+        OnLogout?.Invoke();
+    }
+    public void InvokeRemoveDisconnectedSession()
+    {
+        OnRemoveDisconnectedSession?.Invoke();
+    }
     public async Task ForceLogout()
     {
         this.MemSend(MessageTag.InGameLogoutResult, new LogoutResult()
@@ -193,7 +213,20 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 characterData.Id,
                 characterData.Name);
         }
+        try
+        {
+            await DailyRewardMonthlyPassService.ClaimDailyRewardMonthlyPass(CharacterData, db);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "Failed to send daily reward monthly pass; CharacterId={CharacterId}, CharacterName={CharacterName}",
+                characterData.Id,
+                characterData.Name);
+        }
 
+        characterData.TryResetAds();
         Log.Information("Player online: {Name}", CharacterData.Name);
         return characterData;
     }
@@ -557,7 +590,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var auctionHandler = new AuctionHandler(this);
         module.RemoveHandler<AuctionHandler>();
         module.AddHandler(auctionHandler);
-        
+
+        var trungSinhHandler = new TrungSinhHandler(this);
+        module.RemoveHandler<TrungSinhHandler>();
+        module.AddHandler(trungSinhHandler);
         ChangeState(new AllMaps(this));
     }
     public T GetHandler<T>() where T : IClientHandler

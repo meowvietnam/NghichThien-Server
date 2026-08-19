@@ -20,12 +20,14 @@ namespace MTS.Network.ClientState
             var clientOnline = server.GetClientOnline(userId);
             if (clientOnline != null)
             {
+                clientOnline.InvokeOtherClientLogin();
                 await clientOnline.ForceLogout();
                 return;
             }
             var disconnectedClient = server.GetDisconnectedClientHasLogin(userId);
             if (disconnectedClient != null)
             {
+                disconnectedClient.InvokeOtherClientLogin();
                 await disconnectedClient.ForceLogout();
                 server.RemoveDisconnectClient(disconnectedClient);
             }
@@ -74,6 +76,7 @@ namespace MTS.Network.ClientState
                         {
                             throw new InvalidException(Strings.NotLoggedIn);
                         }
+                        client.InvokeLogout();
                         client.SetUserData(null);
                         result = new LogoutResult()
                         {

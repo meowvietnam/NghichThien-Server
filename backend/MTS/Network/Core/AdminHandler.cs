@@ -1,10 +1,14 @@
 using MemoryPack;
+using MTS.Exceptions;
+using MTS.Game.Auction;
+using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
 
 namespace MTS.Network.Core;
+
 public class AdminHandler : IClientHandler
 {
     private Client client;
@@ -29,12 +33,14 @@ public class AdminHandler : IClientHandler
             {
                 return;
             }
+
             var inventory = await client.GetInventory();
             RewardItems rewards;
             lock (client.CharacterLock)
             {
                 rewards = inventory.AddToInventory(items);
             }
+
             client.Send(MessageTag.AddItemsResult, rewards);
         }
         else if (tag == MessageTag.SetInfinityEnergy)
@@ -52,6 +58,7 @@ public class AdminHandler : IClientHandler
             {
                 client.CharacterData.Progression.SetNgoDaoDiem(ngoDaoDiem);
             }
+
             client.Send(MessageTag.SetNgoDaoDiemResult, ngoDaoDiem);
         }
         else if (tag == MessageTag.SetCamNgo)
@@ -63,6 +70,7 @@ public class AdminHandler : IClientHandler
             {
                 newNgoDaoDiem = inventory.AddOrUpdate(camNgo);
             }
+
             var result = new SetCamNgoResult()
             {
                 CamNgo = camNgo,
@@ -79,6 +87,7 @@ public class AdminHandler : IClientHandler
             {
                 equipped = inventory.EquipThanThong(id);
             }
+
             if (equipped)
             {
                 client.Send(MessageTag.AddThanThongResult, id);
@@ -92,6 +101,7 @@ public class AdminHandler : IClientHandler
             {
                 client.CharacterData.InventoryManager.AddOrUpdate(congPhap);
             }
+
             client.Send(MessageTag.AddCongPhapResult, congPhap);
         }
         else if (tag == MessageTag.SetMoneyVip)
@@ -101,6 +111,7 @@ public class AdminHandler : IClientHandler
             {
                 client.CharacterData.SetMoneyVip(moneyVip);
             }
+
             client.Send(MessageTag.SetMoneyVipResult, moneyVip);
         }
         else if (tag == MessageTag.SetMoney)
@@ -110,6 +121,7 @@ public class AdminHandler : IClientHandler
             {
                 client.CharacterData.Stats.SetLinhThach(money);
             }
+
             client.Send(MessageTag.SetMoneyResult, money);
         }
         else if (tag == MessageTag.SetExpRequest)
@@ -122,6 +134,7 @@ public class AdminHandler : IClientHandler
                 progress.SetCurrentExp(exp);
                 currentExp = progress.CurrentExp;
             }
+
             client.Send(MessageTag.SetExpRequest, currentExp);
         }
         else if (tag == MessageTag.AdminNotify)
@@ -133,6 +146,59 @@ public class AdminHandler : IClientHandler
                 charData?.Client.MemSend(MessageTag.Notify, msg);
             }
         }
+        else if (tag == MessageTag.CreateNewAuctionSessionRequest)
+        {
+            Result result = null;
+            try
+            {
+                var auctionManager = AuctionManager.Instance;
+                if (auctionManager == null)
+                {
+                    throw new InvalidException(Strings.AuctionNotOpen);
+                }
+
+                var request = reader.MemRead<CreateNewAuctionSession>();
+                result = auctionManager.CreateNewAuctionSession(request);
+            }
+            catch (InvalidException e)
+            {
+                result = new Result()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.CreateNewAuctionSessionRequest, result);
+            }
+        }
+        else if (tag == MessageTag.RemoveLastAuctionSessionRequest)
+        {
+            Result result = null;
+            try
+            {
+                var auctionManager = AuctionManager.Instance;
+                if (auctionManager == null)
+                {
+                    throw new InvalidException(Strings.AuctionNotOpen);
+                }
+
+                result = auctionManager.RemoveLastAuctionSession();
+            }
+            catch (InvalidException e)
+            {
+                result = new Result()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.RemoveLastAuctionSessionRequest, result);
+            }
+        }
     }
 
     public void OnLeave()
@@ -142,8 +208,10 @@ public class AdminHandler : IClientHandler
     private static readonly MessageTag[] handler =
     [
         MessageTag.AddItems, MessageTag.SetInfinityEnergy, MessageTag.SetNgoDaoDiem, MessageTag.SetCamNgo,
-        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney, MessageTag.TestRequest,
-        MessageTag.SetExpRequest, MessageTag.AdminNotify
+        MessageTag.AddThanThong, MessageTag.AddCongPhap, MessageTag.SetMoneyVip, MessageTag.SetMoney,
+        MessageTag.TestRequest,
+        MessageTag.SetExpRequest, MessageTag.AdminNotify, MessageTag.CreateNewAuctionSessionRequest,
+        MessageTag.RemoveLastAuctionSessionRequest
     ];
 
     public MessageTag[] HandleTag => handler;

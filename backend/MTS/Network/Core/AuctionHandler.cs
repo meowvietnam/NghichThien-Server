@@ -26,11 +26,11 @@ public class AuctionHandler : IClientHandler
             try
             {
                 var auctionManager = AuctionManager.Instance;
-                if (auctionManager== null)
+                if (auctionManager == null)
                 {
                     throw new InvalidException(Strings.AuctionNotOpen);
                 }
-
+                
                 var auctionInfo = auctionManager.GetInfo();
                 result = new GetAuctionInfoResult()
                 {

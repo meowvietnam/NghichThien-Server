@@ -1,19 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
-using MTS.Game.ItemProvider;
-using MTS.Game.LuyenDan;
-using MTS.Game.Resources;
-using MTS.Game.Social;
-using MTS.Localization;
 using MTS.Network.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
-using MTS.IAP;
-using MTS.Game.Combat;
+using MTS.Exceptions;
+using MTS.Game.CreateCharacter;
+using MTS.ND;
 using MTS.Network;
+using MTS.Services;
+using MTS.Utils;
+using Network.Extensions.MemoryPack;
 
 namespace MTS.Models;
 
@@ -32,6 +31,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public bool IsNoAds { get; private set; } = false;
     public bool CanFly { get; private set; } = false;
     public int CurrentFreeAdsMoneyVipCount { get; private set; }
+    public int TrungSinhCount { get; private set; } = 0;
+    public int BonusPoint { get; private set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
@@ -44,6 +45,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public ShopManager ShopManager { get; set; } = new();
     public GachaManager GachaManager { get; set; } = new();
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
+
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -62,6 +64,9 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
 
     [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
     private List<SpendingMoneyVip> addedSpendingMoneyVips = new();
+
+    [JsonIgnore] [Newtonsoft.Json.JsonIgnore] [MemoryPackIgnore] [NotMapped]
+    private List<UseDan> useDans = new();
 
     public void SetMonPhai(EMonPhai value)
     {
@@ -108,6 +113,15 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         }
     }
 
+    public void SetTrungSinhCount(int value)
+    {
+        if (TrungSinhCount != value)
+        {
+            TrungSinhCount = value;
+            dirty = true;
+        }
+    }
+
     public void SetCurrentFreeAdsMoneyVipCount(int value)
     {
         if (CurrentFreeAdsMoneyVipCount != value)
@@ -116,9 +130,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             dirty = true;
         }
     }
-    public CharacterData()
-    {
-    }
+
     public static CharacterData DeepClone(CharacterData clone)
     {
         var writer = new Writer(clone.ByteSize());
@@ -126,6 +138,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         var reader = new Reader(writer.Buffer);
         return reader.Read<CharacterData>();
     }
+
     public int ByteSize()
     {
         return Id.ByteSize()
@@ -203,6 +216,96 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         return InventoryManager.IsDefault();
     }
 
+    public void SetBonusPoints(int bonusPoints)
+    {
+        if (BonusPoint != bonusPoints)
+        {
+            BonusPoint = bonusPoints;
+            dirty = true;
+        }
+    }
+
+    public TrungSinhConfig GetTrungSinhConfig()
+    {
+        var infoLevels = GameConfig.LevelResource.infoLevels;
+        var level = Progression.Level;
+        var levels = infoLevels.Take(level - 1).ToArray();
+        var daiCanhGioi = levels.Count(x => x.IsSpecialLevelUp);
+        var prices = GameConfig.TrungSinhPrices;
+        var index = Math.Clamp(TrungSinhCount, 0, prices.Length - 1);
+        var price = prices[index];
+        var thienPhu = GameConfig.OriginalMoney + BonusPoint + daiCanhGioi * daiCanhGioi;
+        var stats = GetReset();
+        return new()
+        {
+            DaiCanhGioi = daiCanhGioi,
+            MoneyVip = price,
+            ThienPhu = thienPhu,
+            TargetLevel = 1,
+            Stats = stats
+        };
+    }
+
+    public void TrungSinh(List<SelectionModel> selections)
+    {
+        var config = GetTrungSinhConfig();
+        var remaining = MoneyVip - config.MoneyVip;
+        if (remaining < 0)
+        {
+            throw new InvalidException(string.Empty);
+        }
+
+        var service = new CreateCharacterService(config.ThienPhu, GameConfig.StepConfigTrungSinh);
+        service.ApplyStats(selections, config.Stats);
+        var newStats = service.Char.Stats;
+
+        var ability = newStats.Ability;
+        if (ability.HasFlag(Ability.TeNuiKyNgo))
+        {
+            var herbs = GameConfig.LuyenDanResources.HerbDatas;
+            var herbIds = new[] { 2067, 2077, 2073, 2039 };
+            var items = herbIds.Select(x => herbs.First(i => i.Id == x))
+                .Select(x => new ItemRef()
+                {
+                    Id = (ushort)x.Id,
+                    Type = ItemType.Herb,
+                    Count = 1
+                })
+                .ToList();
+            InventoryManager.AddToInventory(items);
+        }
+
+        var congPhapId = ability.HasFlag(Ability.GiaTocTuChan) ? (ushort)536 : (ushort)501;
+        var congPhap = GameConfig.NDCPTTManager.CongPhaps.FirstOrDefault(x => x.Id == congPhapId);
+        var congPhapRef = new CongPhap()
+        {
+            Id = congPhapId,
+            Level = 1,
+        };
+        if (!InventoryManager.CongPhapOwners.Contains(congPhapRef))
+        {
+            InventoryManager.Add(congPhapRef);
+        }
+
+        SetTrungSinhCount(TrungSinhCount + 1);
+        Progression.ResetLevel(config.TargetLevel);
+        Stats.CopyFrom(newStats);
+        SetMoneyVip(remaining);
+        SetBonusPoints(BonusPoint + config.DaiCanhGioi * config.DaiCanhGioi);
+        AddSpendMoneyVipOnline(config.MoneyVip, SpendFor.TrungSinh);
+    }
+
+    public void AddUseDan(ushort danId, int count)
+    {
+        var useDan = new UseDan()
+        {
+            DanId = danId,
+            CharId = Id,
+            Count = count
+        };
+        useDans.Add(useDan);
+    }
+
     public CharacterData DeepClone()
     {
         var writer = new Writer(ByteSize());
@@ -210,6 +313,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         var reader = new Reader(writer.Buffer);
         return reader.Read<CharacterData>();
     }
+
     public async Task SaveChanges(AppDbContext db)
     {
         if (dirty)
@@ -222,7 +326,9 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.IsInfiniteEnergy, IsInfiniteEnergy)
                         .SetProperty(x => x.IsNoAds, IsNoAds)
                         .SetProperty(x => x.CanFly, CanFly)
-                        .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount));
+                        .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount)
+                        .SetProperty(x => x.TrungSinhCount, TrungSinhCount)
+                        .SetProperty(x => x.BonusPoint, BonusPoint));
             dirty = false;
         }
 
@@ -232,6 +338,15 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             {
                 db.SpendingMoneyVips.AddRange(addedSpendingMoneyVips);
                 addedSpendingMoneyVips.Clear();
+            }
+        }
+
+        lock (useDans)
+        {
+            if (useDans.Count > 0)
+            {
+                db.UseDans.AddRange(useDans);
+                useDans.Clear();
             }
         }
 
@@ -294,6 +409,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         ArenaManager.SetCurrentArenaCount(dailyReset.CurrentArenaCount);
         QuestManager.SetCurrentCountSideQuest(dailyReset.CurrentCountSideQuest);
     }
+
     public async Task UpdateLogin()
     {
         LastLogin = DateTime.UtcNow;
@@ -301,5 +417,64 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         await db.Characters
             .Where(x => x.Id == Id)
             .ExecuteUpdateAsync(x => x.SetProperty(u => u.LastLogin, LastLogin));
+    }
+
+    public void TryResetAds()
+    {
+        if (Utils.Utils.IsToday(LastLogin))
+        {
+            return;
+        }
+
+        SetCurrentFreeAdsMoneyVipCount(0);
+    }
+
+    public CharacterStats GetReset()
+    {
+        var stats = Stats.Clone();
+        var level = Progression.Level;
+        var baseHp = GameConfig.CharacterTemplate.Stats.SinhMenh;
+        var estimateHp = baseHp;
+        //hpmax, than thuc, don toc
+        var infoLevels = GameConfig.LevelResource.infoLevels.Take(level - 1).ToArray();
+        var ability = stats.Ability;
+        var maxHp = stats.SinhMenh;
+        var thanThuc = stats.ThanThuc;
+        var donToc = stats.TocDoBay;
+        for (var i = 0; i < infoLevels.Length; i++)
+        {
+            var infoLevel = infoLevels[i];
+            estimateHp += infoLevel.hpMaxBuff;
+            if (ability.HasFlag(Ability.ThanMaHuyetMach))
+            {
+                estimateHp += (int)MathF.Ceiling(estimateHp * 0.2f);
+            }
+
+            if (i == 2 && ability.HasFlag(Ability.DiTocHuyetMach))
+            {
+                estimateHp *= 2;
+            }
+
+            thanThuc -= infoLevel.thanThucBuff;
+            donToc -= infoLevel.donTocBuff;
+        }
+
+        var hp = baseHp + maxHp - estimateHp;
+
+        hp = Math.Max(0, hp);
+        stats.SetSinhMenh(hp);
+        stats.SetHp(hp);
+        stats.SetThanThuc(thanThuc);
+        stats.SetTocDoBay(donToc);
+        stats.SetLinhCan(LinhCan.NguLinhCan);
+        stats.SetDanDoc(0);
+        stats.SetThoNguyen(100);
+        stats.ResetLinhCan();
+        stats.ResetTuoiTac();
+        stats.ResetAbility();
+        stats.ResetTuChat();
+        stats.ResetNgoTinh();
+        stats.ResetTamCanh();
+        return stats;
     }
 }

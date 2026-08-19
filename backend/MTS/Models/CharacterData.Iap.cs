@@ -62,22 +62,99 @@ public partial class CharacterData
                 store, productId);
             return new VerifiedIapPurchase(product, verify, purchaseTokenHash, true);
         }
-
-        var actualProductType = product.ActualProductType;
-        if (actualProductType == IapProductType.NonConsumable)
-        {
-            hasPurchased = await db.IapPurchases.AnyAsync(
-                x => x.CharId == Id && x.Product.ActualProductType == actualProductType,
-                cancelToken);
-            if (hasPurchased)
-            {
-                throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
-            }
-        }
-
+        await CanBuyProduct(product, db);
         return new VerifiedIapPurchase(product, verify, purchaseTokenHash, false);
     }
 
+    public async Task<Result> CanBuyProduct(Store store, string productId)
+    {
+        if (!Enum.IsDefined(typeof(Store), store))
+        {
+            throw new InvalidException(Strings.IapStoreNotSupported);
+        }
+
+        await using var db = await Program.CreateDbAsync();
+        
+        var product = await db.IapProducts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Store == store
+                                      && x.StoreProductId == productId
+                                      && x.IsActive);
+        return await CanBuyProduct(product, db);
+    }
+
+    public async Task<Result> CanBuyProduct(Store store, int productId)
+    {
+        if (!Enum.IsDefined(typeof(Store), store))
+        {
+            throw new InvalidException(Strings.IapStoreNotSupported);
+        }
+        await using var db = await Program.CreateDbAsync();
+        var product = await db.IapProducts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Store == store
+                                      && x.Id == productId
+                                      && x.IsActive);
+        return await CanBuyProduct(product, db);
+    }
+
+    public async Task<Result> CanBuyProduct(IapProduct? product, AppDbContext db)
+    {
+        if (product == null)
+        {
+            throw new InvalidException(Strings.IapProductNotFound);
+        }
+        var purchases = await db.IapPurchases
+            .AsNoTracking()
+            .Include(x => x.Product)
+            .Where(x => x.CharId == Id)
+            .ToListAsync();
+        return await CanBuyProduct(product, db, purchases);
+    }
+
+    public async Task<Result> CanBuyProduct(IapProduct? product, AppDbContext db, List<IapPurchase> purchases)
+    {
+        if (product == null)
+        {
+            throw new InvalidException(Strings.IapProductNotFound);
+        }
+
+        var linkerId = product.LinkerId;
+        if (linkerId != null && linkerId.Value != 0)
+        {
+            var linker = await db.ProductLinkers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == linkerId);
+            if (linker != null)
+            {
+                if (!linker.CanBuyAgain)
+                {
+                    var hasPurchased = purchases
+                        .Any(x => x.CharId == Id && x.Product.LinkerId == linkerId);
+                    if (hasPurchased)
+                    {
+                        throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
+                    }
+                }
+                else
+                {
+                    var now = DateTime.UtcNow;
+                    var acceptDate = now - TimeSpan.FromDays(linker.NextDayCanBuy);
+                    var hasPurchased = purchases
+                        .Any(x => x.CharId == Id && x.Product.LinkerId == linkerId && x.PurchaseDate > acceptDate);
+                    if (hasPurchased)
+                    {
+                        throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
+                    }
+                }
+            }
+        }
+
+        return new Result()
+        {
+            Success = true,
+        };
+    }
     public async Task<IapResult> CompleteIapPurchase(VerifiedIapPurchase verifiedPurchase)
     {
         var product = verifiedPurchase.Product;
@@ -117,16 +194,7 @@ public partial class CharacterData
             };
         }
 
-        if (product.ProductType == IapProductType.NonConsumable)
-        {
-            hasPurchased = await db.IapPurchases.AnyAsync(
-                x => x.Store == product.Store && x.ProductId == product.Id,
-                cancelToken);
-            if (hasPurchased)
-            {
-                throw new InvalidException(Strings.IapPurchaseAlreadyProcessed);
-            }
-        }
+        await CanBuyProduct(product, db);
 
         var purchase = new IapPurchase()
         {
@@ -142,11 +210,17 @@ public partial class CharacterData
         {
             promotion.PromotionApplicable.Apply(reward);
         }
-
-        reward.Execute(this);
         reward.Edit(purchase);
         await db.IapPurchases.AddAsync(purchase, cancelToken);
-        await db.SaveChangesAsync(cancelToken);
+        var mailRewards = reward.GetMailRewards();
+        var mailManager = new MailManager(this, Client);
+        await mailManager.SendMail(new Mail()
+        {
+            Title = "Nạp tiền thành công!",
+            Content =
+                $"Bạn vừa nạp thành công gói {product.Name}.\nCảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
+            Rewards = mailRewards
+        }, db);
         try
         {
             await IapService.FinalizeAsync(
@@ -181,27 +255,39 @@ public partial class CharacterData
         var iapProducts = await db.IapProducts
             .Where(x => x.IsActive && x.Store == store)
             .ToArrayAsync();
-        var purchasedProductIds = await db.IapPurchases
+        var purchases = await db.IapPurchases
+            .AsNoTracking()
+            .Include(x => x.Product)
             .Where(x => x.CharId == Id)
-            .Select(x => x.ProductId)
-            .ToHashSetAsync();
-        var startPackHasPurchased = db.IapPurchases
-            .Where(x => x.CharId == Id)
-            .Any(x => x.Product.ActualProductType == IapProductType.NonConsumable);
-        var ownerProducts = iapProducts
-            .Select(x =>
+            .ToListAsync();
+        var ownerProducts = new List<OwnerIapProduct>(iapProducts.Length);
+        foreach (var product in iapProducts)
+        {
+            var hasPurchased = await HasPurchased(product, db, purchases);
+            var ownerIapProduct = new OwnerIapProduct()
             {
-                return new OwnerIapProduct()
-                {
-                    Product = x,
-                    HasPurchased = x.ActualProductType == IapProductType.NonConsumable
-                        ? startPackHasPurchased
-                        : purchasedProductIds.Contains(x.Id),
-                };
-            }).ToList();
-        return ownerProducts;
+                HasPurchased = hasPurchased,
+                Product = product,
+            };
+            ownerProducts.Add(ownerIapProduct);
+        }
+        return ownerProducts
+            .OrderByDescending(x => x.Product.Priority)
+            .ThenBy(x => x.Product.Name).ToList();
     }
 
+    public async Task<bool> HasPurchased(IapProduct product, AppDbContext db, List<IapPurchase> purchases)
+    {
+        try
+        {
+            await CanBuyProduct(product, db, purchases);
+            return false;
+        }
+        catch (InvalidException ex)
+        {
+            return true;
+        }
+    }
     public async Task<List<OwnerIapProduct>> GetProducts(Store store)
     {
         await using var db = await Program.CreateDbAsync();
@@ -253,7 +339,8 @@ public partial class CharacterData
         };
         await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
     }
-    public async Task AddSpendMoneyVipOffline(long moneyVip, SpendFor spendFor, DateTime time,AppDbContext db)
+
+    public async Task AddSpendMoneyVipOffline(long moneyVip, SpendFor spendFor, DateTime time, AppDbContext db)
     {
         var spendingMoneyVip = new SpendingMoneyVip
         {
@@ -264,6 +351,7 @@ public partial class CharacterData
         };
         await db.SpendingMoneyVips.AddAsync(spendingMoneyVip);
     }
+
     public async Task<long> GetTongNapInRank()
     {
         await using var db = await Program.CreateDbAsync();

@@ -24,7 +24,7 @@ public static class WelcomeRewardService
             return;
         }
 
-        if (welcomeReward.ClaimCount >= 10)
+        if (welcomeReward.ClaimCount >= 7)
         {
             return;
         }

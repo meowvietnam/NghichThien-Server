@@ -11,7 +11,7 @@ public class PromotionService
     {
         var now = DateTime.UtcNow;
         return await db.Promotions
-            .Where(x => x.Active && x.StartDate <= now && now <= x.EndDate)
+            .Where(x => x.Active && x.StartDate <= now && now <= x.EndDate && x.Store == store)
             .ToArrayAsync();
     }
 }

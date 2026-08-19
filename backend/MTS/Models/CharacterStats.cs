@@ -1,19 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using MemoryPack;
 using Microsoft.EntityFrameworkCore;
-using MTS.CP;
 using MTS.Data;
+using MTS.Game;
 using MTS.Game.CreateCharacter;
 using MTS.Game.LuyenDan;
-using MTS.Localization;
-using Network;
-using Network.Extensions;
+using MTS.Network.Models;
 using Action = MTS.Game.CreateCharacter.Action;
-
+using Network.Extensions.MemoryPack;
 namespace MTS.Models;
-
-public class CharacterStats : IMemorySerializable<CharacterStats>
+[MemoryPackable]
+public partial class CharacterStats 
 {
     public float Kim { get; private set; }
     public float Moc { get; private set; }
@@ -35,17 +34,21 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public int DanDoc { get; private set; }
     public TimeSpan TuoiTac { get; private set; }
 
-    [NotMapped] private bool isDirty;
+    [NotMapped] 
+    [MemoryPackIgnore]
+    private bool isDirty;
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
 
     [ForeignKey(nameof(CharId)), Key]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public CharacterData CharacterData { get; set; }
-
+    [MemoryPackConstructor]
     public CharacterStats()
     {
     }
@@ -76,6 +79,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         Ability = stats.Ability;
         DanDoc = stats.DanDoc;
         TuoiTac = stats.TuoiTac;
+        isDirty = true;
     }
 
     public void SetHp(int value)
@@ -163,7 +167,25 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             isDirty = true;
         }
     }
-
+    public void ApplyFrom(StatsSnapshot snapshot)
+    {
+        Kim = snapshot.Kim;
+        Moc = snapshot.Moc;
+        Thuy = snapshot.Thuy;
+        Hoa = snapshot.Hoa;
+        Tho = snapshot.Tho;
+        Ma = snapshot.Ma;
+        TuChat = snapshot.TuChat;
+        NgoTinh = snapshot.NgoTinh;
+        ThanThuc = snapshot.ThanThuc;
+        TocDoBay = snapshot.TocDoBay;
+        LinhThach = snapshot.LinhThach;
+        Hp = snapshot.Hp;
+        SinhMenh = snapshot.SinhMenh;
+        ThoNguyen = snapshot.ThoNguyen;
+        TamCanh = snapshot.TamCanh;
+        DanDoc = snapshot.DanDoc;
+    }
     public void Apply(StatModifier modifier)
     {
         Apply(modifier.Type, modifier.Action, modifier.Value);
@@ -286,64 +308,6 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
 
         isDirty = true;
     }
-
-    public int ByteSize()
-    {
-        return Kim.ByteSize() + Moc.ByteSize() + Thuy.ByteSize() + Hoa.ByteSize()
-               + Tho.ByteSize() + Ma.ByteSize() + TuChat.ByteSize() + NgoTinh.ByteSize()
-               + ThanThuc.ByteSize() + TocDoBay.ByteSize() + LinhThach.ByteSize()
-               + Hp.ByteSize()
-               + SinhMenh.ByteSize()
-               + ThoNguyen.ByteSize() + TamCanh.ByteSize() + LinhCan.ByteSize() + Ability.ByteSize()
-               + DanDoc.ByteSize() + TuoiTac.ByteSize();
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Kim);
-        writer.Write(Moc);
-        writer.Write(Thuy);
-        writer.Write(Hoa);
-        writer.Write(Tho);
-        writer.Write(Ma);
-        writer.Write(TuChat);
-        writer.Write(NgoTinh);
-        writer.Write(ThanThuc);
-        writer.Write(TocDoBay);
-        writer.Write(LinhThach);
-        writer.Write(Hp);
-        writer.Write(SinhMenh);
-        writer.Write(ThoNguyen);
-        writer.Write(TamCanh);
-        writer.Write(LinhCan);
-        writer.Write(Ability);
-        writer.Write(DanDoc);
-        writer.Write(TuoiTac);
-    }
-
-    public void Deserialize(IReader reader, ref CharacterStats value)
-    {
-        value.Kim = reader.Read<float>();
-        value.Moc = reader.Read<float>();
-        value.Thuy = reader.Read<float>();
-        value.Hoa = reader.Read<float>();
-        value.Tho = reader.Read<float>();
-        value.Ma = reader.Read<float>();
-        value.TuChat = reader.Read<int>();
-        value.NgoTinh = reader.Read<int>();
-        value.ThanThuc = reader.Read<int>();
-        value.TocDoBay = reader.Read<int>();
-        value.LinhThach = reader.Read<int>();
-        value.Hp = reader.Read<int>();
-        value.SinhMenh = reader.Read<int>();
-        value.ThoNguyen = reader.Read<int>();
-        value.TamCanh = reader.Read<int>();
-        value.LinhCan = reader.Read<LinhCan>();
-        value.Ability = reader.Read<Ability>();
-        value.DanDoc = reader.Read<int>();
-        value.TuoiTac = reader.Read<TimeSpan>();
-    }
-
     public bool IsDefault()
     {
         return CharId == 0;
@@ -382,7 +346,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
         var value = linhDan.BuffValue * count;
         var danDoc = linhDan.DanDoc * count;
         bool isAddDanDoc = true;
-
+        
         void AddStat(StatType type)
         {
             var currentValue = Convert.ToSingle(GetValue(type));
@@ -546,6 +510,7 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
             SetValue(StatType.DanDoc, DanDoc + danDoc);
             ClampDanDoc();
         }
+        CharacterData.AddUseDan((ushort)linhDan.Id, count);
     }
 
     public void ClampDanDoc()
@@ -556,6 +521,77 @@ public class CharacterStats : IMemorySerializable<CharacterStats>
     public void ClampHp()
     {
         Hp = Math.Clamp(Hp, 0, SinhMenh);
+        isDirty = true;
+    }
+
+    public CharacterStats Clone()
+    {
+        var bytes = MemoryPackSerializer.Serialize(this);
+        var charStats = MemoryPackSerializer.Deserialize<CharacterStats>(bytes);
+        return charStats;
+    }
+
+    public void SetLinhCan(LinhCan linhCan)
+    {
+        LinhCan = linhCan;
+        isDirty = true;
+    }
+
+    public void ResetLinhCan()
+    {
+        var percent = 100f / 5;
+        Kim = percent;
+        Moc = percent;
+        Thuy = percent;
+        Hoa = percent;
+        Tho = percent;
+        isDirty = true;
+    }
+
+    public void SetDanDoc(int danDoc)
+    {
+       DanDoc = danDoc;
+       isDirty = true;
+    }
+
+    public void ResetAbility()
+    {
+        Ability = Ability.None;
+        isDirty = true;
+    }
+
+    public void ResetTuoiTac()
+    {
+        TuoiTac = GameConfig.CharacterTemplate.Stats.TuoiTac;
+        isDirty = true;
+    }
+    public void ResetTuChat()
+    {
+        TuChat = GameConfig.CharacterTemplate.Stats.TuChat;
+        isDirty = true;
+    }
+
+    public void ResetTamCanh()
+    {
+        TamCanh = GameConfig.CharacterTemplate.Stats.TamCanh;
+        isDirty = true;
+    }
+
+    public void ResetNgoTinh()
+    {
+        NgoTinh = GameConfig.CharacterTemplate.Stats.NgoTinh;
+        isDirty = true;
+    }
+
+    public void SetAbility(Ability ability)
+    {
+        Ability = ability;
+        isDirty = true;
+    }
+
+    public void SetMa(float ma)
+    {
+        Ma = ma;
         isDirty = true;
     }
 }

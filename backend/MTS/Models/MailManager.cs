@@ -58,6 +58,7 @@ public class MailManager
         {
             await db.SaveChangesAsync();
         }
+
         sender?.Send(MessageTag.NewMail, entity.Entity);
         return entity.Entity;
     }
@@ -130,7 +131,7 @@ public class MailManager
         var rewards = mail.Rewards;
         foreach (var mailReward in rewards)
         {
-            mailReward.ClaimReward(characterData);
+            await mailReward.ClaimReward(characterData, db);
         }
 
         mail.IsClaim = true;
@@ -149,7 +150,7 @@ public class MailManager
         var rewards = neverClaims.SelectMany(x => x.Rewards).ToList();
         foreach (var mailReward in rewards)
         {
-            mailReward.ClaimReward(characterData);
+            await mailReward.ClaimReward(characterData, db);
         }
 
         foreach (var mail in neverClaims) mail.IsClaim = true;

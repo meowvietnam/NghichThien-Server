@@ -5,6 +5,7 @@ using MTS.Game.Rank;
 using MTS.Models;
 using Network;
 using Network.Extensions;
+using Serilog;
 using static MTS.Utils.Utils;
 
 namespace MTS.Services;
@@ -128,7 +129,7 @@ public class RechargeRankService : BackgroundService
         var endUtc = periodEnd.UtcDateTime;
         var totals = await db.IapPurchases
             .AsNoTracking()
-            .Where(x => x.PurchaseDate >= startUtc && x.PurchaseDate < endUtc)
+            .Where(x => x.PurchaseDate >= startUtc && x.PurchaseDate < endUtc && x.CharId != null)
             .GroupBy(x => x.CharId)
             .Select(x => new
             {
@@ -166,8 +167,8 @@ public class RechargeRankService : BackgroundService
             await character.InventoryManager.Load(db);
         }
         Tops = totals
-            .Where(x => characters.ContainsKey(x.CharId))
-            .Select(x => new RechargeRankEntry(characters[x.CharId], x.TotalSpent))
+            .Where(x => characters.ContainsKey(x.CharId.Value))
+            .Select(x => new RechargeRankEntry(characters[x.CharId.Value], x.TotalSpent))
             .ToList();
     }
 }

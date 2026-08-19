@@ -64,4 +64,14 @@ public class CongPhap : BaseSkill, IMemorySerializable<CongPhap>
     {
         return level * TocDoTuLuyenBase;
     }
+
+    public ItemRef ToItemRef(ushort count)
+    {
+        return new ItemRef()
+        {
+            Id = (ushort)Id,
+            Count = count,
+            Type = ItemType.CongPhap,
+        };
+    }
 }

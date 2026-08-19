@@ -9,7 +9,8 @@ public enum SpendFor
 {
     Gacha = 1,
     Auction = 8,
-    Arena = 16
+    Arena = 16,
+    TrungSinh = 32
 }
 [MemoryPackable]
 public partial class SpendingMoneyVip

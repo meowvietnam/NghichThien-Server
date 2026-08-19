@@ -62,4 +62,9 @@ public partial class ItemRef : IEquatable<ItemRef>, ICustomEquals<ItemRef>, IDee
     {
         return new ItemRef(Id, Type, Count);
     }
+
+    public override string ToString()
+    {
+        return $"{Id} {Type} {Count}";
+    }
 }

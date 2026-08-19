@@ -1,5 +1,6 @@
 using MTS.Game.BaseSkill;
 using MTS.Game.Resources;
+using MTS.Models;
 using Network;
 
 namespace MTS.TT;
@@ -16,5 +17,15 @@ public class ThanThong : BaseSkill , IMemorySerializable<ThanThong>
     {
         int daiCanhGioi = ((level - 1) / 3) + 1;
         return daiCanhGioi;
+    }
+
+    public ItemRef ToItemRef(ushort count)
+    {
+        return new ItemRef()
+        {
+            Id = (ushort)Id,
+            Count = count,
+            Type = ItemType.ThanThong,
+        };
     }
 }

@@ -9,7 +9,7 @@ namespace MTS.Services;
 
 public class MoneyVipSpendingRankService : BackgroundService
 {
-    private static readonly TimeSpan RankInterval = TimeSpan.FromDays(7);
+    public static readonly TimeSpan RankInterval = TimeSpan.FromDays(7);
     private readonly ILogger<MoneyVipSpendingRankService> logger;
     public static List<MoneyVipSpendingRankEntry> Tops { get; private set; } = new();
 
@@ -50,7 +50,7 @@ public class MoneyVipSpendingRankService : BackgroundService
 
     private async Task RefreshAsync(CancellationToken stoppingToken)
     {
-        await GetTopsAsync(GetTimeStart(), GetTimeEnd(), stoppingToken);
+        Tops = await GetTopsAsync(GetTimeStart(), GetTimeEnd(), stoppingToken);
     }
 
     private record RewardPercent(int Top, int Percent);
@@ -67,21 +67,8 @@ public class MoneyVipSpendingRankService : BackgroundService
 
             try
             {
-                await GetTopsAsync(periodEnd - RankInterval, periodEnd, stoppingToken);
-                var rewardPercents = new RewardPercent[]
-                {
-                    new(0, 50),
-                    new(1, 30),
-                    new(2, 10),
-                    new(3, 5),
-                };
-                var rewards = Tops.Select((entry, index) =>
-                {
-                    var percent = rewardPercents.Last(x => x.Top <= index).Percent / 100f;
-                    var moneyVip = (int)(entry.TotalSpent * percent);
-                    return new TopReward(new[] { entry.CharacterWrapper.Character }, moneyVip, $"Top {index + 1}");
-                }).ToArray();
-                await RankRewardMailer.SendAsync(rewards, "Tiêu Tiên Ngọc", stoppingToken);
+                Tops = await GetTopsAsync(periodEnd - RankInterval, periodEnd, stoppingToken);
+                await GrantRewards(Tops, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -90,6 +77,23 @@ public class MoneyVipSpendingRankService : BackgroundService
         }
     }
 
+    public async Task GrantRewards(List<MoneyVipSpendingRankEntry> tops, CancellationToken stoppingToken)
+    {
+        var rewardPercents = new RewardPercent[]
+        {
+            new(0, 50),
+            new(1, 30),
+            new(2, 10),
+            new(3, 5),
+        };
+        var rewards = tops.Select((entry, index) =>
+        {
+            var percent = rewardPercents.Last(x => x.Top <= index).Percent / 100f;
+            var moneyVip = (int)(entry.TotalSpent * percent);
+            return new TopReward([entry.CharacterWrapper.Character], moneyVip, $"Top {index + 1}");
+        }).ToArray();
+        await RankRewardMailer.SendAsync(rewards, "Tiêu Tiên Ngọc", stoppingToken);
+    }
     public static TimeSpan GetDelayToGrantRewards()
     {
         var now = Now();
@@ -114,7 +118,7 @@ public class MoneyVipSpendingRankService : BackgroundService
         return GetTimeStart() + RankInterval;
     }
 
-    private async Task GetTopsAsync(
+    public async Task<List<MoneyVipSpendingRankEntry>> GetTopsAsync(
         DateTimeOffset periodStart,
         DateTimeOffset periodEnd,
         CancellationToken stoppingToken)
@@ -138,8 +142,7 @@ public class MoneyVipSpendingRankService : BackgroundService
 
         if (totals.Count == 0)
         {
-            Tops = new();
-            return;
+            return new();
         }
 
         var charIds = totals.Select(x => x.CharId).ToList();
@@ -161,7 +164,7 @@ public class MoneyVipSpendingRankService : BackgroundService
         {
             await character.InventoryManager.Load(db);
         }
-        Tops = totals
+        return totals
             .Where(x => characters.ContainsKey(x.CharId))
             .Select(x => new MoneyVipSpendingRankEntry(characters[x.CharId], x.TotalSpent))
             .ToList();

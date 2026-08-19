@@ -10,6 +10,7 @@ using MTS.Models;
 using MTS.ND;
 using MTS.Network.Models;
 using MTS.Utils;
+using Serilog;
 using Action = MTS.Game.CreateCharacter.Action;
 
 namespace MTS.Services;
@@ -17,10 +18,13 @@ namespace MTS.Services;
 public class CreateCharacterService
 {
     public CharacterData Char { get; private set; }
-
-    public CreateCharacterService()
+    private int originalMoney;
+    private StepConfig config;
+    public CreateCharacterService(int money, StepConfig config)
     {
         Char = CharacterData.DeepClone(GameConfig.CharacterTemplate);
+        originalMoney = money;
+        this.config = config;
     }
 
     public async Task SetName(string name)
@@ -134,12 +138,12 @@ public class CreateCharacterService
         return models;
     }
 
-    public void ApplyStats(List<SelectionModel> models)
+    public void ApplyStats(List<SelectionModel> models,CharacterStats template)
     {
         models = Clean(models);
-        var money = GameConfig.OriginalMoney;
-        var steps = GameConfig.StepConfig.StepDatas;
-        var stats = new CharacterStats(GameConfig.CharacterTemplate.Stats);
+        var money = originalMoney;
+        var steps = config.StepDatas;
+        var stats = new CharacterStats(template);
         var unselectPercents = GameConfig.UnselectPercents;
         var set1 = steps.Select(x => x.Id).ToHashSet();
         var set2 = models.Select(x => x.Id).ToHashSet();
@@ -264,12 +268,11 @@ public class CreateCharacterService
 
     public object GetSelection(List<SelectionModel> selectionModels)
     {
-        var stepConfig = GameConfig.StepConfig;
         var res = new List<object>();
         foreach (var selectionModel in selectionModels)
         {
             var modelId = selectionModel.Id;
-            var step = stepConfig.StepDatas.FirstOrDefault(s => s.Id == modelId);
+            var step = config.StepDatas.FirstOrDefault(s => s.Id == modelId);
             var gs = new List<object>();
             res.Add(new
             {
