@@ -34,7 +34,7 @@ public static class GameConfig
     public static NpcData[] NpcDatas { get; private set; }
     public static LevelResource LevelResource { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
-    public static int[] TrungSinhPrices = new[] { 500, 2000, 5000, 10000 };
+    public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
 
     public static readonly string[] tamCanh = new[]

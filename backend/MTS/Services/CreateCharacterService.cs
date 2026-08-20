@@ -10,6 +10,7 @@ using MTS.Models;
 using MTS.ND;
 using MTS.Network.Models;
 using MTS.Utils;
+using Newtonsoft.Json;
 using Serilog;
 using Action = MTS.Game.CreateCharacter.Action;
 
@@ -140,6 +141,8 @@ public class CreateCharacterService
 
     public void ApplyStats(List<SelectionModel> models,CharacterStats template)
     {
+        var selections = GetSelection(models);
+        Log.Information("Selections:\n{selections}\n",JsonConvert.SerializeObject(selections, Formatting.Indented));
         models = Clean(models);
         var money = originalMoney;
         var steps = config.StepDatas;

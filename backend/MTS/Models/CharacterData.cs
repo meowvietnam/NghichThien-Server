@@ -8,11 +8,13 @@ using System.Text.Json.Serialization;
 using MemoryPack;
 using MTS.Exceptions;
 using MTS.Game.CreateCharacter;
+using MTS.Game.LuyenDan;
 using MTS.ND;
 using MTS.Network;
 using MTS.Services;
 using MTS.Utils;
 using Network.Extensions.MemoryPack;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -235,7 +237,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         var index = Math.Clamp(TrungSinhCount, 0, prices.Length - 1);
         var price = prices[index];
         var thienPhu = GameConfig.OriginalMoney + BonusPoint + daiCanhGioi * daiCanhGioi;
-        var stats = GetReset();
+        var stats = GetResetStats();
         return new()
         {
             DaiCanhGioi = daiCanhGioi,
@@ -246,7 +248,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         };
     }
 
-    public void TrungSinh(List<SelectionModel> selections)
+    public async Task TrungSinh(List<SelectionModel> selections)
     {
         var config = GetTrungSinhConfig();
         var remaining = MoneyVip - config.MoneyVip;
@@ -293,6 +295,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         SetMoneyVip(remaining);
         SetBonusPoints(BonusPoint + config.DaiCanhGioi * config.DaiCanhGioi);
         AddSpendMoneyVipOnline(config.MoneyVip, SpendFor.TrungSinh);
+        await using var db = await Program.CreateDbAsync();
+        await RefundLinhDan(db);
     }
 
     public void AddUseDan(ushort danId, int count)
@@ -429,52 +433,88 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         SetCurrentFreeAdsMoneyVipCount(0);
     }
 
-    public CharacterStats GetReset()
+
+    public CharacterStats GetResetStats()
     {
         var stats = Stats.Clone();
-        var level = Progression.Level;
-        var baseHp = GameConfig.CharacterTemplate.Stats.SinhMenh;
-        var estimateHp = baseHp;
-        //hpmax, than thuc, don toc
-        var infoLevels = GameConfig.LevelResource.infoLevels.Take(level - 1).ToArray();
-        var ability = stats.Ability;
-        var maxHp = stats.SinhMenh;
-        var thanThuc = stats.ThanThuc;
-        var donToc = stats.TocDoBay;
-        for (var i = 0; i < infoLevels.Length; i++)
-        {
-            var infoLevel = infoLevels[i];
-            estimateHp += infoLevel.hpMaxBuff;
-            if (ability.HasFlag(Ability.ThanMaHuyetMach))
-            {
-                estimateHp += (int)MathF.Ceiling(estimateHp * 0.2f);
-            }
-
-            if (i == 2 && ability.HasFlag(Ability.DiTocHuyetMach))
-            {
-                estimateHp *= 2;
-            }
-
-            thanThuc -= infoLevel.thanThucBuff;
-            donToc -= infoLevel.donTocBuff;
-        }
-
-        var hp = baseHp + maxHp - estimateHp;
-
-        hp = Math.Max(0, hp);
+        var statsTemp = GameConfig.CharacterTemplate.Stats.Clone();
+        var hp = statsTemp.SinhMenh;
         stats.SetSinhMenh(hp);
         stats.SetHp(hp);
-        stats.SetThanThuc(thanThuc);
-        stats.SetTocDoBay(donToc);
+        stats.SetThanThuc(statsTemp.ThanThuc);
+        stats.SetTocDoBay(statsTemp.TocDoBay);
+        stats.SetThoNguyen(100);
         stats.SetLinhCan(LinhCan.NguLinhCan);
         stats.SetDanDoc(0);
-        stats.SetThoNguyen(100);
         stats.ResetLinhCan();
         stats.ResetTuoiTac();
         stats.ResetAbility();
         stats.ResetTuChat();
         stats.ResetNgoTinh();
         stats.ResetTamCanh();
+        stats.SetMa(0);
         return stats;
+    }
+    public async Task RefundLinhDan(AppDbContext db)
+    {
+        ETypeDan[] returnTypeDans = [ETypeDan.DanBuff , ETypeDan.DanDotPha];
+        EDanBuffType[] exclusives = [
+            EDanBuffType.TuVi,
+            EDanBuffType.TuViVaDanDocDuoiTrucCo,
+            EDanBuffType.TuViVaDanDocDuoiKetDan,
+            EDanBuffType.TuViVaDanDocDuoiNguyenAnh,
+            EDanBuffType.TuViVaDanDocDuoiHoaThan,
+            EDanBuffType.NgoDaoDiem,
+            EDanBuffType.KimChiDao,
+            EDanBuffType.MocChiDao,
+            EDanBuffType.ThuyChiDao,
+            EDanBuffType.HoaChiDao,
+            EDanBuffType.ThoChiDao,
+            EDanBuffType.ThanThucChiDao,
+            EDanBuffType.KiemChiDao,
+            EDanBuffType.DanDoc,
+            EDanBuffType.TamCanh,
+            EDanBuffType.Hp,
+            EDanBuffType.HoiFullHp,
+        ];
+        var linhDans = GameConfig.LuyenDanResources.LinhDans;
+        var danIds = linhDans
+            .Where(x => returnTypeDans.Contains(x.ETypeDan) && !exclusives.Contains(x.EBuffType))
+            .Select(x => x.Id)
+            .ToList();
+        var danUseds = await db.UseDans
+            .Where(x => x.CharId == Id && danIds.Contains(x.DanId))
+            .ToListAsync();
+        var refunds = danUseds.GroupBy(x => x.DanId)
+            .Select(x => new ItemRef()
+            {
+                CharId = Id,
+                Id = x.Key,
+                Count = (ushort)x.Sum(i => i.Count),
+                Type = ItemType.LinhDan
+            }).ToArray();
+        if (!refunds.Any())
+        {
+            return;
+        }
+
+        var mailManager = new MailManager(this, Client);
+        db.UseDans.RemoveRange(danUseds);
+        var chunks = refunds.Chunk(6).ToArray();
+        foreach (var chunk in chunks)
+        {
+            var rewards = chunk.Select(x => new MailRewardItem()
+            {
+                Item = x
+            } as IMailReward).ToList();
+            var mail = new Mail()
+            {
+                CharId = Id,
+                Title = "Hoàn Trả Linh Đan",
+                Content = "Hoàn đan trùng sinh.",
+                Rewards = rewards
+            };
+            await mailManager.SendMail(mail,db);
+        }
     }
 }

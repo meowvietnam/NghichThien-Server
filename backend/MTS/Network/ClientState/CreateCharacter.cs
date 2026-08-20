@@ -92,7 +92,7 @@ public class CreateCharacter : IClientState
         }
         else if (tag == MessageTag.ApplyStats)
         {
-            var models = reader.ReadArray<SelectionModel>().ToList();
+            var models = reader.MemRead<List<SelectionModel>>();
             try
             {
                 UserData userData;
