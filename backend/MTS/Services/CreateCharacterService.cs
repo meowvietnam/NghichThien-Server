@@ -141,8 +141,6 @@ public class CreateCharacterService
 
     public void ApplyStats(List<SelectionModel> models,CharacterStats template)
     {
-        var selections = GetSelection(models);
-        Log.Information("Selections:\n{selections}\n",JsonConvert.SerializeObject(selections, Formatting.Indented));
         models = Clean(models);
         var money = originalMoney;
         var steps = config.StepDatas;
@@ -358,7 +356,7 @@ public class CreateCharacterService
             .ToList();
         db.DailyQuests.AddRange(quests);
         Char.ArenaManager.Init();
-
+        Char.MonsterKill.Init();
         var inventory = Char.InventoryManager;
         inventory.CharacterData = Char;
         var stats = Char.Stats;

@@ -6,4 +6,5 @@ public enum RankType
     RankTongNap,
     RankTongTieu,
     RankArena,
+    RankMonster
 }

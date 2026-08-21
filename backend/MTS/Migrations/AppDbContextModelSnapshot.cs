@@ -707,6 +707,47 @@ namespace MTS.Migrations
                     b.ToTable("Mails");
                 });
 
+            modelBuilder.Entity("MTS.Models.MonsterKill", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("MonsterKills");
+                });
+
+            modelBuilder.Entity("MTS.Models.MonsterRankReward", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsClaim")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("RequirePoints")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Rewards")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("MonsterRankRewards");
+                });
+
             modelBuilder.Entity("MTS.Models.NgoDao", b =>
                 {
                     b.Property<int>("CharId")
@@ -1351,6 +1392,28 @@ namespace MTS.Migrations
                     b.Navigation("Social");
                 });
 
+            modelBuilder.Entity("MTS.Models.MonsterKill", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithOne("MonsterKill")
+                        .HasForeignKey("MTS.Models.MonsterKill", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
+            modelBuilder.Entity("MTS.Models.MonsterRankReward", b =>
+                {
+                    b.HasOne("MTS.Models.MonsterKill", "MonsterKill")
+                        .WithMany("Rewards")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MonsterKill");
+                });
+
             modelBuilder.Entity("MTS.Models.NgoDao", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", "Inventory")
@@ -1558,6 +1621,9 @@ namespace MTS.Migrations
                     b.Navigation("InventoryManager")
                         .IsRequired();
 
+                    b.Navigation("MonsterKill")
+                        .IsRequired();
+
                     b.Navigation("Progression")
                         .IsRequired();
 
@@ -1594,6 +1660,11 @@ namespace MTS.Migrations
                     b.Navigation("NgoDaos");
 
                     b.Navigation("ThanThongOwners");
+                });
+
+            modelBuilder.Entity("MTS.Models.MonsterKill", b =>
+                {
+                    b.Navigation("Rewards");
                 });
 
             modelBuilder.Entity("MTS.Models.ProductLinker", b =>

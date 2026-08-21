@@ -13,6 +13,5 @@ public partial class TuLuyenResult
     public int NewHp { get; set; }
     public int DeltaExp { get; set; }
     public int DeltaHp { get; set; }
-    [MemoryPackIgnore]
     public TimeSpan TuoiTac { get; set; }
 }

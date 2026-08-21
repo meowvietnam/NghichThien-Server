@@ -46,6 +46,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public ArenaManager ArenaManager { get; set; } = new();
     public ShopManager ShopManager { get; set; } = new();
     public GachaManager GachaManager { get; set; } = new();
+    public MonsterKill MonsterKill { get; set; } = new();
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(UserId))]
@@ -397,6 +398,11 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         if (!GachaManager.IsDefault())
         {
             await GachaManager.SaveChanges(db);
+        }
+
+        if (!MonsterKill.IsDefault())
+        {
+            await MonsterKill.SaveChanges(db);
         }
     }
 

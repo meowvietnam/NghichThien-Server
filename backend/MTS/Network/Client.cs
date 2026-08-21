@@ -194,7 +194,13 @@ public class Client : ClientConnection, IRequester<MessageTag>
             .FirstAsync(x => x.CharId == id);
         gachaManager.CharData = characterData;
         characterData.GachaManager = gachaManager;
-
+        var monsterKill = await db.MonsterKills
+            .AsNoTracking()
+            .Include(x => x.Rewards)
+            .FirstAsync(x => x.CharId == id);
+        monsterKill.CharData = characterData;
+        characterData.MonsterKill = monsterKill;
+        
         lock (CharacterLock)
         {
             CharacterData = characterData;
@@ -594,6 +600,11 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var trungSinhHandler = new TrungSinhHandler(this);
         module.RemoveHandler<TrungSinhHandler>();
         module.AddHandler(trungSinhHandler);
+
+        var monsterKillHandler = new MonsterKillHandler(this);
+        module.RemoveHandler<MonsterKillHandler>();
+        module.AddHandler(monsterKillHandler);
+        
         ChangeState(new AllMaps(this));
     }
     public T GetHandler<T>() where T : IClientHandler
@@ -605,5 +616,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
         Action<Exception> onError = null)
     {
         AddRequest(TcpClient, tag, response, timeoutMilliseconds, onError);
+    }
+
+    public bool IsOnline()
+    {
+        return TcpServer.Instance.IsClientOnline(this);
     }
 }

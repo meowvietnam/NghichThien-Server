@@ -339,7 +339,6 @@ namespace MTS.Network.Core
 
         private async Task<CharacterData> LoadEnemyCombat()
         {
-            
             int point;
             int level;
             int charId;
@@ -355,7 +354,7 @@ namespace MTS.Network.Core
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
 
-            var enemyCharId = 
+            var enemyCharId =
                 await db.ArenaManagers
                     .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
                     .OrderBy(x => x.CharData.Progression.Level >= level ? 0 : 1)
@@ -456,10 +455,12 @@ namespace MTS.Network.Core
                 {
                     return;
                 }
+
                 if (session.Status == CombatStatus.End)
                 {
                     return;
                 }
+
                 try
                 {
                     var stats = charData.Stats;
@@ -488,22 +489,30 @@ namespace MTS.Network.Core
                 }
             }
         }
+
         private void OnOtherClientLogin()
         {
-            
+            Log.Information("OnOtherClientLogin");
         }
+
         private void OnLogout()
         {
+            Log.Information("OnLogout");
             FinalNow();
         }
+
         private void OnReconnectedSuccess()
         {
-            
         }
+
         private void OnRemoveDisconnectedSession()
         {
-            FinalNow();
+            if (!client.IsOnline())
+            {
+                FinalNow();
+            }
         }
+
         public void OnDisconnect(IProtocol<MessageTag> protocol)
         {
         }

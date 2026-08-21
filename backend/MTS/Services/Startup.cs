@@ -39,6 +39,23 @@ public class Startup : BackgroundService
             Utils.Utils.FormatCount(estimate));
     }
 
+    private async Task CreateMonterKills(AppDbContext db)
+    {
+        var characters = await db.Characters.ToListAsync();
+        var monsterKills = characters.Select(x =>
+        {
+            var monsterKill = new MonsterKill()
+            {
+                CharData = x,
+                CharId = x.Id,
+            };
+            monsterKill.Init();
+            return monsterKill;
+        }).ToArray();
+        await db.MonsterKills.AddRangeAsync(monsterKills);
+        await db.SaveChangesAsync();
+        Log.Information("Monter Kills: {MonterKills}", monsterKills.Length);
+    }
     private async Task ResetChars(AppDbContext db)
     {
         var mails = await db.Mails.Where(x => x.Title == "Xin lỗi và đền bù reset chỉ số trùng sinh").ToListAsync();

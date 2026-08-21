@@ -127,6 +127,7 @@ public static class Program
             builder.Services.AddHostedService<ReloadDailyQuestService>();
             builder.Services.AddHostedService<ArenaRankService>();
             builder.Services.AddHostedService<TuViRankService>();
+            builder.Services.AddHostedService<MonsterKillRankService>();
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();

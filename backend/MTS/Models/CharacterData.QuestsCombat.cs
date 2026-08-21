@@ -5,6 +5,8 @@ using MTS.Game.LuyenDan;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Game.Combat;
+using MTS.ND;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -113,7 +115,7 @@ public partial class CharacterData
     public ResultCombatResult? ResultCombat(ResultCombat request)
     {
         request.ListIdThanThong.RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
-
+        
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
             .ToDictionary(g => g.Key, g => g.Count());
@@ -124,10 +126,29 @@ public partial class CharacterData
                 x => x,
                 x => idCounts[x.Id]
             );
-
+        var enemyLevel = request.CurrentLevelEnemy;
         var newTamCanh = Stats.TamCanh;
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
+        var camNgo = new CamNgo()
+        {
+            CharId = Id,
+            Id = ETypeSkill.The,
+            Value = 10 * enemyLevel
+        };
+        var camNgos = InventoryManager.CamNgos;
+        if(camNgos.TryGetValue(camNgo, out var ownerCamNgo))
+        {
+            ownerCamNgo.Value += camNgo.Value;
+            InventoryManager.Tracking.CamNgos.Update(camNgo);
+            camNgoAdd.Add(ownerCamNgo);
+        }
+        else
+        {
+            camNgos.Add(camNgo);
+            InventoryManager.Tracking.CamNgos.Add(camNgo);
+            camNgoAdd.Add(camNgo);
+        }
         var newNgoDaoDiem = Progression.NgoDaoDiem;
         foreach (var item in thanThongDict)
         {
@@ -156,7 +177,7 @@ public partial class CharacterData
 
             if (request.TypeCombat == ETypeCombat.AllMaps)
             {
-                if (request.CurrentLevelEnemy > Progression.Level + 2)
+                if (enemyLevel > Progression.Level + 2)
                 {
                     throw new InvalidException(Strings.HackerLevelEnemyCombat);
                 }
@@ -165,7 +186,7 @@ public partial class CharacterData
             {
                 int validBossLevel = ((Progression.Level - 1) / 3 + 1) * 3;
 
-                if (request.CurrentLevelEnemy != validBossLevel)
+                if (enemyLevel != validBossLevel)
                 {
                     throw new InvalidException(Strings.HackerLevelBossCombat);
                 }
@@ -175,8 +196,8 @@ public partial class CharacterData
 
             if (request.TypeResultCombat == ETypeResultCombat.Win)
             {
-                int linhThach = Random.Shared.Next(5 * request.CurrentLevelEnemy, 50 * request.CurrentLevelEnemy);
-                int monsterLevel = request.CurrentLevelEnemy;
+                int linhThach = Random.Shared.Next(5 * enemyLevel, 50 * enemyLevel);
+                int monsterLevel = enemyLevel;
                 var listItemRef = GenerateMonsterRewards(monsterLevel);
                 listItemRef = ConsolidateItemRefs(listItemRef);
                 var rewardItems = InventoryManager.AddToInventory(listItemRef);
@@ -230,7 +251,22 @@ public partial class CharacterData
             var decrease = (int)Math.Round((newTamCanh - min) * 0.1f);
             newTamCanh = Math.Max(min, newTamCanh - decrease);
         }
+
+        if (request.TypeResultCombat == ETypeResultCombat.Win && request.TypeCombat == ETypeCombat.AllMaps)
+        {
+            var myLevel = Progression.Level;
+            var deltaLevel  = enemyLevel - myLevel;
+            var addPoints = deltaLevel switch
+            {
+                <= 0 => 1,
+                > 0 => 3,
+            };
+            var newPoints = MonsterKill.Points + addPoints;
+            Log.Information("Newpoints: {newPoints}, AddPoints: {addPoints}, CharLevel: {myLevel}, EnemyLevel: {enemyLevel}", newPoints, addPoints, myLevel, enemyLevel);
+            MonsterKill.SetPoints(newPoints);
+        }
         Stats.SetTamCanh(newTamCanh);
+        
         return new ResultCombatResult()
         {
             Success = true,
