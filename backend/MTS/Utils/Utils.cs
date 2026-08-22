@@ -104,4 +104,12 @@ public static class Utils
         var dateTime = new DateTimeOffset(DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Utc)).ToOffset(Utc7);
         return now.Date == dateTime.Date;
     }
+    public static List<T[]> SplitArray<T>(T[] array, int chunkSize)
+    {
+        return array
+            .Select((value, index) => new { value, index })
+            .GroupBy(x => x.index / chunkSize)
+            .Select(g => g.Select(x => x.value).ToArray())
+            .ToList();
+    }
 }

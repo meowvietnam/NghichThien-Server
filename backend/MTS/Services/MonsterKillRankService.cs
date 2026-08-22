@@ -1,0 +1,147 @@
+using Microsoft.EntityFrameworkCore;
+using MTS.Game;
+using MTS.Game.Rank;
+using MTS.Network;
+using static MTS.Utils.Utils;
+namespace MTS.Services;
+
+public class MonsterKillRankService : BackgroundService
+{
+    private readonly ILogger<MonsterKillRankService> logger;
+    public static List<MonsterRankEntity> Tops { get; private set; } = new();
+    private static readonly TimeSpan Interval = TimeSpan.FromDays(14);
+    public MonsterKillRankService(ILogger<MonsterKillRankService> logger)
+    {
+        this.logger = logger;
+    }
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        await RunJobAsync(stoppingToken);
+        _ = Task.Run(() => GrantRewardsLoop(stoppingToken), stoppingToken);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var delay = GetDelayToNextRun();
+            await Task.Delay(delay, stoppingToken);
+            try
+            {
+                await RunJobAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Lỗi khi chạy {Service}", nameof(MonsterKillRankService));
+            }
+        }
+    }
+
+    private TimeSpan GetDelayToNextRun()
+    {
+        return TimeSpan.FromMinutes(2);
+    }
+    public static TimeSpan GetDelayToGrantRewards()
+    {
+        var now = Now();
+        return GetTimeEnd() - now;
+    }
+    public static DateTimeOffset GetTimeStart()
+    {
+        var start = GameConfig.GameReleaseDate;
+        var now = Now();
+        if (now <= start)
+        {
+            return start;
+        }
+
+        var passedPeriods = (now - start).Ticks / Interval.Ticks;
+        return start.AddTicks(passedPeriods * Interval.Ticks);
+    }
+    public static DateTimeOffset GetTimeEnd()
+    {
+        return GetTimeStart() + Interval;
+    }
+
+    private async Task GrantRewardsLoop(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var delay = GetDelayToGrantRewards();
+            logger.LogInformation(
+                "{Service} sẽ phát thưởng sau {Delay}", nameof(MonsterKillRankService), delay);
+            await Task.Delay(delay, stoppingToken);
+            try
+            {
+                await GetTopsAsync(stoppingToken);
+                var rewards = new TopReward[]
+                {
+                    new(Tops.Take(1).Select(x => x.CharacterWrapper.Character).ToArray(), 2000, "Top 1"),
+                    new(Tops.Skip(1).Take(1).Select(x => x.CharacterWrapper.Character).ToArray(), 1500, "Top 2"),
+                    new(Tops.Skip(2).Take(1).Select(x => x.CharacterWrapper.Character).ToArray(), 1000, "Top 3"),
+                    new(Tops.Skip(3).Take(7).Select(x => x.CharacterWrapper.Character).ToArray(), 500, "Top 4-10"),
+                };
+                await RankRewardMailer.SendAsync(rewards, "Diệt Quái", stoppingToken);
+                await ResetRank(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Lỗi khi phát thưởng {Service}", nameof(MonsterKillRankService));
+            }
+        }
+    }
+
+    private async Task ResetRank(CancellationToken stoppingToken)
+    {
+        await using var db = await Program.CreateDbAsync();
+        await db.MonsterKills
+            .ExecuteUpdateAsync(s => 
+                s.SetProperty(x => x.Points, 0));
+        await db.MonsterRankRewards
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsClaim, false), stoppingToken);
+        var onlineChars = TcpServer.Instance
+            .GetCharsOnline()
+            .ToDictionary(x => x.Id);
+        foreach (var charData in onlineChars.Values)
+        {
+            lock (charData)
+            {
+                var monsterKill = charData.MonsterKill;
+                monsterKill.SetPoints(0);
+                foreach (var reward in monsterKill.Rewards)
+                {
+                    reward.IsClaim = false;
+                }
+            }
+        }
+        Tops = new List<MonsterRankEntity>();
+    }
+
+    private async Task GetTopsAsync(CancellationToken stoppingToken)
+    {
+        await using var db = await Program.CreateDbAsync();
+        var topCharacters = await db.Characters
+            .AsNoTracking()
+            .Include(x => x.Appearance)
+            .Include(x => x.Progression)
+            .Include(x => x.Stats)
+            .Include(x => x.MonsterKill)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.ThanThongEquips)
+            .Include(x => x.EquipmentManager)
+            .ThenInclude(x => x.DanCombatUseds)
+            .Include(x => x.InventoryManager)
+            .OrderByDescending(x => x.MonsterKill.Points)
+            .ThenByDescending(x => x.Progression.Level)
+            .ThenByDescending(x => x.Progression.CurrentExp)
+            .Take(10)
+            .AsSplitQuery()
+            .ToListAsync(stoppingToken);
+        foreach (var character in topCharacters)
+        {
+            await character.InventoryManager.Load(db);
+        }
+        Tops = topCharacters.Select(x => new MonsterRankEntity(x, x.MonsterKill.Points)).ToList();
+    }
+
+    private async Task RunJobAsync(CancellationToken stoppingToken)
+    {
+        await GetTopsAsync(stoppingToken);
+    }
+}

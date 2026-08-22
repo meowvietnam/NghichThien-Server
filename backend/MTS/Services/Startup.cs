@@ -37,49 +37,143 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
-
     }
 
-    private async Task TopSpending(AppDbContext db)
+    private async Task CreateMonterKills(AppDbContext db)
     {
-        var service = new MoneyVipSpendingRankService(null);
-        var token = CancellationToken.None;
-        var start = GameConfig.GameReleaseDate;
-        var end = start + MoneyVipSpendingRankService.RankInterval;
-        var tops = await service.GetTopsAsync(start, end, token);
-        for (var i = 0; i < tops.Count; i++)
+        var characters = await db.Characters.ToListAsync();
+        var monsterKills = characters.Select(x =>
         {
-            Log.Information("Top: {top}, Name: {name}, MoneyVip: {moneyVip}", i+1, tops[i].CharacterWrapper.Character.Name, Utils.Utils.FormatCount(tops[i].TotalSpent));
-        }
-        // await service.GrantRewards(tops, token);
-        Log.Information("Xong");
-    }
-    private async Task SendMails(AppDbContext db)
-    {
-        var charDatas = await db.Characters.ToArrayAsync();
-        for (var i = 0; i < charDatas.Length; i++)
-        {
-            var charData = charDatas[i];
-            var mail = new Mail()
+            var monsterKill = new MonsterKill()
             {
-                CharId = charData.Id,
-                Title = "Nạp Web Nhận Thêm 30% Tiên Ngọc!",
-                Content =
-                    "Nạp tiền tự động tại https://play.nghichthien.online và nhận ngay +30% Tiên Ngọc. Nạp nhanh – cộng tự động – ưu đãi hấp dẫn.",
-                Rewards = new List<IMailReward>()
-                {
-                    new MailRewardMoneyVip()
-                    {
-                        MoneyVip = 1
-                    }
-                }
+                CharData = x,
+                CharId = x.Id,
             };
-            await db.Mails.AddAsync(mail);
-            Log.Information("[{i}/{j}] Send mail to {Name}", i + 1, charDatas.Length, charData.Name);
+            monsterKill.Init();
+            return monsterKill;
+        }).ToArray();
+        await db.MonsterKills.AddRangeAsync(monsterKills);
+        await db.SaveChangesAsync();
+        Log.Information("Monter Kills: {MonterKills}", monsterKills.Length);
+    }
+    private async Task ResetChars(AppDbContext db)
+    {
+        var mails = await db.Mails.Where(x => x.Title == "Xin lỗi và đền bù reset chỉ số trùng sinh").ToListAsync();
+        var charIds = mails.Select(x => x.CharId).ToHashSet();
+        var chars = await db.Characters
+            .Include(x => x.Stats)
+            .Include(x => x.Progression)
+            .Where(x => charIds.Contains(x.Id))
+            .ToListAsync();
+        foreach (var charData in chars)
+        {
+            var currentStats = charData.Stats;
+            var resetStats = GetReset(charData);
+            var level = charData.Progression.Level;
+            var name = charData.Name;
+            var hp = currentStats.SinhMenh;
+            var thoNguyen = currentStats.ThoNguyen;
+            var thanThuc = currentStats.ThanThuc;
+            var dontoc = currentStats.TocDoBay;
+
+            var newHp = resetStats.SinhMenh;
+            var newThoNguyen = resetStats.ThoNguyen;
+            var newDontoc = currentStats.TocDoBay;
+            var newThanThuc = resetStats.ThanThuc;
+            Log.Information(
+                "Reset {Name}, Level: {Level} Hp: {Hp}-{NewHp}, ThoNguyen: {ThoNguyen}-{NewThoNguyen}, DonToc: {DonToc}-{NewDontoc}, ThanThuc: {ThanThuc}-{NewThanThuc}",
+                name, level, hp, newHp, thoNguyen, newThoNguyen, dontoc, newDontoc, thanThuc, newThanThuc);
+            charData.Stats = resetStats;
+            // var mail1 = new Mail()
+            // {
+            //     CharId = charData.Id,
+            //     Title = "Xin lỗi và đền bù reset chỉ số trùng sinh",
+            //     Content = "Nhằm đảm bảo cân bằng game, admin xin phép reset chỉ số anh em đã trùng sinh, lần reset này bạn nên trùng sinh lại 1 lần nữa để tối ưu chỉ số nhất.",
+            //     Rewards = new List<IMailReward>()
+            //     {
+            //         new MailRewardMoneyVip()
+            //         {
+            //             MoneyVip = 10_000,
+            //         }
+            //     }
+            // };
+            // await db.Mails.AddAsync(mail1);
+            // if (count > 0)
+            // {
+            //     var total = 0;
+            //     for (int i = 0; i < count; i++)
+            //     {
+            //         var index = Math.Clamp(i, 0, prices.Length - 1);
+            //         var price = prices[index];
+            //         total += price;
+            //     }
+            //
+            //     var mail2 = new Mail()
+            //     {
+            //         CharId = charData.Id,
+            //         Title = "Hoàn tiên ngọc đã trùng sinh",
+            //         Content = "Hoàn tiên ngọc đã trùng sinh",
+            //         Rewards = new List<IMailReward>()
+            //         {
+            //             new MailRewardMoneyVip()
+            //             {
+            //                 MoneyVip = total,
+            //             }
+            //         }
+            //     };
+            //     await db.Mails.AddAsync(mail2);
+            //     charData.SetTrungSinhCount(0);
+            // }
+            // await charData.RefundLinhDan(db);
         }
 
         await db.SaveChangesAsync();
+        Log.Information("Oke");
     }
+
+    public CharacterStats GetReset(CharacterData charData)
+    {
+        var stats = charData.Stats.Clone();
+        var level = charData.Progression.Level;
+        var statsTemp = GameConfig.CharacterTemplate.Stats;
+        var baseHp = statsTemp.SinhMenh;
+        var estimateHp = baseHp;
+        var infoLevels = GameConfig.LevelResource.infoLevels.Take(level - 1).ToArray();
+        var ability = stats.Ability;
+        var thanThuc = statsTemp.ThanThuc;
+        var thoNguyen = 100;
+        var donToc = statsTemp.TocDoBay;
+        for (var i = 0; i < infoLevels.Length; i++)
+        {
+            var infoLevel = infoLevels[i];
+            estimateHp += infoLevel.hpMaxBuff;
+            if (ability.HasFlag(Ability.ThanMaHuyetMach))
+            {
+                estimateHp += (int)MathF.Ceiling(estimateHp * 0.2f);
+            }
+
+            if (i == 2 && ability.HasFlag(Ability.DiTocHuyetMach))
+            {
+                estimateHp *= 2;
+            }
+
+            thanThuc += infoLevel.thanThucBuff;
+            thoNguyen += infoLevel.thoNguyenBuff;
+            donToc += infoLevel.donTocBuff;
+        }
+
+        var hp = Math.Max(0, estimateHp);
+        stats.SetSinhMenh(hp);
+        stats.SetHp(hp);
+        stats.SetThoNguyen(thoNguyen);
+        stats.SetThanThuc(thanThuc);
+        stats.SetTocDoBay(donToc);
+        stats.ResetLinhCan();
+        stats.ResetTuChat();
+        stats.ResetNgoTinh();
+        return stats;
+    }
+
 
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
     {

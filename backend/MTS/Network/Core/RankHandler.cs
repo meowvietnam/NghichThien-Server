@@ -58,6 +58,12 @@ namespace MTS.Network.Core
                             rank = new RankArena(tops, time, GameConfig.TypeRankArenaWithValue,
                                 GameConfig.TypeRankArenaWithValue);
                         }
+                        else if (rankType == RankType.RankMonster)
+                        {
+                            var tops = MonsterKillRankService.Tops;
+                            var time = MonsterKillRankService.GetDelayToGrantRewards();
+                            rank = new RankMonster(tops, time, charData.MonsterKill.Points);
+                        }
 
                         result = new GetRankResult()
                         {

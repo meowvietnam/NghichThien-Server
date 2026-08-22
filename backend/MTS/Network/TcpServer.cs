@@ -100,6 +100,11 @@ public class TcpServer : BaseTcpServer
     {
         return clients.Values.FirstOrDefault(x => x.IsLoggedIn() && x.UserData.Id == userDataId);
     }
+
+    public bool IsClientOnline(Client client)
+    {
+        return clients.ContainsKey(client.Id);
+    }
     public Client? GetDisconnectedClient(Reconnect request)
     {
         var id = request.Id;
@@ -128,8 +133,8 @@ public class TcpServer : BaseTcpServer
 
     public void OnReconnected(Client client)
     {
-        RemoveDisconnectClient(client);
         clients.TryAdd(client.Id, client);
+        RemoveDisconnectClient(client);
     }
 
     public Client[] GetClientsOnline()

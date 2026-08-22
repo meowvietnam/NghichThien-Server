@@ -24,13 +24,13 @@ public class TrungSinh : IClientState
         var reader = message.Reader;
         if (tag == MessageTag.TrungSinhRequest)
         {
-            var models = reader.ReadArray<SelectionModel>().ToList();
+            var models = reader.MemRead<List<SelectionModel>>();
             TrungSinhResult result = null;
             try
             {
                 lock (client.CharacterLock)
                 {
-                    client.CharacterData.TrungSinh(models);
+                    client.CharacterData.TrungSinh(models).GetAwaiter().GetResult();
                     result = new TrungSinhResult()
                     {
                         Success = true,

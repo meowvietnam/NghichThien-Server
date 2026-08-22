@@ -1,7 +1,7 @@
 namespace MTS.Models;
 
 [Flags]
-public enum Ability
+public enum Ability : int
 {
     None,
     YeuDuoiNhieuBenh = 1 << 0,

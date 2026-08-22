@@ -376,6 +376,7 @@ public partial class CharacterData
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
         Stats.SetHp(newHp);
+        Stats.SetTuoiTac(Stats.TuoiTac + time);
         return new TuLuyenResult()
         {
             Success = true,
@@ -384,7 +385,8 @@ public partial class CharacterData
             RemainingMoney = remaining,
             NewHp = newHp,
             DeltaExp = buffExp,
-            DeltaHp = newHp - oldHp
+            DeltaHp = newHp - oldHp,
+            TuoiTac = Stats.TuoiTac
         };
     }
 

@@ -216,4 +216,7 @@ public enum MessageTag
     GetTrungSinhConfigRequest = 1933,
     ToTrungSinhRequest = 1954,
     TrungSinhRequest = 1996,
+    
+    GetMonsterKillRequest = 2009,
+    ClaimMonsterKillRewardRequest = 2032,
 }

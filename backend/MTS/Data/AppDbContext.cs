@@ -53,6 +53,9 @@ public class AppDbContext : DbContext
     public DbSet<ProductLinker> ProductLinkers { get; private set; }
     public DbSet<DailyRewardMonthlyPass> DailyRewardMonthlyPasses { get; private set; }
     public DbSet<UseDan> UseDans { get; private set; }
+    public DbSet<MonsterKill> MonsterKills { get; private set; }
+    public DbSet<MonsterRankReward> MonsterRankRewards { get; private set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -63,6 +66,7 @@ public class AppDbContext : DbContext
         options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         return new AppDbContext(options.Options);
     }
+
     private static string SerializeObject<T>(T value)
     {
         return JsonConvert.SerializeObject(value);
@@ -520,10 +524,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey<WelcomeReward>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        modelBuilder.Entity<ProductLinker>(e =>
-        {
-            e.HasKey(x => x.Id);
-        });
+        modelBuilder.Entity<ProductLinker>(e => { e.HasKey(x => x.Id); });
         modelBuilder.Entity<DailyRewardMonthlyPass>(e =>
         {
             e.HasKey(x => x.Id);
@@ -546,8 +547,38 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<MonsterKill>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne(x => x.CharData)
+                .WithOne(x => x.MonsterKill)
+                .HasForeignKey<MonsterKill>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MonsterRankReward>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.MonsterKill)
+                .WithMany(x => x.Rewards)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.Rewards)
+                .HasColumnType(blob)
+                .HasConversion(x =>  MemoryPackSerializer.Serialize(x),
+                    x => ParseMonsterRankRewards(x));
+        });
     }
 
+    private List<IMonsterRankReward> ParseMonsterRankRewards(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return null;
+        }
+        return MemoryPackSerializer.Deserialize<List<IMonsterRankReward>>(data);
+    }
     private IPromotionApplicable ParsePromotionApplicable(byte[] data)
     {
         if (data == null || data.Length == 0)
