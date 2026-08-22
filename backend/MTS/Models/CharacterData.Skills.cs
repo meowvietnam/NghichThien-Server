@@ -30,7 +30,8 @@ public partial class CharacterData
             var result = new List<(NgoDaoResource, int)>();
             foreach (var ngoDaoResource in ndResources)
             {
-                var findIndex = ngoDaoResource.NgoDaos.FindIndex(x => x.Any(y => y.Id == nd.Id));
+                var findIndex = ngoDaoResource.NgoDaos
+                    .FindIndex(x => x.Any(y => y.Id == nd.Id));
                 if (findIndex < 0)
                 {
                     continue;

@@ -492,12 +492,10 @@ namespace MTS.Network.Core
 
         private void OnOtherClientLogin()
         {
-            Log.Information("OnOtherClientLogin");
         }
 
         private void OnLogout()
         {
-            Log.Information("OnLogout");
             FinalNow();
         }
 

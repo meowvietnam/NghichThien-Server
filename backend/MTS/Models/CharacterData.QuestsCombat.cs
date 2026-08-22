@@ -1,7 +1,6 @@
 using MTS.Exceptions;
 using MTS.Game;
 using MTS.Game.LuyenDan;
-
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Game.Combat;
@@ -23,6 +22,7 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.MonPhaiExisted);
         }
+
         SetMonPhai(request);
         ShopManager.ShopSkill.Reload(new ReloadShopRequest()
         {
@@ -114,8 +114,9 @@ public partial class CharacterData
 
     public ResultCombatResult? ResultCombat(ResultCombat request)
     {
-        request.ListIdThanThong.RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
-        
+        request.ListIdThanThong
+            .RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
+
         var idCounts = request.ListIdThanThong
             .GroupBy(id => id)
             .ToDictionary(g => g.Key, g => g.Count());
@@ -137,18 +138,12 @@ public partial class CharacterData
             Value = 10 * enemyLevel
         };
         var camNgos = InventoryManager.CamNgos;
-        if(camNgos.TryGetValue(camNgo, out var ownerCamNgo))
+        if (camNgos.TryGetValue(camNgo, out var ownerCamNgo))
         {
-            ownerCamNgo.Value += camNgo.Value;
-            InventoryManager.Tracking.CamNgos.Update(camNgo);
-            camNgoAdd.Add(ownerCamNgo);
+            camNgo.Value += ownerCamNgo.Value;
         }
-        else
-        {
-            camNgos.Add(camNgo);
-            InventoryManager.Tracking.CamNgos.Add(camNgo);
-            camNgoAdd.Add(camNgo);
-        }
+        InventoryManager.AddOrUpdate(camNgo);
+        camNgoAdd.Add(camNgo);
         var newNgoDaoDiem = Progression.NgoDaoDiem;
         foreach (var item in thanThongDict)
         {
@@ -255,18 +250,18 @@ public partial class CharacterData
         if (request.TypeResultCombat == ETypeResultCombat.Win && request.TypeCombat == ETypeCombat.AllMaps)
         {
             var myLevel = Progression.Level;
-            var deltaLevel  = enemyLevel - myLevel;
+            var deltaLevel = enemyLevel - myLevel;
             var addPoints = deltaLevel switch
             {
                 <= 0 => 1,
                 > 0 => 3,
             };
             var newPoints = MonsterKill.Points + addPoints;
-            Log.Information("Newpoints: {newPoints}, AddPoints: {addPoints}, CharLevel: {myLevel}, EnemyLevel: {enemyLevel}", newPoints, addPoints, myLevel, enemyLevel);
             MonsterKill.SetPoints(newPoints);
         }
+
         Stats.SetTamCanh(newTamCanh);
-        
+
         return new ResultCombatResult()
         {
             Success = true,
@@ -283,13 +278,13 @@ public partial class CharacterData
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {
         var itemRefs = new List<ItemRef>();
-         
+
         int currentRealm = (monsterLevel - 1) / 3;
         int indexInRealm = (monsterLevel - 1) % 3;
 
         double normalMutationRate = 0.2;
         double superMutationRate = 0.1;
-        normalMutationRate *= (indexInRealm+1);
+        normalMutationRate *= (indexInRealm + 1);
         superMutationRate *= (indexInRealm + 1);
 
         double totalMutationRate = normalMutationRate + superMutationRate;
@@ -329,10 +324,12 @@ public partial class CharacterData
                 {
                     for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
                     {
-                        validMaterials = GameConfig.LuyenKhiResources.Materials.Where(m => (int)m.Tier == tierIndex).ToList();
+                        validMaterials = GameConfig.LuyenKhiResources.Materials.Where(m => (int)m.Tier == tierIndex)
+                            .ToList();
                         if (validMaterials.Count > 0) break;
                     }
                 }
+
                 if (validMaterials.Count > 0)
                     selectedId = validMaterials[Random.Shared.Next(0, validMaterials.Count)].Id;
                 else
@@ -345,10 +342,12 @@ public partial class CharacterData
                 {
                     for (int tierIndex = 0; tierIndex <= 5; tierIndex++)
                     {
-                        validHerbs = GameConfig.LuyenDanResources.HerbDatas.Where(h => (int)h.Tier == tierIndex).ToList();
+                        validHerbs = GameConfig.LuyenDanResources.HerbDatas.Where(h => (int)h.Tier == tierIndex)
+                            .ToList();
                         if (validHerbs.Count > 0) break;
                     }
                 }
+
                 if (validHerbs.Count > 0)
                     selectedId = validHerbs[Random.Shared.Next(0, validHerbs.Count)].Id;
                 else
@@ -366,6 +365,7 @@ public partial class CharacterData
 
         return itemRefs;
     }
+
     /// <summary>
     /// Hàm tính toán trọng số tỷ lệ động. Càng về sau càng mở khóa phẩm cao, nhưng tỷ lệ phẩm cao luôn thấp.
     /// </summary>
