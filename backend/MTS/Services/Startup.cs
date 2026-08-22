@@ -2,10 +2,13 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.Resources;
 using MTS.IAP;
 using MTS.Models;
+using MTS.ND;
 using MTS.Network.Models;
 using Serilog;
+using NgoDao = MTS.ND.NgoDao;
 
 namespace MTS.Services;
 
@@ -38,7 +41,7 @@ public class Startup : BackgroundService
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
     }
-
+    
     private async Task CreateMonterKills(AppDbContext db)
     {
         var characters = await db.Characters.ToListAsync();
@@ -56,6 +59,7 @@ public class Startup : BackgroundService
         await db.SaveChangesAsync();
         Log.Information("Monter Kills: {MonterKills}", monsterKills.Length);
     }
+
     private async Task ResetChars(AppDbContext db)
     {
         var mails = await db.Mails.Where(x => x.Title == "Xin lỗi và đền bù reset chỉ số trùng sinh").ToListAsync();

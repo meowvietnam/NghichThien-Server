@@ -44,7 +44,7 @@ public class MonsterKillRankService : BackgroundService
     }
     public static DateTimeOffset GetTimeStart()
     {
-        var start = GameConfig.GameReleaseDate;
+        var start = new DateTimeOffset(2026, 8, 22, 0, 0, 0, Utc7);
         var now = Now();
         if (now <= start)
         {
