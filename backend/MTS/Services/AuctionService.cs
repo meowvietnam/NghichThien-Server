@@ -14,7 +14,7 @@ public class AuctionService : BackgroundService
         DayOfWeek.Saturday, DayOfWeek.Sunday
     ];
 
-    private TimeOnly[] hourOpen = [new(16, 30), new(21, 00)];
+    private TimeOnly[] hourOpen = [new(12,00), new(21, 00)];
 
     private string DefaultContent()
     {

@@ -8,8 +8,7 @@ public class PlantSeed
     public int SlotIndex { get; set; }
     public ushort HerbId { get; set; }
     public DateTime PlantAt { get; set; } = DateTime.UtcNow;
-    public DateTime HarvestableAt { get; set; }
-    
+    public TimeSpan TimeUntilHarvest { get; set; }    
     [ForeignKey(nameof(CharId))]
     public DongPhu DongPhu  { get; set; }
     
