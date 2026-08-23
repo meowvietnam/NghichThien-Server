@@ -99,7 +99,7 @@ public partial class HerbsShop : Shop
         
         for (int i = 0; i < danLuCount; i++)
         {
-            if (RandomUtils.RandomChance(50))
+            if (RandomUtils.RandomChance(100))
             {
                 var list = randomFurnace.Random();
                 var item = list.Random();

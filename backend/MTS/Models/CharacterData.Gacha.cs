@@ -247,9 +247,12 @@ public partial class CharacterData
         {
             // Distribute with ratio LinhDan:Recipe:Furnace = 3:2:1
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 50) type = ItemType.LinhDan;
-            else if (typeRoll < 83.33) type = ItemType.Recipe;
-            else type = ItemType.Furnace;
+            if (typeRoll < 60)
+                type = ItemType.LinhDan;
+            else if (typeRoll < 93.33)
+                type = ItemType.Recipe;
+            else
+                type = ItemType.Furnace;
         }
 
         return RollItemByTypeAndTier(type, tier);
