@@ -15,6 +15,7 @@ using MemoryPack;
 using MTS.Game.BaseSkill;
 using MTS.IAP;
 using MTS.Game.Combat;
+using MTS.Game.Gacha;
 using MTS.Network;
 using MTS.Utils;
 using Serilog;
@@ -26,8 +27,18 @@ public partial class CharacterData
     public GachaResult? Gacha(GachaModel request)
     {
         List<ItemRef> listItemRef = new List<ItemRef>();
-
-        int require = GameConfig.PageGachaWithRequireValue[request.TypeGacha];
+        var type = request.TypeGacha;
+        var typeSkill = request.TypeSkill;
+        var alpha = 1;
+        var typeSpecials = new [] { ETypeGacha.ThanThong, ETypeGacha.CongPhap };
+        if (typeSpecials.Contains(type))
+        {
+            if (typeSkill != ETypeSkill.None)
+            {
+                alpha = 2;
+            }
+        }
+        int require = GameConfig.PageGachaWithRequireValue[type] * alpha;
         int gachaCount = 1;
         if (request.IsGacha10)
         {
@@ -40,8 +51,7 @@ public partial class CharacterData
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
-        var type = request.TypeGacha;
-        var typeSkill = request.TypeSkill;
+
         Log.Information("TypeSkill: {TypeSkill}", typeSkill);
         int newTienNgoc = MoneyVip - require;
         var totalGacha = GachaManager.Get(type, typeSkill);
@@ -52,7 +62,7 @@ public partial class CharacterData
             totalGacha++;
             var remaining = threshold - totalGacha % threshold;
             var special = remaining == threshold;
-            if (request.TypeGacha == Game.Gacha.ETypeGacha.ThanThong)
+            if (type == Game.Gacha.ETypeGacha.ThanThong)
             {
                 var item = RollThanThong(special, typeSkill);
                 if (item != null)
