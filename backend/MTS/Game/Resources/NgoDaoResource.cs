@@ -1,4 +1,5 @@
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.ND;
 using Network;
 using Network.Extensions;

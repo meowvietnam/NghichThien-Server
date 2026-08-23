@@ -411,6 +411,10 @@ namespace MTS.Migrations
                     b.Property<int>("GachaCongPhap")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("GachaCongPhapDict")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
                     b.Property<int>("GachaDanDuoc")
                         .HasColumnType("int");
 
@@ -419,6 +423,10 @@ namespace MTS.Migrations
 
                     b.Property<int>("GachaThanThong")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("GachaThanThongDict")
+                        .IsRequired()
+                        .HasColumnType("blob");
 
                     b.Property<int>("GachaVatLieu")
                         .HasColumnType("int");

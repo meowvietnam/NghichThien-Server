@@ -17,6 +17,8 @@ using MTS.IAP;
 using MTS.Game.Combat;
 using MTS.Network;
 using MTS.Utils;
+using Serilog;
+
 namespace MTS.Models;
 
 public partial class CharacterData
@@ -32,14 +34,17 @@ public partial class CharacterData
             require *= 10;
             gachaCount = 10;
         }
+
         if (MoneyVip < require)
         {
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
         var type = request.TypeGacha;
+        var typeSkill = request.TypeSkill;
+        Log.Information("TypeSkill: {TypeSkill}", typeSkill);
         int newTienNgoc = MoneyVip - require;
-        var totalGacha = GachaManager.Get(type);
+        var totalGacha = GachaManager.Get(type, typeSkill);
         var threshold = GachaManager.Threshold;
 
         for (int i = 0; i < gachaCount; i++)
@@ -49,13 +54,13 @@ public partial class CharacterData
             var special = remaining == threshold;
             if (request.TypeGacha == Game.Gacha.ETypeGacha.ThanThong)
             {
-                var item = RollThanThong(special);
+                var item = RollThanThong(special, typeSkill);
                 if (item != null)
                     listItemRef.Add(item);
             }
             else if (request.TypeGacha == Game.Gacha.ETypeGacha.CongPhap)
             {
-                var item = RollCongPhap(special);
+                var item = RollCongPhap(special, typeSkill);
                 if (item != null)
                     listItemRef.Add(item);
             }
@@ -81,7 +86,7 @@ public partial class CharacterData
 
         listItemRef = ConsolidateItemRefs(listItemRef);
         var rewardItems = InventoryManager.AddToInventory(listItemRef);
-        GachaManager.Set(type, totalGacha);
+        GachaManager.Set(type, typeSkill, totalGacha);
         SetMoneyVip(newTienNgoc);
         AddSpendMoneyVipOnline(require, SpendFor.Gacha);
         return new GachaResult()
@@ -90,6 +95,7 @@ public partial class CharacterData
             RewardItems = rewardItems,
             NewTienNgoc = newTienNgoc,
             Type = type,
+            Skill = typeSkill,
             TotalGacha = totalGacha
         };
     }
@@ -114,14 +120,15 @@ public partial class CharacterData
         return consolidated.Values.ToList();
     }
 
-    private ItemRef? RollThanThong(bool special = false)
+    private ItemRef? RollThanThong(bool special = false, ETypeSkill typeSkill = ETypeSkill.None)
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validThanThongs = GameConfig.NDCPTTManager.ThanThongs
-                .Where(x => x.eTierSkill == checkTier)
+                .Where(x => x.eTierSkill == checkTier &&
+                            (typeSkill == ETypeSkill.None || x.eTypeSkill.Contains(typeSkill)))
                 .ToList();
             if (validThanThongs.Count > 0)
             {
@@ -133,14 +140,16 @@ public partial class CharacterData
         return null;
     }
 
-    private ItemRef? RollCongPhap(bool special = false)
+    private ItemRef? RollCongPhap(bool special = false, ETypeSkill typeSkill = ETypeSkill.None)
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps
-                .Where(x => x.eTierSkill == checkTier).ToList();
+                .Where(x => x.eTierSkill == checkTier &&
+                            (typeSkill == ETypeSkill.None || x.eTypeSkill.Contains(typeSkill)))
+                .ToList();
 
             if (validCongPhaps.Count > 0)
             {
@@ -164,7 +173,7 @@ public partial class CharacterData
             .Add(ETierSkill.DiaGiaiHa, 12)
             .Add(ETierSkill.DiaGiaiTrung, 9.5)
             .Add(ETierSkill.DiaGiaiThuong, 5)
-            .Add(ETierSkill.ThienGiaiHa,2)
+            .Add(ETierSkill.ThienGiaiHa, 2)
             .Add(ETierSkill.ThienGiaiTrung, 1)
             .Add(ETierSkill.ThienGiaiThuong, 0.5)
             .Random();
@@ -385,6 +394,7 @@ public partial class CharacterData
                 }
             }
         }
+
         return null;
     }
 }

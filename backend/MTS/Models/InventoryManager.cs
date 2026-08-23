@@ -1115,9 +1115,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-            ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
+            ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
             {
-                return (ND.ETypeSkill)(int)eTypeSkill;
+                return (ETypeSkill)(int)eTypeSkill;
             }
 
             var newNgoDaoDiem = CharacterData.Progression.NgoDaoDiem;

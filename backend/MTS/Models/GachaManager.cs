@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
+using MTS.Game.BaseSkill;
 using MTS.Game.Gacha;
 
 namespace MTS.Models;
@@ -14,13 +15,13 @@ public partial class GachaManager
     [Newtonsoft.Json.JsonIgnore]
     [MemoryPackIgnore]
     public int CharId { get; set; }
-
     public int GachaThanThong { get; set; }
     public int GachaCongPhap { get; set; }
     public int GachaDanDuoc { get; set; }
     public int GachaDuocLieu { get; set; }
     public int GachaVatLieu { get; set; }
-
+    public Dictionary<ETypeSkill, int> GachaThanThongDict { get; set; } = new();
+    public Dictionary<ETypeSkill, int> GachaCongPhapDict { get; set; } = new();
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [NotMapped]
@@ -41,8 +42,8 @@ public partial class GachaManager
         await db.GachaManagers
             .Where(x => x.CharId == CharId)
             .ExecuteUpdateAsync(s =>
-                s.SetProperty(x => x.GachaThanThong, GachaThanThong)
-                    .SetProperty(x => x.GachaCongPhap, GachaCongPhap)
+                s.SetProperty(x => x.GachaThanThongDict, GachaThanThongDict)
+                    .SetProperty(x => x.GachaCongPhapDict, GachaCongPhapDict)
                     .SetProperty(x => x.GachaDanDuoc, GachaDanDuoc)
                     .SetProperty(x => x.GachaDuocLieu, GachaDuocLieu)
                     .SetProperty(x => x.GachaVatLieu, GachaVatLieu));
@@ -54,9 +55,9 @@ public partial class GachaManager
         return CharId == 0;
     }
 
-    public void Set(ETypeGacha type, int value)
+    public void Set(ETypeGacha type,ETypeSkill skill, int value)
     {
-        var oldValue = Get(type);
+        var oldValue = Get(type,skill);
         if (oldValue == value)
         {
             return;
@@ -64,10 +65,10 @@ public partial class GachaManager
         switch (type)
         {
             case ETypeGacha.ThanThong:
-                GachaThanThong = value;
+                GachaThanThongDict[skill] = value;
                 break;
             case ETypeGacha.CongPhap:
-                GachaCongPhap = value;
+                GachaCongPhapDict[skill] = value;
                 break;
             case ETypeGacha.DanDuoc:
                 GachaDanDuoc = value;
@@ -81,14 +82,22 @@ public partial class GachaManager
         }
         dirty = true;
     }
-    public int Get(ETypeGacha type)
+    public int Get(ETypeGacha type, ETypeSkill skill)
     {
         switch (type)
         {
             case ETypeGacha.ThanThong:
-                return GachaThanThong;
+                if (GachaThanThongDict.TryGetValue(skill, out var ttValue))
+                {
+                    return ttValue;
+                }
+                return 0;
             case ETypeGacha.CongPhap:
-                return GachaCongPhap;
+                if (GachaCongPhapDict.TryGetValue(skill, out var cpValue))
+                {
+                    return cpValue;
+                }
+                return 0;
             case ETypeGacha.DanDuoc:
                 return GachaDanDuoc;
             case ETypeGacha.DuocLieu:

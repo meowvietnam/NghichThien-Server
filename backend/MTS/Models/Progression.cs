@@ -237,7 +237,7 @@ public class Progression : IMemorySerializable<Progression>
     public void SetLevel(int level)
     {
         if (Level == level) return;
-        if (Level < level)
+        if (Level > level)
         {
              Log.Information("{name} gặp lỗi set level hiện tại: {current} level mới: {new}", CharacterData.Name, Level, level);
              throw new InvalidException("Có lỗi xảy ra");

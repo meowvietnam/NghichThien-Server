@@ -1,5 +1,7 @@
 ﻿using MemoryPack;
+using MTS.Game.BaseSkill;
 using MTS.Game.Gacha;
+using MTS.ND;
 
 namespace MTS.Network.Models
 {
@@ -9,6 +11,6 @@ namespace MTS.Network.Models
     {
         public ETypeGacha TypeGacha { get; set; }
         public bool IsGacha10 { get; set; }
-    
+        public ETypeSkill TypeSkill { get; set; }
     }
 }

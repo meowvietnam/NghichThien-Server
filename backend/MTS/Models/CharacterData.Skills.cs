@@ -122,10 +122,10 @@ public partial class CharacterData
 
     public ResetNgoDaoResult ResetNgoDao()
     {
-        var remaining = Stats.LinhThach - 500;
+        var remaining = MoneyVip - 500;
         if (remaining < 0)
         {
-            throw new InvalidException(Strings.NotEnoughMoney);
+            throw new InvalidException(Strings.NotEnoughMoneyVip);
         }
         var owners = InventoryManager.NgoDaos;
         if (!owners.Any())
@@ -145,12 +145,13 @@ public partial class CharacterData
             point += ngoDao.Require;
         }
         Progression.SetNgoDaoDiem(Progression.NgoDaoDiem + point);
-        Stats.SetLinhThach(remaining);
+        SetMoneyVip(remaining);
         InventoryManager.ClearNgoDao();
         return new ResetNgoDaoResult()
         {
             Success = true,
             Message = "Tái Ngộ Đạo thành công!",
+            MoneyVip = MoneyVip,
             NewNgoDaoDiem = Progression.NgoDaoDiem,
             NgoDaos = InventoryManager.NgoDaos,
             Stats = new StatsSnapshot(Stats)

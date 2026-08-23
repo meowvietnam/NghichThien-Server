@@ -459,6 +459,22 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         stats.ResetNgoTinh();
         stats.ResetTamCanh();
         stats.SetMa(0);
+        var ownerNgoDaos = InventoryManager.NgoDaos;
+        var ngoDaos = GameConfig.NDCPTTManager.NgoDaos;
+        var charTemp = new CharacterData()
+        {
+            Stats = stats,
+        };
+        foreach (var ownerNgoDao in ownerNgoDaos)
+        {
+            var ngoDaoId = ownerNgoDao.Id;
+            var ngoDao = ngoDaos.FirstOrDefault(x => x.Id == ngoDaoId);
+            if (ngoDao == null)
+            {
+                continue;
+            }
+            ngoDao.Buff(charTemp);
+        }
         return stats;
     }
     public async Task RefundLinhDan(AppDbContext db)

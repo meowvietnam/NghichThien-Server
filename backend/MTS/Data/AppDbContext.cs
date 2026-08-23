@@ -2,6 +2,7 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MTS.Game.Auction;
+using MTS.Game.BaseSkill;
 using MTS.Game.LuyenKhi;
 using MTS.IAP;
 using MTS.Models;
@@ -439,7 +440,14 @@ public class AppDbContext : DbContext
                 .WithOne(x => x.GachaManager)
                 .HasForeignKey<GachaManager>(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
-            ;
+            e.Property(x => x.GachaThanThongDict)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => ParseDict(x));
+            e.Property(x => x.GachaCongPhapDict)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => ParseDict(x));
         });
         modelBuilder.Entity<AuctionHistory>(e =>
         {
@@ -569,6 +577,15 @@ public class AppDbContext : DbContext
                 .HasConversion(x =>  MemoryPackSerializer.Serialize(x),
                     x => ParseMonsterRankRewards(x));
         });
+    }
+
+    private Dictionary<ETypeSkill, int> ParseDict(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return new Dictionary<ETypeSkill, int>();
+        }
+        return MemoryPackSerializer.Deserialize<Dictionary<ETypeSkill, int>>(data);
     }
 
     private List<IMonsterRankReward> ParseMonsterRankRewards(byte[] data)

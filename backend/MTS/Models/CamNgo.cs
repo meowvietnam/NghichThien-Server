@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
+using MTS.Game.BaseSkill;
 using MTS.ND;
 using Network;
 using Network.Extensions;

@@ -2,6 +2,8 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
+using MTS.Game.Gacha;
 using MTS.Game.Resources;
 using MTS.IAP;
 using MTS.Models;
@@ -40,101 +42,29 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
-    }
-    
-    private async Task CreateMonterKills(AppDbContext db)
-    {
-        var characters = await db.Characters.ToListAsync();
-        var monsterKills = characters.Select(x =>
-        {
-            var monsterKill = new MonsterKill()
-            {
-                CharData = x,
-                CharId = x.Id,
-            };
-            monsterKill.Init();
-            return monsterKill;
-        }).ToArray();
-        await db.MonsterKills.AddRangeAsync(monsterKills);
-        await db.SaveChangesAsync();
-        Log.Information("Monter Kills: {MonterKills}", monsterKills.Length);
+        //using var db1 = AppDbContext.FromConnection("Server=nghichthien.online;Port=6336;Database=MTS;User=MTS;Password=zkxckwomqz;");
+        // await ModifyGacha(db);
     }
 
-    private async Task ResetChars(AppDbContext db)
-    {
-        var mails = await db.Mails.Where(x => x.Title == "Xin lỗi và đền bù reset chỉ số trùng sinh").ToListAsync();
-        var charIds = mails.Select(x => x.CharId).ToHashSet();
-        var chars = await db.Characters
-            .Include(x => x.Stats)
-            .Include(x => x.Progression)
-            .Where(x => charIds.Contains(x.Id))
-            .ToListAsync();
-        foreach (var charData in chars)
-        {
-            var currentStats = charData.Stats;
-            var resetStats = GetReset(charData);
-            var level = charData.Progression.Level;
-            var name = charData.Name;
-            var hp = currentStats.SinhMenh;
-            var thoNguyen = currentStats.ThoNguyen;
-            var thanThuc = currentStats.ThanThuc;
-            var dontoc = currentStats.TocDoBay;
 
-            var newHp = resetStats.SinhMenh;
-            var newThoNguyen = resetStats.ThoNguyen;
-            var newDontoc = currentStats.TocDoBay;
-            var newThanThuc = resetStats.ThanThuc;
-            Log.Information(
-                "Reset {Name}, Level: {Level} Hp: {Hp}-{NewHp}, ThoNguyen: {ThoNguyen}-{NewThoNguyen}, DonToc: {DonToc}-{NewDontoc}, ThanThuc: {ThanThuc}-{NewThanThuc}",
-                name, level, hp, newHp, thoNguyen, newThoNguyen, dontoc, newDontoc, thanThuc, newThanThuc);
-            charData.Stats = resetStats;
-            // var mail1 = new Mail()
-            // {
-            //     CharId = charData.Id,
-            //     Title = "Xin lỗi và đền bù reset chỉ số trùng sinh",
-            //     Content = "Nhằm đảm bảo cân bằng game, admin xin phép reset chỉ số anh em đã trùng sinh, lần reset này bạn nên trùng sinh lại 1 lần nữa để tối ưu chỉ số nhất.",
-            //     Rewards = new List<IMailReward>()
-            //     {
-            //         new MailRewardMoneyVip()
-            //         {
-            //             MoneyVip = 10_000,
-            //         }
-            //     }
-            // };
-            // await db.Mails.AddAsync(mail1);
-            // if (count > 0)
-            // {
-            //     var total = 0;
-            //     for (int i = 0; i < count; i++)
-            //     {
-            //         var index = Math.Clamp(i, 0, prices.Length - 1);
-            //         var price = prices[index];
-            //         total += price;
-            //     }
-            //
-            //     var mail2 = new Mail()
-            //     {
-            //         CharId = charData.Id,
-            //         Title = "Hoàn tiên ngọc đã trùng sinh",
-            //         Content = "Hoàn tiên ngọc đã trùng sinh",
-            //         Rewards = new List<IMailReward>()
-            //         {
-            //             new MailRewardMoneyVip()
-            //             {
-            //                 MoneyVip = total,
-            //             }
-            //         }
-            //     };
-            //     await db.Mails.AddAsync(mail2);
-            //     charData.SetTrungSinhCount(0);
-            // }
-            // await charData.RefundLinhDan(db);
+    private async Task ModifyGacha(AppDbContext db)
+    {
+        var gachaManagers = await db.GachaManagers.ToListAsync();
+        foreach (var gachaManager in gachaManagers)
+        {
+            gachaManager.Set(ETypeGacha.ThanThong, ETypeSkill.None, gachaManager.GachaThanThong);
+            gachaManager.Set(ETypeGacha.CongPhap, ETypeSkill.None, gachaManager.GachaCongPhap);
+            
+            db.Entry(gachaManager)
+                .Property(x => x.GachaThanThongDict)
+                .IsModified = true;
+            db.Entry(gachaManager)
+                .Property(x => x.GachaCongPhapDict)
+                .IsModified = true;
         }
-
         await db.SaveChangesAsync();
-        Log.Information("Oke");
+        Log.Information("ModifyGacha");
     }
-
     public CharacterStats GetReset(CharacterData charData)
     {
         var stats = charData.Stats.Clone();

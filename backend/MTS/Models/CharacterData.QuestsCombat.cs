@@ -1,5 +1,6 @@
 using MTS.Exceptions;
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.Game.LuyenDan;
 using MTS.Localization;
 using MTS.Network.Models;
