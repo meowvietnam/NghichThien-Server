@@ -56,7 +56,7 @@ public class AppDbContext : DbContext
     public DbSet<UseDan> UseDans { get; private set; }
     public DbSet<MonsterKill> MonsterKills { get; private set; }
     public DbSet<MonsterRankReward> MonsterRankRewards { get; private set; }
-
+    public DbSet<DongPhu> DongPhus { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -201,7 +201,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ItemRef>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id, x.Type });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.ItemRefs)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -209,7 +209,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FurnaceData>(e =>
         {
             e.HasKey(x => new { x.CharId, x.SelfId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.Furnaces)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -223,7 +223,7 @@ public class AppDbContext : DbContext
                         v => MemoryPackSerializer.Serialize(v),
                         v => MemoryPackSerializer.Deserialize<List<IMailReward>>(v)
                     );
-                e.HasOne(x => x.Social)
+                e.HasOne<Social>()
                     .WithMany(x => x.Mails)
                     .HasForeignKey(x => x.CharId)
                     .OnDelete(DeleteBehavior.Cascade);
@@ -240,7 +240,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Relationship>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Npc });
-            e.HasOne(x => x.Social)
+            e.HasOne<Social>()
                 .WithMany(x => x.Relationships)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -248,7 +248,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CamNgo>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.CamNgos)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -256,7 +256,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CongPhap>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.CongPhapOwners)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -264,7 +264,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<NgoDao>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.NgoDaos)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -272,7 +272,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ThanThong>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.ThanThongOwners)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -550,7 +550,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UseDan>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasOne(x => x.CharData)
+            e.HasOne<CharacterData>()
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);

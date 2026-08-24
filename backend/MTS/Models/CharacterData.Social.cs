@@ -145,7 +145,9 @@ public partial class CharacterData
         ushort phongCuEquip = EquipmentManager.PhongCu;
         ushort trangSucEquip = EquipmentManager.TrangSuc;
 
-        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip || request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip || request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
+        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip 
+            || request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip 
+            || request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
         {
             Log.Warning("NPC gift rejected: equipped item cannot be gifted; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}",
                 Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id);

@@ -767,7 +767,6 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     Tracking.Equipments.Delete(equipment);
                     return true;
                 }
-
                 return false;
             });
         }

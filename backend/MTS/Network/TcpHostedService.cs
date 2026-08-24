@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Game;
+using MTS.Game.DP;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network.Models;
@@ -25,7 +26,7 @@ public class TcpHostedService : IHostedService
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         tcpServer.Stop();
-        
         await tcpServer.SaveClients();
+        await DongPhuManager.SaveChanges();
     }
 }

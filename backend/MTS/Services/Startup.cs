@@ -42,28 +42,6 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
-        //using var db1 = AppDbContext.FromConnection("Server=nghichthien.online;Port=6336;Database=MTS;User=MTS;Password=zkxckwomqz;");
-        // await ModifyGacha(db);
-    }
-
-
-    private async Task ModifyGacha(AppDbContext db)
-    {
-        var gachaManagers = await db.GachaManagers.ToListAsync();
-        foreach (var gachaManager in gachaManagers)
-        {
-            gachaManager.Set(ETypeGacha.ThanThong, ETypeSkill.None, gachaManager.GachaThanThong);
-            gachaManager.Set(ETypeGacha.CongPhap, ETypeSkill.None, gachaManager.GachaCongPhap);
-            
-            db.Entry(gachaManager)
-                .Property(x => x.GachaThanThongDict)
-                .IsModified = true;
-            db.Entry(gachaManager)
-                .Property(x => x.GachaCongPhapDict)
-                .IsModified = true;
-        }
-        await db.SaveChangesAsync();
-        Log.Information("ModifyGacha");
     }
     public CharacterStats GetReset(CharacterData charData)
     {

@@ -490,11 +490,11 @@ namespace MTS.Network.Core
             }
         }
 
-        private void OnOtherClientLogin()
+        private void OnOtherClientLogin(Client client)
         {
         }
 
-        private void OnLogout()
+        private void OnLogout(Client client)
         {
             FinalNow();
         }
@@ -503,7 +503,7 @@ namespace MTS.Network.Core
         {
         }
 
-        private void OnRemoveDisconnectedSession()
+        private void OnRemoveDisconnectedSession(Client client)
         {
             if (!client.IsOnline())
             {

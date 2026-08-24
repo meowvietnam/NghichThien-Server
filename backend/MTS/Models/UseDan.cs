@@ -10,6 +10,4 @@ public class UseDan
     public ushort DanId { get; set; }
     public int Count { get; set; }
     public int CharId { get; set; }
-    [ForeignKey(nameof(CharId))]
-    public CharacterData CharData { get; set; }
 }
