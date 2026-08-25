@@ -5,7 +5,7 @@ namespace MTS.Game.ItemProvider
 {
     public class LinhDanProvider : ItemProvider<LinhDan>
     {
-        public virtual int BaseValueLevelWithTier => 6;
+        public override int BaseValueLevelWithTier => 6;
 
         public override ItemType SupportedType => ItemType.LinhDan;
 

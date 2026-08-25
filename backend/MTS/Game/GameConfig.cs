@@ -160,18 +160,19 @@ public static class GameConfig
         { Tier.NhiPham, 3 },
         { Tier.TamPham, 5 },
         { Tier.TuPham, 8 },
-        { Tier.NguPham, 11 },
-        { Tier.LucPham, 15 },
+        { Tier.NguPham, 15 },
+        { Tier.LucPham, 20 },
     };
 
     public static Dictionary<EquipmentTier, int> tierEquipmentWithLevel = new Dictionary<EquipmentTier, int>
     {
-        { EquipmentTier.PhuKhi, 3 },
-        { EquipmentTier.PhapKhi, 6 },
-        { EquipmentTier.PhapBao, 9 },
-        { EquipmentTier.ThuanDuong, 12 },
-        { EquipmentTier.ThongThien, 15 },
+        { EquipmentTier.PhuKhi, 5 },
+        { EquipmentTier.PhapKhi, 8 },
+        { EquipmentTier.PhapBao, 11 },
+        { EquipmentTier.ThuanDuong, 18 },
+        { EquipmentTier.ThongThien, 20 },
     };
+
 
     public static Dictionary<Tier, int> PriceTienNgocVatLieuAndHerbTask = new Dictionary<Tier, int>
     {

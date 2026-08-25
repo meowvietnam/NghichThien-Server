@@ -59,12 +59,11 @@ public class MoneyVipSpendingRankService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = GetDelayToGrantRewards();
+            var delay = GetDelayToGrantRewards().Add(TimeSpan.FromSeconds(3));
             logger.LogInformation(
                 "{Service} sẽ phát thưởng sau {Delay}", nameof(MoneyVipSpendingRankService), delay);
             await Task.Delay(delay, stoppingToken);
             var periodEnd = GetTimeStart();
-
             try
             {
                 Tops = await GetTopsAsync(periodEnd - RankInterval, periodEnd, stoppingToken);

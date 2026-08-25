@@ -359,6 +359,8 @@ namespace MTS.Network.Core
                     .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
                     .OrderBy(x => x.CharData.Progression.Level >= level ? 0 : 1)
                     .ThenBy(x => Math.Abs(x.CharData.Progression.Level - level))
+                    .ThenBy(x => x.CharData.TrungSinhCount)
+                    .ThenBy(x => x.CharData.BonusPoint)
                     .ThenBy(_ => EF.Functions.Random())
                     .Select(x => x.CharId)
                     .FirstOrDefaultAsync();

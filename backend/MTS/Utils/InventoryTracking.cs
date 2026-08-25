@@ -1,5 +1,6 @@
 using MTS.Data;
 using MTS.Models;
+using Serilog;
 
 namespace MTS.Utils;
 
@@ -32,7 +33,10 @@ public class InventoryTracking
         CamNgos.Apply(db, db.CamNgos);
         CongPhaps.Apply(db, db.CongPhaps);
         ThanThongs.Apply(db, db.ThanThongs);
-        Equipments.Apply(db, db.Equipments);
+        if (Equipments.IsModified())
+        {
+            Equipments.Apply(db, db.Equipments);
+        }
     }
 
     public void Apply(InventoryManager inventory,InventoryTracking tracking)
