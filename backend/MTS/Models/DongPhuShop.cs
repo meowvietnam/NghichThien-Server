@@ -1,6 +1,10 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using MTS.Exceptions;
+using MTS.Game;
+using MTS.Game.DP;
+using MTS.Game.ItemProvider;
+using MTS.Game.LuyenDan;
 using MTS.Network.Models;
 using MTS.Utils;
 
@@ -28,6 +32,32 @@ public class DongPhuShop
         return null;
     }
 
+    public void ResetDaily()
+    {
+        lock (shopLock)
+        {
+            var herbDatas = GameConfig.LuyenDanResources.HerbDatas.Where(x => x.Tier > Tier.TamPham).ToList();
+            var seedCount = 10;
+            var seeds = new HashSet<SeedItemShop>(seedCount);
+            for (int i = 0; i < seedCount; i++)
+            {
+                var herb = herbDatas.Random();
+                var herbProvider = new HerbProvider();
+                var price = herbProvider.GetPriceItemBuy((ushort)herb.Id) / 3;
+                var count = Random.Shared.Next(1,4);
+                var seed = new SeedItemShop()
+                {
+                    CharId = CharId,
+                    HerbId = herb.Id,
+                    Count = count,
+                    PricePerSeed = price,
+                };
+                seeds.Add(seed);
+            }
+            SetSeeds(seeds);
+        }
+    }
+
     public void SetSeeds(HashSet<SeedItemShop> seeds)
     {
         lock (shopLock)
@@ -36,14 +66,17 @@ public class DongPhuShop
             {
                 seedsTracking.Delete(seed);
             }
+
             Seeds = seeds;
             foreach (var seed in Seeds)
             {
                 seedsTracking.Add(seed);
             }
+
             dirty = true;
         }
     }
+
     public void AddSeed(SeedItemShop seed)
     {
         lock (shopLock)
@@ -89,17 +122,17 @@ public class DongPhuShop
         lock (shopLock)
         {
             var seedShopItem = GetSeed(request.HerbId);
+            var count = request.Count;
             if (seedShopItem == null)
             {
                 throw new InvalidException("Không tìm thấy hạt giống");
             }
 
-            if (request.Count < 1)
+            if (count < 1)
             {
                 throw new InvalidException("Số lượng không hợp lệ");
             }
 
-            var count = request.Count;
             var price = seedShopItem.PricePerSeed * count;
             var linhThach = charData.Stats.LinhThach;
             var newLinhThach = linhThach - price;
@@ -130,5 +163,10 @@ public class DongPhuShop
                 Seed = seed,
             };
         }
+    }
+
+    public void FirstInit()
+    {
+        ResetDaily();
     }
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using MTS.Exceptions;
+using MTS.Game;
 using MTS.Game.DP;
 using MTS.Network.Models;
 using MTS.Utils;
@@ -21,6 +22,53 @@ public class PlantGarden
     [MemoryPackIgnore] [NotMapped] private object gardenLock = new();
     [MemoryPackIgnore] [NotMapped] private PlantGardenTracking tracking = new();
 
+    [MemoryPackIgnore] [NotMapped] private DongPhuConfig config;
+    [MemoryPackIgnore] [NotMapped] private DongPhuLevel level;
+
+    public void SetConfig(DongPhuConfig config)
+    {
+        this.config = config;
+    }
+
+    public void InitLevel(DongPhuLevel level)
+    {
+        this.level = level;
+    }
+    public void SetLevel(DongPhuLevel level)
+    {
+        this.level = level;
+        foreach (var slot in Slots)
+        {
+            var unlock = config.IsLevelGreaterOrEqual(level, slot.UnlockLevel);
+            if (unlock != slot.IsLocked) 
+            {
+                slot.IsLocked = unlock;
+                tracking.Slots.Update(slot);
+            }
+        }
+    }
+    public void FirstInit()
+    {
+        var slots = new HashSet<PlantingSlot>(9);
+        for (ushort i = 0; i < 9; i++)
+        {
+            var unlockLevel = (DongPhuLevel)((i / 3) + 1);
+            var slot = new PlantingSlot()
+            {
+                CharId = CharId,
+                UnlockLevel = unlockLevel,
+                SlotIndex = i
+            };
+            slots.Add(slot);
+        }
+        Slots = slots;
+        SetLevel(level);
+    }
+    private DongPhuLevelConfig GetLevelConfig()
+    {
+        return config.Levels.First(x => x.Level == level);
+    }
+
     public void TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         lock (gardenLock)
@@ -33,7 +81,8 @@ public class PlantGarden
                 CharId = helper.Id,
                 Name = helper.Name,
             };
-            plantSeed.TryWatered(wateringHelp);
+            var levelConfig = GetLevelConfig();
+            plantSeed.TryWatered(wateringHelp, levelConfig.ReduceTime, levelConfig.MaxWaterHelpPerDay);
             tracking.Seeds.Update(plantSeed);
             var addWateringHelp = new AddWateringHelp()
             {
@@ -44,6 +93,33 @@ public class PlantGarden
         }
     }
 
+    public void Plant(Seed seed, ushort slotIndex, CharacterData charData)
+    {
+        lock (gardenLock)
+        {
+            if (CharId != charData.Id)
+            {
+                throw new InvalidException("Không thể trồng cho người khác");
+            }
+
+            var slot = GetActiveSlot(slotIndex);
+            if (!IsSlotEmpty(slotIndex))
+            {
+                throw new InvalidException("Ô đất này đã được trồng cây");
+            }
+
+            var herb = GameConfig.LuyenDanResources.HerbDatas.FirstOrDefault(x => x.Id == seed.HerbId);
+            if (herb == null)
+            {
+                throw new InvalidException("Hạt giống này không tồn tại");
+            }
+            var tier = herb.Tier;
+            var growthDuration = config.Seeds.First(x => x.Tier == tier).GrowthDuration;
+            var plantSeed = new PlantSeed(CharId, slotIndex, seed.HerbId, growthDuration);
+            Seeds.Add(plantSeed);
+            tracking.Seeds.Add(plantSeed);
+        }
+    }
     public ItemRef TryHarvest(HarvestRequest request, CharacterData charData)
     {
         lock (gardenLock)
@@ -56,6 +132,27 @@ public class PlantGarden
             tracking.Seeds.Delete(plantSeed);
             return item;
         }
+    }
+    public void ResetDaily()
+    {
+        lock (gardenLock)
+        {
+            foreach (var plantSeed in Seeds)
+            {
+                if (plantSeed.ResetDaily())
+                {
+                    tracking.Seeds.Update(plantSeed);
+                }
+            }
+        }
+    }
+    public bool IsSlotEmpty(ushort slotIndex)
+    {
+        var plantSeed = new PlantSeed()
+        {
+            SlotIndex = slotIndex
+        };
+        return !Seeds.Contains(plantSeed);
     }
 
     public PlantSeed GetActiveSeed(ushort slotIndex)
@@ -79,7 +176,6 @@ public class PlantGarden
         {
             throw new InvalidException("Ô đất không tồn tại");
         }
-
         if (slot.IsLocked)
         {
             throw new InvalidException("Ô đất chưa mở");
@@ -87,4 +183,5 @@ public class PlantGarden
 
         return slot;
     }
+
 }

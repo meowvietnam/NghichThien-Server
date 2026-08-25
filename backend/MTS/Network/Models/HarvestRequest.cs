@@ -1,6 +1,9 @@
+using MemoryPack;
+
 namespace MTS.Network.Models;
 
-public class HarvestRequest
+[MemoryPackable]
+public partial class HarvestRequest
 {
     public ushort SlotIndex { get; set; }
 }

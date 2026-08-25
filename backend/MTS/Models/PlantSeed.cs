@@ -4,46 +4,39 @@ using MTS.Exceptions;
 
 namespace MTS.Models;
 
-public class PlantSeed: IEquatable<PlantSeed>
+public class PlantSeed : IEquatable<PlantSeed>
 {
     public int CharId { get; set; }
     public ushort SlotIndex { get; set; }
     public ushort HerbId { get; set; }
     public DateTime PlantAt { get; set; }
     public DateTime EstimateHarvestAt { get; set; }
-    public TimeSpan TimeUntilHarvest { get; set; }
-    public DateTime LastInit { get; set; }
     public bool IsHavest { get; set; }
-    public ushort MaxWaterHelpPerDay { get; set; }
-    public TimeSpan WateringTimeReduction { get; set; }
     public List<WateringHelp> WateringHelps { get; set; } = new();
+
     [MemoryPackConstructor]
     public PlantSeed()
     {
     }
 
-    public PlantSeed(int charId, ushort slotIndex, ushort herbId, TimeSpan timeUntilHarvest, ushort maxWaterHelpPerDay,
-        TimeSpan wateringTimeReduction)
+    public PlantSeed(int charId, ushort slotIndex, ushort herbId, TimeSpan growthDuration)
     {
         CharId = charId;
         SlotIndex = slotIndex;
         HerbId = herbId;
         PlantAt = Now();
-        TimeUntilHarvest = timeUntilHarvest;
-        EstimateHarvestAt = PlantAt.Add(timeUntilHarvest);
-        MaxWaterHelpPerDay = maxWaterHelpPerDay;
-        WateringTimeReduction = wateringTimeReduction;
-        Init();
+        EstimateHarvestAt = PlantAt.Add(growthDuration);
+        ResetDaily();
     }
 
-    public void Init()
+    public bool ResetDaily()
     {
-        if (Utils.Utils.IsToday(LastInit))
+        if (WateringHelps.Count == 0)
         {
-            return;
+            return false;
         }
-        LastInit = Now();
         WateringHelps.Clear();
+        return true;
     }
 
     private DateTime Now()
@@ -56,13 +49,14 @@ public class PlantSeed: IEquatable<PlantSeed>
         return Now() >= EstimateHarvestAt;
     }
 
-    public void CanWatering(int charId)
+    public void CanWatering(int charId, int maxWaterHelpPerDay)
     {
         if (CharId == charId)
         {
             throw new InvalidException("Không thể tự tưới cây");
         }
-        if (WateringHelps.Count >= MaxWaterHelpPerDay)
+
+        if (WateringHelps.Count >= maxWaterHelpPerDay)
         {
             throw new InvalidException("Cây này đã đạt giới hạn tưới mỗi ngày");
         }
@@ -73,11 +67,15 @@ public class PlantSeed: IEquatable<PlantSeed>
         }
     }
 
-    public void TryWatered(WateringHelp wateringHelp)
+    public void TryWatered(WateringHelp wateringHelp,TimeSpan wateringTimeReduction, int maxWaterHelpPerDay)
     {
-        CanWatering(wateringHelp.CharId);
+        if (CanHarvest())
+        {
+            throw new InvalidException("Cây đã có thể thu hoạch");
+        }
+        CanWatering(wateringHelp.CharId, maxWaterHelpPerDay);
         WateringHelps.Add(wateringHelp);
-        EstimateHarvestAt -= WateringTimeReduction;
+        EstimateHarvestAt -= wateringTimeReduction;
     }
 
     public ItemRef TryHarvest(CharacterData charData)
@@ -86,14 +84,17 @@ public class PlantSeed: IEquatable<PlantSeed>
         {
             throw new InvalidException("Bạn không thể thu hoạch ô đất của người khác");
         }
+
         if (IsHavest)
         {
             throw new InvalidException("Ô đất đã được thu hoạch");
         }
+
         if (!CanHarvest())
         {
             throw new InvalidException("Chưa thể thu hoạch");
         }
+
         IsHavest = true;
         var itemRef = new ItemRef()
         {
@@ -105,12 +106,14 @@ public class PlantSeed: IEquatable<PlantSeed>
         charData.InventoryManager.Add(itemRef);
         return itemRef;
     }
+
     public bool Equals(PlantSeed? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return SlotIndex == other.SlotIndex;
     }
+
     public override int GetHashCode()
     {
         return SlotIndex;

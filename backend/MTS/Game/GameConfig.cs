@@ -229,13 +229,8 @@ public static class GameConfig
         { ETypeArenaRank.HoangGiai, 100 },
     };
 
+    public static readonly DongPhuConfig DongPhuConfig = DongPhuConfig.Default();
 
-    public readonly static DongPhuLevelConfig[] dongPhuLevelConfigs = new[]
-    {
-        new DongPhuLevelConfig()
-        {
-        }
-    };
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
     {
         var reader = new Reader(File.ReadAllBytes(filePath));

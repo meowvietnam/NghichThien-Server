@@ -1,5 +1,6 @@
 using MTS.Models;
 using MTS.Network;
+using MTS.Network.ClientState;
 using MTS.Network.Models;
 
 namespace MTS.Game.DP;
@@ -7,38 +8,22 @@ namespace MTS.Game.DP;
 public class DongPhuObserver
 {
     public DongPhu DongPhu { get; set; }
-    public HashSet<Client> Clients { get; set; } = new ();
+    public HashSet<DongPhuState> States { get; set; } = new ();
+    private object stateLock = new();
     public DongPhuObserver(DongPhu dongPhu)
     {
         DongPhu = dongPhu;
     }
-    public void AddClient(Client client)
+    public void RemoveState(DongPhuState state)
     {
-        client.OnOtherClientLogin -= OnOtherClientLogin;
-        client.OnLogout -= OnLogout;
-        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
-    }
-    public void RemoveClient(Client client)
-    {
-        if (Clients.Remove(client))
+        lock (stateLock)
         {
-            client.OnOtherClientLogin -= OnOtherClientLogin;
-            client.OnLogout -= OnLogout;
-            client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+            if (States.Remove(state))
+            {
+                state.OnRemove();
+            }
+            DongPhuManager.OnRemoveState(this, state);
         }
-        DongPhuManager.OnRemoveClient(this, client);
-    }
-    private void OnRemoveDisconnectedSession(Client client)
-    {
-        RemoveClient(client);
-    }
-    private void OnLogout(Client client)
-    {
-        RemoveClient(client);
-    }
-    private void OnOtherClientLogin(Client client)
-    {
-        RemoveClient(client);
     }
     public void OnUserDeleted()
     {
@@ -46,7 +31,51 @@ public class DongPhuObserver
     public void OnDongPhuLiked(DongPhuLike like)
     {
     }
-    public void OnWarteringHelp(AddWateringHelp addWateringHelp)
+    public void OnWateringHelp(AddWateringHelp addWateringHelp)
     {
+    }
+    public void AddState(DongPhuState state)
+    {
+        lock (stateLock)
+        {
+            States.Add(state);
+        }
+    }
+
+    public bool UpdateStateDailyReset(DongPhu dongPhu)
+    {
+        lock (stateLock)
+        {
+            foreach (var state in States)
+            {
+                if (state.IsMyDongPhu(dongPhu.CharId))
+                {
+                    state.OnResetDaily(dongPhu);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public void OnMyResetDaily(DongPhu dongPhu)
+    {
+        lock (stateLock)
+        {
+            
+        }
+    }
+
+    public async Task SaveChanges()
+    {
+        await using var db = await Program.CreateDbAsync();
+        lock (stateLock)
+        {
+            DongPhu.SaveChanges(db).GetAwaiter().GetResult();
+            foreach (var dongPhuState in States)
+            {
+                dongPhuState.SaveChanges(db).GetAwaiter().GetResult();
+            }
+        }
+        await db.SaveChangesAsync();
     }
 }
