@@ -39,11 +39,17 @@ public class DongPhu
             DongPhuManager.OnDongPhuLiked(this, like);
         }
     }
-    
+
+    public void TryHarvest(HarvestRequest request, CharacterData charData)
+    {
+        Garden.TryHarvest(request, charData);
+    }
+
     public void TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         Garden.TryWatering(request, helper);
     }
+
     public void AddHistory(string log)
     {
         var history = new DongPhuHistory()

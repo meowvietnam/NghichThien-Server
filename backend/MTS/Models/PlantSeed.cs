@@ -86,17 +86,14 @@ public class PlantSeed: IEquatable<PlantSeed>
         {
             throw new InvalidException("Bạn không thể thu hoạch ô đất của người khác");
         }
-
         if (IsHavest)
         {
             throw new InvalidException("Ô đất đã được thu hoạch");
         }
-
         if (!CanHarvest())
         {
             throw new InvalidException("Chưa thể thu hoạch");
         }
-
         IsHavest = true;
         var itemRef = new ItemRef()
         {

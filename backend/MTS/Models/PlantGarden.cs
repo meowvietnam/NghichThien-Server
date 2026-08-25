@@ -10,17 +10,17 @@ namespace MTS.Models;
 public class PlantGarden
 {
     public int CharId { get; set; }
+    public ushort MaxWaterHelpPerDay { get; set; }
     public HashSet<PlantingSlot> Slots { get; set; } = new();
     public HashSet<PlantSeed> Seeds { get; set; } = new();
+
     [ForeignKey(nameof(CharId))]
     [MemoryPackIgnore]
-    public DongPhu DongPhu  { get; set; }
-    [MemoryPackIgnore]
-    [NotMapped]
-    private object gardenLock = new();
-    [MemoryPackIgnore]
-    [NotMapped]
-    private PlantGardenTracking tracking = new();
+    public DongPhu DongPhu { get; set; }
+
+    [MemoryPackIgnore] [NotMapped] private object gardenLock = new();
+    [MemoryPackIgnore] [NotMapped] private PlantGardenTracking tracking = new();
+
     public void TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         lock (gardenLock)
@@ -40,7 +40,21 @@ public class PlantGarden
                 SlotIndex = slotIndex,
                 WateringHelp = wateringHelp,
             };
-            DongPhuManager.OnWateringHelp(CharId,addWateringHelp);
+            DongPhuManager.OnWateringHelp(CharId, addWateringHelp);
+        }
+    }
+
+    public ItemRef TryHarvest(HarvestRequest request, CharacterData charData)
+    {
+        lock (gardenLock)
+        {
+            var slotIndex = request.SlotIndex;
+            var slot = GetActiveSlot(slotIndex);
+            var plantSeed = GetActiveSeed(slotIndex);
+            var item = plantSeed.TryHarvest(charData);
+            Seeds.Remove(plantSeed);
+            tracking.Seeds.Delete(plantSeed);
+            return item;
         }
     }
 
@@ -54,8 +68,10 @@ public class PlantGarden
         {
             return seed;
         }
+
         throw new InvalidException("Ô đất này chưa được trồng cây");
     }
+
     private PlantingSlot GetActiveSlot(ushort slotIndex)
     {
         var slot = Slots.FirstOrDefault(x => x.SlotIndex == slotIndex);
@@ -63,10 +79,12 @@ public class PlantGarden
         {
             throw new InvalidException("Ô đất không tồn tại");
         }
+
         if (slot.IsLocked)
         {
             throw new InvalidException("Ô đất chưa mở");
         }
+
         return slot;
     }
 }

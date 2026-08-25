@@ -2,6 +2,7 @@ using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.CreateCharacter;
+using MTS.Game.DP;
 using MTS.Game.Gacha;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
@@ -228,6 +229,13 @@ public static class GameConfig
         { ETypeArenaRank.HoangGiai, 100 },
     };
 
+
+    public readonly static DongPhuLevelConfig[] dongPhuLevelConfigs = new[]
+    {
+        new DongPhuLevelConfig()
+        {
+        }
+    };
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
     {
         var reader = new Reader(File.ReadAllBytes(filePath));
