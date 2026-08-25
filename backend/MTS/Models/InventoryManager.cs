@@ -231,12 +231,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-            if (Furnaces.Remove(furnace))
+            if (Furnaces.TryGetValue(furnace, out var owner))
             {
-                Tracking.Furnaces.Delete(furnace);
+                Furnaces.Remove(furnace);
+                Tracking.Furnaces.Delete(owner);
                 return true;
             }
-
             return false;
         }
     }
@@ -681,12 +681,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
             return array.Any(x =>
             {
-                if (x.Remove(itemRef))
+                if (x.TryGetValue(itemRef, out var item))
                 {
-                    Tracking.Items.Delete(itemRef);
+                    x.Remove(item);
+                    Tracking.Items.Delete(item);
                     return true;
                 }
-
                 return false;
             });
         }
@@ -762,9 +762,10 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var array = new[] { VuKhis, PhongCus, TrangSucs };
             return array.Any(x =>
             {
-                if (x.Remove(equipment))
+                if (x.TryGetValue(equipment, out var owner))
                 {
-                    Tracking.Equipments.Delete(equipment);
+                    x.Remove(equipment);
+                    Tracking.Equipments.Delete(owner);
                     return true;
                 }
                 return false;

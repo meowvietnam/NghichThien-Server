@@ -42,6 +42,41 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
+        // using var db1 = AppDbContext.FromConnection("Server=nghichthien.online;Port=6336;Database=MTS;User=MTS;Password=zkxckwomqz;");
+    }
+
+    private async Task Check(AppDbContext db)
+    {
+        var equipments = await db.Equipments.Where(x => x.CharId == 106).ToListAsync();
+        foreach (var equipment in equipments)
+        {
+            var name = equipment.Name;
+            var item = equipment.Item;
+            var tier = item.Tier;
+            var grade = equipment.GetGrade();
+            var materials = equipment.Materials;
+            var materialNames = string.Join(", ", materials.Select(x => $"{x.Name} [{x.Tier}]").ToArray());
+            Log.Information("Equipment: {Name}, Tier: {Tier}, Grade: {Grade}, Materials: {Materials}",
+                name,tier ,grade,materialNames);
+        }
+    }
+    private async Task ModifyGacha(AppDbContext db)
+    {
+        var gachaManagers = await db.GachaManagers.ToListAsync();
+        foreach (var gachaManager in gachaManagers)
+        {
+            gachaManager.Set(ETypeGacha.ThanThong, ETypeSkill.None, gachaManager.GachaThanThong);
+            gachaManager.Set(ETypeGacha.CongPhap, ETypeSkill.None, gachaManager.GachaCongPhap);
+            
+            db.Entry(gachaManager)
+                .Property(x => x.GachaThanThongDict)
+                .IsModified = true;
+            db.Entry(gachaManager)
+                .Property(x => x.GachaCongPhapDict)
+                .IsModified = true;
+        }
+        await db.SaveChangesAsync();
+        Log.Information("ModifyGacha");
     }
     public CharacterStats GetReset(CharacterData charData)
     {

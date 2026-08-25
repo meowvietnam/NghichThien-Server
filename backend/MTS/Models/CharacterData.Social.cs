@@ -41,21 +41,28 @@ public partial class CharacterData
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
-            Log.Warning("NPC gift rejected: NPC not found; CharacterId={CharacterId}, NpcId={NpcId}",
-                Id, request.IdChar);
             throw new InvalidException(Strings.NpcNotExist);
         }
 
+        var item = request.ItemRef;
+
         var value = ItemProviderFactory.GetProvider(request.ItemRef.Type, InventoryManager)
-            .ValueTangQuaNPCWithItem(request.ItemRef.Id, npcRef.CharStats.Progression.Level);
+            .ValueTangQuaNPCWithItem(item.Id, npcRef.CharStats.Progression.Level);
         if (value.Item1 < 0)
         {
-            Log.Warning("NPC gift rejected: invalid gift value; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}, Value={Value}",
+            Log.Warning(
+                "NPC gift rejected: invalid gift value; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}, Value={Value}",
                 Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count, value.Item1);
             throw new InvalidException(Strings.NpcGiftValueInvalid);
         }
 
-        int valueAdd = value.Item1 * request.ItemRef.Count * value.Item2 * 2;
+        ushort count = item.Count;
+        if (item.Type == ItemType.VuKhi || item.Type == ItemType.PhongCu || item.Type == ItemType.TrangSuc)
+        {
+            count = 5;
+        }
+
+        int valueAdd = value.Item1 * count * value.Item2 * 2;
         bool isHasItem = false;
         if (request.ItemRef.Type == ItemType.Herb)
         {
@@ -136,7 +143,8 @@ public partial class CharacterData
 
         if (!isHasItem)
         {
-            Log.Warning("NPC gift rejected: item not owned or not enough quantity; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}",
+            Log.Warning(
+                "NPC gift rejected: item not owned or not enough quantity; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}",
                 Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count);
             throw new InvalidException(Strings.HackerTangQuaNPC);
         }
@@ -145,11 +153,12 @@ public partial class CharacterData
         ushort phongCuEquip = EquipmentManager.PhongCu;
         ushort trangSucEquip = EquipmentManager.TrangSuc;
 
-        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip 
-            || request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip 
-            || request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
+        if (request.ItemRef.Type == ItemType.VuKhi && request.ItemRef.Id == vuKhiEquip ||
+            request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip ||
+            request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
         {
-            Log.Warning("NPC gift rejected: equipped item cannot be gifted; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}",
+            Log.Warning(
+                "NPC gift rejected: equipped item cannot be gifted; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}",
                 Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id);
             throw new InvalidException(Strings.HackerTangQuaNPC);
         }
@@ -161,7 +170,9 @@ public partial class CharacterData
         else if (request.ItemRef.Type == ItemType.VuKhi || request.ItemRef.Type == ItemType.PhongCu ||
                  request.ItemRef.Type == ItemType.TrangSuc)
         {
-            InventoryManager.RemoveEquipment((ushort)request.ItemRef.Id);
+            if (InventoryManager.RemoveEquipment((ushort)request.ItemRef.Id))
+            {
+            }
         }
         else
         {
@@ -183,7 +194,8 @@ public partial class CharacterData
         var npcRef = GameConfig.NpcDatas.FirstOrDefault(x => x.CharStats.Id == request.IdChar);
         if (npcRef == null)
         {
-            Log.Warning("NPC skill request rejected: NPC not found; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
+            Log.Warning(
+                "NPC skill request rejected: NPC not found; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
                 Id, request.IdChar, request.TypeSkill, request.IdSkill);
             throw new InvalidException(Strings.NpcNotExist);
         }
@@ -246,7 +258,8 @@ public partial class CharacterData
         }
         else
         {
-            Log.Warning("NPC skill request rejected: unsupported skill item type; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
+            Log.Warning(
+                "NPC skill request rejected: unsupported skill item type; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}",
                 Id, request.IdChar, request.TypeSkill, request.IdSkill);
             throw new InvalidException(Strings.NotSupportItemType);
         }
@@ -273,7 +286,8 @@ public partial class CharacterData
 
             if (!baseSkillsCheck.Contains(request.IdSkill))
             {
-                Log.Warning("NPC skill request rejected: skill not available on NPC; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, Relationship={Relationship}",
+                Log.Warning(
+                    "NPC skill request rejected: skill not available on NPC; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, Relationship={Relationship}",
                     Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationType);
                 throw new InvalidException(Strings.HackerSkillNotExistOnNpc);
             }
@@ -284,7 +298,8 @@ public partial class CharacterData
         }
         else
         {
-            Log.Warning("NPC skill request rejected: relationship is not enough; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, RelationshipValue={RelationshipValue}",
+            Log.Warning(
+                "NPC skill request rejected: relationship is not enough; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, RelationshipValue={RelationshipValue}",
                 Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationshipValue);
             throw new InvalidException(Strings.NpcSkillRequestInvalid);
         }

@@ -50,8 +50,6 @@ namespace MTS.Game.ItemProvider
 
             }
             return (levelWithTier - npcLevel, indexTier);
-
-
         }
     }
     

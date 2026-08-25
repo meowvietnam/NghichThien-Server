@@ -21,7 +21,7 @@ public class UnauthenticatedClient : ClientConnection
     {
         private static readonly string[] acceptVersions =
         [
-            "apk_v1.3.9", "ios_v1.3.6"
+            "apk_v1.4.4", "apk_v1.4.3",  "apk_v1.4.2", "ios_v1.3.6"
         ];
 
         public void OnEnter()
@@ -37,7 +37,7 @@ public class UnauthenticatedClient : ClientConnection
                 var version = reader.Read();
                 var success = acceptVersions.Contains(version);
                 var msg = success
-                    ? $"[4] Đạo hữu nạp tại web https://play.nghichthien.online ưu đãi thêm 30% tiên ngọc"
+                    ? $"[2] Đạo hữu nạp tại web https://play.nghichthien.online ưu đãi thêm 30% tiên ngọc"
                     : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {

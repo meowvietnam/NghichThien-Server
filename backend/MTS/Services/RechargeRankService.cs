@@ -65,7 +65,7 @@ public class RechargeRankService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = GetDelayToGrantRewards();
+            var delay = GetDelayToGrantRewards().Add(TimeSpan.FromSeconds(3));
             logger.LogInformation(
                 "{Service} sẽ phát thưởng sau {Delay}", nameof(RechargeRankService), delay);
             await Task.Delay(delay, stoppingToken);

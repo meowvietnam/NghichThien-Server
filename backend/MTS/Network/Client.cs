@@ -231,9 +231,7 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 characterData.Id,
                 characterData.Name);
         }
-
         characterData.TryResetAds();
-        Log.Information("Player online: {Name}", CharacterData.Name);
         return characterData;
     }
 

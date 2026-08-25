@@ -51,8 +51,6 @@ public partial class CharacterData
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
-
-        Log.Information("TypeSkill: {TypeSkill}", typeSkill);
         int newTienNgoc = MoneyVip - require;
         var totalGacha = GachaManager.Get(type, typeSkill);
         var threshold = GachaManager.Threshold;
