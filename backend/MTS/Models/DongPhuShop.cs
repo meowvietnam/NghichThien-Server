@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
+using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game;
-using MTS.Game.DP;
 using MTS.Game.ItemProvider;
 using MTS.Game.LuyenDan;
 using MTS.Network.Models;
@@ -10,7 +10,8 @@ using MTS.Utils;
 
 namespace MTS.Models;
 
-public class DongPhuShop
+[MemoryPackable]
+public partial class DongPhuShop
 {
     public int CharId { get; set; }
     public HashSet<SeedItemShop> Seeds { get; set; } = new();
@@ -92,7 +93,6 @@ public class DongPhuShop
                 Seeds.Add(seed);
                 seedsTracking.Add(seed);
             }
-
             dirty = true;
         }
     }
@@ -109,6 +109,7 @@ public class DongPhuShop
             }
             else
             {
+                seed.Count = 0;
                 Seeds.Remove(seed);
                 seedsTracking.Delete(seed);
             }
@@ -161,6 +162,7 @@ public class DongPhuShop
                 Message = "Mua vật phẩm thành công",
                 NewLinhThach = newLinhThach,
                 Seed = seed,
+                UpdatedSeed = seedShopItem,
             };
         }
     }
@@ -168,5 +170,17 @@ public class DongPhuShop
     public void FirstInit()
     {
         ResetDaily();
+    }
+    public void SaveChanges(AppDbContext db)
+    {
+        lock(shopLock)
+        {
+            if (!dirty)
+            {
+                return;
+            }
+            seedsTracking.Apply(db, db.SeedItemShops);
+            dirty = false;
+        }
     }
 }

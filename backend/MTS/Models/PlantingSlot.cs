@@ -2,7 +2,8 @@ using MemoryPack;
 
 namespace MTS.Models;
 
-public class PlantingSlot : IEquatable<PlantingSlot>
+[MemoryPackable]
+public partial class PlantingSlot : IEquatable<PlantingSlot>
 {
     public int CharId { get; set; }
     public ushort SlotIndex { get; set; }

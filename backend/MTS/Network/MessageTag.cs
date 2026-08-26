@@ -219,4 +219,27 @@ public enum MessageTag
     
     GetMonsterKillRequest = 2009,
     ClaimMonsterKillRewardRequest = 2032,
+
+
+    VisitDongPhu = 2044,
+    VisitDongPhuResult = 2063,
+    GetDongPhuInfo = 2086,
+    GetDongPhuInfoResult = 2089,
+
+    WateringHelp = 2104,
+    WateringHelpResult = 2106,
+    WateringHelpNotify = 2107,
+    Plant = 2114,
+    PlantResult = 2117,
+    PlantNotify = 2131,
+    UpgradeDongPhu = 2151,
+    UpgradeDongPhuResult = 2158,
+    UpgradeDongPhuNotify = 2164,
+
+    GetDongPhuShopRequest = 2178,
+    GetDongPhuInventoryRequest = 2180,
+    GetDongPhuHistoriesRequest = 2192,
+    BuySeedRequest = 2189,
+
+
 }

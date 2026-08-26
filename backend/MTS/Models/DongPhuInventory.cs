@@ -4,7 +4,8 @@ using MTS.Utils;
 
 namespace MTS.Models;
 
-public class DongPhuInventory
+[MemoryPackable]
+public partial class DongPhuInventory
 {
     public int CharId { get; set; }
     public HashSet<Seed> Seeds { get; set; } = new();
@@ -56,10 +57,10 @@ public class DongPhuInventory
             }
             else
             {
+                seed.Count = 0;
                 Seeds.Remove(seed);
                 seedsTracking.Delete(seed);
             }
-
             dirty = true;
         }
     }

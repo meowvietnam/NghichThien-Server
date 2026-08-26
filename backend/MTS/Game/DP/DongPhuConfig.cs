@@ -4,6 +4,7 @@ using MTS.Game.LuyenDan;
 using MTS.Models;
 
 namespace MTS.Game.DP;
+
 [MemoryPackable]
 public partial class DongPhuConfig
 {
@@ -30,31 +31,39 @@ public partial class DongPhuConfig
         {
             new()
             {
+                Name = "Phàm cấp",
                 Level = DongPhuLevel.None,
                 SlotMaxWaterHelpPerDay = 0,
                 MyMaxWaterHelpPerDay = 0,
                 ReduceTime = TimeSpan.FromMinutes(0),
+                RequireMoneyVip = 0,
             },
             new()
             {
+                Name = "Hạ cấp",
                 Level = DongPhuLevel.Ha,
                 SlotMaxWaterHelpPerDay = 3,
                 MyMaxWaterHelpPerDay = 3,
                 ReduceTime = TimeSpan.FromMinutes(10),
+                RequireMoneyVip = 10_000,
             },
             new()
             {
+                Name = "Trung cấp",
                 Level = DongPhuLevel.Trung,
                 SlotMaxWaterHelpPerDay = 5,
                 MyMaxWaterHelpPerDay = 5,
                 ReduceTime = TimeSpan.FromMinutes(30),
+                RequireMoneyVip = 20_000,
             },
             new()
             {
+                Name = "Thượng cấp",
                 Level = DongPhuLevel.Thuong,
                 SlotMaxWaterHelpPerDay = 8,
                 MyMaxWaterHelpPerDay = 8,
                 ReduceTime = TimeSpan.FromMinutes(60),
+                RequireMoneyVip = 50_000,
             }
         };
         var seeds = new DongPhuSeedConfig[]

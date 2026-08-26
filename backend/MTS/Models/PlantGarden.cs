@@ -8,7 +8,8 @@ using MTS.Utils;
 
 namespace MTS.Models;
 
-public class PlantGarden
+[MemoryPackable]
+public partial class PlantGarden
 {
     public int CharId { get; set; }
     public ushort MaxWaterHelpPerDay { get; set; }
@@ -95,7 +96,7 @@ public class PlantGarden
         }
     }
 
-    public void Plant(Seed seed, ushort slotIndex, CharacterData charData)
+    public (PlantSeed plantSeed, PlantingSlot slot) Plant(Seed seed, ushort slotIndex, CharacterData charData)
     {
         lock (gardenLock)
         {
@@ -120,6 +121,7 @@ public class PlantGarden
             var plantSeed = new PlantSeed(CharId, slotIndex, seed.HerbId, growthDuration);
             Seeds.Add(plantSeed);
             tracking.Seeds.Add(plantSeed);
+            return (plantSeed, slot);
         }
     }
     public (List<IDongPhuReward> rewards, PlantingSlot slot)TryHarvest(HarvestRequest request, CharacterData charData)

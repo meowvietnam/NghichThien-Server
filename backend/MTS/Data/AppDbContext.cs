@@ -57,6 +57,9 @@ public class AppDbContext : DbContext
     public DbSet<MonsterKill> MonsterKills { get; private set; }
     public DbSet<MonsterRankReward> MonsterRankRewards { get; private set; }
     public DbSet<DongPhu> DongPhus { get; private set; }
+    public DbSet<DongPhuHistory> DongPhuHistories { get; private set; }
+    public DbSet<DongPhuShop> DongPhuShops { get; private set; }
+    public DbSet<SeedItemShop> SeedItemShops { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }

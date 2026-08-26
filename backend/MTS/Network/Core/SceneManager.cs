@@ -1,5 +1,6 @@
 using MTS.Exceptions;
 using MTS.Game.Auction;
+using MTS.Game.DP;
 using MTS.Localization;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
@@ -17,6 +18,7 @@ public class SceneManager : IClientHandler
     private const string LuyenKhi = "LuyenKhi";
     private const string ConvertElementalSkill = "ConvertElementalSkill";
     private const string Auction = "Auction";
+    private const string DongPhu = "DongPhu";
     public SceneManager(Client client)
     {
         this.client = client;
@@ -25,7 +27,7 @@ public class SceneManager : IClientHandler
     {
     }
 
-    public void Handle(Message<MessageTag> message)
+    public async void Handle(Message<MessageTag> message)
     {
         var tag = message.Tag;
         var reader = message.Reader;
@@ -90,6 +92,12 @@ public class SceneManager : IClientHandler
                             result.Success = false;
                             result.Message = Strings.AuctionServiceNotReady;
                         }
+                        break;
+                    case DongPhu:
+                        var targetId = client.CharacterData.Id;
+                        var state = await DongPhuManager.VisitDongPhu(targetId, client);
+                        result.Success = true;
+                        client.ChangeState(state);
                         break;
                     default:
                         result.Success = true;

@@ -60,7 +60,11 @@ public static class DongPhuManager
         }
         return await VisitDongPhu(charId, client, db);
     }
-
+    public static async Task<DongPhuState> VisitDongPhu(int targetId, Client client)
+    {
+        await using var db = await Program.CreateDbAsync();
+        return await VisitDongPhu(targetId, client, db);
+    }
     public static async Task<DongPhuState>
         VisitDongPhu(int targetId, Client client, AppDbContext db)
     {

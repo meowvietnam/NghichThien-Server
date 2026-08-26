@@ -6,6 +6,10 @@ namespace MTS.Game.DP;
 public partial class DongPhuRewardMoney : IDongPhuReward
 {
     public int Money { get; set; }
+    public DongPhuRewardMoney(int money)
+    {
+        Money = money;
+    }
     public void Claim(CharacterData charData)
     {
         var newMoney = charData.Stats.LinhThach + Money;

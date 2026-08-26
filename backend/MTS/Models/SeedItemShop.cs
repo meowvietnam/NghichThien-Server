@@ -1,6 +1,9 @@
+using MemoryPack;
+
 namespace MTS.Models;
 
-public class SeedItemShop :  IEquatable<SeedItemShop>
+[MemoryPackable]
+public partial class SeedItemShop :  IEquatable<SeedItemShop>
 {
     public int CharId { get; set; }
     public int PricePerSeed { get; set; }

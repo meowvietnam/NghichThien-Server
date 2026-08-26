@@ -1,11 +1,14 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using MTS.Exceptions;
+using MTS.Game;
 using MTS.Game.DP;
+using MTS.Game.LuyenDan;
 
 namespace MTS.Models;
 
-public class PlantSeed : IEquatable<PlantSeed>
+[MemoryPackable]
+public partial class PlantSeed : IEquatable<PlantSeed>
 {
     public int CharId { get; set; }
     public ushort SlotIndex { get; set; }
@@ -114,7 +117,10 @@ public class PlantSeed : IEquatable<PlantSeed>
             }
         ];
     }
-
+    public HerbData GetHerbData()
+    {
+        return GameConfig.LuyenDanResources.FindHerb(HerbId);
+    }
     public bool Equals(PlantSeed? other)
     {
         if (other is null) return false;
