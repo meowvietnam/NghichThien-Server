@@ -6,4 +6,9 @@ public class PlantGardenTracking
 {
     public Modify<PlantingSlot> Slots { get; set; } = new();
     public Modify<PlantSeed> Seeds { get; set; } = new();
+    public void Clear()
+    {
+        Slots.Clear();
+        Seeds.Clear();
+    }
 }

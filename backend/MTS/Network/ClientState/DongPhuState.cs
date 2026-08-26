@@ -12,6 +12,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     private DongPhuReference referenceVisitor;
     public MessageState State => MessageState.DongPhuState;
     private bool isClientReady = false;
+    private object lockObject = new();
     public DongPhuState(Client client, DongPhuObserver observer, DongPhuReference referenceTarget,
         DongPhuReference referenceVisitor)
     {
@@ -23,7 +24,6 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         client.OnLogout += OnLogout;
         client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
     }
-
     public DongPhu MyDongPhu()
     {
         return referenceVisitor.DongPhu;
@@ -33,17 +33,6 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     {
         return referenceTarget.DongPhu;
     }
-
-    public bool IsOwnerDongPhu()
-    {
-        return IsMyDongPhu(observer.DongPhu.CharId);
-    }
-
-    public bool IsMyDongPhu(int charId)
-    {
-        return client.CharacterData.Id == charId;
-    }
-
     public void OnEnter()
     {
     }
@@ -55,24 +44,24 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         }
         client.Send(data);
     }
-    public void Handle(Message<MessageTag> message)
+    public async void Handle(Message<MessageTag> message)
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        if(tag == MessageTag.GetDongPhuInfo)
+        if (tag == MessageTag.GetDongPhuInfo)
         {
             isClientReady = true;
             var result = GetDongPhuInfo();
             client.MemSend(MessageTag.GetDongPhuInfoResult, result);
         }
-        else if(tag == MessageTag.WateringHelp)
+        else if (tag == MessageTag.WateringHelp)
         {
             var request = reader.MemRead<WateringHelpRequest>();
             try
             {
                 HelpWatering(request);
             }
-            catch(InvalidException e)
+            catch (InvalidException e)
             {
                 var result = new WateringHelpResult()
                 {
@@ -82,7 +71,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                 client.MemSend(MessageTag.WateringHelpResult, result);
             }
         }
-        else if(tag == MessageTag.Plant)
+        else if (tag == MessageTag.Plant)
         {
             var request = reader.MemRead<PlantRequest>();
             try
@@ -99,13 +88,13 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                 client.MemSend(MessageTag.PlantResult, result);
             }
         }
-        else if(tag == MessageTag.UpgradeDongPhu)
+        else if (tag == MessageTag.UpgradeDongPhu)
         {
             try
             {
                 UpgradeDongPhu();
             }
-            catch(InvalidException e)
+            catch (InvalidException e)
             {
                 var result = new UpgradeDongPhuResult()
                 {
@@ -115,22 +104,22 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                 client.MemSend(MessageTag.UpgradeDongPhuResult, result);
             }
         }
-        else if(tag == MessageTag.GetDongPhuShopRequest)
+        else if (tag == MessageTag.GetDongPhuShopRequest)
         {
             var shop = GetShop();
             client.MemSend(MessageTag.GetDongPhuShopRequest, shop);
         }
-        else if(tag == MessageTag.GetDongPhuHistoriesRequest)
+        else if (tag == MessageTag.GetDongPhuHistoriesRequest)
         {
             var histories = GetHistories();
             client.MemSend(MessageTag.GetDongPhuHistoriesRequest, histories);
         }
-        else if(tag == MessageTag.GetDongPhuInventoryRequest)
+        else if (tag == MessageTag.GetDongPhuInventoryRequest)
         {
             var inventory = GetInventory();
             client.MemSend(MessageTag.GetDongPhuInventoryRequest, inventory);
         }
-        else if(tag == MessageTag.BuySeedRequest)
+        else if (tag == MessageTag.BuySeedRequest)
         {
             var request = reader.MemRead<BuySeed>();
             BuySeedResult result = null!;
@@ -138,7 +127,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
             {
                 result = BuySeed(request);
             }
-            catch(InvalidException e)
+            catch (InvalidException e)
             {
                 result = new BuySeedResult()
                 {
@@ -151,6 +140,98 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                 client.MemSend(MessageTag.BuySeedRequest, result);
             }
         }
+        else if (tag == MessageTag.HarvestSlot)
+        {
+            var request = reader.MemRead<HarvestRequest>();
+            try
+            {
+                HarvestSlot(request);
+            }
+            catch (InvalidException e)
+            {
+                var result = new HarvestSlotResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+                client.MemSend(MessageTag.HarverstSlotResult, result);
+            }
+        }
+        else if(tag == MessageTag.LikeDongPhu)
+        {
+            try
+            {
+                Like();
+            }
+            catch(InvalidException e)
+            {
+                var result = new LikeDongPhuResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+                client.MemSend(MessageTag.LikeDongPhuResult, result);
+            }
+        }
+        else if(tag == MessageTag.VisitDongPhuRequest)
+        {
+            var request = reader.MemRead<VisitDongPhu>();
+            VisitDongPhuResult result = null!;
+            try
+            {
+                lock(lockObject)
+                {
+                    VisitDongPhu(request).GetAwaiter().GetResult();
+                }
+            }
+            catch(InvalidException e)
+            {
+                result = new VisitDongPhuResult()
+                {
+                    Success = false,
+                    Message = e.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.VisitDongPhuRequest, result);
+            }
+        }
+
+    }
+    private async Task<VisitDongPhuResult> VisitDongPhu(VisitDongPhu request)
+    {
+        var name = request.Name;
+        var state = await DongPhuManager.VisitDongPhu(name, client);
+        client.ChangeState(state);
+        return new VisitDongPhuResult()
+        {
+            Success = true,
+        };
+    }
+    private void Like()
+    {
+        var targetDongPhu = TargetDongPhu();
+        var charData = client.CharacterData;
+        var result = targetDongPhu.Like(charData);
+        var notify = new LikeDongPhuNotify()
+        {
+            NewLike = result.NewLike
+        };
+        client.MemSend(MessageTag.LikeDongPhuResult, result);
+        observer.SendAllIgnore(this, MessageTag.LikeDongPhuNotify, notify);
+    }
+    private void HarvestSlot(HarvestRequest request)
+    {
+        var targetDongPhu = TargetDongPhu();
+        var charData = client.CharacterData;
+        var result = targetDongPhu.TryHarvest(request, charData);
+        var notify = new HarvestSlotNotify()
+        {
+            SlotIndex = result.SlotIndex
+        };
+        client.MemSend(MessageTag.HarverstSlotResult, result);
+        observer.SendAllIgnore(this,MessageTag.HarvertSlotNotify, notify);
     }
     private BuySeedResult BuySeed(BuySeed request)
     {
@@ -161,19 +242,19 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     private DongPhuInventory GetInventory()
     {
         var myDongPhu = MyDongPhu();
-        return myDongPhu.Inventory;
+        return myDongPhu.GetInventory();
     }
 
     private Queue<DongPhuHistory> GetHistories()
     {
         var myDongPhu = MyDongPhu();
-        return myDongPhu.Histories;
+        return myDongPhu.GetHistories();
     }
 
     private DongPhuShop GetShop()
     {
         var myDongPhu = MyDongPhu();
-        return myDongPhu.Shop;
+        return myDongPhu.GetShop();
     }
     private void UpgradeDongPhu()
     {
@@ -191,11 +272,19 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     private GetDongPhuInfoResult GetDongPhuInfo()
     {
         var dongPhu = TargetDongPhu();
+        var charId = client.CharacterData.Id;
+        var canLike = dongPhu.CanLike(charId);
+        var myDongPhu = MyDongPhu();
         return new GetDongPhuInfoResult()
         {
             Success = true,
-            Config = dongPhu.GetConfig(),
-            DongPhu = dongPhu
+            DongPhuInfo = new DongPhuInfo()
+            {
+                Config = dongPhu.GetConfig(),
+                DongPhu = dongPhu,
+                MyLevel = myDongPhu.Level,
+                CurrentWateringHelpCount = myDongPhu.CurrentWateringHelpCount
+            }
         };
     }
     private void Plant(PlantRequest request)
@@ -263,5 +352,10 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         client.OnOtherClientLogin -= OnOtherClientLogin;
         client.OnLogout -= OnLogout;
         client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+    }
+
+    public void ToAllMap()
+    {
+        client.Send(MessageTag.ToAllMapFromDongPhu);
     }
 }

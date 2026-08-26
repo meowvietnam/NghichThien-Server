@@ -9,11 +9,17 @@ using MTS.Network.Models;
 
 namespace MTS.Game.DP;
 
+public class RefCountedSemaphore
+{
+    public SemaphoreSlim Semaphore { get; } = new(1, 1);
+    public int RefCount;
+}
+
 public static class DongPhuManager
 {
     private static ConcurrentDictionary<int, DongPhuObserver> observers = new();
     private static ConcurrentDictionary<int, DongPhuReference> references = new();
-
+    private static ConcurrentDictionary<int, RefCountedSemaphore> creationLocks = new();
     static DongPhuManager()
     {
         DbEvent.OnUserDeleted += OnUserDeleted;
@@ -68,6 +74,7 @@ public static class DongPhuManager
     public static async Task<DongPhuState>
         VisitDongPhu(int targetId, Client client, AppDbContext db)
     {
+
         var charData = client.CharacterData;
         if (charData.Progression.MaxLevel < 4)
         {
@@ -107,34 +114,67 @@ public static class DongPhuManager
         {
             return reference;
         }
-
+        var gate = creationLocks.AddOrUpdate(
+            charId,
+            _ => new RefCountedSemaphore { RefCount = 1 },
+            (_, existing) => { Interlocked.Increment(ref existing.RefCount); return existing; });
+        await gate.Semaphore.WaitAsync();
         var config = GameConfig.DongPhuConfig;
-        var dongPhu = await db
-            .DongPhus
-            .FirstOrDefaultAsync(x => x.CharId == charId);
-        if (dongPhu == null)
+        try
         {
-            if (!canCreate)
+            var dongPhu = await db
+            .DongPhus
+            .AsNoTracking()
+            .Include(x => x.Garden)
+            .ThenInclude(x => x.Slots)
+            .Include(x => x.Garden)
+            .ThenInclude(x => x.Seeds)
+            .Include(x => x.Shop)
+            .ThenInclude(x => x.Seeds)
+            .Include(x => x.Inventory)
+            .ThenInclude(x => x.Seeds)
+            .Include(x => x.Likes)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.CharId == charId);
+            var histories = await db.DongPhuHistories
+                .AsNoTracking()
+                .Where(x => x.CharId == charId)
+                .OrderByDescending(x => x.Time)
+                .Take(50)
+                .ToListAsync();
+            var queueHistories = new Queue<DongPhuHistory>(histories);
+            dongPhu.Histories = queueHistories;
+            if (dongPhu == null)
             {
-                throw new InvalidException("Động phủ không tồn tại");
+                if (!canCreate)
+                {
+                    throw new InvalidException("Động phủ không tồn tại");
+                }
+
+                var charName = await db.Characters.Where(x => x.Id == charId).Select(x => x.Name).FirstAsync();
+                dongPhu = new DongPhu()
+                {
+                    CharId = charId,
+                    Name = charName,
+                    Level = config.Levels.First().Level,
+                };
+                dongPhu.FirstInit(config);
+                await db.DongPhus.AddAsync(dongPhu);
+                await db.SaveChangesAsync();
             }
-
-            var charName = await db.Characters.Where(x => x.Id == charId).Select(x => x.Name).FirstAsync();
-            dongPhu = new DongPhu()
-            {
-                CharId = charId,
-                Name = charName,
-                Level = config.Levels.First().Level,
-            };
-            dongPhu.FirstInit(config);
-            await db.DongPhus.AddAsync(dongPhu);
-            await db.SaveChangesAsync();
+            dongPhu.Init(config);
+            reference = new DongPhuReference(dongPhu);
+            references.TryAdd(charId, reference);
+            return reference;
         }
-
-        dongPhu.Init(config);
-        reference = new DongPhuReference(dongPhu);
-        references.TryAdd(charId, reference);
-        return reference;
+        finally
+        {
+            gate.Semaphore.Release();
+            if (Interlocked.Decrement(ref gate.RefCount) == 0)
+            {
+                creationLocks.TryRemove(charId, out _);
+            }
+        }
     }
 
     private static void OnUserDeleted(UserData userData)
@@ -145,33 +185,12 @@ public static class DongPhuManager
             {
                 observer.OnUserDeleted();
             }
+            if (references.TryRemove(charData.Id, out var _))
+            {
+
+            }
         }
     }
-
-    public static void OnDongPhuLiked(DongPhu dongPhu, DongPhuLike like)
-    {
-        if (observers.TryGetValue(dongPhu.CharId, out var observer))
-        {
-            observer.OnDongPhuLiked(like);
-        }
-    }
-
-    public static void OnWateringHelp(int charId, AddWateringHelp addWateringHelp)
-    {
-        if (observers.TryGetValue(charId, out var observer))
-        {
-            observer.OnWateringHelp(addWateringHelp);
-        }
-    }
-
-    public static void OnResetDaily(DongPhu dongPhu)
-    {
-        if (observers.TryGetValue(dongPhu.CharId, out var obs))
-        {
-            obs.OnMyResetDaily(dongPhu);
-        }
-    }
-
     public static async Task SaveChanges()
     {
         foreach (var reference in references.Values)

@@ -53,6 +53,13 @@ public class DongPhuObserver
 
     public void OnUserDeleted()
     {
+        lock(stateLock)
+        {
+            foreach(var state in States)
+            {
+                state.ToAllMap();
+            }
+        }
     }
 
     public void OnDongPhuLiked(DongPhuLike like)

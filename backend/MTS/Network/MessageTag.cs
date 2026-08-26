@@ -221,8 +221,7 @@ public enum MessageTag
     ClaimMonsterKillRewardRequest = 2032,
 
 
-    VisitDongPhu = 2044,
-    VisitDongPhuResult = 2063,
+    VisitDongPhuRequest = 2044,
     GetDongPhuInfo = 2086,
     GetDongPhuInfoResult = 2089,
 
@@ -240,6 +239,11 @@ public enum MessageTag
     GetDongPhuInventoryRequest = 2180,
     GetDongPhuHistoriesRequest = 2192,
     BuySeedRequest = 2189,
-
-
+    HarvestSlot = 2204,
+    HarverstSlotResult = 2208,
+    HarvertSlotNotify = 2212,
+    LikeDongPhu = 2314,
+    LikeDongPhuResult = 2324,
+    LikeDongPhuNotify = 2342,
+    ToAllMapFromDongPhu = 2351,
 }

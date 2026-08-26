@@ -180,6 +180,7 @@ public partial class DongPhuShop
                 return;
             }
             seedsTracking.Apply(db, db.SeedItemShops);
+            seedsTracking.Clear();
             dirty = false;
         }
     }

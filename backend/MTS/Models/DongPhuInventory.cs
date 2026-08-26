@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
+using MTS.Data;
 using MTS.Utils;
 
 namespace MTS.Models;
@@ -62,6 +63,19 @@ public partial class DongPhuInventory
                 seedsTracking.Delete(seed);
             }
             dirty = true;
+        }
+    }
+    public void SaveChanges(AppDbContext db)
+    {
+        lock(inventoryLock)
+        {
+            if(!dirty)
+            {
+                return;
+            }
+            seedsTracking.Apply(db, db.Seeds);
+            seedsTracking.Clear();
+            dirty = false;
         }
     }
 }

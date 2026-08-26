@@ -14,6 +14,7 @@ namespace MTS.Network.Models
     {
         public ushort SlotIndex { get; set; }
         public TimeSpan ReduceTime { get; set; }
+        public int CurrentWateringHelpCount { get; set; }
         public List<IDongPhuReward> Rewards { get; set; }
     }
 }

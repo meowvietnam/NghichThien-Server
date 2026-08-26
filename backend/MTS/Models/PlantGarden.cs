@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
+using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game;
 using MTS.Game.DP;
@@ -15,16 +16,11 @@ public partial class PlantGarden
     public ushort MaxWaterHelpPerDay { get; set; }
     public HashSet<PlantingSlot> Slots { get; set; } = new();
     public HashSet<PlantSeed> Seeds { get; set; } = new();
+    [MemoryPackIgnore][NotMapped] private object gardenLock = new();
+    [MemoryPackIgnore][NotMapped] private PlantGardenTracking tracking = new();
 
-    [ForeignKey(nameof(CharId))]
-    [MemoryPackIgnore]
-    public DongPhu DongPhu { get; set; }
-
-    [MemoryPackIgnore] [NotMapped] private object gardenLock = new();
-    [MemoryPackIgnore] [NotMapped] private PlantGardenTracking tracking = new();
-
-    [MemoryPackIgnore] [NotMapped] private DongPhuConfig config;
-    [MemoryPackIgnore] [NotMapped] private DongPhuLevel level;
+    [MemoryPackIgnore][NotMapped] private DongPhuConfig config;
+    [MemoryPackIgnore][NotMapped] private DongPhuLevel level;
 
     public void SetConfig(DongPhuConfig config)
     {
@@ -41,7 +37,7 @@ public partial class PlantGarden
         foreach (var slot in Slots)
         {
             var unlock = config.IsLevelGreaterOrEqual(level, slot.UnlockLevel);
-            if (unlock != slot.IsLocked) 
+            if (unlock != slot.IsLocked)
             {
                 slot.IsLocked = unlock;
                 tracking.Slots.Update(slot);
@@ -70,7 +66,7 @@ public partial class PlantGarden
         return config.Levels.First(x => x.Level == level);
     }
 
-    public (PlantingSlot,TimeSpan reduceTime) TryWatering(WateringHelpRequest request, CharacterData helper)
+    public (PlantingSlot, TimeSpan reduceTime) TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         lock (gardenLock)
         {
@@ -91,8 +87,7 @@ public partial class PlantGarden
                 SlotIndex = slotIndex,
                 WateringHelp = wateringHelp,
             };
-            DongPhuManager.OnWateringHelp(CharId, addWateringHelp);
-            return (slot,reduceTime);
+            return (slot, reduceTime);
         }
     }
 
@@ -124,7 +119,7 @@ public partial class PlantGarden
             return (plantSeed, slot);
         }
     }
-    public (List<IDongPhuReward> rewards, PlantingSlot slot)TryHarvest(HarvestRequest request, CharacterData charData)
+    public (List<IDongPhuReward> rewards, PlantingSlot slot) TryHarvest(HarvestRequest request, CharacterData charData)
     {
         lock (gardenLock)
         {
@@ -188,4 +183,13 @@ public partial class PlantGarden
         return slot;
     }
 
+    public void SaveChanges(AppDbContext db)
+    {
+        lock (gardenLock)
+        {
+            tracking.Slots.Apply(db, db.PlantingSlots);
+            tracking.Seeds.Apply(db, db.PlantSeeds);
+            tracking.Clear();
+        }
+    }
 }

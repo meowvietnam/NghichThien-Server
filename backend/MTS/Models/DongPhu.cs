@@ -7,6 +7,7 @@ using MTS.Network.Models;
 using static MTS.Utils.Utils;
 using MTS.Utils;
 using MTS.Localization;
+using Microsoft.EntityFrameworkCore;
 
 namespace MTS.Models;
 
@@ -46,10 +47,24 @@ public partial class DongPhu
         Garden.SetConfig(config);
         Garden.InitLevel(Level);
     }
-
+    public DongPhuShop GetShop()
+    {
+        ResetDaily();
+        return Shop;
+    }
+    public DongPhuInventory GetInventory()
+    {
+        ResetDaily();
+        return Inventory;
+    }
+    public Queue<DongPhuHistory> GetHistories()
+    {
+        ResetDaily();
+        return Histories;
+    }
     public UpgradeDongPhuResult TryUpgrade(CharacterData charData)
     {
-        if(charData.Id != CharId)
+        if (charData.Id != CharId)
         {
             throw new InvalidException("Không thể nâng cấp Động phủ người chơi khác");
         }
@@ -58,7 +73,7 @@ public partial class DongPhu
             ResetDaily();
             var nextLevel = config.GetNextLevel(Level);
             var remaining = charData.MoneyVip - nextLevel.RequireMoneyVip;
-            if(remaining < 0)
+            if (remaining < 0)
             {
                 throw new InvalidException(Strings.NotEnoughMoneyVip);
             }
@@ -79,11 +94,11 @@ public partial class DongPhu
     }
     public PlantResult Plant(PlantRequest request, CharacterData charData)
     {
-        lock(dongPhuLock)
+        lock (dongPhuLock)
         {
             ResetDaily();
             var seed = Inventory.GetSeed(request.HerbId);
-            if(seed == null)
+            if (seed == null)
             {
                 throw new InvalidException("Hạt giống không tồn tại");
             }
@@ -119,8 +134,16 @@ public partial class DongPhu
     {
         return CurrentWateringHelpCount >= MaxWateringHelperCount();
     }
-
-    public void AddLike(DongPhuLike like, CharacterData charData)
+    public LikeDongPhuResult Like(CharacterData charData)
+    {
+        var like = new DongPhuLike()
+        {
+            OtherCharId = charData.Id,
+            OwnerCharId = CharId,
+        };
+        return AddLike(like, charData);
+    }
+    private LikeDongPhuResult AddLike(DongPhuLike like, CharacterData charData)
     {
         lock (dongPhuLock)
         {
@@ -135,6 +158,11 @@ public partial class DongPhu
             LikeCount++;
             AddHistory($"{charData.Name} vừa thích Động phủ của bạn");
             dirty = true;
+            return new LikeDongPhuResult()
+            {
+                CanLike = false,
+                NewLike = LikeCount
+            };
         }
     }
     private void ResetDaily()
@@ -150,11 +178,10 @@ public partial class DongPhu
             SetCurrentWateringHelpCount(0);
             Garden.ResetDaily();
             Shop.ResetDaily();
-            DongPhuManager.OnResetDaily(this);
         }
     }
 
-    public void TryHarvest(HarvestRequest request, CharacterData charData)
+    public HarvestSlotResult TryHarvest(HarvestRequest request, CharacterData charData)
     {
         lock (dongPhuLock)
         {
@@ -164,7 +191,15 @@ public partial class DongPhu
             {
                 reward.Claim(charData);
             }
-            AddHistory($"Bạn đã thu hoạch {slot.GetName()} và nhận được {string.Join(", ", rewards.Select(x => x.GetText()))}");
+            var log = $"Bạn đã thu hoạch {slot.GetName()} và nhận được {string.Join(", ", rewards.Select(x => x.GetText()))}";
+            AddHistory(log);
+            return new HarvestSlotResult()
+            {
+                Success = true,
+                Message = log,
+                SlotIndex = slot.SlotIndex,
+                Rewards = rewards,
+            };
         }
     }
 
@@ -190,6 +225,7 @@ public partial class DongPhu
             {
                 Success = true,
                 SlotIndex = slot.SlotIndex,
+                CurrentWateringHelpCount = CurrentWateringHelpCount,
                 ReduceTime = reduceTime,
                 Rewards = rewards,
                 Message = log
@@ -248,9 +284,9 @@ public partial class DongPhu
         }
     }
 
-    public void SaveHistory(AppDbContext db)
+    private void SaveHistories(AppDbContext db)
     {
-   
+
         lock (addedHistories)
         {
             if (addedHistories.Count == 0)
@@ -260,15 +296,36 @@ public partial class DongPhu
             db.DongPhuHistories.AddRange(addedHistories);
             addedHistories.Clear();
         }
-    
-    }
 
+    }
+    private void SaveLikes(AppDbContext db)
+    {
+        lock (dongPhuLock)
+        {
+            likesTracking.Apply(db, db.DongPhuLikes);
+            likesTracking.Clear();
+        }
+    }
     public async Task SaveChanges(AppDbContext db)
     {
-        SaveHistory(db);
-        Shop.SaveChanges(db);
-
-        dirty = false;
+        lock (dongPhuLock)
+        {
+            if (dirty)
+            {
+                db.DongPhus.ExecuteUpdate(s =>
+                s.SetProperty(x => x.Level, Level)
+                    .SetProperty(x => x.LikeCount, LikeCount)
+                    .SetProperty(x => x.CurrentWateringHelpCount, CurrentWateringHelpCount)
+                    .SetProperty(x => x.LastReset, LastReset)
+                );
+                dirty = false;
+            }
+            SaveHistories(db);
+            SaveLikes(db);
+            Garden.SaveChanges(db);
+            Shop.SaveChanges(db);
+            Inventory.SaveChanges(db);
+        }
     }
 
     public bool CanLike(int charId)
@@ -283,7 +340,7 @@ public partial class DongPhu
 
     private bool CanLike(DongPhuLike like)
     {
-        return like.OtherCharId != CharId && Likes.Contains(like);
+        return like.OtherCharId != CharId && !Likes.Contains(like);
     }
 
     public BuySeedResult BuySeed(BuySeed request, CharacterData charData)
