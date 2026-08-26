@@ -26,29 +26,23 @@ namespace MTS.Game.Snapshot
         public (List<int>, List<int>, List<int>) GetCategorizeThinhGiaoThanThong()
         {
             // Ép kiểu danh sách ThanThong về List<BaseSkill> bằng .Cast<BaseSkill>().ToList()
-            return GetCategorizeThinhGiaoWithId(ComboChar.ComboWithDaiCanhGioi[TT.ThanThong.GetDaiCanhGioi(CharStats.Progression.Level)].ThanThongs.Cast<BaseSkill.BaseSkill>().ToList());
+            return GetCategorizeThinhGiaoWithId(ComboChar.ComboWithDaiCanhGioi[TT.ThanThong.GetDaiCanhGioi(CharStats.Progression.Level) - 1].ThanThongs.Cast<BaseSkill.BaseSkill>().ToList());
         }
 
         public (List<int>, List<int>, List<int>) GetCategorizeThinhGiaoCongPhap()
         {
             // Ép kiểu danh sách CongPhap về List<BaseSkill> tương tự
-            return GetCategorizeThinhGiaoWithId(ComboChar.ComboWithDaiCanhGioi[TT.ThanThong.GetDaiCanhGioi(CharStats.Progression.Level)].CongPhaps.Cast<BaseSkill.BaseSkill>().ToList());
+            return GetCategorizeThinhGiaoWithId(ComboChar.ComboWithDaiCanhGioi[TT.ThanThong.GetDaiCanhGioi(CharStats.Progression.Level) - 1].CongPhaps.Cast<BaseSkill.BaseSkill>().ToList());
         }
-        private (List<int>, List<int>, List<int>) GetCategorizeThinhGiaoWithId(List<BaseSkill.BaseSkill> baseSkills) // phân loại skill thỉnh giáo của npc
+        private (List<int>, List<int>, List<int>) GetCategorizeThinhGiaoWithId(List<BaseSkill.BaseSkill> baseSkills)
         {
-            // Giả sử listThanThongData là danh sách các đối tượng có thuộc tính eTierSkill
 
             List<int> list1 = new List<int>();
             List<int> list2 = new List<int>();
             List<int> list3 = new List<int>();
-            // 1. Kiểm tra list có null hoặc trống không
             if (baseSkills == null || baseSkills.Count == 0)
                 return (list1, list2, list3);
-
-            // 2. Lọc bỏ các phần tử null bên trong list trước khi tìm Max
-            // và đảm bảo x không null khi truy cập eTierSkill
             var validItems = baseSkills.Where(x => x != null).ToList();
-
             if (validItems.Count == 0)
                 return (list1, list2, list3);
 

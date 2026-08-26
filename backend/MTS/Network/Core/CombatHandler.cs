@@ -342,26 +342,26 @@ namespace MTS.Network.Core
             int point;
             int level;
             int charId;
+            int bonusPoints;
             lock (client.CharacterLock)
             {
                 var charData = client.CharacterData;
                 point = charData.ArenaManager.Points;
                 level = charData.Progression.Level;
                 charId = charData.Id;
+                bonusPoints = charData.BonusPoint;
             }
 
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
-
             var enemyCharId =
                 await db.ArenaManagers
                     .Where(x => x.Points >= min && x.Points <= max && x.CharId != charId)
-                    .OrderBy(x => x.CharData.Progression.Level >= level ? 0 : 1)
-                    .ThenBy(x => Math.Abs(x.CharData.Progression.Level - level))
-                    .ThenBy(x => x.CharData.TrungSinhCount)
-                    .ThenBy(x => x.CharData.BonusPoint)
-                    .ThenBy(_ => EF.Functions.Random())
+                    .OrderBy(x => Math.Abs(x.CharData.Progression.Level - level))
+                    .ThenBy(x => Math.Abs(x.CharData.BonusPoint - bonusPoints))
+                    .Take(3)
+                    .OrderBy(_ => EF.Functions.Random())
                     .Select(x => x.CharId)
                     .FirstOrDefaultAsync();
             if (enemyCharId == 0)
