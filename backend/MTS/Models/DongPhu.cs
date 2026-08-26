@@ -19,8 +19,10 @@ public partial class DongPhu
     public string Name { get; set; }
     public DongPhuLevel Level { get; set; }
     public int CurrentWateringHelpCount { get; private set; }
-    public DateTime LastReset { get; set; }
+
     public PlantGarden Garden { get; set; } = new();
+    [MemoryPackIgnore]
+    public DateTime LastReset { get; set; }
     [MemoryPackIgnore] public DongPhuShop Shop { get; set; } = new();
     [MemoryPackIgnore] public DongPhuInventory Inventory { get; set; } = new();
     [MemoryPackIgnore] public HashSet<DongPhuLike> Likes { get; set; } = new();

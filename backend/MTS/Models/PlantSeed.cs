@@ -16,6 +16,7 @@ public partial class PlantSeed : IEquatable<PlantSeed>
     public DateTime PlantAt { get; set; }
     public DateTime EstimateHarvestAt { get; set; }
     public bool IsHavest { get; set; }
+    [MemoryPackIgnore]
     public List<WateringHelp> WateringHelps { get; set; } = new();
 
     [MemoryPackConstructor]

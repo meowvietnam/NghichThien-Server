@@ -11,4 +11,5 @@ public partial class DongPhuLevelConfig
     public ushort MyMaxWaterHelpPerDay { get; set; }
     public TimeSpan ReduceTime { get; set; }  
     public int RequireMoneyVip { get; set; }
+    public Color Color { get; set; }
 }
