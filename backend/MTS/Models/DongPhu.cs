@@ -27,6 +27,7 @@ public class DongPhu
     [MemoryPackIgnore] [NotMapped] private Modify<DongPhuLike> likesTracking = new();
     [MemoryPackIgnore] [NotMapped] private object dongPhuLock = new();
     [MemoryPackIgnore] [NotMapped] private DongPhuConfig config;
+
     public void FirstInit(DongPhuConfig config)
     {
         this.config = config;
@@ -35,6 +36,7 @@ public class DongPhu
         Garden.InitLevel(Level);
         Garden.FirstInit();
     }
+
     public void Init(DongPhuConfig config)
     {
         ResetDaily();
@@ -53,6 +55,21 @@ public class DongPhu
             dirty = true;
             Garden.SetLevel(Level);
         }
+    }
+
+    public DongPhuLevelConfig LevelConfig()
+    {
+        return config.Levels.First(x => x.Level == Level);
+    }
+
+    public int MaxWateringHelperCount()
+    {
+        return LevelConfig().MyMaxWaterHelpPerDay;
+    }
+
+    public bool IsLimitWateringHelperCount()
+    {
+        return CurrentWateringHelpCount >= MaxWateringHelperCount();
     }
 
     public void AddLike(DongPhuLike like, CharacterData charData)
@@ -81,6 +98,7 @@ public class DongPhu
             {
                 return;
             }
+
             LastReset = DateTime.UtcNow;
             SetCurrentWateringHelpCount(0);
             Garden.ResetDaily();
@@ -94,16 +112,45 @@ public class DongPhu
         lock (dongPhuLock)
         {
             ResetDaily();
-            var item = Garden.TryHarvest(request, charData);
+            var (rewards,slot) = Garden.TryHarvest(request, charData);
+            foreach (var reward in rewards)
+            {
+                reward.Claim(charData);
+            }
+            AddHistory($"Bạn đã thu hoạch {slot.GetName()} và nhận được {string.Join(", ", rewards.Select(x => x.GetText()))}");
         }
     }
 
+    public void HelpWatering(WateringHelpRequest request, CharacterData helper, DongPhu target)
+    {
+        lock (dongPhuLock)
+        {
+            if (IsLimitWateringHelperCount())
+            {
+                throw new InvalidException("Đã đạt giới hạn tưới trong ngày");
+            }
+            target.TryWatering(request, helper);
+            var rewards = RandomRewardWatering(target);
+            AddHistory($"Bạn đã tưới nước hộ {target.Name} và nhận được {string.Join(", ", rewards.Select(x => x.GetText()))}");
+            SetCurrentWateringHelpCount(CurrentWateringHelpCount + 1);
+        }
+    }
+
+    private List<IDongPhuReward> RandomRewardWatering(DongPhu helped)
+    {
+        ItemRateRandomizer<IDongPhuReward> randomRewards = new ItemRateRandomizer<IDongPhuReward>(new []
+        {
+            new ItemRate<IDongPhuReward>(new DongPhuRewardMoney(), 85),
+            new ItemRate<IDongPhuReward>()
+        });
+    }
     public void TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         lock (dongPhuLock)
         {
             ResetDaily();
-            Garden.TryWatering(request, helper);
+            var (slot, reduceTime) = Garden.TryWatering(request, helper);
+            AddHistory($"{helper.Name} tưới {slot.GetName()} giảm {reduceTime.Minutes} phút sinh trưởng");
         }
     }
 
@@ -135,6 +182,13 @@ public class DongPhu
         }
     }
 
+    public void SaveHistory(AppDbContext db)
+    {
+        lock (addedHistories)
+        {
+        }
+    }
+
     public async Task SaveChanges(AppDbContext db)
     {
     }
@@ -153,5 +207,4 @@ public class DongPhu
     {
         return like.OtherCharId != CharId && Likes.Contains(like);
     }
-
 }

@@ -31,28 +31,28 @@ public partial class DongPhuConfig
             new()
             {
                 Level = DongPhuLevel.None,
-                MaxWaterHelpPerDay = 0,
+                SlotMaxWaterHelpPerDay = 0,
                 MyMaxWaterHelpPerDay = 0,
                 ReduceTime = TimeSpan.FromMinutes(0),
             },
             new()
             {
                 Level = DongPhuLevel.Ha,
-                MaxWaterHelpPerDay = 3,
+                SlotMaxWaterHelpPerDay = 3,
                 MyMaxWaterHelpPerDay = 3,
                 ReduceTime = TimeSpan.FromMinutes(10),
             },
             new()
             {
                 Level = DongPhuLevel.Trung,
-                MaxWaterHelpPerDay = 5,
+                SlotMaxWaterHelpPerDay = 5,
                 MyMaxWaterHelpPerDay = 5,
                 ReduceTime = TimeSpan.FromMinutes(30),
             },
             new()
             {
                 Level = DongPhuLevel.Thuong,
-                MaxWaterHelpPerDay = 8,
+                SlotMaxWaterHelpPerDay = 8,
                 MyMaxWaterHelpPerDay = 8,
                 ReduceTime = TimeSpan.FromMinutes(60),
             }

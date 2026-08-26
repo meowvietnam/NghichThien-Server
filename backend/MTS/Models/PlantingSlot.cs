@@ -14,6 +14,11 @@ public class PlantingSlot : IEquatable<PlantingSlot>
         if (ReferenceEquals(this, other)) return true;
         return SlotIndex == other.SlotIndex;
     }
+
+    public string GetName()
+    {
+        return $"ô thứ {SlotIndex + 1}";
+    }
     public override int GetHashCode()
     {
         return SlotIndex;

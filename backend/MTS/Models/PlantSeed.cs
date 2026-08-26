@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 using MTS.Exceptions;
+using MTS.Game.DP;
 
 namespace MTS.Models;
 
@@ -35,6 +36,7 @@ public class PlantSeed : IEquatable<PlantSeed>
         {
             return false;
         }
+
         WateringHelps.Clear();
         return true;
     }
@@ -67,18 +69,19 @@ public class PlantSeed : IEquatable<PlantSeed>
         }
     }
 
-    public void TryWatered(WateringHelp wateringHelp,TimeSpan wateringTimeReduction, int maxWaterHelpPerDay)
+    public void TryWatered(WateringHelp wateringHelp, TimeSpan wateringTimeReduction, int maxWaterHelpPerDay)
     {
         if (CanHarvest())
         {
             throw new InvalidException("Cây đã có thể thu hoạch");
         }
+
         CanWatering(wateringHelp.CharId, maxWaterHelpPerDay);
         WateringHelps.Add(wateringHelp);
         EstimateHarvestAt -= wateringTimeReduction;
     }
 
-    public ItemRef TryHarvest(CharacterData charData)
+    public List<IDongPhuReward> TryHarvest(CharacterData charData)
     {
         if (charData.Id != CharId)
         {
@@ -103,8 +106,13 @@ public class PlantSeed : IEquatable<PlantSeed>
             Id = HerbId,
             Count = 1,
         };
-        charData.InventoryManager.Add(itemRef);
-        return itemRef;
+        return
+        [
+            new DongPhuRewardHerb()
+            {
+                Herb = itemRef,
+            }
+        ];
     }
 
     public bool Equals(PlantSeed? other)

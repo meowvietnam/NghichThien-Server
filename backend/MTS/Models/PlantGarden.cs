@@ -69,7 +69,7 @@ public class PlantGarden
         return config.Levels.First(x => x.Level == level);
     }
 
-    public void TryWatering(WateringHelpRequest request, CharacterData helper)
+    public (PlantingSlot,TimeSpan reduceTime) TryWatering(WateringHelpRequest request, CharacterData helper)
     {
         lock (gardenLock)
         {
@@ -82,7 +82,8 @@ public class PlantGarden
                 Name = helper.Name,
             };
             var levelConfig = GetLevelConfig();
-            plantSeed.TryWatered(wateringHelp, levelConfig.ReduceTime, levelConfig.MaxWaterHelpPerDay);
+            var reduceTime = levelConfig.ReduceTime;
+            plantSeed.TryWatered(wateringHelp, reduceTime, levelConfig.SlotMaxWaterHelpPerDay);
             tracking.Seeds.Update(plantSeed);
             var addWateringHelp = new AddWateringHelp()
             {
@@ -90,6 +91,7 @@ public class PlantGarden
                 WateringHelp = wateringHelp,
             };
             DongPhuManager.OnWateringHelp(CharId, addWateringHelp);
+            return (slot,reduceTime);
         }
     }
 
@@ -120,17 +122,17 @@ public class PlantGarden
             tracking.Seeds.Add(plantSeed);
         }
     }
-    public ItemRef TryHarvest(HarvestRequest request, CharacterData charData)
+    public (List<IDongPhuReward> rewards, PlantingSlot slot)TryHarvest(HarvestRequest request, CharacterData charData)
     {
         lock (gardenLock)
         {
             var slotIndex = request.SlotIndex;
             var slot = GetActiveSlot(slotIndex);
             var plantSeed = GetActiveSeed(slotIndex);
-            var item = plantSeed.TryHarvest(charData);
+            var rewards = plantSeed.TryHarvest(charData);
             Seeds.Remove(plantSeed);
             tracking.Seeds.Delete(plantSeed);
-            return item;
+            return (rewards, slot);
         }
     }
     public void ResetDaily()

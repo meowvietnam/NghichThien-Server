@@ -93,7 +93,7 @@ public static class Program
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Nh?p JWT token: Bearer {your_token}"
+                    Description = "Nhap JWT token: Bearer {your_token}"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement

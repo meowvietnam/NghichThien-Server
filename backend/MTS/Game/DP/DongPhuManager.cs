@@ -12,6 +12,7 @@ namespace MTS.Game.DP;
 public static class DongPhuManager
 {
     private static ConcurrentDictionary<int, DongPhuObserver> observers = new();
+    private static ConcurrentDictionary<int, DongPhuReference> references = new();
 
     static DongPhuManager()
     {
@@ -27,8 +28,41 @@ public static class DongPhuManager
         }
     }
 
-    public static async Task<(DongPhuObserver observer, DongPhuState state)>
-        JoinDongPhuObserver(int charId, Client client)
+    public static async Task OnRemoveState(DongPhuReference reference, DongPhuState state)
+    {
+        try
+        {
+            var cts = reference.GetCancelToken();
+            await cts.CancelAsync();
+            cts = reference.ResetCancelToken();
+            await Task.Delay(TimeSpan.FromSeconds(15), cts.Token);
+            if (reference.States.Count == 0)
+            {
+                var id = reference.DongPhu.CharId;
+                references.TryRemove(id, out _);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public static async Task<DongPhuState> VisitDongPhu(string name, Client client)
+    {
+        await using var db = await Program.CreateDbAsync();
+        var charId = await db.DongPhus
+            .Where(x => x.Name == name)
+            .Select(x => x.CharId)
+            .FirstOrDefaultAsync();
+        if (charId == 0)
+        {
+            throw new InvalidException("Động phủ không tồn tại");
+        }
+        return await VisitDongPhu(charId, client, db);
+    }
+
+    public static async Task<DongPhuState>
+        VisitDongPhu(int targetId, Client client, AppDbContext db)
     {
         var charData = client.CharacterData;
         if (charData.Progression.MaxLevel < 4)
@@ -36,49 +70,67 @@ public static class DongPhuManager
             throw new InvalidException("Yêu cầu đạt Trúc cơ sơ kì");
         }
 
-        await using var db = await Program.CreateDbAsync();
-        var myCharId = charData.Id;
-        var observer = await FindOrCreateDongPhuObserver(charId, db);
-        DongPhuState state = null!;
-        if (charId == myCharId)
-        {
-            var dongPhu = observer.DongPhu;
-            state = new DongPhuState(client, observer, GameConfig.DongPhuConfig, dongPhu.Level,
-                dongPhu.CurrentWateringHelpCount);
-        }
-        else
-        {
-            var data = await db.DongPhus.Where(x => x.CharId == myCharId)
-                .Select(x => new { x.Level, x.CurrentWateringHelpCount })
-                .FirstOrDefaultAsync();
-            if (data == null)
-            {
-                throw new InvalidException("Động phủ của bạn chưa mở");
-            }
-
-            state = new DongPhuState(client, observer, GameConfig.DongPhuConfig, data.Level,
-                data.CurrentWateringHelpCount);
-        }
-
+        var visitorId = charData.Id;
+        var (observer, referenceTarget, referenceVisitor) =
+            await FindOrCreateDongPhuObserverAndReference(targetId, visitorId, db);
+        var state = new DongPhuState(client, observer, referenceTarget, referenceVisitor);
+        referenceTarget.AddState(state);
+        referenceVisitor.AddState(state);
         observer.AddState(state);
-        return (observer, state);
+        return state;
     }
 
-    private static async Task<DongPhuObserver> FindOrCreateDongPhuObserver(int charId, AppDbContext db)
+    private static async Task<(DongPhuObserver observer, DongPhuReference referenceTarget, DongPhuReference
+            referenceVisitor)>
+        FindOrCreateDongPhuObserverAndReference(int targetId, int visitorCharId, AppDbContext db)
     {
-        if (observers.TryGetValue(charId, out var observer))
+        var canCreate = targetId == visitorCharId;
+        var referenceTarget = await FindDongPhuReference(targetId, db, canCreate);
+        var referenceVisitor = await FindDongPhuReference(visitorCharId, db, canCreate);
+        if (observers.TryGetValue(targetId, out var observer))
         {
-            return observer;
+            return (observer, referenceTarget, referenceVisitor);
         }
 
-        var dongPhu = await db.DongPhus.FirstOrDefaultAsync(x => x.CharId == charId);
+        observer = new DongPhuObserver(referenceTarget.DongPhu);
+        observers.TryAdd(targetId, observer);
+        return (observer, referenceTarget, referenceVisitor);
+    }
+
+    private static async Task<DongPhuReference> FindDongPhuReference(int charId, AppDbContext db, bool canCreate)
+    {
+        if (references.TryGetValue(charId, out var reference))
+        {
+            return reference;
+        }
+
+        var config = GameConfig.DongPhuConfig;
+        var dongPhu = await db
+            .DongPhus
+            .FirstOrDefaultAsync(x => x.CharId == charId);
         if (dongPhu == null)
         {
-            throw new InvalidException("Động phù không tồn tại");
+            if (!canCreate)
+            {
+                throw new InvalidException("Động phủ không tồn tại");
+            }
+
+            var charName = await db.Characters.Where(x => x.Id == charId).Select(x => x.Name).FirstAsync();
+            dongPhu = new DongPhu()
+            {
+                CharId = charId,
+                Name = charName,
+                Level = config.Levels.First().Level,
+            };
+            dongPhu.FirstInit(config);
+            await db.DongPhus.AddAsync(dongPhu);
+            await db.SaveChangesAsync();
         }
 
-        observer = new DongPhuObserver(dongPhu);
-        return observer;
+        dongPhu.Init(config);
+        reference = new DongPhuReference(dongPhu);
+        references.TryAdd(charId, reference);
+        return reference;
     }
 
     private static void OnUserDeleted(UserData userData)
@@ -110,52 +162,17 @@ public static class DongPhuManager
 
     public static void OnResetDaily(DongPhu dongPhu)
     {
-        foreach (var observer in observers.Values)
-        {
-            if (observer.UpdateStateDailyReset(dongPhu))
-            {
-                break;
-            }
-        }
-
         if (observers.TryGetValue(dongPhu.CharId, out var obs))
         {
             obs.OnMyResetDaily(dongPhu);
         }
     }
 
-    public static async Task UpgradeLevelDongPhu(int charId)
-    {
-        DongPhu dongPhu = null!;
-        if (observers.TryGetValue(charId, out var observer))
-        {
-            dongPhu = observer.DongPhu;
-            dongPhu.TryUpgrade();
-        }
-        else
-        {
-            await using var db = await Program.CreateDbAsync();
-            var config = GameConfig.DongPhuConfig;
-            dongPhu = await db.DongPhus.FirstOrDefaultAsync(x => x.CharId == charId);
-            if (dongPhu == null)
-            {
-                dongPhu = new DongPhu()
-                {
-                    CharId = charId,
-                    Level = config.Levels.First().Level,
-                };
-                dongPhu.FirstInit(config);
-                await db.DongPhus.AddAsync(dongPhu);
-                await db.SaveChangesAsync();
-            }
-        }
-    }
-
     public static async Task SaveChanges()
     {
-        foreach (var observer in observers.Values)
+        foreach (var reference in references.Values)
         {
-            await observer.SaveChanges();
+            await reference.SaveChanges();
         }
     }
 }
