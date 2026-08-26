@@ -110,15 +110,15 @@ public static class DongPhuManager
 
     private static async Task<DongPhuReference> FindDongPhuReference(int charId, AppDbContext db, bool canCreate)
     {
+        var gate = creationLocks.AddOrUpdate(
+               charId,
+               _ => new RefCountedSemaphore { RefCount = 1 },
+               (_, existing) => { Interlocked.Increment(ref existing.RefCount); return existing; });
+        await gate.Semaphore.WaitAsync();
         if (references.TryGetValue(charId, out var reference))
         {
             return reference;
         }
-        var gate = creationLocks.AddOrUpdate(
-            charId,
-            _ => new RefCountedSemaphore { RefCount = 1 },
-            (_, existing) => { Interlocked.Increment(ref existing.RefCount); return existing; });
-        await gate.Semaphore.WaitAsync();
         var config = GameConfig.DongPhuConfig;
         try
         {
@@ -175,6 +175,7 @@ public static class DongPhuManager
                 creationLocks.TryRemove(charId, out _);
             }
         }
+
     }
 
     private static void OnUserDeleted(UserData userData)
