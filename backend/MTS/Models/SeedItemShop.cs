@@ -7,7 +7,7 @@ public partial class SeedItemShop :  IEquatable<SeedItemShop>
 {
     public int CharId { get; set; }
     public int PricePerSeed { get; set; }
-    public int HerbId { get; set; }
+    public ushort HerbId { get; set; }
     public int Count { get; set; }
     public override int GetHashCode()
     {

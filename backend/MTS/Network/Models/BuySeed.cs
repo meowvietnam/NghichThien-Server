@@ -1,7 +1,9 @@
-namespace MTS.Network.Models;
+using MemoryPack;
 
-public class BuySeed
+namespace MTS.Network.Models;
+[MemoryPackable]
+public partial class BuySeed
 {
     public ushort HerbId { get; set; }
-    public ushort Count { get; set; }
+    public int Count { get; set; }
 }

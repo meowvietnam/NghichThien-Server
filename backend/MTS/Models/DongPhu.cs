@@ -18,6 +18,7 @@ public partial class DongPhu
     public int LikeCount { get; private set; }
     public string Name { get; set; }
     public DongPhuLevel Level { get; set; }
+    [MemoryPackIgnore] 
     public int CurrentWateringHelpCount { get; private set; }
 
     public PlantGarden Garden { get; set; } = new();

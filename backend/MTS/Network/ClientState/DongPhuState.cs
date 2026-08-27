@@ -258,7 +258,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     }
     private void UpgradeDongPhu()
     {
-        var dongPhu = TargetDongPhu();
+        var dongPhu = MyDongPhu();
         var charData = client.CharacterData;
         var result = dongPhu.TryUpgrade(charData);
         var notify = new UpgradeDongPhuNotify()
