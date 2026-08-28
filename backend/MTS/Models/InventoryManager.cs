@@ -543,14 +543,17 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     furnaceIdAllocator.ReleaseId(furnace.SelfId);
                     Tracking.Furnaces.Delete(furnace);
                     modify.Furnaces.Delete(furnace);
-                    return new LuyenDanResult()
+                    if (dur < 0)
                     {
-                        Success = true,
-                        Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
-                        ItemRefs = new(),
-                        Modify = modify,
-                        NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
-                    };
+                        return new LuyenDanResult()
+                        {
+                            Success = true,
+                            Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
+                            ItemRefs = new(),
+                            Modify = modify,
+                            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                        };
+                    }
                 }
 
                 furnace.Durability = (sbyte)dur;

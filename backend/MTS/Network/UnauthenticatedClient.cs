@@ -21,7 +21,7 @@ public class UnauthenticatedClient : ClientConnection
     {
         private static readonly string[] acceptVersions =
         [
-            "apk_v1.4.4", "apk_v1.4.3",  "apk_v1.4.2", "ios_v1.3.6"
+            "apk_v1.4.5",  "ios_v1.3.6"
         ];
 
         public void OnEnter()

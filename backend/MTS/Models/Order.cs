@@ -11,21 +11,28 @@ public enum OrderStatus
     Complete,
 }
 
+public enum OrderType
+{
+    Pack,
+    DongPhu
+}
 public class Order
 {
     [Key] public long OrderId { get; set; }
-    public int ProductId { get; set; }
+    public int? ProductId { get; set; }
     public int CharId { get; set; }
     public long Amount { get; set; }
     public int? PurchaseId { get; set; }
     public string Link { get; set; }
     public OrderStatus Status { get; set; } = OrderStatus.Processing;
+    public OrderType OrderType { get; set; } = OrderType.Pack;
+    public string? Data { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public DateTime ExpireAt { get; set; }
     [ForeignKey(nameof(ProductId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
-    public IapProduct Product { get; set; }
+    public IapProduct? Product { get; set; }
 
     [ForeignKey(nameof(CharId))]
     [JsonIgnore]

@@ -6,6 +6,7 @@ using MTS.Game;
 using MTS.Game.DP;
 using MTS.Network.Models;
 using MTS.Utils;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -35,18 +36,18 @@ public partial class PlantGarden
         this.level = level;
         foreach (var slot in Slots)
         {
-            var unlock = config.IsLevelGreaterOrEqual(level, slot.UnlockLevel);
-            if (unlock != slot.IsLocked)
+            var isLocked = !config.IsLevelGreaterOrEqual(level, slot.UnlockLevel);
+            if (isLocked != slot.IsLocked)
             {
-                slot.IsLocked = unlock;
+                slot.IsLocked = isLocked;
                 tracking.Slots.Update(slot);
             }
         }
     }
     public void FirstInit()
     {
-        var slots = new HashSet<PlantingSlot>(9);
-        for (ushort i = 0; i < 9; i++)
+        var slots = new HashSet<PlantingSlot>(15);
+        for (ushort i = 0; i < 15; i++)
         {
             var unlockLevel = (DongPhuLevel)((i / 3) + 1);
             var slot = new PlantingSlot()
@@ -65,7 +66,7 @@ public partial class PlantGarden
         return config.Levels.First(x => x.Level == level);
     }
 
-    public (PlantingSlot, TimeSpan reduceTime) TryWatering(WateringHelpRequest request, CharacterData helper)
+    public (PlantingSlot, TimeSpan reduceTime) TryWatering(WateringHelpRequest request, CharacterData helper, DongPhu helperDongPhu)
     {
         lock (gardenLock)
         {
@@ -77,15 +78,10 @@ public partial class PlantGarden
                 CharId = helper.Id,
                 Name = helper.Name,
             };
-            var levelConfig = GetLevelConfig();
+            var levelConfig = helperDongPhu.GetLevelConfig();
             var reduceTime = levelConfig.ReduceTime;
             plantSeed.TryWatered(wateringHelp, reduceTime, levelConfig.SlotMaxWaterHelpPerDay);
             tracking.Seeds.Update(plantSeed);
-            var addWateringHelp = new AddWateringHelp()
-            {
-                SlotIndex = slotIndex,
-                WateringHelp = wateringHelp,
-            };
             return (slot, reduceTime);
         }
     }
@@ -112,6 +108,14 @@ public partial class PlantGarden
             }
             var tier = herb.Tier;
             var growthDuration = config.Seeds.First(x => x.Tier == tier).GrowthDuration;
+            var level = GetLevelConfig();
+            var alpha = 1f;
+            if (herb.IsDanDotPha())
+            {
+                alpha *= 2;
+            }
+            alpha /= level.Alpha;
+            growthDuration *= alpha;
             var plantSeed = new PlantSeed(CharId, slotIndex, seed.HerbId, growthDuration);
             Seeds.Add(plantSeed);
             tracking.Seeds.Add(plantSeed);

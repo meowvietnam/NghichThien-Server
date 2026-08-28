@@ -15,9 +15,9 @@ git -C "$BUILD_DIR" clean -fdx
 git -C "$BUILD_DIR" pull origin $BRANCH
 
 echo "===> Restore dependencies"
-dotnet restore MTS.sln -p:BuildProjectReferences=true -r linux-x64
+dotnet restore ../MTS.slnx -p:BuildProjectReferences=true -r linux-x64
 echo "===> Build project"
-dotnet build MTS.sln "${DOTNET_PROPS[@]}" --no-restore -c Release
+dotnet build ../MTS.slnx "${DOTNET_PROPS[@]}" --no-restore -c Release
 echo "===> Publish project"
 dotnet publish MTS.csproj "${DOTNET_PROPS[@]}" --no-restore -c Release -r linux-x64 --no-self-contained -o "$BUILD_DIR"
 echo "===> Validate publish dependencies"

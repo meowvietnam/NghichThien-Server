@@ -90,4 +90,9 @@ public class HerbData : IItemData, IMemorySerializable<HerbData>
         value.Locations = reader.Read();
         value.Description = reader.Read();
     }
+
+    public bool IsDanDotPha()
+    {
+        return GameConfig.MaterialDotPhas.Contains((ushort)Id);
+    }
 }

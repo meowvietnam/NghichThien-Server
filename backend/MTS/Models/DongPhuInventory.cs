@@ -23,7 +23,6 @@ public partial class DongPhuInventory
         {
             return ownerSeed;
         }
-
         return null;
     }
 

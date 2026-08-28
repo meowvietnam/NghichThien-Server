@@ -50,7 +50,6 @@ public class DongPhuObserver
             }
         }
     }
-
     public void OnUserDeleted()
     {
         lock(stateLock)
@@ -62,26 +61,11 @@ public class DongPhuObserver
         }
     }
 
-    public void OnDongPhuLiked(DongPhuLike like)
-    {
-    }
-
-    public void OnWateringHelp(AddWateringHelp addWateringHelp)
-    {
-    }
-
     public void AddState(DongPhuState state)
     {
         lock (stateLock)
         {
             States.Add(state);
-        }
-    }
-
-    public void OnMyResetDaily(DongPhu dongPhu)
-    {
-        lock (stateLock)
-        {
         }
     }
 }

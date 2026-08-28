@@ -612,7 +612,6 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<DongPhuHistory>(e =>
         {
-            e.HasKey(x => x.CharId);
             e.HasOne<DongPhu>()
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
@@ -645,10 +644,18 @@ public class AppDbContext : DbContext
             x => ParseWateringHelps(x));
 
             e.HasOne<PlantingSlot>()
-            .WithOne()
-            .HasPrincipalKey<PlantSeed>(x => new { x.CharId, x.SlotIndex })
-            .OnDelete(DeleteBehavior.Cascade);
-
+                .WithOne()
+                .HasForeignKey<PlantSeed>(x => new
+                {
+                    x.CharId,
+                    x.SlotIndex
+                })
+                .HasPrincipalKey<PlantingSlot>(x => new
+                {
+                    x.CharId,
+                    x.SlotIndex
+                })
+                .OnDelete(DeleteBehavior.Cascade);
             e.HasOne<PlantGarden>()
              .WithMany(x => x.Seeds)
              .HasForeignKey(x => x.CharId)
@@ -673,8 +680,10 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => new { x.OwnerCharId, x.OtherCharId });
             e.HasOne<DongPhu>()
-            .WithMany(x => x.Likes)
-            .OnDelete(DeleteBehavior.NoAction);
+                .WithMany(x => x.Likes)
+                .HasForeignKey(x => x.OwnerCharId)
+                .HasPrincipalKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
     private List<WateringHelp> ParseWateringHelps(byte[] data)

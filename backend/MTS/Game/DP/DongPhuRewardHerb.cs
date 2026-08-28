@@ -13,6 +13,7 @@ public partial class DongPhuRewardHerb : IDongPhuReward
     public string GetText()
     {
         var herbData = GameConfig.LuyenDanResources.FindHerb(Herb.Id);
-        return $"x{Utils.Utils.FormatCount(Herb.Count)} {herbData.Name}";
+        var quality = GameConfig.Core.Qualities.First(x => x.Tier == herbData.Tier);
+        return $"x{Utils.Utils.FormatCount(Herb.Count)} <color={quality.Color.ToHexRGB()}>{herbData.Name}</color>";
     }
 }

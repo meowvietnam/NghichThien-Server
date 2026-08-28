@@ -9,24 +9,11 @@ public class DongPhuReference
     public DongPhu DongPhu { get; private set; }
     public HashSet<DongPhuState> States { get; private set; } = new();
     private object stateLock = new();
-    private CancellationTokenSource cts = new();
 
     public DongPhuReference(DongPhu dongPhu)
     {
         DongPhu = dongPhu;
     }
-
-    public CancellationTokenSource GetCancelToken()
-    {
-        return cts;
-    }
-
-    public CancellationTokenSource ResetCancelToken()
-    {
-        cts = new CancellationTokenSource();
-        return cts;
-    }
-
     public void RemoveState(DongPhuState state)
     {
         lock (stateLock)

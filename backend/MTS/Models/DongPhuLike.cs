@@ -7,7 +7,6 @@ public partial class DongPhuLike : IEquatable<DongPhuLike>
 {
     public int OwnerCharId { get; set; }
     public int OtherCharId { get; set; }
-
     public bool Equals(DongPhuLike? other)
     {
         if (other is null) return false;

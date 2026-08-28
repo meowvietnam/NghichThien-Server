@@ -30,98 +30,57 @@ public class Startup : BackgroundService
             .Include(x => x.Product)
             .ToListAsync(stoppingToken);
         var total = purchases
-            .Sum(x => x.Product.Price);
+            .Sum(x => x.AmountSnapshot);
         var estimate = purchases.Sum(x =>
         {
-            if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+            if (x.Product != null)
             {
-                return (int)(x.Product.Price * 0.7f);
+                if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+                {
+                    return (int)(x.Product.Price * 0.7f);
+                }
+
+                return x.Product.Price;
             }
 
-            return x.Product.Price;
+            return x.AmountSnapshot;
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
-        // using var db1 = AppDbContext.FromConnection("Server=nghichthien.online;Port=6336;Database=MTS;User=MTS;Password=zkxckwomqz;");
     }
 
-    private async Task Check(AppDbContext db)
+    private async Task Edit(AppDbContext db)
     {
-        var equipments = await db.Equipments.Where(x => x.CharId == 106).ToListAsync();
-        foreach (var equipment in equipments)
+        var purchases = await db.IapPurchases.Include(x => x.Product).ToListAsync();
+        foreach (var p in purchases)
         {
-            var name = equipment.Name;
-            var item = equipment.Item;
-            var tier = item.Tier;
-            var grade = equipment.GetGrade();
-            var materials = equipment.Materials;
-            var materialNames = string.Join(", ", materials.Select(x => $"{x.Name} [{x.Tier}]").ToArray());
-            Log.Information("Equipment: {Name}, Tier: {Tier}, Grade: {Grade}, Materials: {Materials}",
-                name,tier ,grade,materialNames);
+            p.AmountSnapshot = p.Product.Price;
         }
-    }
-    private async Task ModifyGacha(AppDbContext db)
-    {
-        var gachaManagers = await db.GachaManagers.ToListAsync();
-        foreach (var gachaManager in gachaManagers)
-        {
-            gachaManager.Set(ETypeGacha.ThanThong, ETypeSkill.None, gachaManager.GachaThanThong);
-            gachaManager.Set(ETypeGacha.CongPhap, ETypeSkill.None, gachaManager.GachaCongPhap);
-            
-            db.Entry(gachaManager)
-                .Property(x => x.GachaThanThongDict)
-                .IsModified = true;
-            db.Entry(gachaManager)
-                .Property(x => x.GachaCongPhapDict)
-                .IsModified = true;
-        }
+
         await db.SaveChangesAsync();
-        Log.Information("ModifyGacha");
+        Log.Information("Okeeee");
     }
-    public CharacterStats GetReset(CharacterData charData)
+    public async Task AddReward(AppDbContext db)
     {
-        var stats = charData.Stats.Clone();
-        var level = charData.Progression.Level;
-        var statsTemp = GameConfig.CharacterTemplate.Stats;
-        var baseHp = statsTemp.SinhMenh;
-        var estimateHp = baseHp;
-        var infoLevels = GameConfig.LevelResource.infoLevels.Take(level - 1).ToArray();
-        var ability = stats.Ability;
-        var thanThuc = statsTemp.ThanThuc;
-        var thoNguyen = 100;
-        var donToc = statsTemp.TocDoBay;
-        for (var i = 0; i < infoLevels.Length; i++)
+        var ms = await db.MonsterKills.Include(x => x.Rewards).ToListAsync();
+        foreach (var m in ms)
         {
-            var infoLevel = infoLevels[i];
-            estimateHp += infoLevel.hpMaxBuff;
-            if (ability.HasFlag(Ability.ThanMaHuyetMach))
+            var reward = m.Rewards[2];
+            if (reward.Rewards.All(x => !(x is LinhDanMonsterRankReward)))
             {
-                estimateHp += (int)MathF.Ceiling(estimateHp * 0.2f);
+                reward.Rewards.Add(new LinhDanMonsterRankReward()
+                {
+                    Id = 4670,
+                    Count = 1
+                });
+                db.Entry(reward).Property(x => x.Rewards).IsModified = true;
             }
-
-            if (i == 2 && ability.HasFlag(Ability.DiTocHuyetMach))
-            {
-                estimateHp *= 2;
-            }
-
-            thanThuc += infoLevel.thanThucBuff;
-            thoNguyen += infoLevel.thoNguyenBuff;
-            donToc += infoLevel.donTocBuff;
         }
 
-        var hp = Math.Max(0, estimateHp);
-        stats.SetSinhMenh(hp);
-        stats.SetHp(hp);
-        stats.SetThoNguyen(thoNguyen);
-        stats.SetThanThuc(thanThuc);
-        stats.SetTocDoBay(donToc);
-        stats.ResetLinhCan();
-        stats.ResetTuChat();
-        stats.ResetNgoTinh();
-        return stats;
+        await db.SaveChangesAsync();
+        Log.Information("Oke");
     }
-
-
+    
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
     {
         return await db.Characters.FirstAsync(x => x.Name == name);

@@ -37,19 +37,22 @@ public partial class DongPhuShop
     {
         lock (shopLock)
         {
-            var herbDatas = GameConfig.LuyenDanResources.HerbDatas.Where(x => x.Tier > Tier.TamPham).ToList();
+            var herbDatas = GameConfig.LuyenDanResources.HerbDatas
+                .Where(x => x.Tier >= Tier.TamPham)
+                .ToList();
             var seedCount = 10;
             var seeds = new HashSet<SeedItemShop>(seedCount);
             for (int i = 0; i < seedCount; i++)
             {
                 var herb = herbDatas.Random();
+                herbDatas.Remove(herb);
                 var herbProvider = new HerbProvider();
-                var price = herbProvider.GetPriceItemBuy((ushort)herb.Id) / 3;
-                var count = Random.Shared.Next(1,4);
+                var price = herbProvider.GetPriceItemSell((ushort)herb.Id) / 3;
+                var count = Random.Shared.Next(1, 4);
                 var seed = new SeedItemShop()
                 {
                     CharId = CharId,
-                    HerbId = herb.Id,
+                    HerbId = (ushort)herb.Id,
                     Count = count,
                     PricePerSeed = price,
                 };
@@ -93,6 +96,7 @@ public partial class DongPhuShop
                 Seeds.Add(seed);
                 seedsTracking.Add(seed);
             }
+
             dirty = true;
         }
     }
@@ -171,14 +175,16 @@ public partial class DongPhuShop
     {
         ResetDaily();
     }
+
     public void SaveChanges(AppDbContext db)
     {
-        lock(shopLock)
+        lock (shopLock)
         {
             if (!dirty)
             {
                 return;
             }
+
             seedsTracking.Apply(db, db.SeedItemShops);
             seedsTracking.Clear();
             dirty = false;

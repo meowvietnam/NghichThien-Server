@@ -93,6 +93,11 @@ public partial class MonsterKill
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiTrung,
                         Count = 1
+                    },
+                    new LinhDanMonsterRankReward()
+                    {
+                        Id = 4670,
+                        Count = 1
                     }
                 }
             },
