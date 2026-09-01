@@ -38,7 +38,7 @@ public class Startup : BackgroundService
             {
                 if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
                 {
-                    return (int)(x.Product.Price * 0.7f);
+                    return (long)(x.Product.Price * 0.7f);
                 }
                 return x.Product.Price;
             }
