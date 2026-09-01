@@ -316,6 +316,90 @@ namespace MTS.Migrations
                     b.ToTable("DanCombatUseds");
                 });
 
+            modelBuilder.Entity("MTS.Models.DongPhu", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentWateringHelpCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastReset")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LikeCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("DongPhus");
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Log")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("DongPhuHistories");
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuInventory", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("DongPhuInventories");
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuLike", b =>
+                {
+                    b.Property<int>("OwnerCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OtherCharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OwnerCharId", "OtherCharId");
+
+                    b.ToTable("DongPhuLikes");
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuShop", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("DongPhuShops");
+                });
+
             modelBuilder.Entity("MTS.Models.Equipment", b =>
                 {
                     b.Property<int>("CharId")
@@ -382,6 +466,49 @@ namespace MTS.Migrations
                     b.HasKey("CharId");
 
                     b.ToTable("EquipmentManagers");
+                });
+
+            modelBuilder.Entity("MTS.Models.Event", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("Id")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("GameEvent")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("CharId", "Id");
+
+                    b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("EventInventories");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("EventManagers");
                 });
 
             modelBuilder.Entity("MTS.Models.FurnaceData", b =>
@@ -622,6 +749,22 @@ namespace MTS.Migrations
                     b.ToTable("InventoryManagers");
                 });
 
+            modelBuilder.Entity("MTS.Models.ItemEvent", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("Id")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId", "Id");
+
+                    b.ToTable("ItemEvents");
+                });
+
             modelBuilder.Entity("MTS.Models.ItemRef", b =>
                 {
                     b.Property<int>("CharId")
@@ -633,8 +776,8 @@ namespace MTS.Migrations
                     b.Property<byte>("Type")
                         .HasColumnType("tinyint unsigned");
 
-                    b.Property<ushort>("Count")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
 
                     b.HasKey("CharId", "Id", "Type");
 
@@ -783,6 +926,9 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)");
 
@@ -793,7 +939,10 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int>("OrderType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PurchaseId")
@@ -812,6 +961,64 @@ namespace MTS.Migrations
                         .IsUnique();
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantGarden", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("PlantGardens");
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantSeed", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("SlotIndex")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<DateTime>("EstimateHarvestAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<ushort>("HerbId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<bool>("IsHavest")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("PlantAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("WateringHelps")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.HasKey("CharId", "SlotIndex");
+
+                    b.ToTable("PlantSeeds");
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantingSlot", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("SlotIndex")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("UnlockLevel")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId", "SlotIndex");
+
+                    b.ToTable("PlantingSlots");
                 });
 
             modelBuilder.Entity("MTS.Models.ProductLinker", b =>
@@ -852,6 +1059,9 @@ namespace MTS.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxLevel")
                         .HasColumnType("int");
 
                     b.Property<int>("NgoDaoDiem")
@@ -947,8 +1157,8 @@ namespace MTS.Migrations
                     b.Property<ushort>("Npc")
                         .HasColumnType("smallint unsigned");
 
-                    b.Property<ushort>("Points")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
 
                     b.HasKey("CharId", "Npc");
 
@@ -969,6 +1179,41 @@ namespace MTS.Migrations
                     b.HasKey("CharId", "RewardDay");
 
                     b.ToTable("ReleaseDailyRewardClaim");
+                });
+
+            modelBuilder.Entity("MTS.Models.Seed", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("HerbId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId", "HerbId");
+
+                    b.ToTable("Seeds");
+                });
+
+            modelBuilder.Entity("MTS.Models.SeedItemShop", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("HerbId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PricePerSeed")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId", "HerbId");
+
+                    b.ToTable("SeedItemShops");
                 });
 
             modelBuilder.Entity("MTS.Models.ShopManager", b =>
@@ -1133,6 +1378,9 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<long>("AmountSnapshot")
+                        .HasColumnType("bigint");
+
                     b.Property<int?>("CharId")
                         .HasColumnType("int");
 
@@ -1186,13 +1434,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.CamNgo", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("CamNgos")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.CharacterData", b =>
@@ -1219,13 +1465,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("CongPhapOwners")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.DailyQuest", b =>
@@ -1261,6 +1505,51 @@ namespace MTS.Migrations
                     b.Navigation("EquipmentManager");
                 });
 
+            modelBuilder.Entity("MTS.Models.DongPhu", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.DongPhu", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuHistory", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhu", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuInventory", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhu", null)
+                        .WithOne("Inventory")
+                        .HasForeignKey("MTS.Models.DongPhuInventory", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuLike", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhu", null)
+                        .WithMany("Likes")
+                        .HasForeignKey("OwnerCharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuShop", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhu", null)
+                        .WithOne("Shop")
+                        .HasForeignKey("MTS.Models.DongPhuShop", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.Equipment", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", "Inventory")
@@ -1283,15 +1572,40 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.Event", b =>
+                {
+                    b.HasOne("MTS.Models.EventManager", null)
+                        .WithMany("Events")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.HasOne("MTS.Models.EventManager", null)
+                        .WithOne("Inventory")
+                        .HasForeignKey("MTS.Models.EventInventory", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithOne("EventManager")
+                        .HasForeignKey("MTS.Models.EventManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.FurnaceData", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("Furnaces")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.GachaManager", b =>
@@ -1367,15 +1681,22 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.ItemEvent", b =>
+                {
+                    b.HasOne("MTS.Models.EventInventory", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.ItemRef", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("ItemRefs")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.LocalAccount", b =>
@@ -1391,13 +1712,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.Mail", b =>
                 {
-                    b.HasOne("MTS.Models.Social", "Social")
+                    b.HasOne("MTS.Models.Social", null)
                         .WithMany("Mails")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Social");
                 });
 
             modelBuilder.Entity("MTS.Models.MonsterKill", b =>
@@ -1424,13 +1743,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.NgoDao", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("NgoDaos")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.Order", b =>
@@ -1443,9 +1760,7 @@ namespace MTS.Migrations
 
                     b.HasOne("MTS.Models.IapProduct", "Product")
                         .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ProductId");
 
                     b.HasOne("MTS.Network.Models.IapPurchase", "Purchase")
                         .WithOne()
@@ -1456,6 +1771,39 @@ namespace MTS.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Purchase");
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantGarden", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhu", null)
+                        .WithOne("Garden")
+                        .HasForeignKey("MTS.Models.PlantGarden", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantSeed", b =>
+                {
+                    b.HasOne("MTS.Models.PlantGarden", null)
+                        .WithMany("Seeds")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.PlantingSlot", null)
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.PlantSeed", "CharId", "SlotIndex")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantingSlot", b =>
+                {
+                    b.HasOne("MTS.Models.PlantGarden", null)
+                        .WithMany("Slots")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.Progression", b =>
@@ -1493,13 +1841,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.Relationship", b =>
                 {
-                    b.HasOne("MTS.Models.Social", "Social")
+                    b.HasOne("MTS.Models.Social", null)
                         .WithMany("Relationships")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Social");
                 });
 
             modelBuilder.Entity("MTS.Models.ReleaseDailyRewardClaim", b =>
@@ -1511,6 +1857,24 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharData");
+                });
+
+            modelBuilder.Entity("MTS.Models.Seed", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhuInventory", null)
+                        .WithMany("Seeds")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.SeedItemShop", b =>
+                {
+                    b.HasOne("MTS.Models.DongPhuShop", null)
+                        .WithMany("Seeds")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.ShopManager", b =>
@@ -1548,13 +1912,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.ThanThong", b =>
                 {
-                    b.HasOne("MTS.Models.InventoryManager", "Inventory")
+                    b.HasOne("MTS.Models.InventoryManager", null)
                         .WithMany("ThanThongOwners")
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("MTS.Models.ThanThongEquip", b =>
@@ -1570,13 +1932,11 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.UseDan", b =>
                 {
-                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                    b.HasOne("MTS.Models.CharacterData", null)
                         .WithMany()
                         .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CharData");
                 });
 
             modelBuilder.Entity("MTS.Models.WelcomeReward", b =>
@@ -1623,6 +1983,9 @@ namespace MTS.Migrations
                     b.Navigation("EquipmentManager")
                         .IsRequired();
 
+                    b.Navigation("EventManager")
+                        .IsRequired();
+
                     b.Navigation("GachaManager")
                         .IsRequired();
 
@@ -1648,11 +2011,48 @@ namespace MTS.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MTS.Models.DongPhu", b =>
+                {
+                    b.Navigation("Garden")
+                        .IsRequired();
+
+                    b.Navigation("Inventory")
+                        .IsRequired();
+
+                    b.Navigation("Likes");
+
+                    b.Navigation("Shop")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuInventory", b =>
+                {
+                    b.Navigation("Seeds");
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuShop", b =>
+                {
+                    b.Navigation("Seeds");
+                });
+
             modelBuilder.Entity("MTS.Models.EquipmentManager", b =>
                 {
                     b.Navigation("DanCombatUseds");
 
                     b.Navigation("ThanThongEquips");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Inventory")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.InventoryManager", b =>
@@ -1673,6 +2073,13 @@ namespace MTS.Migrations
             modelBuilder.Entity("MTS.Models.MonsterKill", b =>
                 {
                     b.Navigation("Rewards");
+                });
+
+            modelBuilder.Entity("MTS.Models.PlantGarden", b =>
+                {
+                    b.Navigation("Seeds");
+
+                    b.Navigation("Slots");
                 });
 
             modelBuilder.Entity("MTS.Models.ProductLinker", b =>

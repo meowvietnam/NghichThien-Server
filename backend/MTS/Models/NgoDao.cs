@@ -14,11 +14,6 @@ public partial class NgoDao : IEquatable<NgoDao>
     [MemoryPackIgnore]
     public int CharId { get; set; }
     public ushort Id { get; set; }
-    [ForeignKey(nameof(CharId))]
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
-    [MemoryPackIgnore]
-    public InventoryManager Inventory { get; set; }
     public bool Equals(NgoDao? other)
     {
         if (other is null) return false;

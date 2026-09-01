@@ -11,7 +11,6 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{env}.json")
             .Build();
         var builder = new DbContextOptionsBuilder<AppDbContext>();

@@ -13,7 +13,23 @@ public class AuctionState : IClientState, ISender<MessageTag>
     {
         this.client = client;
         playerAuction = new PlayerAuction(this);
+        client.OnOtherClientLogin += OnOtherClientLogin;
+        client.OnLogout += OnLogout;
+        client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
     }
+    private void OnRemoveDisconnectedSession(Client client)
+    {
+        playerAuction.Exit();
+    }
+    private void OnLogout(Client client)
+    {
+        playerAuction.Exit();
+    }
+    private void OnOtherClientLogin(Client client)
+    {
+        playerAuction.Exit();
+    }
+
     public void OnEnter()
     {
         playerAuction.OnEnter();
@@ -93,10 +109,12 @@ public class AuctionState : IClientState, ISender<MessageTag>
     public void OnLeave()
     {
         playerAuction.OnExit();
+        client.OnOtherClientLogin -= OnOtherClientLogin;
+        client.OnLogout -= OnLogout;
+        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
     }
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
-        playerAuction.OnDisconnected();
     }
 
     public void Send(Span<byte> data)

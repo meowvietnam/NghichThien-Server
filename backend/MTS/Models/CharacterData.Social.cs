@@ -1,19 +1,11 @@
 using MTS.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using MTS.Data;
 using MTS.Game;
 using MTS.Game.ItemProvider;
-using MTS.Game.LuyenDan;
-using MTS.Game.Resources;
+
 using MTS.Game.Social;
 using MTS.Localization;
 using MTS.Network.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using MemoryPack;
-using MTS.IAP;
-using MTS.Game.Combat;
+
 using MTS.Network;
 using Serilog;
 
@@ -55,8 +47,7 @@ public partial class CharacterData
                 Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count, value.Item1);
             throw new InvalidException(Strings.NpcGiftValueInvalid);
         }
-
-        ushort count = item.Count;
+        var count = item.Count;
         if (item.Type == ItemType.VuKhi || item.Type == ItemType.PhongCu || item.Type == ItemType.TrangSuc)
         {
             count = 5;
@@ -66,32 +57,32 @@ public partial class CharacterData
         bool isHasItem = false;
         if (request.ItemRef.Type == ItemType.Herb)
         {
-            var Herb = InventoryManager.Herbs.FirstOrDefault(x => x.Id == request.ItemRef.Id);
-            if (Herb != null && Herb.Count >= request.ItemRef.Count)
+            var herb = InventoryManager.Herbs.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (herb != null && herb.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
         }
         else if (request.ItemRef.Type == ItemType.Recipe)
         {
-            var Recipe = InventoryManager.Recipes.FirstOrDefault(x => x.Id == request.ItemRef.Id);
-            if (Recipe != null && Recipe.Count >= request.ItemRef.Count)
+            var recipe = InventoryManager.Recipes.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (recipe != null && recipe.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
         }
         else if (request.ItemRef.Type == ItemType.LinhDan)
         {
-            var LinhDan = InventoryManager.LinhDans.FirstOrDefault(x => x.Id == request.ItemRef.Id);
-            if (LinhDan != null && LinhDan.Count >= request.ItemRef.Count)
+            var linhDan = InventoryManager.LinhDans.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (linhDan != null && linhDan.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
         }
         else if (request.ItemRef.Type == ItemType.Material)
         {
-            var Material = InventoryManager.Materials.FirstOrDefault(x => x.Id == request.ItemRef.Id);
-            if (Material != null && Material.Count >= request.ItemRef.Count)
+            var material = InventoryManager.Materials.FirstOrDefault(x => x.Id == request.ItemRef.Id);
+            if (material != null && material.Count >= request.ItemRef.Count)
             {
                 isHasItem = true;
             }
@@ -181,6 +172,7 @@ public partial class CharacterData
 
         int newValueRelationship = Social.GetRelationship((ushort)request.IdChar).Points + valueAdd;
         Social.RelationshipAddValue((ushort)request.IdChar, valueAdd);
+        Client.MemSend(MessageTag.Notify, $"Tăng {valueAdd} hào cảm, hào cảm hiện tại: {newValueRelationship}");
         return new TangQuaNpcResult()
         {
             Success = true,

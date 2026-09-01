@@ -2,6 +2,7 @@ using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.CreateCharacter;
+using MTS.Game.DP;
 using MTS.Game.Gacha;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
@@ -33,6 +34,8 @@ public static class GameConfig
     public static ComboSkillResource ComboSkillResources { get; private set; }
     public static NpcData[] NpcDatas { get; private set; }
     public static LevelResource LevelResource { get; private set; }
+    public static CoreResource Core { get; private set; }
+    public static HashSet<ushort> MaterialDotPhas { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
@@ -228,6 +231,8 @@ public static class GameConfig
         { ETypeArenaRank.HoangGiai, 100 },
     };
 
+    public static readonly DongPhuConfig DongPhuConfig = DongPhuConfig.Default();
+
     private static T Read<T>(string filePath) where T : IMemorySerializable<T>, new()
     {
         var reader = new Reader(File.ReadAllBytes(filePath));
@@ -261,5 +266,18 @@ public static class GameConfig
         ComboSkillResources = Read2<ComboSkillResource>("Data/combo-skill-resources.bin");
         NpcDatas = ReadArray2<NpcData>("Data/npc-datas.bin");
         LevelResource = Read<LevelResource>("Data/level-resources.bin");
+        Core = Read2<CoreResource>("Data/core-config.bin");
+        var danDotPhas = LevelResource.infoLevels
+            .SelectMany(x => x.RequireItem)
+            .Select(x => x.Id)
+            .ToHashSet();
+        MaterialDotPhas = LuyenDanResources.Recipes
+            .Where(x => danDotPhas.Contains((ushort)x.LinhDanId))
+            .SelectMany(x => x.Recipes
+                .Select(y => y.GetListHerbs())
+                .SelectMany(y => y))
+            .Select(x=>(ushort)x.Id)
+            .ToHashSet();
+
     }
 }

@@ -9,6 +9,7 @@ using MTS.Services;
 using Network;
 using Network.Extensions;
 using Serilog;
+using EventHandler = System.EventHandler;
 
 namespace MTS.Network;
 
@@ -31,9 +32,9 @@ public class Client : ClientConnection, IRequester<MessageTag>
         add => TcpClient.ReconnectedSuccess += value;
         remove => TcpClient.ReconnectedSuccess -= value;
     }
-    public event Action OnOtherClientLogin;
-    public event Action OnLogout;
-    public event Action OnRemoveDisconnectedSession;
+    public event Action<Client> OnOtherClientLogin;
+    public event Action<Client> OnLogout;
+    public event Action<Client> OnRemoveDisconnectedSession;
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
@@ -113,15 +114,15 @@ public class Client : ClientConnection, IRequester<MessageTag>
     }
     public void InvokeOtherClientLogin()
     {
-        OnOtherClientLogin?.Invoke();
+        OnOtherClientLogin?.Invoke(this);
     }
     public void InvokeLogout()
     {
-        OnLogout?.Invoke();
+        OnLogout?.Invoke(this);
     }
     public void InvokeRemoveDisconnectedSession()
     {
-        OnRemoveDisconnectedSession?.Invoke();
+        OnRemoveDisconnectedSession?.Invoke(this);
     }
     public async Task ForceLogout()
     {
@@ -200,7 +201,15 @@ public class Client : ClientConnection, IRequester<MessageTag>
             .FirstAsync(x => x.CharId == id);
         monsterKill.CharData = characterData;
         characterData.MonsterKill = monsterKill;
-        
+
+        var eventManager = await db.EventManagers
+            .AsNoTracking()
+            .Include(x => x.Inventory)
+            .ThenInclude(x => x.Items)
+            .Include(x => x.Events)
+            .FirstAsync(x => x.CharId == id);
+        characterData.EventManager = eventManager;
+        eventManager.Init(characterData);
         lock (CharacterLock)
         {
             CharacterData = characterData;
@@ -602,6 +611,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var monsterKillHandler = new MonsterKillHandler(this);
         module.RemoveHandler<MonsterKillHandler>();
         module.AddHandler(monsterKillHandler);
+
+        var eventHandler = new Core.EventHandler(this);
+        module.RemoveHandler<Core.EventHandler>();
+        module.AddHandler(eventHandler);
         
         ChangeState(new AllMaps(this));
     }

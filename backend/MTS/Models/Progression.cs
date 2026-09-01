@@ -25,7 +25,7 @@ public class Progression : IMemorySerializable<Progression>
     public int CurrentEnergy { get; private set; }
     public int NgoDaoDiem { get; private set; }
     public int IdCurrentNode { get; private set; }
-
+    public int MaxLevel { get; set; }
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [ForeignKey(nameof(CharId))]
@@ -82,7 +82,8 @@ public class Progression : IMemorySerializable<Progression>
                 .SetProperty(x => x.CurrentExp, CurrentExp)
                 .SetProperty(x => x.IdCurrentNode, IdCurrentNode)
                 .SetProperty(x => x.NgoDaoDiem, NgoDaoDiem)
-                .SetProperty(x => x.CurrentEnergy, CurrentEnergy));
+                .SetProperty(x => x.CurrentEnergy, CurrentEnergy)
+                .SetProperty(x => x.MaxLevel, MaxLevel));
         dirty = false;
     }
 
@@ -245,6 +246,10 @@ public class Progression : IMemorySerializable<Progression>
         var infoLevels = LevelResource.Instance.infoLevels;
         var oldLevelInfo = infoLevels[Level - 1];
         Level = level;
+        if (Level > MaxLevel)
+        {
+            MaxLevel = Level;
+        }
         var newInfoLevel = infoLevels[level - 1];
         var stats = CharacterData.Stats;
         var maxHp = stats.SinhMenh + oldLevelInfo.hpMaxBuff;

@@ -609,7 +609,7 @@ public partial class CharacterData
         InventoryManager.Update(cpOwner, cpOwnerNewValue);
         Stats.SetLinhThach(remaining);
         Stats.SetTuoiTac(newTuoiTac);
-        cpRef.Count -= (ushort)require;
+        cpRef.Count -= require;
         if (cpRef.Count < 1)
         {
             InventoryManager.Remove(cpRef);

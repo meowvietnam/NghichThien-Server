@@ -56,7 +56,20 @@ public class AppDbContext : DbContext
     public DbSet<UseDan> UseDans { get; private set; }
     public DbSet<MonsterKill> MonsterKills { get; private set; }
     public DbSet<MonsterRankReward> MonsterRankRewards { get; private set; }
-
+    public DbSet<DongPhu> DongPhus { get; private set; }
+    public DbSet<PlantGarden> PlantGardens { get; private set; }
+    public DbSet<DongPhuInventory> DongPhuInventories { get; private set; }
+    public DbSet<DongPhuHistory> DongPhuHistories { get; private set; }
+    public DbSet<DongPhuShop> DongPhuShops { get; private set; }
+    public DbSet<PlantingSlot> PlantingSlots { get; private set; }
+    public DbSet<PlantSeed> PlantSeeds { get; private set; }
+    public DbSet<SeedItemShop> SeedItemShops { get; private set; }
+    public DbSet<Seed> Seeds { get; private set;  }
+    public DbSet<DongPhuLike> DongPhuLikes { get; private set; }
+    public DbSet<EventManager> EventManagers { get; private set; }
+    public DbSet<Event> Events { get; private set; }
+    public DbSet<EventInventory> EventInventories { get; private set; }
+    public DbSet<ItemEvent> ItemEvents { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -201,7 +214,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ItemRef>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id, x.Type });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.ItemRefs)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -209,7 +222,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FurnaceData>(e =>
         {
             e.HasKey(x => new { x.CharId, x.SelfId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.Furnaces)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -223,7 +236,7 @@ public class AppDbContext : DbContext
                         v => MemoryPackSerializer.Serialize(v),
                         v => MemoryPackSerializer.Deserialize<List<IMailReward>>(v)
                     );
-                e.HasOne(x => x.Social)
+                e.HasOne<Social>()
                     .WithMany(x => x.Mails)
                     .HasForeignKey(x => x.CharId)
                     .OnDelete(DeleteBehavior.Cascade);
@@ -240,7 +253,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Relationship>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Npc });
-            e.HasOne(x => x.Social)
+            e.HasOne<Social>()
                 .WithMany(x => x.Relationships)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -248,7 +261,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CamNgo>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.CamNgos)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -256,7 +269,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CongPhap>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.CongPhapOwners)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -264,7 +277,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<NgoDao>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.NgoDaos)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -272,7 +285,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ThanThong>(e =>
         {
             e.HasKey(x => new { x.CharId, x.Id });
-            e.HasOne(x => x.Inventory)
+            e.HasOne<InventoryManager>()
                 .WithMany(x => x.ThanThongOwners)
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -550,7 +563,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UseDan>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasOne(x => x.CharData)
+            e.HasOne<CharacterData>()
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -577,8 +590,152 @@ public class AppDbContext : DbContext
                 .HasConversion(x =>  MemoryPackSerializer.Serialize(x),
                     x => ParseMonsterRankRewards(x));
         });
-    }
+        modelBuilder.Entity<DongPhu>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<CharacterData>()
+                .WithOne()
+                .HasForeignKey<DongPhu>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuShop>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<DongPhu>()
+                .WithOne(x => x.Shop)
+                .HasForeignKey<DongPhuShop>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuInventory>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<DongPhu>()
+              .WithOne(x => x.Inventory)
+              .HasForeignKey<DongPhuInventory>(x => x.CharId)
+              .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuHistory>(e =>
+        {
+            e.HasOne<DongPhu>()
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PlantGarden>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<DongPhu>()
+              .WithOne(x => x.Garden)
+              .HasForeignKey<PlantGarden>(x => x.CharId)
+              .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PlantingSlot>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.SlotIndex });
 
+            e.HasOne<PlantGarden>()
+            .WithMany(x => x.Slots)
+            .HasForeignKey(x => x.CharId)
+            .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PlantSeed>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.SlotIndex });
+
+            e.Property(x => x.WateringHelps)
+            .HasColumnType(blob)
+            .HasConversion(x => MemoryPackSerializer.Serialize(x),
+            x => ParseWateringHelps(x));
+
+            e.HasOne<PlantingSlot>()
+                .WithOne()
+                .HasForeignKey<PlantSeed>(x => new
+                {
+                    x.CharId,
+                    x.SlotIndex
+                })
+                .HasPrincipalKey<PlantingSlot>(x => new
+                {
+                    x.CharId,
+                    x.SlotIndex
+                })
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<PlantGarden>()
+             .WithMany(x => x.Seeds)
+             .HasForeignKey(x => x.CharId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<SeedItemShop>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.HerbId });
+            e.HasOne<DongPhuShop>()
+            .WithMany(x => x.Seeds)
+            .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Seed>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.HerbId });
+            e.HasOne<DongPhuInventory>()
+            .WithMany(x => x.Seeds)
+            .HasForeignKey(x => x.CharId)
+            .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuLike>(e =>
+        {
+            e.HasKey(x => new { x.OwnerCharId, x.OtherCharId });
+            e.HasOne<DongPhu>()
+                .WithMany(x => x.Likes)
+                .HasForeignKey(x => x.OwnerCharId)
+                .HasPrincipalKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EventManager>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<CharacterData>()
+                .WithOne(x => x.EventManager)
+                .HasForeignKey<EventManager>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<EventInventory>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<EventManager>()
+                .WithOne(x => x.Inventory)
+                .HasForeignKey<EventInventory>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ItemEvent>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasOne<EventInventory>()
+                .WithMany(x => x.Items)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Event>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasOne<EventManager>()
+                .WithMany(x => x.Events)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.GameEvent)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => MemoryPackSerializer.Deserialize<IGameEvent>(x));
+        });
+        
+    }
+    private List<WateringHelp> ParseWateringHelps(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return new List<WateringHelp>();
+        }
+        return MemoryPackSerializer.Deserialize<List<WateringHelp>>(data);
+    } 
     private Dictionary<ETypeSkill, int> ParseDict(byte[] data)
     {
         if (data == null || data.Length == 0)
@@ -588,13 +745,13 @@ public class AppDbContext : DbContext
         return MemoryPackSerializer.Deserialize<Dictionary<ETypeSkill, int>>(data);
     }
 
-    private List<IMonsterRankReward> ParseMonsterRankRewards(byte[] data)
+    private List<IEventReward> ParseMonsterRankRewards(byte[] data)
     {
         if (data == null || data.Length == 0)
         {
             return null;
         }
-        return MemoryPackSerializer.Deserialize<List<IMonsterRankReward>>(data);
+        return MemoryPackSerializer.Deserialize<List<IEventReward>>(data);
     }
     private IPromotionApplicable ParsePromotionApplicable(byte[] data)
     {

@@ -107,7 +107,7 @@ public partial class CharacterData
         var purchases = await db.IapPurchases
             .AsNoTracking()
             .Include(x => x.Product)
-            .Where(x => x.CharId == Id)
+            .Where(x => x.CharId == Id && x.ProductId != null)
             .ToListAsync();
         return await CanBuyProduct(product, db, purchases);
     }
@@ -258,7 +258,7 @@ public partial class CharacterData
         var purchases = await db.IapPurchases
             .AsNoTracking()
             .Include(x => x.Product)
-            .Where(x => x.CharId == Id)
+            .Where(x => x.CharId == Id && x.ProductId != null)
             .ToListAsync();
         var ownerProducts = new List<OwnerIapProduct>(iapProducts.Length);
         foreach (var product in iapProducts)

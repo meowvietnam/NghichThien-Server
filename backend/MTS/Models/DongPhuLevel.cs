@@ -3,7 +3,9 @@ namespace MTS.Models;
 public enum DongPhuLevel
 {
     None,
-    Ha,
-    Trung,
-    Thuong
+    Hoang,
+    Huyen,
+    Dia,
+    Thien,
+    Than
 }

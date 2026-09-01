@@ -14,12 +14,10 @@ public class LuyenKhiRequest : IMemorySerializable<LuyenKhiRequest>
         value.SelectedType = reader.Read<ArtifactType>();
         value.MaterialIds = reader.ReadArray<ushort>();
     }
-
     public int ByteSize()
     {
         return SelectedType.ByteSize() + MaterialIds.ByteSize();
     }
-
     public void Serialize(IWriter writer)
     {
         writer.Write(SelectedType);

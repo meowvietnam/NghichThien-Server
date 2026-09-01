@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Exceptions;
+using MTS.Game.DP;
 using MTS.IAP;
 using MTS.Localization;
 using MTS.Models;
@@ -60,29 +61,16 @@ public class PaymentController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Store == Store.Web && x.IsActive && x.Id == productId);
             await charData.CanBuyProduct(product, db);
-            var orderCode = idGenerator.NextId();
-            var now = DateTime.UtcNow;
-            var expireTime = now.AddHours(1);
-            var expireUnixTime = new DateTimeOffset(expireTime).ToUnixTimeSeconds();
-            var cancelUrl = config["PayOS:CancelUrl"];
-            var returnUrl = config["PayOS:ReturnUrl"];
-            if (string.IsNullOrWhiteSpace(cancelUrl) || string.IsNullOrWhiteSpace(returnUrl))
-            {
-                throw new InvalidException(Strings.PaymentConfigInvalid);
-            }
-            var paymentRequest = new CreatePaymentLinkRequest
-            {
-                OrderCode = orderCode,
-                Amount = product.Price,
-                CancelUrl = cancelUrl,
-                ReturnUrl = returnUrl,
-                ExpiredAt = expireUnixTime,
-            };
-            var paymentLink = await payOS.PaymentRequests.CreateAsync(paymentRequest);
 
+            var paymentLink = await PaymentService.Instance.CreateLink(product.Price, TimeSpan.FromHours(1));
+            var orderCode = paymentLink.OrderCode;
+            var expireTime = DateTimeOffset
+                .FromUnixTimeSeconds(paymentLink.ExpiredAt.Value)
+                .UtcDateTime;
             var oder = new Order()
             {
                 CharId = charId,
+                OrderType = OrderType.Pack,
                 ProductId = productId,
                 OrderId = orderCode,
                 Link = paymentLink.CheckoutUrl,
@@ -99,7 +87,7 @@ public class PaymentController : Controller
             return Fail(ex.Message);
         }
     }
-
+    
     [HttpGet("pack")]
     [Authorize]
     public async Task<IActionResult> GetPack()
@@ -139,6 +127,10 @@ public class PaymentController : Controller
         try
         {
             var data = await VerifyWebhook(webhook);
+            if (webhook.Data.OrderCode == 343448523228160)
+            {
+                return Ok();
+            }
             var order = await db.Orders
                 .Include(o => o.CharData)
                 .Include(o => o.Product)
@@ -164,37 +156,53 @@ public class PaymentController : Controller
                 throw new InvalidException(Strings.PaymentOrderStatusInvalid);
             }
 
-            order.Status = OrderStatus.Complete;
-            var purchase = new IapPurchase()
+            if (order.OrderType == OrderType.Pack)
             {
-                CharId = order.CharId,
-                ProductId = order.ProductId,
-                Store = Store.Web,
-                PurchaseTokenHash = Array.Empty<byte>(),
-            };
-            order.Purchase = purchase;
-            var productReward = IIapReward.Clone(order.Product.Reward);
-            var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
-            foreach (var promotion in promotions)
-            {
-                promotion.PromotionApplicable.Apply(productReward);
-            }
+                order.Status = OrderStatus.Complete;
+                var purchase = new IapPurchase()
+                {
+                    CharId = order.CharId,
+                    ProductId = order.ProductId,
+                    Store = Store.Web,
+                    PurchaseTokenHash = Array.Empty<byte>(),
+                    AmountSnapshot = order.Product.Price
+                };
+                order.Purchase = purchase;
+                var productReward = IIapReward.Clone(order.Product.Reward);
+                var promotions = await PromotionService.GetActivePromotions(Store.Web, db);
+                foreach (var promotion in promotions)
+                {
+                    promotion.PromotionApplicable.Apply(productReward);
+                }
 
-            var charData = TcpServer.Instance.GetCharsOnline()
-                .FirstOrDefault(c => c.Id == order.CharId);
-            charData ??= order.CharData;
-            productReward.Edit(purchase);
-            var rewards = productReward.GetMailRewards();
-            var mailManager = new MailManager(charData, charData.Client);
-            await mailManager.SendMail(new Mail()
+                var charData = TcpServer.Instance.GetCharsOnline()
+                    .FirstOrDefault(c => c.Id == order.CharId);
+                charData ??= order.CharData;
+                productReward.Edit(purchase);
+                var rewards = productReward.GetMailRewards();
+                var mailManager = new MailManager(charData, charData.Client);
+                await mailManager.SendMail(new Mail()
+                {
+                    Title = "Nạp tiền thành công!",
+                    Content =
+                        $"Bạn vừa nạp thành công gói {order.Product.Name}.\nCảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
+                    Rewards = rewards
+                }, db);
+                Log.Information("{Name} vừa mua gói {ProductName}: {Price} VNĐ", charData.Name, order.Product.Name,
+                    FormatCount(order.Amount));
+            }
+            else if(order.OrderType == OrderType.DongPhu)
             {
-                Title = "Nạp tiền thành công!",
-                Content =
-                    $"Bạn vừa nạp thành công gói {order.Product.Name}.\nCảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
-                Rewards = rewards
-            }, db);
-            Log.Information("{Name} vừa mua gói {ProductName}: {Price} VNĐ", charData.Name, order.Product.Name,
-                FormatCount(order.Amount));
+                await DongPhuManager.Handle(order,db);
+            }
+            else if (order.OrderType == OrderType.RechargeEvent1)
+            {
+                await RechargeEvent1Service.Handle(order, db);
+            }
+            else
+            {
+                throw new InvalidException("OrderType không hợp lệ");
+            }
             return Success(order);
         }
         catch (Exception ex)
