@@ -38,7 +38,7 @@ public class Startup : BackgroundService
             {
                 if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
                 {
-                    return (int)(x.Product.Price * 0.7f);
+                    return (long)(x.Product.Price * 0.7f);
                 }
                 return x.Product.Price;
             }
@@ -49,6 +49,29 @@ public class Startup : BackgroundService
             Utils.Utils.FormatCount(estimate));
     }
 
+    private async Task EditPurchase(AppDbContext db)
+    {
+        var purchases = await db.IapPurchases.Include(x => x.Product).ToListAsync();
+        foreach (var purchase in purchases)
+        {
+            if (purchase.Product != null)
+            {
+                if (purchase.Store == Store.GooglePlay || purchase.Store == Store.AppStore)
+                {
+                     purchase.AmountSnapshot = (long)(purchase.Product.Price * 0.7f);
+                }
+
+                else
+                {
+                    purchase.AmountSnapshot = purchase.Product.Price;
+                }
+            }
+
+        }
+
+        await db.SaveChangesAsync();
+        Log.Information("Oke");
+    }
     private async Task FixEvent(AppDbContext db)
     {
         var @events = await db.Events.ToListAsync();
