@@ -5,6 +5,7 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.Game.CreateCharacter;
 using MTS.Game.LuyenDan;
 using MTS.Network.Models;
@@ -93,6 +94,7 @@ public partial class CharacterStats
 
     public void SetSinhMenh(int value)
     {
+        value = Math.Max(0, value);
         if (SinhMenh != value)
         {
             SinhMenh = value;
@@ -125,7 +127,7 @@ public partial class CharacterStats
             var oldValue = TuoiTac;
             TuoiTac = value;
             isDirty = true;
-            CharacterData.Progression.OnSetTuoiTac(oldValue, value);
+            CharacterData?.Progression.OnSetTuoiTac(oldValue, value);
         }
     }
 
@@ -360,43 +362,43 @@ public partial class CharacterStats
             progression.SetCurrentExp(progression.CurrentExp + value);
         }
 
-        ND.ETypeSkill ConvertETypeBuffDanToETypeND(EDanBuffType eDanBuffType)
+        ETypeSkill ConvertETypeBuffDanToETypeND(EDanBuffType eDanBuffType)
         {
             if (eDanBuffType == EDanBuffType.KimChiDao)
             {
-                return ND.ETypeSkill.Kim;
+                return ETypeSkill.Kim;
             }
             if (eDanBuffType == EDanBuffType.MocChiDao)
             {
-                return ND.ETypeSkill.Moc;
+                return ETypeSkill.Moc;
             }
             if (eDanBuffType == EDanBuffType.ThuyChiDao)
             {
-                return ND.ETypeSkill.Thuy;
+                return ETypeSkill.Thuy;
             }
             if (eDanBuffType == EDanBuffType.HoaChiDao)
             {
-                return ND.ETypeSkill.Hoa;
+                return ETypeSkill.Hoa;
             }
             if (eDanBuffType == EDanBuffType.ThoChiDao)
             {
-                return ND.ETypeSkill.Tho;
+                return ETypeSkill.Tho;
             }
             if (eDanBuffType == EDanBuffType.KiemChiDao)
             {
-                return ND.ETypeSkill.Kiem;
+                return ETypeSkill.Kiem;
             }
             if (eDanBuffType == EDanBuffType.ThanThucChiDao)
             {
-                return ND.ETypeSkill.Than;
+                return ETypeSkill.Than;
             }
-            return ND.ETypeSkill.None;
+            return ETypeSkill.None;
         }
 
         void AddCamNgo(EDanBuffType eDanBuffType)
         {
             var camNgoType = ConvertETypeBuffDanToETypeND(eDanBuffType);
-            if (camNgoType == ND.ETypeSkill.None) return;
+            if (camNgoType == ETypeSkill.None) return;
             var userCamNgo = CharacterData.InventoryManager.CamNgos.FirstOrDefault(x => x.Id == camNgoType);
             int currentUserCamNgoValue = userCamNgo != null ? userCamNgo.Value : 0;
             var camNgo = new CamNgo

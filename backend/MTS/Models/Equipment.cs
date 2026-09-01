@@ -32,8 +32,14 @@ public partial class Equipment : IEquatable<Equipment>
 
     [NotMapped]
     [MemoryPackIgnore]
-    public Material[] Materials =>
-        LuyenKhiResources.Instance.Materials.Where(x => MaterialIds.Contains((ushort)x.Id)).ToArray();
+    public Material[] Materials
+    {
+        get
+        {
+            var materials = LuyenKhiResources.Instance.Materials;
+            return MaterialIds.Select(x => materials.FirstOrDefault(y => y.Id == x)).ToArray();
+        }
+    }
 
     [NotMapped]
     [MemoryPackIgnore]

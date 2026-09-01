@@ -19,12 +19,6 @@ public partial class FurnaceData :  IEquatable<FurnaceData> ,ICustomEquals<Furna
     public ushort SelfId { get; set; }
     public ushort Id { get; set; }
     public sbyte Durability { get; set; }
-    [ForeignKey(nameof(CharId))]
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
-    [MemoryPackIgnore]
-    public InventoryManager Inventory { get; set; }
-
     public FurnaceData DeepClone()
     {
         return new FurnaceData()

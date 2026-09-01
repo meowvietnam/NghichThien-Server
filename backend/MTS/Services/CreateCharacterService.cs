@@ -4,6 +4,7 @@ using Google.Apis.AndroidPublisher.v3.Data;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
 using MTS.Game.CreateCharacter;
 using MTS.Localization;
 using MTS.Models;
@@ -363,7 +364,8 @@ public class CreateCharacterService
         stats.CharacterData = Char;
         var equipment = Char.EquipmentManager;
         equipment.CharacterData = Char;
-
+        var eventManger = Char.EventManager;
+        eventManger.Events = EventService.CreateEvents();
         var ability = stats.Ability;
         if (ability.HasFlag(Ability.SoKhuyMonKinh))
         {

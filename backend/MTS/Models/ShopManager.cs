@@ -350,7 +350,7 @@ public partial class ShopManager
                 }
             }
 
-            item.Count = (ushort)remaining;
+            item.Count = remaining;
             if (item.Count == 0)
             {
                 items.Remove(item);
@@ -391,7 +391,7 @@ public partial class ShopManager
                     }
                     else
                     {
-                        myItem.Count = (ushort)remaining;
+                        myItem.Count = remaining;
                         tracking.Update(myItem);
                         result.Items.Update(myItem);
                     }

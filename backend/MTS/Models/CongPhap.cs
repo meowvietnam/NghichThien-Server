@@ -19,13 +19,6 @@ public partial class CongPhap : IEquatable<CongPhap>
     public ushort Id { get; set; }
     public ushort Level { get; set; }
 
-    [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [ForeignKey(nameof(CharId))]
-    [MemoryPackIgnore]
-    public InventoryManager Inventory { get; set; }
-
-
     public override int GetHashCode()
     {
         return Id;

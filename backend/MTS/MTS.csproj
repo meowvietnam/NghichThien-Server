@@ -104,6 +104,9 @@
         <Content Include="Data\step-config-trung-sinh.bin">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <None Update="Data\core-config.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

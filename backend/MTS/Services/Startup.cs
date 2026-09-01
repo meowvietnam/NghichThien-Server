@@ -2,11 +2,14 @@ using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.BaseSkill;
+using MTS.Game.Gacha;
 using MTS.Game.Resources;
 using MTS.IAP;
 using MTS.Models;
 using MTS.ND;
 using MTS.Network.Models;
+using Newtonsoft.Json;
 using Serilog;
 using NgoDao = MTS.ND.NgoDao;
 
@@ -28,157 +31,161 @@ public class Startup : BackgroundService
             .Include(x => x.Product)
             .ToListAsync(stoppingToken);
         var total = purchases
-            .Sum(x => x.Product.Price);
+            .Sum(x => x.AmountSnapshot);
         var estimate = purchases.Sum(x =>
         {
-            if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+            if (x.Product != null)
             {
-                return (int)(x.Product.Price * 0.7f);
+                if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+                {
+                    return (int)(x.Product.Price * 0.7f);
+                }
+                return x.Product.Price;
             }
 
-            return x.Product.Price;
+            return x.AmountSnapshot;
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
     }
-    
-    private async Task CreateMonterKills(AppDbContext db)
-    {
-        var characters = await db.Characters.ToListAsync();
-        var monsterKills = characters.Select(x =>
-        {
-            var monsterKill = new MonsterKill()
-            {
-                CharData = x,
-                CharId = x.Id,
-            };
-            monsterKill.Init();
-            return monsterKill;
-        }).ToArray();
-        await db.MonsterKills.AddRangeAsync(monsterKills);
-        await db.SaveChangesAsync();
-        Log.Information("Monter Kills: {MonterKills}", monsterKills.Length);
-    }
 
-    private async Task ResetChars(AppDbContext db)
+    private async Task FixEvent(AppDbContext db)
     {
-        var mails = await db.Mails.Where(x => x.Title == "Xin lỗi và đền bù reset chỉ số trùng sinh").ToListAsync();
-        var charIds = mails.Select(x => x.CharId).ToHashSet();
+        var @events = await db.Events.ToListAsync();
+        var es = @events.Where(x => x.GameEvent is MilestoneEvent).ToList();
+        foreach (var @event in es)
+        {
+            var e = @event.GameEvent as MilestoneEvent;
+            var m = e.Milestones.Last();
+            m.Id = 5;
+            db.Entry(@event).Property(x => x.GameEvent).IsModified = true;
+        }
+        var result = await db.SaveChangesAsync();
+        Log.Information(result.ToString());
+    }
+    private async Task ClaimMail(AppDbContext db)
+    {
+        var charData = await db.Characters.FirstAsync(x => x.Id == 1925);
+        var @event = await db.EventManagers.Include(x => x.Events).FirstAsync(x => x.CharId == charData.Id);
+        var rechargeEvent = @event.Events[0].GameEvent as RechargeEvent1;
+        var mile = rechargeEvent.Milestones.First(x => x.Id == 48);
+        var rewards = mile.GetRewards();
+        var mail = new Mail()
+        {
+            CharId = charData.Id,
+            Title = "Phần thưởng nạp tiền",
+            Content = $"Chúc mừng! Bạn nhận được phần thưởng {mile.Name}.",
+            Rewards = rewards
+        };
+        await db.Mails.AddAsync(mail);
+        await db.SaveChangesAsync();
+    }
+    private async Task UpdateShop(AppDbContext db)
+    {
         var chars = await db.Characters
-            .Include(x => x.Stats)
-            .Include(x => x.Progression)
-            .Where(x => charIds.Contains(x.Id))
             .ToListAsync();
         foreach (var charData in chars)
         {
-            var currentStats = charData.Stats;
-            var resetStats = GetReset(charData);
-            var level = charData.Progression.Level;
-            var name = charData.Name;
-            var hp = currentStats.SinhMenh;
-            var thoNguyen = currentStats.ThoNguyen;
-            var thanThuc = currentStats.ThanThuc;
-            var dontoc = currentStats.TocDoBay;
-
-            var newHp = resetStats.SinhMenh;
-            var newThoNguyen = resetStats.ThoNguyen;
-            var newDontoc = currentStats.TocDoBay;
-            var newThanThuc = resetStats.ThanThuc;
-            Log.Information(
-                "Reset {Name}, Level: {Level} Hp: {Hp}-{NewHp}, ThoNguyen: {ThoNguyen}-{NewThoNguyen}, DonToc: {DonToc}-{NewDontoc}, ThanThuc: {ThanThuc}-{NewThanThuc}",
-                name, level, hp, newHp, thoNguyen, newThoNguyen, dontoc, newDontoc, thanThuc, newThanThuc);
-            charData.Stats = resetStats;
-            // var mail1 = new Mail()
-            // {
-            //     CharId = charData.Id,
-            //     Title = "Xin lỗi và đền bù reset chỉ số trùng sinh",
-            //     Content = "Nhằm đảm bảo cân bằng game, admin xin phép reset chỉ số anh em đã trùng sinh, lần reset này bạn nên trùng sinh lại 1 lần nữa để tối ưu chỉ số nhất.",
-            //     Rewards = new List<IMailReward>()
-            //     {
-            //         new MailRewardMoneyVip()
-            //         {
-            //             MoneyVip = 10_000,
-            //         }
-            //     }
-            // };
-            // await db.Mails.AddAsync(mail1);
-            // if (count > 0)
-            // {
-            //     var total = 0;
-            //     for (int i = 0; i < count; i++)
-            //     {
-            //         var index = Math.Clamp(i, 0, prices.Length - 1);
-            //         var price = prices[index];
-            //         total += price;
-            //     }
-            //
-            //     var mail2 = new Mail()
-            //     {
-            //         CharId = charData.Id,
-            //         Title = "Hoàn tiên ngọc đã trùng sinh",
-            //         Content = "Hoàn tiên ngọc đã trùng sinh",
-            //         Rewards = new List<IMailReward>()
-            //         {
-            //             new MailRewardMoneyVip()
-            //             {
-            //                 MoneyVip = total,
-            //             }
-            //         }
-            //     };
-            //     await db.Mails.AddAsync(mail2);
-            //     charData.SetTrungSinhCount(0);
-            // }
-            // await charData.RefundLinhDan(db);
+            var shopManager = new ShopManager()
+            {
+                CharId = charData.Id,
+                CharData = charData
+            };
+            shopManager.ReloadAll();
+            var e = db.Attach(shopManager);
+            e.Property(x => x.ShopDuocLieu).IsModified = true;
+            e.Property(x => x.ShopVatLieu).IsModified = true;
+            e.Property(x => x.ShopSkill).IsModified = true;
+            e.Property(x => x.ShopSkillAll).IsModified = true;
+        }
+        var result = await db.SaveChangesAsync();
+        Log.Information("Result: {result}", result);
+    }
+    private async Task UpdateQuest(AppDbContext db)
+    {
+        var charIds = await db.Characters.Select(x => x.Id).ToListAsync();
+        var total = charIds.Count;
+        var count = 0;
+        foreach (var charId in charIds)
+        {
+            count++;
+            if (count % 100 == 1)
+            {
+                Log.Information("Tiến độ: {count}/{total}", count,total);
+            }
+            var questManager = new QuestManager()
+            {
+                CharId = charId
+            };
+            questManager.InitDailyQuests();
+            
+            var dailyQuests = questManager.DailyQuests;
+            var quests = dailyQuests.Values.SelectMany(x => x).ToList();
+            foreach (var dailyQuest in quests)
+            {
+                await db.DailyQuests
+                    .Where(x => x.CharId == charId && x.EDailyQuest == dailyQuest.EDailyQuest)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.QuestReward, dailyQuest.QuestReward));
+            }
+        }
+        Log.Information("Completed");
+    }
+    
+    private async Task AddEvents(AppDbContext db)
+    {
+        var charIds = await db.Characters.Select(x => x.Id).ToArrayAsync();
+        foreach (var charId in charIds)
+        {
+            var events = EventService.CreateEvents();
+            var eventManager = new EventManager()
+            {
+                CharId = charId,
+                Events = events
+            };
+            await db.EventManagers.AddAsync(eventManager);
         }
 
         await db.SaveChangesAsync();
         Log.Information("Oke");
     }
-
-    public CharacterStats GetReset(CharacterData charData)
+    public async Task AddReward(AppDbContext db)
     {
-        var stats = charData.Stats.Clone();
-        var level = charData.Progression.Level;
-        var statsTemp = GameConfig.CharacterTemplate.Stats;
-        var baseHp = statsTemp.SinhMenh;
-        var estimateHp = baseHp;
-        var infoLevels = GameConfig.LevelResource.infoLevels.Take(level - 1).ToArray();
-        var ability = stats.Ability;
-        var thanThuc = statsTemp.ThanThuc;
-        var thoNguyen = 100;
-        var donToc = statsTemp.TocDoBay;
-        for (var i = 0; i < infoLevels.Length; i++)
+        var ms = await db.MonsterKills.Include(x => x.Rewards).ToListAsync();
+        foreach (var m in ms)
         {
-            var infoLevel = infoLevels[i];
-            estimateHp += infoLevel.hpMaxBuff;
-            if (ability.HasFlag(Ability.ThanMaHuyetMach))
+            var reward1 = m.Rewards[0];
+            if (reward1.Rewards.All(x => !(x is ItemEventReward)))
             {
-                estimateHp += (int)MathF.Ceiling(estimateHp * 0.2f);
+                reward1.Rewards.Add(new ItemEventReward()
+                {
+                    Item = new ItemRef()
+                    {
+                        Id = 2027,
+                        Type = ItemType.Herb,
+                        Count = 3
+                    }
+                });
             }
-
-            if (i == 2 && ability.HasFlag(Ability.DiTocHuyetMach))
+            var reward2 = m.Rewards[1];
+            if (reward2.Rewards.All(x => !(x is ItemEventReward)))
             {
-                estimateHp *= 2;
+                reward2.Rewards.Add(new ItemEventReward()
+                {
+                    Item = new ItemRef()
+                    {
+                        Id = 2027,
+                        Type = ItemType.Herb,
+                        Count = 6
+                    }
+                });
             }
-
-            thanThuc += infoLevel.thanThucBuff;
-            thoNguyen += infoLevel.thoNguyenBuff;
-            donToc += infoLevel.donTocBuff;
+            db.Entry(reward1).Property(x => x.Rewards).IsModified = true;
+            db.Entry(reward2).Property(x => x.Rewards).IsModified = true;
         }
-
-        var hp = Math.Max(0, estimateHp);
-        stats.SetSinhMenh(hp);
-        stats.SetHp(hp);
-        stats.SetThoNguyen(thoNguyen);
-        stats.SetThanThuc(thanThuc);
-        stats.SetTocDoBay(donToc);
-        stats.ResetLinhCan();
-        stats.ResetTuChat();
-        stats.ResetNgoTinh();
-        return stats;
+        await db.SaveChangesAsync();
+        Log.Information("Oke");
     }
-
-
+    
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
     {
         return await db.Characters.FirstAsync(x => x.Name == name);

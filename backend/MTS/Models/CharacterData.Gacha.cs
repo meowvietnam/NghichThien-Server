@@ -15,8 +15,11 @@ using MemoryPack;
 using MTS.Game.BaseSkill;
 using MTS.IAP;
 using MTS.Game.Combat;
+using MTS.Game.Gacha;
 using MTS.Network;
 using MTS.Utils;
+using Serilog;
+
 namespace MTS.Models;
 
 public partial class CharacterData
@@ -24,22 +27,32 @@ public partial class CharacterData
     public GachaResult? Gacha(GachaModel request)
     {
         List<ItemRef> listItemRef = new List<ItemRef>();
-
-        int require = GameConfig.PageGachaWithRequireValue[request.TypeGacha];
+        var type = request.TypeGacha;
+        var typeSkill = request.TypeSkill;
+        var alpha = 1;
+        var typeSpecials = new [] { ETypeGacha.ThanThong, ETypeGacha.CongPhap };
+        if (typeSpecials.Contains(type))
+        {
+            if (typeSkill != ETypeSkill.None)
+            {
+                alpha = 2;
+            }
+        }
+        int require = GameConfig.PageGachaWithRequireValue[type] * alpha;
         int gachaCount = 1;
         if (request.IsGacha10)
         {
             require *= 10;
             gachaCount = 10;
         }
+
         if (MoneyVip < require)
         {
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
-        var type = request.TypeGacha;
         int newTienNgoc = MoneyVip - require;
-        var totalGacha = GachaManager.Get(type);
+        var totalGacha = GachaManager.Get(type, typeSkill);
         var threshold = GachaManager.Threshold;
 
         for (int i = 0; i < gachaCount; i++)
@@ -47,15 +60,15 @@ public partial class CharacterData
             totalGacha++;
             var remaining = threshold - totalGacha % threshold;
             var special = remaining == threshold;
-            if (request.TypeGacha == Game.Gacha.ETypeGacha.ThanThong)
+            if (type == Game.Gacha.ETypeGacha.ThanThong)
             {
-                var item = RollThanThong(special);
+                var item = RollThanThong(special, typeSkill);
                 if (item != null)
                     listItemRef.Add(item);
             }
             else if (request.TypeGacha == Game.Gacha.ETypeGacha.CongPhap)
             {
-                var item = RollCongPhap(special);
+                var item = RollCongPhap(special, typeSkill);
                 if (item != null)
                     listItemRef.Add(item);
             }
@@ -81,7 +94,7 @@ public partial class CharacterData
 
         listItemRef = ConsolidateItemRefs(listItemRef);
         var rewardItems = InventoryManager.AddToInventory(listItemRef);
-        GachaManager.Set(type, totalGacha);
+        GachaManager.Set(type, typeSkill, totalGacha);
         SetMoneyVip(newTienNgoc);
         AddSpendMoneyVipOnline(require, SpendFor.Gacha);
         return new GachaResult()
@@ -90,6 +103,7 @@ public partial class CharacterData
             RewardItems = rewardItems,
             NewTienNgoc = newTienNgoc,
             Type = type,
+            Skill = typeSkill,
             TotalGacha = totalGacha
         };
     }
@@ -103,7 +117,7 @@ public partial class CharacterData
             var key = (item.Type, item.Id);
             if (consolidated.TryGetValue(key, out var existingItem))
             {
-                existingItem.Count = (ushort)(existingItem.Count + item.Count);
+                existingItem.Count = (existingItem.Count + item.Count);
             }
             else
             {
@@ -114,14 +128,15 @@ public partial class CharacterData
         return consolidated.Values.ToList();
     }
 
-    private ItemRef? RollThanThong(bool special = false)
+    private ItemRef? RollThanThong(bool special = false, ETypeSkill typeSkill = ETypeSkill.None)
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validThanThongs = GameConfig.NDCPTTManager.ThanThongs
-                .Where(x => x.eTierSkill == checkTier)
+                .Where(x => x.eTierSkill == checkTier &&
+                            (typeSkill == ETypeSkill.None || x.eTypeSkill.Contains(typeSkill)))
                 .ToList();
             if (validThanThongs.Count > 0)
             {
@@ -133,14 +148,16 @@ public partial class CharacterData
         return null;
     }
 
-    private ItemRef? RollCongPhap(bool special = false)
+    private ItemRef? RollCongPhap(bool special = false, ETypeSkill typeSkill = ETypeSkill.None)
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps
-                .Where(x => x.eTierSkill == checkTier).ToList();
+                .Where(x => x.eTierSkill == checkTier &&
+                            (typeSkill == ETypeSkill.None || x.eTypeSkill.Contains(typeSkill)))
+                .ToList();
 
             if (validCongPhaps.Count > 0)
             {
@@ -164,7 +181,7 @@ public partial class CharacterData
             .Add(ETierSkill.DiaGiaiHa, 12)
             .Add(ETierSkill.DiaGiaiTrung, 9.5)
             .Add(ETierSkill.DiaGiaiThuong, 5)
-            .Add(ETierSkill.ThienGiaiHa,2)
+            .Add(ETierSkill.ThienGiaiHa, 2)
             .Add(ETierSkill.ThienGiaiTrung, 1)
             .Add(ETierSkill.ThienGiaiThuong, 0.5)
             .Random();
@@ -247,12 +264,24 @@ public partial class CharacterData
         {
             // Distribute with ratio LinhDan:Recipe:Furnace = 3:2:1
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 60)
-                type = ItemType.LinhDan;
-            else if (typeRoll < 93.33)
-                type = ItemType.Recipe;
+            if (!special)
+            {
+                if (typeRoll < 60)
+                    type = ItemType.LinhDan;       // 60%
+                else if (typeRoll < 90)
+                    type = ItemType.Recipe;        // 30%
+                else
+                    type = ItemType.Furnace;       // 10%
+            }
             else
-                type = ItemType.Furnace;
+            {
+                if (typeRoll < 50)
+                    type = ItemType.LinhDan;       // 60%
+                else if (typeRoll < 90)
+                    type = ItemType.Furnace;        // 30%
+                else
+                    type = ItemType.Recipe;       // 10%
+            }
         }
 
         return RollItemByTypeAndTier(type, tier);
@@ -385,6 +414,7 @@ public partial class CharacterData
                 }
             }
         }
+
         return null;
     }
 }

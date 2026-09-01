@@ -1,3 +1,4 @@
+using MTS.Game.BaseSkill;
 using MTS.Game.Resources;
 using MTS.Models;
 using MTS.Network.Models;

@@ -21,9 +21,14 @@ public static class Program
 {
     public static WebApplication App { get; private set; }
     public static IDbContextFactory<AppDbContext> Db { get; private set; }
+    private static PayOSClient payOSClient;
     public static async Task<AppDbContext> CreateDbAsync()
     {
         return await Db.CreateDbContextAsync();
+    }
+    public static PayOSClient GetPayOSClient()
+    {
+        return payOSClient;
     }
     public static async Task Main(string[] args)
     {
@@ -93,7 +98,7 @@ public static class Program
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Nh?p JWT token: Bearer {your_token}"
+                    Description = "Nhap JWT token: Bearer {your_token}"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -131,16 +136,15 @@ public static class Program
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();
+            builder.Services.AddHostedService<PaymentService>();
             builder.Services.AddHostedService<Startup>();
-            builder.Services.AddSingleton(sp =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                return new PayOSClient(
-                    configuration["PayOS:ClientID"]!,
-                    configuration["PayOS:ApiKey"]!,
-                    configuration["PayOS:ChecksumKey"]!
-                );
-            });
+            var configuration = builder.Configuration;
+            payOSClient = new PayOSClient(
+                configuration["PayOS:ClientID"]!,
+                configuration["PayOS:ApiKey"]!,
+                configuration["PayOS:ChecksumKey"]!
+            );
+            builder.Services.AddSingleton(payOSClient);
             builder.Services.AddSingleton(new SnowflakeIdGenerator(1));
             builder.Services.AddScoped<JwtService>();
             App = builder.Build();

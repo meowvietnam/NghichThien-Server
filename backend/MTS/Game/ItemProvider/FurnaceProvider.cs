@@ -5,13 +5,14 @@ namespace MTS.Game.ItemProvider
 {
     public class FurnaceProvider : ItemProvider<FurnaceData>
     {
-        public virtual int BaseValueLevelWithTier => 3;
+        public override int BaseValueLevelWithTier => 3;
         public override ItemType SupportedType => ItemType.Furnace;
         private InventoryManager inventoryManager;
         public FurnaceProvider(InventoryManager inventoryManager)
         {
             this.inventoryManager = inventoryManager;
         }
+        
         public override FurnaceData GetDataItemByIdRef(ushort id)
         {
             var furnaceData = new FurnaceData()
@@ -24,7 +25,7 @@ namespace MTS.Game.ItemProvider
             }
             return null;
         }
-
+        
         public override int GetPriceItemSell(ushort id)
         {
             FurnaceData furnaceData = GetDataItemByIdRef(id);

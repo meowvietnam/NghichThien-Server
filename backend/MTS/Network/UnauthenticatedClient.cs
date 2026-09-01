@@ -2,8 +2,10 @@ using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
+using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
-
+using Network.Extensions;
+using Network.Extensions.MemoryPack;
 
 namespace MTS.Network;
 
@@ -19,7 +21,7 @@ public class UnauthenticatedClient : ClientConnection
     {
         private static readonly string[] acceptVersions =
         [
-            "apk_v1.3.6", "ios_v1.3.6"
+            "apk_v1.5.0", "apk_v1.4.9", "ios_v1.3.6"
         ];
 
         public void OnEnter()
@@ -35,7 +37,7 @@ public class UnauthenticatedClient : ClientConnection
                 var version = reader.Read();
                 var success = acceptVersions.Contains(version);
                 var msg = success
-                    ? $"[5] Server test sẽ reset dữ liệu khi bản chính thức ra mắt. Nạp Tiên Ngọc trong server test sẽ được hoàn lại x2 khi game chính thức ra mắt. Chúc các đạo hữu trải nghiệm vui vẻ!"
+                    ? $"[2] Đạo hữu nạp tại web https://play.nghichthien.online ưu đãi thêm 30% tiên ngọc"
                     : "Phiên bản không hợp lệ, hãy tải phiên bản mới!";
                 var result = new CheckVersionResult()
                 {

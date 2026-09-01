@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using MemoryPack;
+using MTS.Game.BaseSkill;
 using MTS.ND;
 using Network;
 using Network.Extensions;
@@ -16,12 +17,6 @@ public partial class CamNgo : IEquatable<CamNgo>
     public int CharId { get; set; }
     public ETypeSkill Id { get; set; }
     public int Value { get; set; }
-    [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [ForeignKey(nameof(CharId))]
-    [MemoryPackIgnore]
-    public InventoryManager Inventory { get; set; }
-
     public override int GetHashCode()
     {
         return (int)Id;

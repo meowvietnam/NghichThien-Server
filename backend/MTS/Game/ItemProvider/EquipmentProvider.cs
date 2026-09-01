@@ -7,7 +7,7 @@ namespace MTS.Game.ItemProvider;
 
 public abstract class EquipmentProvider : ItemProvider<Equipment>
 {
-    public virtual int BaseValueLevelWithTier => 6;
+    public override int BaseValueLevelWithTier => 6;
 
     public abstract override  ItemType SupportedType { get; }
     public abstract EquipmentType EquipemtType { get; }

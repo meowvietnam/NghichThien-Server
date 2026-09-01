@@ -20,10 +20,4 @@ public partial class Mail
     public bool IsClaim { get; set; }
     public List<IMailReward> Rewards { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [System.Text.Json.Serialization.JsonIgnore]
-    [JsonIgnore]
-    [ForeignKey(nameof(CharId))]
-    [MemoryPackIgnore]
-    public Social Social { get; set; }
 }

@@ -3,3 +3,4 @@
 .DS_Store
 backend/MTS/Logs
 frontend/mts-web/mts-web-build
+backend/.vs

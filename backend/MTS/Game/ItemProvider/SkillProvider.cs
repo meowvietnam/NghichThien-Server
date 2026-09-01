@@ -5,7 +5,7 @@ namespace MTS.Game.ItemProvider
 {
     public abstract class SkillProvider : ItemProvider<BaseSkill.BaseSkill>
     {
-        public virtual int BaseValueLevelWithTier => 3;
+        public override int BaseValueLevelWithTier => 3;
 
         public override int GetPriceItemSell(ushort Id)
         {

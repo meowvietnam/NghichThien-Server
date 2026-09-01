@@ -46,12 +46,9 @@ namespace MTS.Game.ItemProvider
             else if (data is Equipment equipment)
             {
                 levelWithTier += GameConfig.tierEquipmentWithLevel.GetValueOrDefault(equipment.GradeConfig.Tier);
-                indexTier = (int)equipment.GradeConfig.Tier;
-
+                indexTier = (int)equipment.GradeConfig.Tier + 1;
             }
             return (levelWithTier - npcLevel, indexTier);
-
-
         }
     }
     

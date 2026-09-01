@@ -62,7 +62,7 @@ public partial class Social
     public void RelationshipAddValue(Relationship relationship, int value)
     {
         var newValue = relationship.Points + value;
-        relationship.Points = (ushort)newValue;
+        relationship.Points = newValue;
         modifyRelationships.Update(relationship);
     }
 

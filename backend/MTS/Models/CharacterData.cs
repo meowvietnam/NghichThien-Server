@@ -47,8 +47,9 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public ShopManager ShopManager { get; set; } = new();
     public GachaManager GachaManager { get; set; } = new();
     public MonsterKill MonsterKill { get; set; } = new();
+    public EventManager EventManager { get; set; } = new();
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
-
+    
     [ForeignKey(nameof(UserId))]
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -404,6 +405,11 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         {
             await MonsterKill.SaveChanges(db);
         }
+
+        if (!EventManager.IsDefault())
+        {
+            await EventManager.SaveChanges(db);
+        }
     }
 
     public void AcceptChanges()
@@ -459,6 +465,22 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         stats.ResetNgoTinh();
         stats.ResetTamCanh();
         stats.SetMa(0);
+        var ownerNgoDaos = InventoryManager.NgoDaos;
+        var ngoDaos = GameConfig.NDCPTTManager.NgoDaos;
+        var charTemp = new CharacterData()
+        {
+            Stats = stats,
+        };
+        foreach (var ownerNgoDao in ownerNgoDaos)
+        {
+            var ngoDaoId = ownerNgoDao.Id;
+            var ngoDao = ngoDaos.FirstOrDefault(x => x.Id == ngoDaoId);
+            if (ngoDao == null)
+            {
+                continue;
+            }
+            ngoDao.Buff(charTemp);
+        }
         return stats;
     }
     public async Task RefundLinhDan(AppDbContext db)
@@ -496,7 +518,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             {
                 CharId = Id,
                 Id = x.Key,
-                Count = (ushort)x.Sum(i => i.Count),
+                Count = x.Sum(i => i.Count),
                 Type = ItemType.LinhDan
             }).ToArray();
         if (!refunds.Any())

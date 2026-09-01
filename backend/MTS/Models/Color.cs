@@ -21,7 +21,14 @@ public struct Color : IEquatable<Color>
             A = (float)Math.Round(c.A, digits)
         };
     }
+    public string ToHexRGB()
+    {
+        int r = (int)Math.Round(Math.Clamp(R, 0f, 1f) * 255f);
+        int g = (int)Math.Round(Math.Clamp(G, 0f, 1f) * 255f);
+        int b = (int)Math.Round(Math.Clamp(B, 0f, 1f) * 255f);
 
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
     public bool Equals(Color other)
     {
         return R == other.R &&

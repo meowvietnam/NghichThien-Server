@@ -231,12 +231,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-            if (Furnaces.Remove(furnace))
+            if (Furnaces.TryGetValue(furnace, out var owner))
             {
-                Tracking.Furnaces.Delete(furnace);
+                Furnaces.Remove(furnace);
+                Tracking.Furnaces.Delete(owner);
                 return true;
             }
-
             return false;
         }
     }
@@ -398,7 +398,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     throw new InvalidException(Strings.InventoryItemQuantityInvalid);
                 }
 
-                item.Count = (ushort)remaining;
+                item.Count = remaining;
                 var tracking = collection.Tracking as Modify<ItemRef>;
                 if (remaining == 0)
                 {
@@ -482,7 +482,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     }
                     else
                     {
-                        itemRef.Count = (ushort)itemCount;
+                        itemRef.Count = itemCount;
                         Tracking.Items.Update(itemRef);
                         modify.Items.Update(itemRef);
                     }
@@ -543,14 +543,17 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     furnaceIdAllocator.ReleaseId(furnace.SelfId);
                     Tracking.Furnaces.Delete(furnace);
                     modify.Furnaces.Delete(furnace);
-                    return new LuyenDanResult()
+                    if (dur < 0)
                     {
-                        Success = true,
-                        Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
-                        ItemRefs = new(),
-                        Modify = modify,
-                        NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
-                    };
+                        return new LuyenDanResult()
+                        {
+                            Success = true,
+                            Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
+                            ItemRefs = new(),
+                            Modify = modify,
+                            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                        };
+                    }
                 }
 
                 furnace.Durability = (sbyte)dur;
@@ -559,7 +562,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 var linhDanRef = new ItemRef()
                 {
                     Id = (ushort)linhDan.Id,
-                    Count = (ushort)actualCount,
+                    Count = actualCount,
                     Type = ItemType.LinhDan
                 };
                 Add(LinhDans, linhDanRef);
@@ -628,7 +631,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 if (itemRefse.TryGetValue(itemRef, out var item))
                 {
                     var remaining = item.Count + count;
-                    item.Count = (ushort)remaining;
+                    item.Count = remaining;
                     if (remaining <= 0)
                     {
                         itemRefse.Remove(item);
@@ -681,12 +684,12 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var array = new[] { Herbs, LinhDans, ThanThongs, CongPhaps, Recipes, Materials };
             return array.Any(x =>
             {
-                if (x.Remove(itemRef))
+                if (x.TryGetValue(itemRef, out var item))
                 {
-                    Tracking.Items.Delete(itemRef);
+                    x.Remove(item);
+                    Tracking.Items.Delete(item);
                     return true;
                 }
-
                 return false;
             });
         }
@@ -762,12 +765,13 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var array = new[] { VuKhis, PhongCus, TrangSucs };
             return array.Any(x =>
             {
-                if (x.Remove(equipment))
+                if (x.TryGetValue(equipment, out var owner))
                 {
-                    Tracking.Equipments.Delete(equipment);
+                    x.Remove(owner);
+                    Tracking.Equipments.Delete(owner);
+                    equipmentIdAllocator.ReleaseId(owner.SelfId);
                     return true;
                 }
-
                 return false;
             });
         }
@@ -966,7 +970,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 .Select(x => new
                 {
                     Material = x.First(),
-                    Count = (ushort)x.Count()
+                    Count = x.Count()
                 })
                 .ToArray();
             var itemRefs = g.Select(x =>
@@ -1073,7 +1077,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 }
                 else
                 {
-                    itemRef.Count = (ushort)newCount;
+                    itemRef.Count = newCount;
                     Update(itemRef);
                     modify.Items.Update(itemRef);
                 }
@@ -1115,9 +1119,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     {
         lock (inventoryLock)
         {
-            ND.ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
+            ETypeSkill ConvertETypeSkillToETypeND(ETypeSkill eTypeSkill)
             {
-                return (ND.ETypeSkill)(int)eTypeSkill;
+                return (ETypeSkill)(int)eTypeSkill;
             }
 
             var newNgoDaoDiem = CharacterData.Progression.NgoDaoDiem;

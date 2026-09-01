@@ -51,7 +51,8 @@ public class PlayerAuction : ISender<MessageTag>
     {
         Model = model;
     }
-    public void OnDisconnected()
+
+    public void Exit()
     {
         if (HasJoined())
         {
@@ -63,10 +64,7 @@ public class PlayerAuction : ISender<MessageTag>
     }
     public void OnExit()
     {
-        if (HasJoined())
-        {
-            AuctionManager?.PlayerExit(this);
-        }
+        Exit();
     }
     public void Send(Span<byte> data)
     {

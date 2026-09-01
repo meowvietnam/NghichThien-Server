@@ -9,6 +9,7 @@ namespace MTS.Game
     {
         public RewardItems RewardItems;
         public List<ItemRef> ItemRefs;
+        public List<ItemEvent> itemEvents;
         public int Money;
         public int MoneyVip;
     }

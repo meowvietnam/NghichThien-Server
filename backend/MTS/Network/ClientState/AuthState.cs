@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Identity.Data;
 using MTS.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using MTS.Data;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Services;
 using Network;
 using Network.Extensions;
+using Serilog;
 
 namespace MTS.Network.ClientState
 {
@@ -218,14 +220,24 @@ namespace MTS.Network.ClientState
         private async Task<DeleteAccountResult> DeleteAccount(int userId)
         {
             await using var db = await Program.CreateDbAsync();
-            var result = await db.Users
-                .Where(x => x.Id == userId)
-                .ExecuteDeleteAsync();
-            if (result <= 0)
+            var user = await db.Users
+                .Include(x => x.CharacterDatas)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
             {
                 throw new InvalidException(Strings.DeleteAccountFailed);
             }
 
+            try
+            {
+                DbEvent.InvokeUserDeleted(user);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.ToString());
+            }
+            db.Users.Remove(user);
+            
             return new DeleteAccountResult()
             {
                 Success = true,
