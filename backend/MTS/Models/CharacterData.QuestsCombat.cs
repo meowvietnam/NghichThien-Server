@@ -6,6 +6,7 @@ using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Game.Combat;
 using MTS.ND;
+using MTS.Services;
 using Serilog;
 
 namespace MTS.Models;
@@ -197,12 +198,22 @@ public partial class CharacterData
                 var listItemRef = GenerateMonsterRewards(monsterLevel);
                 listItemRef = ConsolidateItemRefs(listItemRef);
                 var rewardItems = InventoryManager.AddToInventory(listItemRef);
+                var itemEvents = GenerateItemEvents();
+                if (itemEvents != null)
+                {
+                    var inventory = EventManager.Inventory;
+                    foreach (var itemEvent in itemEvents)
+                    {
+                        inventory.Add(itemEvent);
+                    }
+                }
                 newReward = new RewardSnapshot
                 {
                     Money = linhThach,
                     MoneyVip = 0,
                     RewardItems = rewardItems,
                     ItemRefs = listItemRef,
+                    itemEvents = itemEvents
                 };
             }
             else if (request.TypeResultCombat == ETypeResultCombat.LoseByRun)
@@ -276,6 +287,10 @@ public partial class CharacterData
         };
     }
 
+    private List<ItemEvent> GenerateItemEvents()
+    {
+        return EventService.GenerateItemEvents();
+    }
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {
         var itemRefs = new List<ItemRef>();
@@ -413,6 +428,15 @@ public partial class CharacterData
         {
             var rewardItems = InventoryManager.AddToInventory(reward.ItemRefs);
             reward.RewardItems = rewardItems;
+        }
+        if (reward.itemEvents != null)
+        {
+            var items = reward.itemEvents;
+            var inventory = EventManager.Inventory;
+            foreach (var itemEvent in items)
+            {
+                inventory.Add(itemEvent);
+            }
         }
     }
 }

@@ -117,7 +117,7 @@ public partial class CharacterData
             var key = (item.Type, item.Id);
             if (consolidated.TryGetValue(key, out var existingItem))
             {
-                existingItem.Count = (ushort)(existingItem.Count + item.Count);
+                existingItem.Count = (existingItem.Count + item.Count);
             }
             else
             {
@@ -264,12 +264,24 @@ public partial class CharacterData
         {
             // Distribute with ratio LinhDan:Recipe:Furnace = 3:2:1
             double typeRoll = Random.Shared.NextDouble() * 100;
-            if (typeRoll < 60)
-                type = ItemType.LinhDan;
-            else if (typeRoll < 93.33)
-                type = ItemType.Recipe;
+            if (!special)
+            {
+                if (typeRoll < 60)
+                    type = ItemType.LinhDan;       // 60%
+                else if (typeRoll < 90)
+                    type = ItemType.Recipe;        // 30%
+                else
+                    type = ItemType.Furnace;       // 10%
+            }
             else
-                type = ItemType.Furnace;
+            {
+                if (typeRoll < 50)
+                    type = ItemType.LinhDan;       // 60%
+                else if (typeRoll < 90)
+                    type = ItemType.Furnace;        // 30%
+                else
+                    type = ItemType.Recipe;       // 10%
+            }
         }
 
         return RollItemByTypeAndTier(type, tier);

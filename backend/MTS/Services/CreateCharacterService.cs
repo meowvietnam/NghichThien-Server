@@ -364,7 +364,8 @@ public class CreateCharacterService
         stats.CharacterData = Char;
         var equipment = Char.EquipmentManager;
         equipment.CharacterData = Char;
-
+        var eventManger = Char.EventManager;
+        eventManger.Events = EventService.CreateEvents();
         var ability = stats.Ability;
         if (ability.HasFlag(Ability.SoKhuyMonKinh))
         {

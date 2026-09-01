@@ -13,7 +13,7 @@ public partial class Relationship : IEquatable<Relationship>
     [MemoryPackIgnore]
     public int CharId { get; set; }
     public ushort Npc { get; set; }
-    public ushort Points { get; set; }
+    public int Points { get; set; }
     public override int GetHashCode()
     {
         return Npc;

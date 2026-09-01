@@ -57,7 +57,7 @@ public partial class MonthlyPassPack : IIapReward
             {
                 Id = g.Key.Id,
                 Type = g.Key.Type,
-                Count = (ushort)g.Sum(x => x.Count)
+                Count = g.Sum(x => x.Count)
             })
             .ToList();
     }

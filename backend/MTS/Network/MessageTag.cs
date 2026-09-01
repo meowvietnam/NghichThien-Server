@@ -74,6 +74,8 @@ public enum MessageTag
     LuyenKhiResult = 311,
     SetEquipmentName = 320,
     SetEquipmentNameResult = 321,
+    RandomLuyenKhiRequest = 324,
+
 
     LearnNgoDao = 332,
     LearnNgoDaoResult = 333,
@@ -216,7 +218,7 @@ public enum MessageTag
     GetTrungSinhConfigRequest = 1933,
     ToTrungSinhRequest = 1954,
     TrungSinhRequest = 1996,
-    
+
     GetMonsterKillRequest = 2009,
     ClaimMonsterKillRewardRequest = 2032,
 
@@ -246,8 +248,11 @@ public enum MessageTag
     LikeDongPhuResult = 2324,
     LikeDongPhuNotify = 2342,
     ToAllMapFromDongPhu = 2351,
-    
+
     OpenLink = 2484,
     ReloadDpShop = 2531,
     ReloadDpShopResult = 2541,
+    GetAllActiveEvents  = 2742,
+    GetEventRequest = 2812,
+    HandleEventRequest = 2833,
 }

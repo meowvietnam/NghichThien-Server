@@ -6,20 +6,30 @@ using MTS.Utils;
 namespace MTS.Models;
 
 [MemoryPackable]
-public partial class ItemMonsterRankReward : IMonsterRankReward
+public partial class SkillEventReward : IEventReward
 {
     public ItemRef Item { get; set; }
     public ETierSkill Tier { get; set; }
     public ItemType Type { get; set; }
     public ushort Count { get; set; }
+
     public void Claim(CharacterData charData)
     {
-        if (Item == null)
-        {
-            Item = RandomSkill();
-        }
+        Item = RandomSkill();
         charData.InventoryManager.Add(Item);
     }
+
+    public List<IMailReward> GetMailReward()
+    {
+        return
+        [
+            new MailRewardItem()
+            {
+                Item = RandomSkill()
+            }
+        ];
+    }
+
     private ItemRef RandomSkill()
     {
         IEnumerable<BaseSkill> skills = Type == ItemType.ThanThong

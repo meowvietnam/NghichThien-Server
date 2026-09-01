@@ -170,9 +170,9 @@ public partial class QuestManager
         }
     }
 
-    private ushort RandomCount()
+    private int RandomCount()
     {
-        return (ushort)Random.Shared.Next(1, 4);
+        return Random.Shared.Next(1, 4);
     }
 
     private ItemRef[] GetRandomItems(int totalQuest, int keys)

@@ -33,24 +33,37 @@ public partial class DongPhuLevelConfig
             : GameConfig.NDCPTTManager.CongPhaps;
         var filterSkills = skills.Where(x => TierSkill.Contains(x.eTierSkill)).ToList();
         var rewards = new List<ItemRef>();
-        for (int i = 0; i < RandomItem.Count; i++)
+        if (RandomItem.Type == ItemType.ThanThong)
+        {
+            for (int i = 0; i < RandomItem.Count; i++)
+            {
+                var skill = filterSkills.Random();
+     
+                var itemRef = new ItemRef()
+                {
+                    Id = (ushort)skill.Id,
+                    Count = 1,
+                    Type = RandomItem.Type 
+                };
+                rewards.Add(itemRef);
+            }
+        }
+        else
         {
             var skill = filterSkills.Random();
-            var type = skill is ThanThong ? ItemType.ThanThong : ItemType.CongPhap;
             var itemRef = new ItemRef()
             {
                 Id = (ushort)skill.Id,
-                Count = 1,
-                Type = type
+                Count = RandomItem.Count,
+                Type = RandomItem.Type
             };
             rewards.Add(itemRef);
         }
-
         var mailRewards = rewards.GroupBy(x => x.Id)
             .Select(x => new ItemRef()
             {
                 Id = x.Key,
-                Count = (ushort)x.Sum(i => i.Count),
+                Count = x.Sum(i => i.Count),
                 Type = x.First().Type
             })
             .Select(x => new MailRewardItem()

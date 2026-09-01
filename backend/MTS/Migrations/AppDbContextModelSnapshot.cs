@@ -468,6 +468,49 @@ namespace MTS.Migrations
                     b.ToTable("EquipmentManagers");
                 });
 
+            modelBuilder.Entity("MTS.Models.Event", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("Id")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte[]>("GameEvent")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("CharId", "Id");
+
+                    b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("EventInventories");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId");
+
+                    b.ToTable("EventManagers");
+                });
+
             modelBuilder.Entity("MTS.Models.FurnaceData", b =>
                 {
                     b.Property<int>("CharId")
@@ -706,6 +749,22 @@ namespace MTS.Migrations
                     b.ToTable("InventoryManagers");
                 });
 
+            modelBuilder.Entity("MTS.Models.ItemEvent", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<ushort>("Id")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.HasKey("CharId", "Id");
+
+                    b.ToTable("ItemEvents");
+                });
+
             modelBuilder.Entity("MTS.Models.ItemRef", b =>
                 {
                     b.Property<int>("CharId")
@@ -717,8 +776,8 @@ namespace MTS.Migrations
                     b.Property<byte>("Type")
                         .HasColumnType("tinyint unsigned");
 
-                    b.Property<ushort>("Count")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
 
                     b.HasKey("CharId", "Id", "Type");
 
@@ -1098,8 +1157,8 @@ namespace MTS.Migrations
                     b.Property<ushort>("Npc")
                         .HasColumnType("smallint unsigned");
 
-                    b.Property<ushort>("Points")
-                        .HasColumnType("smallint unsigned");
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
 
                     b.HasKey("CharId", "Npc");
 
@@ -1513,6 +1572,33 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.Event", b =>
+                {
+                    b.HasOne("MTS.Models.EventManager", null)
+                        .WithMany("Events")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.HasOne("MTS.Models.EventManager", null)
+                        .WithOne("Inventory")
+                        .HasForeignKey("MTS.Models.EventInventory", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithOne("EventManager")
+                        .HasForeignKey("MTS.Models.EventManager", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.FurnaceData", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", null)
@@ -1593,6 +1679,15 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharacterData");
+                });
+
+            modelBuilder.Entity("MTS.Models.ItemEvent", b =>
+                {
+                    b.HasOne("MTS.Models.EventInventory", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.ItemRef", b =>
@@ -1888,6 +1983,9 @@ namespace MTS.Migrations
                     b.Navigation("EquipmentManager")
                         .IsRequired();
 
+                    b.Navigation("EventManager")
+                        .IsRequired();
+
                     b.Navigation("GachaManager")
                         .IsRequired();
 
@@ -1942,6 +2040,19 @@ namespace MTS.Migrations
                     b.Navigation("DanCombatUseds");
 
                     b.Navigation("ThanThongEquips");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventInventory", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MTS.Models.EventManager", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Inventory")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.InventoryManager", b =>

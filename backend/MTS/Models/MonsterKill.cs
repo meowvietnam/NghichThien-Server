@@ -48,11 +48,20 @@ public partial class MonsterKill
                 RequirePoints = 100,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 100
                     },
-                    new ItemMonsterRankReward()
+                    new ItemEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 2027,
+                            Type = ItemType.Herb,
+                            Count = 3
+                        }
+                    },
+                    new SkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiHa,
@@ -66,11 +75,20 @@ public partial class MonsterKill
                 RequirePoints = 200,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 300
                     },
-                    new ItemMonsterRankReward()
+                    new ItemEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 2027,
+                            Type = ItemType.Herb,
+                            Count = 6
+                        }
+                    },
+                    new SkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiHa,
@@ -84,17 +102,17 @@ public partial class MonsterKill
                 RequirePoints = 400,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 500,
                     },
-                    new ItemMonsterRankReward()
+                    new SkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiTrung,
                         Count = 1
                     },
-                    new LinhDanMonsterRankReward()
+                    new LinhDanEventReward()
                     {
                         Id = 4670,
                         Count = 1
@@ -107,11 +125,11 @@ public partial class MonsterKill
                 RequirePoints = 800,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 700
                     },
-                    new ItemMonsterRankReward()
+                    new SkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiTrung,
@@ -125,11 +143,11 @@ public partial class MonsterKill
                 RequirePoints = 1600,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 900
                     },
-                    new ItemMonsterRankReward()
+                    new SkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiThuong,
@@ -143,11 +161,11 @@ public partial class MonsterKill
                 RequirePoints = 3200,
                 Rewards = new()
                 {
-                    new MoneyVipMonsterRankReward()
+                    new MoneyVipEventReward()
                     {
                         MoneyVip = 1100
                     },
-                    new ItemMonsterRankReward()
+                    new SkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiThuong,

@@ -399,6 +399,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
 
     private void OnOtherClientLogin(Client client)
     {
+        Log.Information("On other login");
         observer.RemoveState(this);
         referenceTarget.RemoveState(this);
         referenceVisitor.RemoveState(this);

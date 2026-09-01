@@ -383,7 +383,9 @@ public partial class DongPhu
 
     public BuySeedResult BuySeed(BuySeed request, CharacterData charData)
     {
-        return Shop.Buy(request, charData, Inventory);
+        var result =  Shop.Buy(request, charData, Inventory);
+        AddHistory($"Bạn vừa mua thành công x{result.Seed.Count} Id: {result.Seed.HerbId} [${FormatCount(charData.Stats.LinhThach)}]");
+        return result;
     }
 
     public DongPhuLevelConfig GetLevelConfig()

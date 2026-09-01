@@ -398,7 +398,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     throw new InvalidException(Strings.InventoryItemQuantityInvalid);
                 }
 
-                item.Count = (ushort)remaining;
+                item.Count = remaining;
                 var tracking = collection.Tracking as Modify<ItemRef>;
                 if (remaining == 0)
                 {
@@ -482,7 +482,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                     }
                     else
                     {
-                        itemRef.Count = (ushort)itemCount;
+                        itemRef.Count = itemCount;
                         Tracking.Items.Update(itemRef);
                         modify.Items.Update(itemRef);
                     }
@@ -562,7 +562,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 var linhDanRef = new ItemRef()
                 {
                     Id = (ushort)linhDan.Id,
-                    Count = (ushort)actualCount,
+                    Count = actualCount,
                     Type = ItemType.LinhDan
                 };
                 Add(LinhDans, linhDanRef);
@@ -631,7 +631,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 if (itemRefse.TryGetValue(itemRef, out var item))
                 {
                     var remaining = item.Count + count;
-                    item.Count = (ushort)remaining;
+                    item.Count = remaining;
                     if (remaining <= 0)
                     {
                         itemRefse.Remove(item);
@@ -767,8 +767,9 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             {
                 if (x.TryGetValue(equipment, out var owner))
                 {
-                    x.Remove(equipment);
+                    x.Remove(owner);
                     Tracking.Equipments.Delete(owner);
+                    equipmentIdAllocator.ReleaseId(owner.SelfId);
                     return true;
                 }
                 return false;
@@ -969,7 +970,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 .Select(x => new
                 {
                     Material = x.First(),
-                    Count = (ushort)x.Count()
+                    Count = x.Count()
                 })
                 .ToArray();
             var itemRefs = g.Select(x =>
@@ -1076,7 +1077,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 }
                 else
                 {
-                    itemRef.Count = (ushort)newCount;
+                    itemRef.Count = newCount;
                     Update(itemRef);
                     modify.Items.Update(itemRef);
                 }

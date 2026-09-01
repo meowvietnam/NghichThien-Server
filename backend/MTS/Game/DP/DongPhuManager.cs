@@ -279,6 +279,7 @@ public static class DongPhuManager
         var reference = await FindDongPhuReference(charId, db, false);
         var data = JsonConvert.DeserializeObject<UpgradeDongPhuData>(order.Data);
         var nextLevel = reference.DongPhu.GetNextLevel();
+  
         if (data.Level != nextLevel.Level)
         {
             throw new InvalidException($"Level không hợp lệ: {data.Level} - {nextLevel.Level}");

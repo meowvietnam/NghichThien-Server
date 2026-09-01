@@ -66,6 +66,10 @@ public class AppDbContext : DbContext
     public DbSet<SeedItemShop> SeedItemShops { get; private set; }
     public DbSet<Seed> Seeds { get; private set;  }
     public DbSet<DongPhuLike> DongPhuLikes { get; private set; }
+    public DbSet<EventManager> EventManagers { get; private set; }
+    public DbSet<Event> Events { get; private set; }
+    public DbSet<EventInventory> EventInventories { get; private set; }
+    public DbSet<ItemEvent> ItemEvents { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -685,6 +689,44 @@ public class AppDbContext : DbContext
                 .HasPrincipalKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<EventManager>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<CharacterData>()
+                .WithOne(x => x.EventManager)
+                .HasForeignKey<EventManager>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<EventInventory>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.HasOne<EventManager>()
+                .WithOne(x => x.Inventory)
+                .HasForeignKey<EventInventory>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ItemEvent>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasOne<EventInventory>()
+                .WithMany(x => x.Items)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Event>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Id });
+            e.HasOne<EventManager>()
+                .WithMany(x => x.Events)
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.GameEvent)
+                .HasColumnType(blob)
+                .HasConversion(x => MemoryPackSerializer.Serialize(x),
+                    x => MemoryPackSerializer.Deserialize<IGameEvent>(x));
+        });
+        
     }
     private List<WateringHelp> ParseWateringHelps(byte[] data)
     {
@@ -703,13 +745,13 @@ public class AppDbContext : DbContext
         return MemoryPackSerializer.Deserialize<Dictionary<ETypeSkill, int>>(data);
     }
 
-    private List<IMonsterRankReward> ParseMonsterRankRewards(byte[] data)
+    private List<IEventReward> ParseMonsterRankRewards(byte[] data)
     {
         if (data == null || data.Length == 0)
         {
             return null;
         }
-        return MemoryPackSerializer.Deserialize<List<IMonsterRankReward>>(data);
+        return MemoryPackSerializer.Deserialize<List<IEventReward>>(data);
     }
     private IPromotionApplicable ParsePromotionApplicable(byte[] data)
     {

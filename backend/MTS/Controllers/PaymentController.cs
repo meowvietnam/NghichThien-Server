@@ -127,6 +127,10 @@ public class PaymentController : Controller
         try
         {
             var data = await VerifyWebhook(webhook);
+            if (webhook.Data.OrderCode == 343448523228160)
+            {
+                return Ok();
+            }
             var order = await db.Orders
                 .Include(o => o.CharData)
                 .Include(o => o.Product)
@@ -190,6 +194,10 @@ public class PaymentController : Controller
             else if(order.OrderType == OrderType.DongPhu)
             {
                 await DongPhuManager.Handle(order,db);
+            }
+            else if (order.OrderType == OrderType.RechargeEvent1)
+            {
+                await RechargeEvent1Service.Handle(order, db);
             }
             else
             {
