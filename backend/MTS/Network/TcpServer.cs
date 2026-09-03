@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic.CompilerServices;
 using MTS.Game;
 using MTS.Localization;
@@ -18,6 +19,7 @@ public class TcpServer : BaseTcpServer
     private ConcurrentDictionary<int, Client> clients = new();
     private ConcurrentDictionary<int, Client> disconnectedClients = new();
     private int currentId = int.MinValue;
+    public CharacterData Scarecrow { get; private set; }
     public TcpServer(int port) : base(port)
     {
         Instance = this;
@@ -44,9 +46,25 @@ public class TcpServer : BaseTcpServer
     {
         
     }
-    protected override void OnRun()
+    protected override async void OnRun()
     {
         Log.Information("TCP server is running on port {Port}", Port);
+        await using var db = await Program.CreateDbAsync();
+        var charData = await db.Characters
+            .AsNoTracking()
+            .Include(x => x.Stats)
+            .Include(x => x.Appearance)
+            .Include(x => x.Progression)
+            .Include(x => x.InventoryManager)
+            .Include (x => x.EquipmentManager)
+            .ThenInclude(x => x.ThanThongEquips)
+            .Include (x => x.EquipmentManager)
+            .ThenInclude(x => x.DanCombatUseds)
+            .Include (x => x.ArenaManager)
+            .FirstAsync(x => x.Id == 2);
+        await charData.InventoryManager.Load(db);
+        charData.Name = "Rối";
+        Scarecrow = charData;
     }
     public void Remove(UnauthenticatedClient unauthenticatedClient)
     {

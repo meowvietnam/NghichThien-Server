@@ -31,12 +31,14 @@ public class AllMaps : IClientState
             currentNodeId = charData.Progression.IdCurrentNode;
             charId = charData.Id;
         }
+
         var charsOnline = TcpServer.Instance.GetCharsOnline()
             .Where(x => x.Progression.IdCurrentNode == currentNodeId && x.Id != charId)
             .Select(x => new CharacterSnapshot(x))
             .OrderBy(_ => Random.Shared.Next())
             .Take(5)
             .ToArray();
+        charsOnline = new[] { new CharacterSnapshot(TcpServer.Instance.Scarecrow) }.Concat(charsOnline).ToArray();
         return charsOnline;
     }
 
@@ -52,8 +54,10 @@ public class AllMaps : IClientState
                 {
                     return;
                 }
+
                 isMoving = true;
             }
+
             var id = reader.Read<int>();
             try
             {
@@ -69,6 +73,7 @@ public class AllMaps : IClientState
                     {
                         throw new InvalidException($"{NotEnoughEnergy}: {energy}");
                     }
+
                     var stats = charData.Stats;
                     var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
                     var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
@@ -86,6 +91,7 @@ public class AllMaps : IClientState
                         NewAge = newAge
                     };
                 }
+
                 client.Send(MessageTag.MoveToMapResult, result);
             }
             catch (InvalidException e)
@@ -127,7 +133,7 @@ public class AllMaps : IClientState
                 client.Send(MessageTag.GetPlayerOnlineThisNodeResult, result);
             }
         }
-        else if(tag == MessageTag.WatchAdsForEnergy)
+        else if (tag == MessageTag.WatchAdsForEnergy)
         {
             WatchAdsForEnergyResult result = null;
             try
@@ -157,12 +163,14 @@ public class AllMaps : IClientState
             }
         }
     }
+
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
-        
     }
+
     public void OnLeave()
     {
     }
+
     public MessageState State => MessageState.AllMaps;
 }
