@@ -39,7 +39,9 @@ public class EventHandler : IClientHandler
         }
         else if (tag == MessageTag.GetAllActiveEvents)
         {
-            var events = eventManager.GetActiveEvents().Select(x => x.Id).ToArray();
+            var events = eventManager.GetActiveEvents()
+                .Where(x => !(x.GameEvent is RechargeEvent1))
+                .Select(x => x.Id).ToArray();
             client.MemSend(MessageTag.GetAllActiveEvents, events);
         }
         else if (tag == MessageTag.GetEventRequest)
