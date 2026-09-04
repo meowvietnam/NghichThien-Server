@@ -20,12 +20,17 @@ public class EventHandler : IClientHandler
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        var eventManager = client.CharacterData.EventManager;
+        var charData = client.CharacterData;
+        if (charData == null)
+        {
+            return;
+        }
+        var eventManager = charData.EventManager;
         if (tag == MessageTag.HandleEventRequest)
         {
             var request = reader.MemRead<HandleEventRequest>();
             await using var db = await Program.CreateDbAsync();
-            lock (client.CharacterData)
+            lock (client.CharacterLock)
             {
                 try
                 {

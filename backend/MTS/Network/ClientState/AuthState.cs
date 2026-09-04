@@ -237,7 +237,7 @@ namespace MTS.Network.ClientState
                 Log.Error(e.ToString());
             }
             db.Users.Remove(user);
-            
+            await db.SaveChangesAsync();
             return new DeleteAccountResult()
             {
                 Success = true,
