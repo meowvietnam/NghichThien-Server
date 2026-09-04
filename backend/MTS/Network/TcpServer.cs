@@ -61,7 +61,7 @@ public class TcpServer : BaseTcpServer
             .Include (x => x.EquipmentManager)
             .ThenInclude(x => x.DanCombatUseds)
             .Include (x => x.ArenaManager)
-            .FirstAsync(x => x.Id == 2);
+            .FirstAsync(x => x.Id == 4721);
         await charData.InventoryManager.Load(db);
         charData.Name = "Rối";
         Scarecrow = charData;

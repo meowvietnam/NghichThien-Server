@@ -9,6 +9,7 @@ using MTS.IAP;
 using MTS.Models;
 using MTS.ND;
 using MTS.Network.Models;
+using MTS.Utils;
 using Newtonsoft.Json;
 using Serilog;
 using NgoDao = MTS.ND.NgoDao;
@@ -40,6 +41,7 @@ public class Startup : BackgroundService
                 {
                     return (long)(x.Product.Price * 0.7f);
                 }
+
                 return x.Product.Price;
             }
 
@@ -49,20 +51,23 @@ public class Startup : BackgroundService
             Utils.Utils.FormatCount(estimate));
     }
 
-    private async Task FixEvent(AppDbContext db)
+    private async Task Register(AppDbContext db)
     {
-        var @events = await db.Events.ToListAsync();
-        var es = @events.Where(x => x.GameEvent is MilestoneEvent).ToList();
-        foreach (var @event in es)
+        var charData = await db.Characters.FirstAsync(x => x.Name == "halwyt");
+        var account = await db.GuestAccounts.FirstAsync(x => x.UserId == charData.UserId);
+        var localAccount = new LocalAccount()
         {
-            var e = @event.GameEvent as MilestoneEvent;
-            var m = e.Milestones.Last();
-            m.Id = 5;
-            db.Entry(@event).Property(x => x.GameEvent).IsModified = true;
-        }
-        var result = await db.SaveChangesAsync();
-        Log.Information(result.ToString());
+            UserId = charData.UserId,
+            Username = "anhkive2",
+            PasswordHash = PasswordService.Hash("1234567"),
+            CreatedAt = DateTime.UtcNow
+        };
+        await db.LocalAccounts.AddAsync(localAccount);
+        db.GuestAccounts.Remove(account);
+        await db.SaveChangesAsync();
+        Log.Information("Oke");
     }
+
     private async Task ClaimMail(AppDbContext db)
     {
         var charData = await db.Characters.FirstAsync(x => x.Id == 1925);
@@ -80,6 +85,7 @@ public class Startup : BackgroundService
         await db.Mails.AddAsync(mail);
         await db.SaveChangesAsync();
     }
+
     private async Task UpdateShop(AppDbContext db)
     {
         var chars = await db.Characters
@@ -98,9 +104,11 @@ public class Startup : BackgroundService
             e.Property(x => x.ShopSkill).IsModified = true;
             e.Property(x => x.ShopSkillAll).IsModified = true;
         }
+
         var result = await db.SaveChangesAsync();
         Log.Information("Result: {result}", result);
     }
+
     private async Task UpdateQuest(AppDbContext db)
     {
         var charIds = await db.Characters.Select(x => x.Id).ToListAsync();
@@ -111,14 +119,15 @@ public class Startup : BackgroundService
             count++;
             if (count % 100 == 1)
             {
-                Log.Information("Tiến độ: {count}/{total}", count,total);
+                Log.Information("Tiến độ: {count}/{total}", count, total);
             }
+
             var questManager = new QuestManager()
             {
                 CharId = charId
             };
             questManager.InitDailyQuests();
-            
+
             var dailyQuests = questManager.DailyQuests;
             var quests = dailyQuests.Values.SelectMany(x => x).ToList();
             foreach (var dailyQuest in quests)
@@ -128,9 +137,10 @@ public class Startup : BackgroundService
                     .ExecuteUpdateAsync(s => s.SetProperty(x => x.QuestReward, dailyQuest.QuestReward));
             }
         }
+
         Log.Information("Completed");
     }
-    
+
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.Characters.Select(x => x.Id).ToArrayAsync();
@@ -148,6 +158,7 @@ public class Startup : BackgroundService
         await db.SaveChangesAsync();
         Log.Information("Oke");
     }
+
     public async Task AddReward(AppDbContext db)
     {
         var ms = await db.MonsterKills.Include(x => x.Rewards).ToListAsync();
@@ -166,6 +177,7 @@ public class Startup : BackgroundService
                     }
                 });
             }
+
             var reward2 = m.Rewards[1];
             if (reward2.Rewards.All(x => !(x is ItemEventReward)))
             {
@@ -179,13 +191,15 @@ public class Startup : BackgroundService
                     }
                 });
             }
+
             db.Entry(reward1).Property(x => x.Rewards).IsModified = true;
             db.Entry(reward2).Property(x => x.Rewards).IsModified = true;
         }
+
         await db.SaveChangesAsync();
         Log.Information("Oke");
     }
-    
+
     private async Task<CharacterData> FindCharacter(string name, AppDbContext db)
     {
         return await db.Characters.FirstAsync(x => x.Name == name);
