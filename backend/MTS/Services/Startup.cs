@@ -51,24 +51,9 @@ public class Startup : BackgroundService
             Utils.Utils.FormatCount(estimate));
     }
 
-    private async Task Register(AppDbContext db)
-    {
-        var charData = await db.Characters.FirstAsync(x => x.Name == "halwyt");
-        var account = await db.GuestAccounts.FirstAsync(x => x.UserId == charData.UserId);
-        var localAccount = new LocalAccount()
-        {
-            UserId = charData.UserId,
-            Username = "anhkive2",
-            PasswordHash = PasswordService.Hash("1234567"),
-            CreatedAt = DateTime.UtcNow
-        };
-        await db.LocalAccounts.AddAsync(localAccount);
-        db.GuestAccounts.Remove(account);
-        await db.SaveChangesAsync();
-        Log.Information("Oke");
-    }
 
-    private async Task ClaimMail(AppDbContext db)
+
+private async Task ClaimMail(AppDbContext db)
     {
         var charData = await db.Characters.FirstAsync(x => x.Id == 1925);
         var @event = await db.EventManagers.Include(x => x.Events).FirstAsync(x => x.CharId == charData.Id);
