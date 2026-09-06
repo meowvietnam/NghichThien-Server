@@ -51,9 +51,7 @@ public class Startup : BackgroundService
             Utils.Utils.FormatCount(estimate));
     }
 
-
-
-private async Task ClaimMail(AppDbContext db)
+    private async Task ClaimMail(AppDbContext db)
     {
         var charData = await db.Characters.FirstAsync(x => x.Id == 1925);
         var @event = await db.EventManagers.Include(x => x.Events).FirstAsync(x => x.CharId == charData.Id);
