@@ -168,7 +168,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                     Success = false,
                     Message = e.Message
                 };
-                client.MemSend(MessageTag.HarverstSlotResult, result);
+                client.MemSend(MessageTag.HarvestSlotResult, result);
             }
         }
         else if (tag == MessageTag.LikeDongPhu)
@@ -271,8 +271,8 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         {
             SlotIndex = result.SlotIndex
         };
-        client.MemSend(MessageTag.HarverstSlotResult, result);
-        observer.SendAllIgnore(this, MessageTag.HarvertSlotNotify, notify);
+        client.MemSend(MessageTag.HarvestSlotResult, result);
+        observer.SendAllIgnore(this, MessageTag.HarvetSlotNotify, notify);
     }
 
     private BuySeedResult BuySeed(BuySeed request)

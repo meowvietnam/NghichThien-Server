@@ -243,8 +243,8 @@ public enum MessageTag
     GetDongPhuHistoriesRequest = 2192,
     BuySeedRequest = 2189,
     HarvestSlot = 2204,
-    HarverstSlotResult = 2208,
-    HarvertSlotNotify = 2212,
+    HarvestSlotResult = 2208,
+    HarvetSlotNotify = 2212,
     LikeDongPhu = 2314,
     LikeDongPhuResult = 2324,
     LikeDongPhuNotify = 2342,
@@ -256,4 +256,10 @@ public enum MessageTag
     GetAllActiveEvents  = 2742,
     GetEventRequest = 2812,
     HandleEventRequest = 2833,
+    
+    
+    InvitePvpRequest = 3110,
+    InvitePvp = 3133,
+    InvitePvpResponse = 3210,
+    PvpMatched = 3235
 }
