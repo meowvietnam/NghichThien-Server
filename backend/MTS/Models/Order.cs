@@ -16,7 +16,8 @@ public enum OrderType
 {
     Pack,
     DongPhu,
-    RechargeEvent1
+    RechargeEvent1,
+    EventShop
 }
 [MemoryPackable]
 public partial class Order

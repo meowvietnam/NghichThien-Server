@@ -11,6 +11,7 @@ namespace MTS.Network.ClientState
         ConvertElementalSkill,
         AuctionState,
         TrungSinh,
-        DongPhuState
+        DongPhuState,
+        CombatPvp
     }
 }

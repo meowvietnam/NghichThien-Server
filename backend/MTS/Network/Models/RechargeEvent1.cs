@@ -116,7 +116,7 @@ public partial class RechargeEvent1 : IGameEvent
                     Rewards = rewards
                 };
                 var mailManager = new MailManager(charData, charData.Client);
-                await mailManager.SendMail(mail, db, false);
+                await mailManager.SendMail(mail, db, true);
                 return new HandleOrderRechargeEvent1Result()
                 {
                     Success = true

@@ -35,7 +35,7 @@ public class DailyRewardMonthlyPass
         var mail = new Mail()
         {
             Title = "Quà Thưởng Thẻ Tháng",
-            Content = $"Phần thưởng Thẻ Tháng hôm nay đã được gửi đến bạn. Thẻ Tháng có hiệu lực đến {endDate}. Chúc bạn có những phút giây trải nghiệm vui vẻ!",
+            Content = $"Thẻ Tháng có hiệu lực đến {endDate}. Lưu ý quan trọng: Đăng nhập ngày nào nhận thưởng ngày đó (offline sẽ không nhận được quà)",
             Rewards = Rewards,
         };
         var mailManager = new MailManager(charData, charData.Client);

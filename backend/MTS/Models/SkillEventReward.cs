@@ -1,46 +1,26 @@
 using MemoryPack;
-using MTS.Game;
-using MTS.Game.BaseSkill;
-using MTS.Utils;
 
-namespace MTS.Models;
-
-[MemoryPackable]
-public partial class SkillEventReward : IEventReward
+namespace MTS.Models
 {
-    public ItemRef Item { get; set; }
-    public ETierSkill Tier { get; set; }
-    public ItemType Type { get; set; }
-    public ushort Count { get; set; }
-
-    public void Claim(CharacterData charData)
+    [MemoryPackable]
+    public partial class SkillEventReward : IEventReward
     {
-        Item = RandomSkill();
-        charData.InventoryManager.Add(Item);
-    }
+        public ItemRef Item { get; set; }
 
-    public List<IMailReward> GetMailReward()
-    {
-        return
-        [
-            new MailRewardItem()
-            {
-                Item = RandomSkill()
-            }
-        ];
-    }
-
-    private ItemRef RandomSkill()
-    {
-        IEnumerable<BaseSkill> skills = Type == ItemType.ThanThong
-            ? GameConfig.NDCPTTManager.ThanThongs
-            : GameConfig.NDCPTTManager.CongPhaps;
-        var skill = skills.Where(x => x.eTierSkill == Tier).ToArray().Random();
-        return new ItemRef()
+        public void Claim(CharacterData charData)
         {
-            Id = (ushort)skill.Id,
-            Type = Type,
-            Count = Count
-        };
+            charData.InventoryManager.Add(Item);
+        }
+
+        public List<IMailReward> GetMailReward()
+        {
+            return new List<IMailReward>()
+            {
+                new MailRewardItem()
+                {
+                    Item = Item
+                }
+            };
+        }
     }
 }

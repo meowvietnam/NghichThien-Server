@@ -4,9 +4,8 @@ using MTS.Game.BaseSkill;
 using MTS.Utils;
 
 namespace MTS.Models;
-
 [MemoryPackable]
-public partial class SpecialSkillEventReward : IEventReward
+public partial class RandomSpecialSkillEventReward : IEventReward
 {
     public List<ItemRef> Items { get; set; }
     public ETierSkill[] Tiers { get; set; }
