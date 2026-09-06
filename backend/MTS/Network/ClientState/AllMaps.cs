@@ -286,10 +286,13 @@ public class AllMaps : IClientState
                     Inviter = new CharacterSnapshot(otherChar),
                     Defender = new CharacterSnapshot(thisChar)
                 };
-                var myPvpState = new CombatPvp(client);
-                var otherPvpState = new CombatPvp(otherState.client);
+                var myPvpState = new CombatPvp(client, thisChar);
+                var otherPvpState = new CombatPvp(otherState.client, otherChar);
                 myPvpState.SetEnemy(otherPvpState);
                 otherPvpState.SetEnemy(myPvpState);
+                var manager = new CombatPvpManager(myPvpState, otherPvpState);
+                myPvpState.SetManager(manager);
+                otherPvpState.SetManager(manager);
                 client.ChangeState(myPvpState);
                 otherState.client.ChangeState(otherPvpState);
                 client.MemSend(MessageTag.PvpMatched, pvpMatched);
