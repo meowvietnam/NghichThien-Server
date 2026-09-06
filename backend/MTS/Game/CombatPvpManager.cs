@@ -20,8 +20,9 @@ public class CombatPvpManager
         }
     }
 
-    private void StartCombat()
+    private async void StartCombat()
     {
+        await Task.Delay(TimeSpan.FromMilliseconds(2000));
         var startTurnPlayer = Players.MaxBy(x => x.CharData().Stats.TocDoBay).CharData().Id;
         foreach (var player in Players)
         {

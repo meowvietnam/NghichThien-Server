@@ -67,7 +67,7 @@ public class CombatPvp : IClientState, ISender<MessageTag>
         }
         else if (tag == MessageTag.SyncPlaySkill)
         {
-            var model = reader.MemRead<SyncHealing>();
+            var model = reader.MemRead<SyncPlaySkill>();
             enemy.MemSend(MessageTag.SyncPlaySkill, model);
         }
         else if (tag == MessageTag.SyncUsePhapBao)
