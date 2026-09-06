@@ -11,7 +11,9 @@ public class AllMaps : IClientState
     private Client client;
     private const string NotEnoughEnergy = "Không đủ năng lượng";
     private bool isMoving;
+    private InvitePvp? currentInvited;
     private static event Action<PlayerMoving> OnPlayerMoving;
+
     public AllMaps(Client client)
     {
         this.client = client;
@@ -27,6 +29,7 @@ public class AllMaps : IClientState
         {
             return;
         }
+
         client.MemSend(MessageTag.OtherPlayerMoving, playerMoving);
     }
 
@@ -37,6 +40,7 @@ public class AllMaps : IClientState
         client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
         OnPlayerMoving -= OnOtherPlayerMoving;
     }
+
     private void OnRemoveDisconnectedSession(Client client)
     {
         OnRemove();
@@ -59,8 +63,10 @@ public class AllMaps : IClientState
         {
             return false;
         }
+
         return charData.Id == charId;
     }
+
     public void OnEnter()
     {
     }
@@ -147,7 +153,6 @@ public class AllMaps : IClientState
                 }
 
                 client.Send(MessageTag.MoveToMapResult, result);
-                
             }
             catch (InvalidException e)
             {
@@ -217,6 +222,156 @@ public class AllMaps : IClientState
                 client.Send(MessageTag.WatchAdsForEnergyResult, result);
             }
         }
+        else if (tag == MessageTag.InvitePvpRequest)
+        {
+            var request = reader.MemRead<InvitePvpRequest>();
+            InvitePvpResult result = null;
+            try
+            {
+                lock (client.CharacterLock)
+                {
+                    var state = TryGetPlayerState(request.Defender);
+                    result = TryInvitePvp(state);
+                }
+            }
+            catch (InvalidException ex)
+            {
+                result = new InvitePvpResult()
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+            finally
+            {
+                client.MemSend(MessageTag.InvitePvpRequest, result);
+            }
+        }
+        else if (tag == MessageTag.InvitePvpResponse)
+        {
+            var response = reader.MemRead<InvitePvpResponse>();
+            lock (client.CharacterLock)
+            {
+                OnInviteResponse(response);
+            }
+        }
+    }
+
+    private void OnInviteResponse(InvitePvpResponse response)
+    {
+        if (response.Accept)
+        {
+            try
+            {
+                if (currentInvited == null)
+                {
+                    throw new InvalidException("Chưa có lời mời");
+                }
+
+                if (currentInvited.IsExpire())
+                {
+                    throw new InvalidException("Lời mời hết hạn");
+                }
+
+                var otherState = TryGetPlayerState(currentInvited.Inviter);
+                var thisChar = client.CharacterData;
+                var otherChar = otherState.client.CharacterData;
+                if (thisChar == null || otherChar == null)
+                {
+                    throw new InvalidException("Không thể mời người chơi này");
+                }
+
+                var pvpMatched = new PvpMatched()
+                {
+                    Inviter = new CharacterSnapshot(otherChar),
+                    Defender = new CharacterSnapshot(thisChar)
+                };
+                var myPvpState = new CombatPvp(client);
+                var otherPvpState = new CombatPvp(otherState.client);
+                myPvpState.SetEnemy(otherPvpState);
+                otherPvpState.SetEnemy(myPvpState);
+                client.ChangeState(myPvpState);
+                otherState.client.ChangeState(otherPvpState);
+                client.MemSend(MessageTag.PvpMatched, pvpMatched);
+                otherState.client.MemSend(MessageTag.PvpMatched, pvpMatched);
+            }
+            catch (InvalidException e)
+            {
+                client.MemSend(MessageTag.Notify, e.Message);
+            }
+        }
+        else
+        {
+            if (currentInvited == null) return;
+            try
+            {
+                var state = TryGetPlayerState(currentInvited.Inviter);
+                state.currentInvited = null;
+                state.client.MemSend(MessageTag.Notify, $"{client.CharacterData?.Name} đã từ chối lời mời thách đấu");
+                currentInvited = null;
+            }
+            catch (InvalidException e)
+            {
+            }
+        }
+    }
+
+    private AllMaps TryGetPlayerState(int charId)
+    {
+        var charData = TcpServer.Instance.GetCharsOnline().FirstOrDefault(x => x.Id == charId);
+        if (charData == null)
+        {
+            throw new InvalidException("Người chơi không online");
+        }
+
+        var state = charData.Client.ClientState as AllMaps;
+        if (state is null)
+        {
+            throw new InvalidException("Trạng thái không phù hợp");
+        }
+
+        return state;
+    }
+
+    private void EnsureCurrentInvitedIsExpire()
+    {
+        if (currentInvited != null)
+        {
+            if (!currentInvited.IsExpire())
+            {
+                throw new InvalidException("Lời mời chưa hết hạn");
+            }
+        }
+    }
+
+    public InvitePvpResult TryInvitePvp(AllMaps otherPlayerState)
+    {
+        EnsureCurrentInvitedIsExpire();
+        otherPlayerState.EnsureCurrentInvitedIsExpire();
+        var thisChar = client.CharacterData;
+        var otherChar = otherPlayerState.client.CharacterData;
+        if (thisChar == null || otherChar == null)
+        {
+            throw new InvalidException("Không thể mời người chơi này");
+        }
+
+        var invitePvp = new InvitePvp()
+        {
+            Inviter = thisChar.Id,
+            Defender = otherChar.Id,
+            InviterName = thisChar.Name,
+            DefenderName = otherChar.Name,
+            Expire = DateTime.UtcNow.AddSeconds(30)
+        };
+        currentInvited = invitePvp;
+        otherPlayerState.currentInvited = invitePvp;
+        otherPlayerState.client.MemSend(MessageTag.InvitePvp, invitePvp);
+        return new InvitePvpResult()
+        {
+            Success = true,
+            InvitePvp = invitePvp,
+            Message = $"Gửi lời mời thách đấu đến {invitePvp.DefenderName} thành công"
+        };
     }
 
     public void OnDisconnect(IProtocol<MessageTag> protocol)

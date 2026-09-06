@@ -1,5 +1,4 @@
 using MemoryPack;
-using Network.Models;
 
 namespace MTS.Network.Models
 {
