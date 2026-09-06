@@ -271,4 +271,5 @@ public enum MessageTag
     SyncEndTurn = 3426,
     SyncHealing = 3431,
     SyncPlaySkill = 3443,
+    SyncUsePhapBao = 3476,
 }
