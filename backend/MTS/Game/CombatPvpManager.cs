@@ -48,11 +48,12 @@ public class CombatPvpManager
         {
             if (player != playerIgnore)
             {
-                player.MemSend(tag,data);
+                player.MemSend(tag, data);
             }
         }
     }
-    private void SendOther(MessageTag tag,CombatPvp playerIgnore)
+
+    private void SendOther(MessageTag tag, CombatPvp playerIgnore)
     {
         foreach (var player in Players)
         {
@@ -62,6 +63,7 @@ public class CombatPvpManager
             }
         }
     }
+
     public void OnResultCombat(CombatPvp player, ResultCombat resultCombat)
     {
         lock (combatLock)
@@ -79,13 +81,12 @@ public class CombatPvpManager
                     Message = e.Message
                 };
             }
-            if (resultCombat.TypeResultCombat != ETypeResultCombat.LoseByRun)
-            {
-                player.MemSend(MessageTag.ReadyCombatPvp, result);
-            }
-            else
+
+            player.MemSend(MessageTag.ResultCombatPvp, result);
+            if (resultCombat.TypeResultCombat == ETypeResultCombat.LoseByRun)
             {
                 SendOther(MessageTag.YouWinPvp, player);
+                SendOther(MessageTag.Notify, "Đối thủ bỏ trốn", player);
             }
         }
     }

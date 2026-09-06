@@ -20,6 +20,18 @@ public class CombatPvp : IClientState, ISender<MessageTag>
     {
         this.client = client;
         this.charData = charData;
+        client.OnLogout += OnLogout;
+        client.OnOtherClientLogin += OnOtherClientLogin;
+    }
+
+    private void OnLogout(Client client)
+    {
+        OnRemove();
+    }
+
+    private void OnOtherClientLogin(Client client)
+    {
+        OnRemove();
     }
 
     public void SetEnemy(CombatPvp enemy)
@@ -106,10 +118,13 @@ public class CombatPvp : IClientState, ISender<MessageTag>
 
     public void OnLeave()
     {
+        OnRemove();
     }
 
-    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    private void OnRemove()
     {
+        client.OnLogout -= OnLogout;
+        client.OnOtherClientLogin -= OnOtherClientLogin;
         var resultCombat = new ResultCombat()
         {
             CurrentLevelEnemy = enemy.CharData().Progression.Level,
@@ -121,6 +136,10 @@ public class CombatPvp : IClientState, ISender<MessageTag>
             ListIdThanThong = new()
         };
         EndCombatWithResult(resultCombat);
+    }
+    public void OnDisconnect(IProtocol<MessageTag> protocol)
+    {
+        OnRemove();
     }
 
     public MessageState State => MessageState.CombatPvp;
