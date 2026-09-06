@@ -1,6 +1,8 @@
 using MTS.Game;
+using MTS.Game.Combat;
 using MTS.Models;
 using MTS.Network.Models;
+using Serilog;
 
 namespace MTS.Network.ClientState;
 
@@ -11,25 +13,31 @@ public class CombatPvp : IClientState, ISender<MessageTag>
     private CombatPvp enemy;
     private CombatPvpManager manager;
     public bool IsReady { get; set; }
+    public bool IsGameEnded { get; set; }
+    private object lockObject = new();
+
     public CombatPvp(Client client, CharacterData charData)
     {
         this.client = client;
         this.charData = charData;
     }
+
     public void SetEnemy(CombatPvp enemy)
     {
         this.enemy = enemy;
     }
+
     public void SetManager(CombatPvpManager manager)
     {
         this.manager = manager;
     }
+
     public void OnEnter()
     {
-        
     }
 
     public CharacterData CharData() => charData;
+
     public void Handle(Message<MessageTag> message)
     {
         var tag = message.Tag;
@@ -75,17 +83,51 @@ public class CombatPvp : IClientState, ISender<MessageTag>
             var model = reader.MemRead<SyncUsePhapBao>();
             enemy.MemSend(MessageTag.SyncUsePhapBao, model);
         }
+        else if (tag == MessageTag.ResultCombatPvp)
+        {
+            var resultCombat = reader.MemRead<ResultCombat>();
+            EndCombatWithResult(resultCombat);
+        }
     }
+
+    private void EndCombatWithResult(ResultCombat resultCombat)
+    {
+        
+        lock (lockObject)
+        {
+            if (IsGameEnded)
+            {
+                return;
+            }
+            manager.OnResultCombat(this, resultCombat);
+            IsGameEnded = true;
+        }
+    }
+
     public void OnLeave()
     {
     }
+
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
+        var resultCombat = new ResultCombat()
+        {
+            CurrentLevelEnemy = enemy.CharData().Progression.Level,
+            TypeCombat = ETypeCombat.LuanBanRealTime,
+            TypeResultCombat = ETypeResultCombat.LoseByRun,
+            CurrentHPUser = charData.Stats.Hp,
+            CurrentThanThuc = charData.Stats.ThanThuc,
+            CurrentThoNguyen = charData.Stats.ThoNguyen,
+            ListIdThanThong = new()
+        };
+        EndCombatWithResult(resultCombat);
     }
+
     public MessageState State => MessageState.CombatPvp;
+
     public void Send(Span<byte> data)
     {
-        if(!IsReady) return;
+        if (!IsReady) return;
         client.Send(data);
     }
 }

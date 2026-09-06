@@ -286,7 +286,136 @@ public partial class CharacterData
             NewTamCanh = Stats.TamCanh,
         };
     }
+    public ResultCombatResult? ResultCombatPvp(ResultCombat request)
+    {
+        request.ListIdThanThong
+            .RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
 
+        var idCounts = request.ListIdThanThong
+            .GroupBy(id => id)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var thanThongDict = GameConfig.NDCPTTManager.ThanThongs
+            .Where(x => idCounts.ContainsKey(x.Id))
+            .ToDictionary(
+                x => x,
+                x => idCounts[x.Id]
+            );
+        var enemyLevel = request.CurrentLevelEnemy;
+        var newTamCanh = Stats.TamCanh;
+        int baseAddCamNgo = 5;
+        List<CamNgo> camNgoAdd = new List<CamNgo>();
+        var camNgo = new CamNgo()
+        {
+            CharId = Id,
+            Id = ETypeSkill.The,
+            Value = 10 * enemyLevel
+        };
+        var camNgos = InventoryManager.CamNgos;
+        if (camNgos.TryGetValue(camNgo, out var ownerCamNgo))
+        {
+            camNgo.Value += ownerCamNgo.Value;
+        }
+        InventoryManager.AddOrUpdate(camNgo);
+        camNgoAdd.Add(camNgo);
+        var newNgoDaoDiem = Progression.NgoDaoDiem;
+        foreach (var item in thanThongDict)
+        {
+            newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(item.Key, baseAddCamNgo, ref camNgoAdd, item.Value);
+        }
+
+        int newHp = Stats.Hp;
+        int newPointRank = ArenaManager.Points;
+        RewardSnapshot newReward = new RewardSnapshot();
+        if (request.TypeCombat != ETypeCombat.LuanBanRealTime)
+        {
+            if (request.CurrentHPUser > Stats.SinhMenh * 5)
+            {
+                throw new InvalidException(Strings.HackerHP);
+            }
+
+            if (request.CurrentThanThuc > Stats.ThanThuc)
+            {
+                throw new InvalidException(Strings.HackerThanThucEndCombat);
+            }
+
+            if (request.CurrentThoNguyen > Stats.ThoNguyen)
+            {
+                throw new InvalidException(Strings.HackerThoNguyenEndCombat);
+            }
+
+            newHp = request.CurrentHPUser;
+
+            if (request.TypeResultCombat == ETypeResultCombat.Win)
+            {
+                int linhThach = Random.Shared.Next(5 * enemyLevel, 50 * enemyLevel);
+                int monsterLevel = enemyLevel;
+                var listItemRef = GenerateMonsterRewards(monsterLevel);
+                listItemRef = ConsolidateItemRefs(listItemRef);
+                var rewardItems = InventoryManager.AddToInventory(listItemRef);
+                var itemEvents = GenerateItemEvents();
+                if (itemEvents != null)
+                {
+                    var inventory = EventManager.Inventory;
+                    foreach (var itemEvent in itemEvents)
+                    {
+                        inventory.Add(itemEvent);
+                    }
+                }
+
+                linhThach = 0;
+                rewardItems = new();
+                itemEvents = new();
+                listItemRef = new();
+                
+                newReward = new RewardSnapshot
+                {
+                    Money = linhThach,
+                    MoneyVip = 0,
+                    RewardItems = rewardItems,
+                    ItemRefs = listItemRef,
+                    itemEvents = itemEvents
+                };
+            }
+            else if (request.TypeResultCombat == ETypeResultCombat.LoseByRun)
+            {
+                if (request.CurrentHPUser < Stats.SinhMenh)
+                {
+                    newHp = request.CurrentHPUser / 2;
+                }
+                else
+                {
+                    newHp = Stats.SinhMenh / 2;
+                }
+            }
+
+            newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
+            Stats.SetHp(newHp);
+            Stats.SetThoNguyen(request.CurrentThoNguyen);
+            Stats.SetThanThuc(request.CurrentThanThuc);
+        }
+        var loseTypes = new[]
+            { ETypeResultCombat.LoseByDied, ETypeResultCombat.LoseByRun, ETypeResultCombat.LoseByTime };
+        if (loseTypes.Contains(request.TypeResultCombat))
+        {
+            var min = CharacterStats.GetMinTamCanh();
+            var decrease = (int)Math.Round((newTamCanh - min) * 0.1f);
+            newTamCanh = Math.Max(min, newTamCanh - decrease);
+        }
+        Stats.SetTamCanh(newTamCanh);
+
+        return new ResultCombatResult()
+        {
+            Success = true,
+            NewHP = newHp,
+            NewCamNgo = camNgoAdd.ToArray(),
+            Reward = newReward,
+            NewNgoDaoDiem = newNgoDaoDiem,
+            TypeResultCombat = request.TypeResultCombat,
+            NewPointRank = ArenaManager.Points,
+            NewTamCanh = Stats.TamCanh,
+        };
+    }
     private List<ItemEvent> GenerateItemEvents()
     {
         return EventService.GenerateItemEvents();
