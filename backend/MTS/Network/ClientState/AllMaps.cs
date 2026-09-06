@@ -11,12 +11,56 @@ public class AllMaps : IClientState
     private Client client;
     private const string NotEnoughEnergy = "Không đủ năng lượng";
     private bool isMoving;
-
+    private static event Action<PlayerMoving> OnPlayerMoving;
     public AllMaps(Client client)
     {
         this.client = client;
+        client.OnLogout += OnLogout;
+        client.OnOtherClientLogin += OnOtherClientLogin;
+        client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
+        OnPlayerMoving += OnOtherPlayerMoving;
     }
 
+    private void OnOtherPlayerMoving(PlayerMoving playerMoving)
+    {
+        if (IsMe(playerMoving.CharId))
+        {
+            return;
+        }
+        client.MemSend(MessageTag.OtherPlayerMoving, playerMoving);
+    }
+
+    public void OnRemove()
+    {
+        client.OnOtherClientLogin -= OnOtherClientLogin;
+        client.OnLogout -= OnLogout;
+        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+        OnPlayerMoving -= OnOtherPlayerMoving;
+    }
+    private void OnRemoveDisconnectedSession(Client client)
+    {
+        OnRemove();
+    }
+
+    private void OnOtherClientLogin(Client client)
+    {
+        OnRemove();
+    }
+
+    private void OnLogout(Client client)
+    {
+        OnRemove();
+    }
+
+    private bool IsMe(int charId)
+    {
+        var charData = client.CharacterData;
+        if (charData == null)
+        {
+            return false;
+        }
+        return charData.Id == charId;
+    }
     public void OnEnter()
     {
     }
@@ -90,9 +134,20 @@ public class AllMaps : IClientState
                         CharactersOnline = charsOnline,
                         NewAge = newAge
                     };
+                    var playerMoving = new PlayerMoving()
+                    {
+                        CharId = charData.Id,
+                        Name = charData.Name,
+                        Appearance = charData.Appearance,
+                        Gender = charData.Gender,
+                        IsSwordRiding = charData.IsInfiniteEnergy,
+                        Path = pathIds
+                    };
+                    OnPlayerMoving?.Invoke(playerMoving);
                 }
 
                 client.Send(MessageTag.MoveToMapResult, result);
+                
             }
             catch (InvalidException e)
             {
@@ -170,6 +225,7 @@ public class AllMaps : IClientState
 
     public void OnLeave()
     {
+        OnRemove();
     }
 
     public MessageState State => MessageState.AllMaps;
