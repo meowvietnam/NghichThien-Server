@@ -11,19 +11,24 @@ public enum SpendFor
     Auction = 8,
     Arena = 16,
     TrungSinh = 32,
-    UpgradeDongPhu = 48
+    UpgradeDongPhu = 48,
+    EventShop = 56
 }
+
 [MemoryPackable]
 public partial class SpendingMoneyVip
 {
     [Key] public long Id { get; set; }
+
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [MemoryPackIgnore]
     public int CharId { get; set; }
+
     public SpendFor SpendFor { get; set; }
     public long MoneyVip { get; set; }
     public DateTime Time { get; set; } = DateTime.UtcNow;
+
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [ForeignKey(nameof(CharId))]

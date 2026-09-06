@@ -103,7 +103,7 @@ public static class EventService
                         {
                             MoneyVip = config.MoneyVip,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Count = (ushort)config.Count,
                             Tiers = config.Tiers,
@@ -148,7 +148,7 @@ public static class EventService
                         {
                             MoneyVip = 100,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.DiaGiaiTrung],
                             Type = ItemType.ThanThong,
@@ -173,7 +173,7 @@ public static class EventService
                         {
                             MoneyVip = 300,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.DiaGiaiTrung],
                             Type = ItemType.CongPhap,
@@ -198,7 +198,7 @@ public static class EventService
                         {
                             MoneyVip = 500,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.DiaGiaiThuong],
                             Type = ItemType.ThanThong,
@@ -223,7 +223,7 @@ public static class EventService
                         {
                             MoneyVip = 700,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.DiaGiaiThuong],
                             Type = ItemType.CongPhap,
@@ -248,7 +248,7 @@ public static class EventService
                         {
                             MoneyVip = 900,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.ThienGiaiHa],
                             Type = ItemType.ThanThong,
@@ -273,7 +273,7 @@ public static class EventService
                         {
                             MoneyVip = 1100,
                         },
-                        new SpecialSkillEventReward()
+                        new RandomSpecialSkillEventReward()
                         {
                             Tiers = [ETierSkill.ThienGiaiHa],
                             Type = ItemType.CongPhap,
@@ -290,8 +290,115 @@ public static class EventService
             EndAt = endAt,
             GameEvent = gameEvent2
         };
+        var event3StartAt = new DateTimeOffset(2026, 09, 06, 0, 0, 0, Utc7).UtcDateTime;
+        var event3EndAt = event3StartAt.AddDays(8);
+        var gameEvent3 = new EventShop()
+        {
+            Title = "Công Pháp Đặc biệt nên mua khi đánh pvp thời gian thực, gia tộc chiến...",
+            Items = new List<ItemEventShop>()
+            {
+                new ()
+                {
+                    Id = 1,
+                    Amount = 100_000,
+                    MoneyVip = 22_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 702,
+                            Type = ItemType.CongPhap,
+                            Count = 1
+                        }
+                    }
+                },
+                new ()
+                {
+                    Id = 2,
+                    Amount = 500_000,
+                    MoneyVip = 120_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 702,
+                            Type = ItemType.CongPhap,
+                            Count = 6
+                        }
+                    }
+                },
+                new ()
+                {
+                    Id = 3,
+                    Amount = 1_000_000,
+                    MoneyVip = 300_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 702,
+                            Type = ItemType.CongPhap,
+                            Count = 15
+                        }
+                    }
+                },
+                new ()
+                {
+                    Id = 4,
+                    Amount = 50_000,
+                    MoneyVip = 11_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
+                            Type = ItemType.CongPhap,
+                            Count = 1
+                        }
+                    }
+                },
+                new ()
+                {
+                    Id = 5,
+                    Amount = 250_000,
+                    MoneyVip = 60_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
+                            Type = ItemType.CongPhap,
+                            Count = 6
+                        }
+                    }
+                },
+                new ()
+                {
+                    Id = 6,
+                    Amount = 500_000,
+                    MoneyVip = 150_000,
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
+                            Type = ItemType.CongPhap,
+                            Count = 15
+                        }
+                    }
+                }
+            }
+        };
+        var event3 = new Event()
+        {
+            Id = 2,
+            StartAt = event3StartAt,
+            EndAt = event3EndAt,
+            GameEvent = gameEvent3
+        };
         eventList.Add(event1);
         eventList.Add(event2);
+        eventList.Add(event3);
         return eventList;
     }
 

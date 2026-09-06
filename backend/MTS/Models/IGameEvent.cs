@@ -6,6 +6,7 @@ namespace MTS.Models;
 [MemoryPackable]
 [MemoryPackUnion(0, typeof(MilestoneEvent))]
 [MemoryPackUnion(1, typeof(RechargeEvent1))]
+[MemoryPackUnion(2, typeof(EventShop))]
 public partial interface IGameEvent
 {
     void Init(CharacterData charData);

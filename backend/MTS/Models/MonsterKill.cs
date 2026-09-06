@@ -61,7 +61,7 @@ public partial class MonsterKill
                             Count = 3
                         }
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiHa,
@@ -88,7 +88,7 @@ public partial class MonsterKill
                             Count = 6
                         }
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiHa,
@@ -106,7 +106,7 @@ public partial class MonsterKill
                     {
                         MoneyVip = 500,
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiTrung,
@@ -129,7 +129,7 @@ public partial class MonsterKill
                     {
                         MoneyVip = 700
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiTrung,
@@ -147,7 +147,7 @@ public partial class MonsterKill
                     {
                         MoneyVip = 900
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.ThanThong,
                         Tier = ETierSkill.DiaGiaiThuong,
@@ -165,7 +165,7 @@ public partial class MonsterKill
                     {
                         MoneyVip = 1100
                     },
-                    new SkillEventReward()
+                    new RandomSkillEventReward()
                     {
                         Type = ItemType.CongPhap,
                         Tier = ETierSkill.DiaGiaiThuong,

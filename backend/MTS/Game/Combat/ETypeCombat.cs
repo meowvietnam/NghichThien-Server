@@ -7,5 +7,7 @@
         LuanBan,
         DauTruong,
         Boss,
+        LuanBanRealTime,
+        TongMonChienRealTime
     }
 }

@@ -199,6 +199,10 @@ public class PaymentController : Controller
             {
                 await RechargeEvent1Service.Handle(order, db);
             }
+            else if (order.OrderType == OrderType.EventShop)
+            {
+                await EventShopService.Handle(order, db);
+            }
             else
             {
                 throw new InvalidException("OrderType không hợp lệ");
