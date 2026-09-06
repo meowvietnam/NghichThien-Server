@@ -261,5 +261,14 @@ public enum MessageTag
     InvitePvpRequest = 3110,
     InvitePvp = 3133,
     InvitePvpResponse = 3210,
-    PvpMatched = 3235
+    PvpMatched = 3235,
+    
+    ReadyCombatPvp = 3368,
+    SyncStartTurn = 3498,
+    SyncAdjustLinhKhi = 3410,
+    SyncBuff = 3418,
+    SyncDame = 3423,
+    SyncEndTurn = 3426,
+    SyncHealing = 3431,
+    SyncPlaySkill = 3443,
 }
