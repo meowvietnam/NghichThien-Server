@@ -290,19 +290,7 @@ public partial class CharacterData
     {
         request.ListIdThanThong
             .RemoveAll(item => !EquipmentManager.ThanThongEquips.Any(x => x.Id == item));
-
-        var idCounts = request.ListIdThanThong
-            .GroupBy(id => id)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        var thanThongDict = GameConfig.NDCPTTManager.ThanThongs
-            .Where(x => idCounts.ContainsKey(x.Id))
-            .ToDictionary(
-                x => x,
-                x => idCounts[x.Id]
-            );
         var enemyLevel = request.CurrentLevelEnemy;
-        var newTamCanh = Stats.TamCanh;
         int baseAddCamNgo = 5;
         List<CamNgo> camNgoAdd = new List<CamNgo>();
         var camNgo = new CamNgo()
@@ -318,14 +306,7 @@ public partial class CharacterData
         }
         InventoryManager.AddOrUpdate(camNgo);
         camNgoAdd.Add(camNgo);
-        var newNgoDaoDiem = Progression.NgoDaoDiem;
-        foreach (var item in thanThongDict)
-        {
-            newNgoDaoDiem = InventoryManager.UpdateNgoDaoWithSkill(item.Key, baseAddCamNgo, ref camNgoAdd, item.Value);
-        }
-
         int newHp = Stats.Hp;
-        int newPointRank = ArenaManager.Points;
         RewardSnapshot newReward = new RewardSnapshot();
         if (request.TypeCombat != ETypeCombat.LuanBanRealTime)
         {
@@ -388,29 +369,18 @@ public partial class CharacterData
                     newHp = Stats.SinhMenh / 2;
                 }
             }
-
             newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
             Stats.SetHp(newHp);
             Stats.SetThoNguyen(request.CurrentThoNguyen);
             Stats.SetThanThuc(request.CurrentThanThuc);
         }
-        var loseTypes = new[]
-            { ETypeResultCombat.LoseByDied, ETypeResultCombat.LoseByRun, ETypeResultCombat.LoseByTime };
-        if (loseTypes.Contains(request.TypeResultCombat))
-        {
-            var min = CharacterStats.GetMinTamCanh();
-            var decrease = (int)Math.Round((newTamCanh - min) * 0.1f);
-            newTamCanh = Math.Max(min, newTamCanh - decrease);
-        }
-        Stats.SetTamCanh(newTamCanh);
-
         return new ResultCombatResult()
         {
             Success = true,
             NewHP = newHp,
             NewCamNgo = camNgoAdd.ToArray(),
             Reward = newReward,
-            NewNgoDaoDiem = newNgoDaoDiem,
+            NewNgoDaoDiem = Progression.NgoDaoDiem,
             TypeResultCombat = request.TypeResultCombat,
             NewPointRank = ArenaManager.Points,
             NewTamCanh = Stats.TamCanh,
