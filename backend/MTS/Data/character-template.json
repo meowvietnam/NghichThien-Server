@@ -2,7 +2,7 @@
   "Id": 0,
   "Gender": 0,
   "Name": "",
-  "IsNoAds": true,
+  "IsNoAds": false,
   "IsInfiniteEnergy": true,
   "Stats": {
     "Kim": 20.0,
