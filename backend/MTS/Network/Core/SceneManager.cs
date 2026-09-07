@@ -17,6 +17,7 @@ public class SceneManager : IClientHandler
     private const string LuyenDan = "LuyenDan";
     private const string LuyenKhi = "LuyenKhi";
     private const string ConvertElementalSkill = "ConvertElementalSkill";
+    private const string ConvertDanLu = "ConvertDanLu";
     private const string Auction = "Auction";
     private const string DongPhu = "DongPhu";
     public SceneManager(Client client)
@@ -66,6 +67,13 @@ public class SceneManager : IClientHandler
                         lock (client.StateLock)
                         {
                             client.ChangeState(new ConvertElementalSkillState(client));
+                        }
+                        break;
+                    case ConvertDanLu:
+                        result.Success = true;
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new ConvertDanLuState(client));
                         }
                         break;
                     case Auction:

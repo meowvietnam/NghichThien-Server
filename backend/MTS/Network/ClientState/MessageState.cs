@@ -9,6 +9,7 @@ namespace MTS.Network.ClientState
         LuyenDan,
         LuyenKhi,
         ConvertElementalSkill,
+        ConvertDanLu,
         AuctionState,
         TrungSinh,
         DongPhuState,

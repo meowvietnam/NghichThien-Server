@@ -90,6 +90,11 @@ public static class Strings
     public static string ConvertElementalSkillResourceNotFound => _current.ConvertElementalSkillResourceNotFound;
     public static string ConvertElementalSkillResultNotFound => _current.ConvertElementalSkillResultNotFound;
     public static string ConvertElementalSkillSuccess => _current.ConvertElementalSkillSuccess;
+    public static string ConvertDanLuItemCountInvalid => _current.ConvertDanLuItemCountInvalid;
+    public static string ConvertDanLuFurnaceNotOwned => _current.ConvertDanLuFurnaceNotOwned;
+    public static string ConvertDanLuResourceNotFound => _current.ConvertDanLuResourceNotFound;
+    public static string ConvertDanLuResultNotFound => _current.ConvertDanLuResultNotFound;
+    public static string ConvertDanLuSuccess => _current.ConvertDanLuSuccess;
     public static string NotCompleteFirstMainQuest => _current.NotCompleteFirstMainQuest;
     public static string MonPhaiExisted => _current.MonPhaiExisted;
     public static string HackerMainQuest => _current.HackerMainQuest;
