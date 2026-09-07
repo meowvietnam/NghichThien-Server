@@ -152,6 +152,10 @@ public partial class CharacterData
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
+        if (special)
+        {
+            Log.Information("Special: {tiers}", string.Join(", ", tierOrder.Select(x => x.ToString())));
+        }
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps
@@ -199,13 +203,21 @@ public partial class CharacterData
             ETierSkill.ThienGiaiTrung,
             ETierSkill.ThienGiaiThuong
         };
-        var tierIndex = Array.IndexOf(allTiers, tier);
-        if (tierIndex < 0)
-        {
-            return allTiers;
-        }
 
-        return allTiers.Skip(tierIndex).Concat(allTiers.Take(tierIndex)).ToArray();
+        var tierIndex = Array.IndexOf(allTiers, tier);
+
+        if (tierIndex < 0)
+            return allTiers;
+
+        var result = new List<ETierSkill> { tier };
+
+        for (var i = tierIndex - 1; i >= 0; i--)
+            result.Add(allTiers[i]);
+
+        for (var i = tierIndex + 1; i < allTiers.Length; i++)
+            result.Add(allTiers[i]);
+
+        return result.ToArray();
     }
 
     private ItemRef RollDanDuoc(bool special = false)

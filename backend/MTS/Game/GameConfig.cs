@@ -1,6 +1,7 @@
 using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
+using MTS.Game.BaseSkill;
 using MTS.Game.CreateCharacter;
 using MTS.Game.DP;
 using MTS.Game.Gacha;
@@ -14,6 +15,7 @@ using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
 using MTS.Game.Gacha;
+using Serilog;
 using static MTS.Utils.Utils;
 
 namespace MTS.Game;
@@ -278,6 +280,5 @@ public static class GameConfig
                 .SelectMany(y => y))
             .Select(x=>(ushort)x.Id)
             .ToHashSet();
-
     }
 }
