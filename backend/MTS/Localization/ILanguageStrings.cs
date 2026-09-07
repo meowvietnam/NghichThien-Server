@@ -94,6 +94,12 @@ public abstract class ILanguageStrings
     public abstract string ConvertElementalSkillResultNotFound { get; }
     public abstract string ConvertElementalSkillSuccess { get; }
 
+    public abstract string ConvertDanLuItemCountInvalid { get; }
+    public abstract string ConvertDanLuFurnaceNotOwned { get; }
+    public abstract string ConvertDanLuResourceNotFound { get; }
+    public abstract string ConvertDanLuResultNotFound { get; }
+    public abstract string ConvertDanLuSuccess { get; }
+
     // Quest / Mon Phai messages
     public abstract string NotCompleteFirstMainQuest { get; }
     public abstract string MonPhaiExisted { get; }

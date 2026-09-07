@@ -189,6 +189,7 @@ public enum MessageTag
     DailyReset = 1123,
 
     ConvertElementalSkillRequest = 1232,
+    ConvertDanLuRequest = 1233,
 
     JoinAuction = 1234,
     JoinAuctionResult = 1235,

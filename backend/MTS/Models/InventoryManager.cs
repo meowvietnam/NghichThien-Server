@@ -233,7 +233,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
         {
             if (Furnaces.TryGetValue(furnace, out var owner))
             {
-                Furnaces.Remove(furnace);
+                Furnaces.Remove(owner);
                 Tracking.Furnaces.Delete(owner);
                 return true;
             }

@@ -82,6 +82,11 @@ public class VietnameseStrings : ILanguageStrings
     public override string ConvertElementalSkillResourceNotFound => "Kỹ năng chuyển đổi không tồn tại!";
     public override string ConvertElementalSkillResultNotFound => "Không tìm thấy kỹ năng phù hợp để chuyển đổi!";
     public override string ConvertElementalSkillSuccess => "Chuyển đổi thành công!";
+    public override string ConvertDanLuItemCountInvalid => "Cần chọn đúng 4 đan lô để chuyển đổi!";
+    public override string ConvertDanLuFurnaceNotOwned => "Đan lô không thuộc sở hữu của bạn!";
+    public override string ConvertDanLuResourceNotFound => "Dữ liệu đan lô không tồn tại!";
+    public override string ConvertDanLuResultNotFound => "Không tìm thấy đan phương phù hợp để chuyển đổi!";
+    public override string ConvertDanLuSuccess => "Chuyển đổi đan lô thành đan phương thành công!";
     public override string NotCompleteFirstMainQuest => "Cần hoàn thành nhiệm vụ chính đầu tiên!";
     public override string MonPhaiExisted => "Đã gia nhập môn phái!";
     public override string HackerMainQuest => "Dữ liệu nhiệm vụ chính không hợp lệ!";

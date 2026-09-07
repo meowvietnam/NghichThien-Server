@@ -85,6 +85,11 @@ public class EnglishStrings : ILanguageStrings
     public override string ConvertElementalSkillResourceNotFound => "Conversion skill does not exist!";
     public override string ConvertElementalSkillResultNotFound => "No matching skill was found for conversion!";
     public override string ConvertElementalSkillSuccess => "Conversion successful!";
+    public override string ConvertDanLuItemCountInvalid => "Exactly 4 furnaces are required for conversion!";
+    public override string ConvertDanLuFurnaceNotOwned => "The furnace does not belong to you!";
+    public override string ConvertDanLuResourceNotFound => "Furnace data does not exist!";
+    public override string ConvertDanLuResultNotFound => "No matching recipe was found for conversion!";
+    public override string ConvertDanLuSuccess => "Successfully converted furnaces into a recipe!";
     public override string NotCompleteFirstMainQuest => "The first main quest must be completed!";
     public override string MonPhaiExisted => "A sect has already been joined!";
     public override string HackerMainQuest => "Main quest data is invalid!";
