@@ -49,7 +49,9 @@ public class Startup : BackgroundService
         });
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
+        // await AddEvents(db);
     }
+
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.EventManagers

@@ -3,6 +3,7 @@ using MTS.Game.LuyenDan;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Utils;
+using Serilog;
 
 namespace MTS.Models;
 
@@ -12,41 +13,63 @@ public partial class CharacterData
 
     public ConvertDanLuResult ConvertDanLu(ConvertDanLuRequest request)
     {
-        var furnaceSelfIds = request.FurnaceSelfIds;
-        // Validate: exactly 4 đan lô
-        if (furnaceSelfIds == null || furnaceSelfIds.Count != ConvertDanLuRequiredCount)
+        var recipeItems = request.RecipeItems;
+
+        // Validate: tổng số lượng phải đúng 4 đan phương
+        if (recipeItems == null || recipeItems.Count == 0)
         {
             throw new InvalidException(Strings.ConvertDanLuItemCountInvalid);
         }
-        var furnaceConverts = furnaceSelfIds.Select(x => new FurnaceData()
+
+        var totalCount = recipeItems.Sum(x => x.Count);
+        if (totalCount != ConvertDanLuRequiredCount)
         {
-            SelfId = x
-        }).ToList();
+            throw new InvalidException(Strings.ConvertDanLuItemCountInvalid);
+        }
+
+        if (recipeItems.Any(x => x.Count <= 0))
+        {
+            throw new InvalidException(Strings.ConvertDanLuItemCountInvalid);
+        }
+
         var resources = LuyenDanResources.Instance;
 
-        // Validate each furnace, verify ownership and retrieve its Tier
-        var furnaceTiers = furnaceConverts.Select(f =>
+        // Xác thực từng đan phương và lấy Tier
+        var recipeTiers = recipeItems.SelectMany(itemRef =>
         {
-            // Must be owned by this character
-            if (!InventoryManager.Furnaces.TryGetValue(f, out var owned))
-            {
-                throw new InvalidException(Strings.ConvertDanLuFurnaceNotOwned);
-            }
-
-            var data = resources.TempFurnaceDatas.FirstOrDefault(x => x.Id == owned.Id);
-            if (data == null)
+            // Phải là loại Recipe
+            if (itemRef.Type != ItemType.Recipe)
             {
                 throw new InvalidException(Strings.ConvertDanLuResourceNotFound);
             }
 
-            return new { Furnace = owned, Tier = data.Tier };
+            // Phải được sở hữu
+            if (!InventoryManager.Recipes.TryGetValue(itemRef, out var owned))
+            {
+                throw new InvalidException(Strings.ConvertDanLuFurnaceNotOwned);
+            }
+
+            if (owned.Count < itemRef.Count)
+            {
+                throw new InvalidException(Strings.ConvertDanLuFurnaceNotOwned);
+            }
+
+            // Lấy dữ liệu RecipeData để biết Tier
+            var recipeData = resources.FindRecipe(itemRef.Id);
+            if (recipeData == null)
+            {
+                throw new InvalidException(Strings.ConvertDanLuResourceNotFound);
+            }
+
+            // Trả về tier cho từng "đơn vị" đan phương (Count lần)
+            return Enumerable.Repeat(recipeData.Tier, itemRef.Count);
         }).ToArray();
 
-        // Determine result tier weighted by input tiers
+        // Tính tỉ lệ tier theo số lượng (chia đều mỗi đan phương)
         var oneRate = 100f / ConvertDanLuRequiredCount;
-        var tierCounts = furnaceTiers
-            .GroupBy(x => x.Tier)
-            .Select(x => new { Tier = x.Key, Count = x.Count() })
+        var tierCounts = recipeTiers
+            .GroupBy(t => t)
+            .Select(g => new { Tier = g.Key, Count = g.Count() })
             .ToArray();
 
         var randomItem = new ItemRateRandomizer<Tier>();
@@ -54,54 +77,54 @@ public partial class CharacterData
         {
             randomItem.Add(tc.Tier, tc.Count * oneRate);
         }
-
-        // Find a matching recipe (đan phương) for the rolled tier
-        RecipeData resultRecipe = null!;
-        while (resultRecipe == null && randomItem.Items.Count > 0)
+        Log.Information(string.Join(", ", tierCounts.Select(x => $"T: {x.Tier} - R: {x.Count*oneRate}")));
+        // Tìm ngẫu nhiên đan lô (TempFurnaceData) khớp tier
+        TempFurnaceData resultFurnaceData = null!;
+        while (resultFurnaceData == null && randomItem.Items.Count > 0)
         {
             var tier = randomItem.Random();
             randomItem.Remove(tier);
 
-            var candidates = resources.Recipes
+            var candidates = resources.TempFurnaceDatas
                 .Where(x => x.Tier == tier)
                 .ToArray();
 
             if (candidates.Any())
             {
-                resultRecipe = candidates.Random();
+                resultFurnaceData = candidates.Random();
             }
         }
 
-        if (resultRecipe == null)
+        if (resultFurnaceData == null)
         {
             throw new InvalidException(Strings.ConvertDanLuResultNotFound);
         }
 
-        var recipeRef = new ItemRef()
+        // Tạo FurnaceData mới để thêm vào inventory
+        var newFurnace = new FurnaceData()
         {
-            Type = ItemType.Recipe,
-            Id = (ushort)resultRecipe.Id,
-            Count = 1
+            Id = (ushort)resultFurnaceData.Id,
+            Durability = 100,
         };
 
         lock (InventoryManager.SyncRoot)
         {
-            // Remove the 4 đan lô
-            foreach (var item in furnaceConverts)
+            // Trừ các đan phương đầu vào
+            foreach (var itemRef in recipeItems)
             {
-                InventoryManager.RemoveFurnace(item);
+                InventoryManager.Decrease(itemRef);
             }
 
-            // Add the đan phương
-            InventoryManager.Add(recipeRef);
+            // Thêm đan lô kết quả
+            InventoryManager.AddFurnace(newFurnace);
         }
 
         return new ConvertDanLuResult()
         {
             Success = true,
             Message = Strings.ConvertDanLuSuccess,
-            FurnaceSelfIds = furnaceSelfIds,
-            ItemResult = recipeRef
+            RecipeItems = recipeItems,
+            FurnaceResult = newFurnace
         };
     }
 }

@@ -88,7 +88,7 @@ public class AllMaps : IClientState
             .OrderBy(_ => Random.Shared.Next())
             .Take(5)
             .ToArray();
-        charsOnline = new[] { new CharacterSnapshot(TcpServer.Instance.Scarecrow) }.Concat(charsOnline).ToArray();
+        // charsOnline = new[] { new CharacterSnapshot(TcpServer.Instance.Scarecrow) }.Concat(charsOnline).ToArray();
         return charsOnline;
     }
 
