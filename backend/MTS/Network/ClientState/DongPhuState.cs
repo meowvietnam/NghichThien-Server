@@ -26,7 +26,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         this.referenceVisitor = referenceVisitor;
         client.OnOtherClientLogin += OnOtherClientLogin;
         client.OnLogout += OnLogout;
-        client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired += OnDisconnectedSessionExpired;
     }
 
     public bool IsMe(int charId)
@@ -383,7 +383,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         referenceVisitor.RemoveState(this);
     }
 
-    private void OnRemoveDisconnectedSession(Client client)
+    private void OnDisconnectedSessionExpired(Client client)
     {
         observer.RemoveState(this);
         referenceTarget.RemoveState(this);
@@ -414,7 +414,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     {
         client.OnOtherClientLogin -= OnOtherClientLogin;
         client.OnLogout -= OnLogout;
-        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired -= OnDisconnectedSessionExpired;
     }
 
     public void ToAllMap()

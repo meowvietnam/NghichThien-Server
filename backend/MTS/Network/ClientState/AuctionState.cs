@@ -15,9 +15,9 @@ public class AuctionState : IClientState, ISender<MessageTag>
         playerAuction = new PlayerAuction(this);
         client.OnOtherClientLogin += OnOtherClientLogin;
         client.OnLogout += OnLogout;
-        client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired += OnDisconnectedSessionExpired;
     }
-    private void OnRemoveDisconnectedSession(Client client)
+    private void OnDisconnectedSessionExpired(Client client)
     {
         playerAuction.Exit();
     }
@@ -111,7 +111,7 @@ public class AuctionState : IClientState, ISender<MessageTag>
         playerAuction.OnExit();
         client.OnOtherClientLogin -= OnOtherClientLogin;
         client.OnLogout -= OnLogout;
-        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired -= OnDisconnectedSessionExpired;
     }
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {

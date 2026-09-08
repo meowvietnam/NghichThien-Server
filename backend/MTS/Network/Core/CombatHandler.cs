@@ -33,7 +33,7 @@ namespace MTS.Network.Core
             client.OnLogout += OnLogout;
             client.OnOtherClientLogin += OnOtherClientLogin;
             client.OnReconnectedSuccess += OnReconnectedSuccess;
-            client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
+            client.OnDisconnectedSessionExpired += OnDisconnectedSessionExpired;
         }
 
 
@@ -409,6 +409,7 @@ namespace MTS.Network.Core
                     Type = type,
                     Level = level,
                 };
+                client.ChangeState(null);
             }
         }
 
@@ -505,7 +506,7 @@ namespace MTS.Network.Core
         {
         }
 
-        private void OnRemoveDisconnectedSession(Client client)
+        private void OnDisconnectedSessionExpired(Client client)
         {
             if (!client.IsOnline())
             {
@@ -526,7 +527,7 @@ namespace MTS.Network.Core
             client.OnLogout -= OnLogout;
             client.OnOtherClientLogin -= OnOtherClientLogin;
             client.OnReconnectedSuccess -= OnReconnectedSuccess;
-            client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+            client.OnDisconnectedSessionExpired -= OnDisconnectedSessionExpired;
         }
     }
 }
