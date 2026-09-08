@@ -19,7 +19,7 @@ public class AllMaps : IClientState
         this.client = client;
         client.OnLogout += OnLogout;
         client.OnOtherClientLogin += OnOtherClientLogin;
-        client.OnRemoveDisconnectedSession += OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired += OnDisconnectedSessionExpired;
         OnPlayerMoving += OnOtherPlayerMoving;
     }
 
@@ -37,11 +37,11 @@ public class AllMaps : IClientState
     {
         client.OnOtherClientLogin -= OnOtherClientLogin;
         client.OnLogout -= OnLogout;
-        client.OnRemoveDisconnectedSession -= OnRemoveDisconnectedSession;
+        client.OnDisconnectedSessionExpired -= OnDisconnectedSessionExpired;
         OnPlayerMoving -= OnOtherPlayerMoving;
     }
 
-    private void OnRemoveDisconnectedSession(Client client)
+    private void OnDisconnectedSessionExpired(Client client)
     {
         OnRemove();
     }
@@ -88,7 +88,7 @@ public class AllMaps : IClientState
             .OrderBy(_ => Random.Shared.Next())
             .Take(5)
             .ToArray();
-        // charsOnline = new[] { new CharacterSnapshot(TcpServer.Instance.Scarecrow) }.Concat(charsOnline).ToArray();
+        charsOnline = new[] { new CharacterSnapshot(TcpServer.Instance.Scarecrow) }.Concat(charsOnline).ToArray();
         return charsOnline;
     }
 

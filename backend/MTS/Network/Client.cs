@@ -34,7 +34,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
     }
     public event Action<Client> OnOtherClientLogin;
     public event Action<Client> OnLogout;
-    public event Action<Client> OnRemoveDisconnectedSession;
+    public event Action<Client> OnDisconnectedSessionExpired;
+    public event Action<Client> OnSessionReconnected;
     public Client(UnauthenticatedClient client)
     {
         Id = client.Id;
@@ -120,9 +121,13 @@ public class Client : ClientConnection, IRequester<MessageTag>
     {
         OnLogout?.Invoke(this);
     }
-    public void InvokeRemoveDisconnectedSession()
+    public void InvokeDisconnectedSessionExpired()
     {
-        OnRemoveDisconnectedSession?.Invoke(this);
+        OnDisconnectedSessionExpired?.Invoke(this);
+    }
+    public void InvokeSessionReconnected()
+    {
+        OnSessionReconnected?.Invoke(this);
     }
     public async Task ForceLogout()
     {

@@ -77,7 +77,6 @@ public partial class CharacterData
         {
             randomItem.Add(tc.Tier, tc.Count * oneRate);
         }
-        Log.Information(string.Join(", ", tierCounts.Select(x => $"T: {x.Tier} - R: {x.Count*oneRate}")));
         // Tìm ngẫu nhiên đan lô (TempFurnaceData) khớp tier
         TempFurnaceData resultFurnaceData = null!;
         while (resultFurnaceData == null && randomItem.Items.Count > 0)
