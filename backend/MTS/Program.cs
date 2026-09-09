@@ -21,6 +21,8 @@ public static class Program
 {
     public static WebApplication App { get; private set; }
     public static IDbContextFactory<AppDbContext> Db { get; private set; }
+    public static CloudflareR2Service R2 =>
+        App.Services.GetRequiredService<CloudflareR2Service>();
     private static PayOSClient payOSClient;
     public static async Task<AppDbContext> CreateDbAsync()
     {
@@ -146,6 +148,9 @@ public static class Program
             );
             builder.Services.AddSingleton(payOSClient);
             builder.Services.AddSingleton(new SnowflakeIdGenerator(1));
+            builder.Services.Configure<CloudflareR2Options>(
+                builder.Configuration.GetSection(CloudflareR2Options.SectionName));
+            builder.Services.AddSingleton<CloudflareR2Service>();
             builder.Services.AddScoped<JwtService>();
             App = builder.Build();
             Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();

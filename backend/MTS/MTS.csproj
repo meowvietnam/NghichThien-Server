@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <!-- Entity Framework Core -->
+        <PackageReference Include="AWSSDK.S3" Version="4.0.103" />
         <PackageReference Include="Google.Apis.AndroidPublisher.v3" Version="1.74.0.4165" />
         <PackageReference Include="JetBrains.Profiler.Api" Version="1.4.11" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
@@ -33,6 +34,7 @@
         <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="8.0.0-nblumhardt-02322" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="4.1.1" />
         <PackageReference Include="Spectre.Console" Version="0.57.3-alpha.0.1" />
 
         <!-- Swagger / OpenAPI -->
@@ -105,6 +107,9 @@
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <None Update="Data\core-config.bin">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Data\google-play.png">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
