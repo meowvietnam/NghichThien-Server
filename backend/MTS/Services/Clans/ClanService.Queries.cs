@@ -12,6 +12,7 @@ public sealed partial class ClanService
         try
         {
             Require(charId > 0, "CharacterRequired");
+            Require(settings.IsValid(), "InvalidClanConfiguration");
             Require(Enum.IsDefined(r.Query) && r.AfterId >= 0 && r.RequestId != Guid.Empty, "InvalidQuery");
             using var strategyDb = factory.CreateDbContext();
             return strategyDb.Database.CreateExecutionStrategy().Execute(() =>
@@ -22,6 +23,15 @@ public sealed partial class ClanService
                 var result = new ClanResponse { RequestId = r.RequestId, Success = true, Code = "Ok" };
                 var limit = Math.Clamp(r.Limit, 1, 50);
                 var now = DateTime.UtcNow;
+                if (r.Query == ClanQueryType.Payments)
+                {
+                    var payments = db.ClanCreationPayments.AsNoTracking()
+                        .Where(x => x.CharId == charId && (r.AfterId == 0 || x.OrderId < r.AfterId))
+                        .OrderByDescending(x => x.OrderId).Take(limit + 1).ToArray();
+                    result.Payments = payments.Take(limit).Select(ClanPaymentService.ToDto).ToArray();
+                    result.NextCursor = payments.Length > limit ? result.Payments.Last().OrderId : 0;
+                    return result;
+                }
                 if (r.Query == ClanQueryType.Search)
                 {
                     Require((r.Search?.Length ?? 0) <= 64, "InvalidSearch");
@@ -66,6 +76,13 @@ public sealed partial class ClanService
                         LeaderCharId = clan.LeaderCharId, Version = clan.Version,
                         Announcement = member == null ? "" : clan.Announcement,
                         Funds = member == null ? 0 : clan.Funds,
+                        JadeFunds = member == null ? 0 : clan.JadeFunds,
+                        CastleNodeId = member == null ? null : clan.CastleNodeId,
+                        ActiveInheritanceId = member?.ActiveInheritanceId,
+                        DonationUnitMoneyVip = member == null ? 0 : settings.DonationUnitMoneyVip,
+                        FreeDonationAvailable = member != null && settings.DonationUnitMoneyVip > 0 &&
+                            !db.ClanMemberPeriodStats.Any(x => x.CharId == charId && x.ScopeId == 0 &&
+                                x.PeriodId == PeriodId(now) && x.CounterType == "FreeDonation" && x.Value > 0),
                         MyRole = member == null ? -1 : (int)EffectiveRole(clan, member),
                         MyContribution = member?.TotalContribution ?? 0,
                         MyAvailableContribution = member?.AvailableContribution ?? 0 };
@@ -74,6 +91,17 @@ public sealed partial class ClanService
                 Require(member != null, "NotMember");
                 switch (r.Query)
                 {
+                    case ClanQueryType.Inheritances:
+                        var unlocked = db.ClanInheritances.Where(x => x.ClanId == clan.Id).Select(x => x.InheritanceId).ToHashSet();
+                        var learned = db.ClanMemberInheritances.Where(x => x.CharId == charId && x.ClanId == clan.Id)
+                            .Select(x => x.InheritanceId).ToHashSet();
+                        var definitions = settings.Inheritances.Where(x => x.Id > r.AfterId).OrderBy(x => x.Id).Take(limit + 1).ToArray();
+                        result.Inheritances = definitions.Take(limit).Select(x => new ClanInheritanceDto {
+                            Id = x.Id, Name = x.Name, Effect = x.Effect, Element = x.Element, Value = x.Value,
+                            UnlockCost = x.UnlockCost, LearnCost = x.LearnCost, MinClanLevel = x.MinClanLevel,
+                            Unlocked = unlocked.Contains(x.Id), Learned = learned.Contains(x.Id) }).ToArray();
+                        result.NextCursor = definitions.Length > limit ? result.Inheritances.Last().Id : 0;
+                        break;
                     case ClanQueryType.Members:
                         var members = (from m in db.ClanMembers.AsNoTracking()
                             join c in db.Characters.AsNoTracking() on m.CharId equals c.Id
@@ -103,13 +131,14 @@ public sealed partial class ClanService
                         break;
                     case ClanQueryType.Ledger:
                         var ledger = db.ClanLedgerEntries.AsNoTracking().Where(x => x.ClanId == clan.Id &&
-                            (x.AccountType == ClanLedgerAccount.Funds || x.ActorCharId == charId) && (r.AfterId == 0 || x.Id < r.AfterId))
+                            (x.AccountType == ClanLedgerAccount.Funds || x.AccountType == ClanLedgerAccount.JadeFunds || x.ActorCharId == charId) && (r.AfterId == 0 || x.Id < r.AfterId))
                             .OrderByDescending(x => x.Id).Take(limit + 1).Select(x => new ClanLogDto { Id = x.Id,
                                 ActorCharId = x.ActorCharId, Action = x.Reason + ":" + x.AccountType,
                                 Delta = x.Delta, BalanceAfter = x.BalanceAfter, CreatedAt = x.CreatedAt }).ToArray();
                         result.Logs = ledger.Take(limit).ToArray();
                         result.NextCursor = ledger.Length > limit ? result.Logs.Last().Id : 0;
                         break;
+                    default: throw new ClanRuleException("InvalidQuery");
                 }
                 return result;
             });

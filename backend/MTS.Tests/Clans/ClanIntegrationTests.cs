@@ -45,6 +45,7 @@ public sealed class ClanDatabase : IDisposable, IDbContextFactory<AppDbContext>
         db.Entry(user).State = EntityState.Added;
         db.SaveChanges();
         var character = new CharacterData { UserId = user.Id, Name = "T" + Guid.NewGuid().ToString("N") };
+        character.SetMoneyVip(money);
         db.Entry(character).State = EntityState.Added;
         db.SaveChanges();
         var stats = new CharacterStats { CharId = character.Id };
@@ -55,8 +56,8 @@ public sealed class ClanDatabase : IDisposable, IDbContextFactory<AppDbContext>
         db.SaveChanges();
         return new Actor(character.Id, money);
     }
-    public ClanService Service(int capacity = 30, int dailyLimit = 100000, int creationCost = 0) =>
-        new(this, Options.Create(new ClanOptions { InitialCapacity = capacity, DailyDonationLimit = dailyLimit, CreationCost = creationCost }));
+    public ClanService Service(int capacity = 30, int creationCost = 10) =>
+        new(this, Options.Create(new ClanOptions { InitialCapacity = capacity, DonationUnitMoneyVip = 100, CreationMoneyVipCost = creationCost }), new TestWorld());
     public void Dispose() { using var db = CreateDbContext(); db.Database.EnsureDeleted(); }
 }
 
@@ -65,13 +66,15 @@ public sealed class Actor(int id, int money) : IClanActor
     public object SyncRoot { get; } = new();
     public int CharId => id;
     public int Level => 0;
-    public int LinhThach { get; set; } = money;
+    public int MoneyVip { get; set; } = money;
 }
+
+public sealed class TestWorld : IClanWorldCatalog { public bool Contains(int nodeId) => nodeId == 1; }
 
 public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDatabase>
 {
     private static ClanCommandRequest Command(ClanCommandType type, int clanId = 0, int target = 0) =>
-        new() { RequestId = Guid.NewGuid(), Command = type, ClanId = clanId, TargetCharId = target };
+        new() { RequestId = Guid.NewGuid(), Command = type, ClanId = clanId, TargetCharId = target, CastleNodeId = 1 };
     private static ClanResponse Run(ClanService service, Actor actor, ClanCommandRequest request)
     {
         var result = service.Execute(actor, request);
@@ -104,15 +107,15 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     public void Duplicate_donation_debits_once_and_does_not_restore_old_wallet_on_replay()
     {
         var actor = database.NewActor(); var service = database.Service(); var id = Create(service, actor);
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100;
-        Run(service, actor, request); Assert.Equal(900, actor.LinhThach);
-        actor.LinhThach = 850; // a later gameplay purchase
-        var replay = Run(service, actor, request); Assert.Equal(850, replay.LinhThach);
+        var request = Command(ClanCommandType.Donate, id);
+        Run(service, actor, request); Assert.Equal(890, actor.MoneyVip);
+        actor.MoneyVip = 850; // a later gameplay purchase
+        var replay = Run(service, actor, request); Assert.Equal(850, replay.MoneyVip);
         using var db = database.CreateDbContext();
-        Assert.Equal(100, db.Clans.Single(x => x.Id == id).Funds);
-        Assert.Equal(900, db.CharacterStats.Single(x => x.CharId == actor.CharId).LinhThach);
-        Assert.Equal(3, db.ClanLedgerEntries.Count(x => x.ClanId == id));
-        request.Amount = 200;
+        Assert.Equal(100, db.Clans.Single(x => x.Id == id).JadeFunds);
+        Assert.Equal(890, db.Characters.Single(x => x.Id == actor.CharId).MoneyVip);
+        Assert.Equal(4, db.ClanLedgerEntries.Count(x => x.ClanId == id));
+        request.DonationCount = 10;
         Assert.Equal("RequestIdReused", service.Execute(actor, request).Code);
     }
 
@@ -120,25 +123,32 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     public void Failed_donation_rolls_back_everything()
     {
         var actor = database.NewActor(50); var service = database.Service(); var id = Create(service, actor);
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100;
+        var request = Command(ClanCommandType.Donate, id);
         Assert.Equal("InsufficientFunds", service.Execute(actor, request).Code);
         using var db = database.CreateDbContext();
         Assert.Equal(0, db.Clans.Single(x => x.Id == id).Funds);
-        Assert.Equal(50, actor.LinhThach);
-        Assert.Empty(db.ClanLedgerEntries.Where(x => x.ClanId == id));
+        Assert.Equal(40, actor.MoneyVip);
+        Assert.Empty(db.ClanLedgerEntries.Where(x => x.RequestId == request.RequestId));
         Assert.Empty(db.ClanMemberPeriodStats.Where(x => x.CharId == actor.CharId));
         Assert.DoesNotContain(db.ClanCommandReceipts, x => x.RequestId == request.RequestId);
     }
 
     [MySqlFact]
-    public void Daily_limit_is_character_wide()
+    public void Free_donation_is_once_daily_and_paid_batches_have_no_daily_cap()
     {
-        var actor = database.NewActor(); var service = database.Service(dailyLimit: 100); var id = Create(service, actor);
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100; Run(service, actor, request);
-        request = Command(ClanCommandType.Donate, id); request.Amount = 1;
-        Assert.Equal("DailyLimit", service.Execute(actor, request).Code);
+        var actor = database.NewActor(5000); var service = database.Service(); var id = Create(service, actor);
+        var request = Command(ClanCommandType.Donate, id); request.FreeDonation = true; Run(service, actor, request);
+        Assert.Equal(4990, actor.MoneyVip);
+        request.RequestId = Guid.NewGuid();
+        Assert.Equal("FreeDonationUsed", service.Execute(actor, request).Code);
+        for (var i = 0; i < 2; i++)
+        {
+            request = Command(ClanCommandType.Donate, id); request.DonationCount = 10; Run(service, actor, request);
+        }
+        Assert.Equal(2990, actor.MoneyVip);
         using var db = database.CreateDbContext();
-        Assert.Equal(0, db.ClanMemberPeriodStats.Single(x => x.CharId == actor.CharId).ScopeId);
+        Assert.All(db.ClanMemberPeriodStats.Where(x => x.CharId == actor.CharId), x => Assert.Equal(0, x.ScopeId));
+        Assert.Equal(2100, db.Clans.Single(x => x.Id == id).JadeFunds);
     }
 
     [MySqlFact]
@@ -195,9 +205,11 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     {
         var leader = database.NewActor(); var outsider = database.NewActor(); var service = database.Service(); var id = Create(service, leader);
         var update = Command(ClanCommandType.UpdateSettings, id); update.Announcement = "Secret"; Run(service, leader, update);
-        var donate = Command(ClanCommandType.Donate, id); donate.Amount = 10; Run(service, leader, donate);
+        var donate = Command(ClanCommandType.Donate, id); Run(service, leader, donate);
         var publicDetail = Query(service, outsider, ClanQueryType.Detail, id).Detail;
         Assert.Equal("", publicDetail.Announcement); Assert.Equal(0, publicDetail.Funds); Assert.Equal(-1, publicDetail.MyRole);
+        Assert.Equal(0, publicDetail.JadeFunds); Assert.Null(publicDetail.CastleNodeId);
+        Assert.Equal(1, Query(service, leader, ClanQueryType.Mine).Detail.CastleNodeId);
         Assert.Equal("Secret", Query(service, leader, ClanQueryType.Mine).Detail.Announcement);
     }
 
@@ -226,13 +238,13 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     public void Creation_fee_and_insufficient_fee_are_atomic()
     {
         var actor = database.NewActor(100); var service = database.Service(creationCost: 60); var id = Create(service, actor);
-        Assert.Equal(40, actor.LinhThach);
+        Assert.Equal(40, actor.MoneyVip);
         var poor = database.NewActor(10); var request = Command(ClanCommandType.Create); request.Name = "Poor" + Guid.NewGuid().ToString("N");
         Assert.Equal("InsufficientFunds", service.Execute(poor, request).Code);
         using var db = database.CreateDbContext();
         Assert.False(db.Clans.Any(x => x.Name == request.Name));
         Assert.False(db.ClanMembers.Any(x => x.CharId == poor.CharId));
-        Assert.Equal(40, db.CharacterStats.Single(x => x.CharId == actor.CharId).LinhThach);
+        Assert.Equal(40, db.Characters.Single(x => x.Id == actor.CharId).MoneyVip);
     }
 
     [MySqlFact]
@@ -251,29 +263,29 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     public void Donation_uses_live_stats_and_later_autosave_preserves_committed_balance()
     {
         var actor = database.NewActor(); var service = database.Service(); var id = Create(service, actor);
-        CharacterStats stats;
-        using (var db = database.CreateDbContext()) stats = db.CharacterStats.AsNoTracking().Single(x => x.CharId == actor.CharId);
-        stats.SetLinhThach(800); // gameplay change not yet flushed by periodic autosave
+        CharacterData stats;
+        using (var db = database.CreateDbContext()) stats = db.Characters.AsNoTracking().Single(x => x.Id == actor.CharId);
+        stats.SetMoneyVip(800); // gameplay change not yet flushed by periodic autosave
         var live = new StatsActor(stats);
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100;
+        var request = Command(ClanCommandType.Donate, id);
         Assert.True(service.Execute(live, request).Success);
-        Assert.Equal(700, stats.LinhThach);
+        Assert.Equal(700, stats.MoneyVip);
         lock (live.SyncRoot)
         {
             using var autosave = database.CreateDbContext();
             stats.SaveChanges(autosave).GetAwaiter().GetResult();
         }
         using var verify = database.CreateDbContext();
-        Assert.Equal(700, verify.CharacterStats.Single(x => x.CharId == actor.CharId).LinhThach);
-        Assert.Equal(100, verify.Clans.Single(x => x.Id == id).Funds);
+        Assert.Equal(700, verify.Characters.Single(x => x.Id == actor.CharId).MoneyVip);
+        Assert.Equal(100, verify.Clans.Single(x => x.Id == id).JadeFunds);
     }
 
-    private sealed class StatsActor(CharacterStats stats) : IClanActor
+    private sealed class StatsActor(CharacterData stats) : IClanActor
     {
         public object SyncRoot { get; } = new();
-        public int CharId => stats.CharId;
+        public int CharId => stats.Id;
         public int Level => 0;
-        public int LinhThach { get => stats.LinhThach; set => stats.SetLinhThach(value); }
+        public int MoneyVip { get => stats.MoneyVip; set => stats.SetMoneyVip(value); }
     }
 
     [MySqlFact]
@@ -281,13 +293,13 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     {
         var actor = database.NewActor(); var normal = database.Service(); var id = Create(normal, actor);
         var interceptor = new LostCommitAck();
-        var service = new ClanService(new FaultFactory(database, interceptor), Options.Create(new ClanOptions()));
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100;
+        var service = new ClanService(new FaultFactory(database, interceptor), Options.Create(new ClanOptions { DonationUnitMoneyVip = 100 }), new TestWorld());
+        var request = Command(ClanCommandType.Donate, id);
         Run(service, actor, request);
-        Assert.Equal(900, actor.LinhThach);
+        Assert.Equal(890, actor.MoneyVip);
         using var db = database.CreateDbContext();
-        Assert.Equal(100, db.Clans.Single(x => x.Id == id).Funds);
-        Assert.Equal(900, db.CharacterStats.Single(x => x.CharId == actor.CharId).LinhThach);
+        Assert.Equal(100, db.Clans.Single(x => x.Id == id).JadeFunds);
+        Assert.Equal(890, db.Characters.Single(x => x.Id == actor.CharId).MoneyVip);
         Assert.Single(db.ClanCommandReceipts.Where(x => x.RequestId == request.RequestId));
     }
 
@@ -295,14 +307,14 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     public void Failure_after_wallet_update_rolls_back_money_and_clan()
     {
         var actor = database.NewActor(); var normal = database.Service(); var id = Create(normal, actor);
-        var service = new ClanService(new FaultFactory(database, new FailReceiptSave()), Options.Create(new ClanOptions()));
-        var request = Command(ClanCommandType.Donate, id); request.Amount = 100;
+        var service = new ClanService(new FaultFactory(database, new FailReceiptSave()), Options.Create(new ClanOptions { DonationUnitMoneyVip = 100 }), new TestWorld());
+        var request = Command(ClanCommandType.Donate, id);
         Assert.Throws<InvalidOperationException>(() => service.Execute(actor, request));
         using var db = database.CreateDbContext();
-        Assert.Equal(1000, actor.LinhThach);
-        Assert.Equal(1000, db.CharacterStats.Single(x => x.CharId == actor.CharId).LinhThach);
+        Assert.Equal(990, actor.MoneyVip);
+        Assert.Equal(990, db.Characters.Single(x => x.Id == actor.CharId).MoneyVip);
         Assert.Equal(0, db.Clans.Single(x => x.Id == id).Funds);
-        Assert.Empty(db.ClanLedgerEntries.Where(x => x.ClanId == id));
+        Assert.Empty(db.ClanLedgerEntries.Where(x => x.RequestId == request.RequestId));
     }
 
     [MySqlFact]
@@ -333,7 +345,7 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
         role.RequestId = Guid.NewGuid(); role.Role = (int)ClanRole.Leader;
         Assert.Equal("InvalidRole", service.Execute(leader, role).Code);
         Run(service, deputy, Command(ClanCommandType.Leave, id));
-        var donate = Command(ClanCommandType.Donate, id); donate.Amount = 1; Run(service, leader, donate);
+        var donate = Command(ClanCommandType.Donate, id); Run(service, leader, donate);
         Assert.Equal("ClanHasFunds", service.Execute(leader, Command(ClanCommandType.Dissolve, id)).Code);
     }
 
@@ -396,5 +408,116 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
         Action<ClanChangedDto> current = _ => calls++;
         realtime.Subscribe(1, old); realtime.Subscribe(1, current); realtime.Unsubscribe(1, old);
         realtime.Publish(new[] { 1, 1, 2 }, new ClanChangedDto()); Assert.Equal(1, calls);
+    }
+
+    [MySqlFact]
+    public void Creation_requires_configured_price_valid_node_and_payment_method()
+    {
+        var actor = database.NewActor(); var request = Command(ClanCommandType.Create);
+        request.Name = "Rules" + Guid.NewGuid().ToString("N");
+        Assert.Equal("CreationPriceNotConfigured", database.Service(creationCost: 0).Execute(actor, request).Code);
+        request.CastleNodeId = -1;
+        Assert.Equal("InvalidCastleNode", database.Service().Execute(actor, request).Code);
+        request.CastleNodeId = 1; request.CreationPaymentMethod = 2;
+        Assert.Equal("InvalidPaymentMethod", database.Service().Execute(actor, request).Code);
+        Assert.Equal(1000, actor.MoneyVip);
+    }
+
+    [MySqlFact]
+    public void Donation_rejects_client_amount_and_invalid_batch()
+    {
+        var actor = database.NewActor(); var service = database.Service(); var id = Create(service, actor);
+        var request = Command(ClanCommandType.Donate, id); request.Amount = 1;
+        Assert.False(service.Execute(actor, request).Success);
+        request.Amount = 0; request.DonationCount = 2;
+        Assert.Equal("InvalidDonationCount", service.Execute(actor, request).Code);
+        request.FreeDonation = true; request.DonationCount = 10;
+        Assert.Equal("InvalidDonationCount", service.Execute(actor, request).Code);
+        Assert.True(Query(service, actor, ClanQueryType.Mine).Detail.FreeDonationAvailable);
+        request.DonationCount = 1; Run(service, actor, request);
+        Assert.False(Query(service, actor, ClanQueryType.Mine).Detail.FreeDonationAvailable);
+    }
+
+    [MySqlFact]
+    public void Inheritance_unlock_learn_select_and_leave_enforce_costs_and_access()
+    {
+        var settings = Options.Create(new ClanOptions { CreationMoneyVipCost = 10, DonationUnitMoneyVip = 100,
+            Inheritances = [new ClanInheritanceDefinition { Id = 1, Name = "Kim", Effect = 1, Element = 1,
+                Value = 2, UnlockCost = 100, LearnCost = 50 }] });
+        var service = new ClanService(database, settings, new TestWorld());
+        var leader = database.NewActor(); var member = database.NewActor(); var outsider = database.NewActor();
+        var id = Create(service, leader, true); Run(service, member, Command(ClanCommandType.Apply, id));
+        var unlock = Command(ClanCommandType.UnlockInheritance, id); unlock.InheritanceId = 1;
+        Assert.Equal("Forbidden", service.Execute(member, unlock).Code);
+        Assert.Equal("InsufficientClanFunds", service.Execute(leader, unlock).Code);
+        var learn = Command(ClanCommandType.LearnInheritance, id); learn.InheritanceId = 1;
+        Assert.Equal("InheritanceLocked", service.Execute(member, learn).Code);
+        Run(service, member, Command(ClanCommandType.Donate, id)); Run(service, leader, unlock);
+        Run(service, leader, unlock); // receipt replay must not debit twice
+        Run(service, member, learn); Run(service, member, learn);
+        var mine = Query(service, member, ClanQueryType.Mine).Detail;
+        Assert.Equal(0, mine.JadeFunds); Assert.Equal(50, mine.MyAvailableContribution); Assert.Equal(1, mine.ActiveInheritanceId);
+        var inheritance = Assert.Single(Query(service, member, ClanQueryType.Inheritances, id).Inheritances);
+        Assert.True(inheritance.Unlocked); Assert.True(inheritance.Learned);
+        Assert.Equal("NotMember", Query(service, outsider, ClanQueryType.Inheritances, id).Code);
+        Run(service, member, Command(ClanCommandType.SelectInheritance, id));
+        Assert.Null(Query(service, member, ClanQueryType.Mine).Detail.ActiveInheritanceId);
+        Run(service, member, Command(ClanCommandType.Leave, id));
+        using var db = database.CreateDbContext();
+        Assert.False(db.ClanMemberInheritances.Any(x => x.CharId == member.CharId));
+    }
+
+    private sealed class FakeGateway : IClanPaymentGateway
+    {
+        public int Calls;
+        public Task<ClanCheckout> CreateOrRecover(long orderId, long amount, DateTime expiresAt)
+        {
+            Calls++;
+            return Task.FromResult(new ClanCheckout("link-" + orderId, "https://example.com/checkout/" + orderId));
+        }
+    }
+
+    [MySqlFact]
+    public async Task Paid_creation_is_owned_consumed_once_and_survives_rejected_creation()
+    {
+        var actor = database.NewActor(); var outsider = database.NewActor(); var gateway = new FakeGateway();
+        var payments = new ClanPaymentService(database, Options.Create(new ClanOptions { CreationPayOsVnd = 20000 }),
+            new MTS.Services.SnowflakeIdGenerator(1), gateway, new ClanRealtimeService());
+        var requestId = Guid.NewGuid(); var response = await payments.Prepare(actor.CharId, requestId);
+        var order = Assert.Single(response.Payments);
+        Assert.Equal(order.OrderId, Assert.Single((await payments.Prepare(actor.CharId, requestId)).Payments).OrderId);
+        Assert.Equal(1, gateway.Calls);
+        var service = database.Service();
+        Assert.Single(Query(service, actor, ClanQueryType.Payments).Payments);
+        Assert.Empty(Query(service, outsider, ClanQueryType.Payments).Payments);
+        var create = Command(ClanCommandType.Create); create.Name = "Paid" + Guid.NewGuid().ToString("N");
+        create.CreationPaymentMethod = 1; create.PaymentOrderId = order.OrderId;
+        Assert.Equal("PaidCreationRequired", service.Execute(actor, create).Code);
+        Assert.Throws<ClanRuleException>(() => payments.AcceptVerified(order.OrderId, 1, "VND", "00", "link-" + order.OrderId, "ref"));
+        Assert.True(payments.AcceptVerified(order.OrderId, order.Amount, "VND", "00", "link-" + order.OrderId, "ref"));
+        Assert.True(payments.AcceptVerified(order.OrderId, order.Amount, "VND", "00", "link-" + order.OrderId, "ref"));
+        Assert.Equal("PaidCreationRequired", service.Execute(outsider, create).Code);
+        create.Name = "x"; Assert.Equal("InvalidName", service.Execute(actor, create).Code);
+        create.Name = "Paid" + Guid.NewGuid().ToString("N");
+        var created = Run(service, actor, create); Run(service, actor, create);
+        Assert.Equal(1000, actor.MoneyVip);
+        Assert.True(payments.AcceptVerified(order.OrderId, order.Amount, "VND", "00", "link-" + order.OrderId, "ref"));
+        var paid = Assert.Single(Query(service, actor, ClanQueryType.Payments).Payments);
+        Assert.Equal((int)ClanCreationPaymentStatus.Consumed, paid.Status); Assert.Equal(created.ClanId, paid.ClanId);
+    }
+
+    [MySqlFact]
+    public async Task Expired_checkout_is_rejected_but_delayed_verified_payment_is_honored()
+    {
+        var actor = database.NewActor();
+        var payments = new ClanPaymentService(database, Options.Create(new ClanOptions { CreationPayOsVnd = 10000 }),
+            new MTS.Services.SnowflakeIdGenerator(2), new FakeGateway(), new ClanRealtimeService());
+        var requestId = Guid.NewGuid(); var order = Assert.Single((await payments.Prepare(actor.CharId, requestId)).Payments);
+        using (var db = database.CreateDbContext())
+            db.ClanCreationPayments.Where(x => x.OrderId == order.OrderId).ExecuteUpdate(s => s.SetProperty(x => x.ExpiresAt, DateTime.UtcNow.AddMinutes(-1)));
+        var error = await Assert.ThrowsAsync<ClanRuleException>(() => payments.Prepare(actor.CharId, requestId));
+        Assert.Equal("PaymentLinkExpired", error.Code);
+        Assert.True(payments.AcceptVerified(order.OrderId, order.Amount, "VND", "00", "link-" + order.OrderId, "late"));
+        Assert.Equal((int)ClanCreationPaymentStatus.Paid, Assert.Single((await payments.Prepare(actor.CharId, requestId)).Payments).Status);
     }
 }

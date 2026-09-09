@@ -14,7 +14,7 @@ public sealed class ClanHandler : IClientHandler
     private int busy;
     private long nextAllowedQuery;
     private long nextAllowedCommand;
-    private bool left;
+    private volatile bool left;
     public ClanHandler(Client client)
     {
         this.client = client;
@@ -92,21 +92,33 @@ public sealed class ClanHandler : IClientHandler
         }
         if (tag == MessageTag.ClanQuery) nextAllowedQuery = now + 200;
         else nextAllowedCommand = now + 100;
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
             try
             {
-                ClanResponse response;
+                ClanResponse? response = null;
                 // Share the existing character lock with autosave and inventory/skill handlers.
                 lock (client.CharacterLock)
                 {
                     if (left || !client.IsLoggedIn() || client.CharacterData?.Id != charId)
                         response = new ClanResponse { RequestId = requestId, Code = "CharacterRequired" };
-                    else if (tag == MessageTag.ClanPreparePayment)
-                        response = Program.App.Services.GetRequiredService<ClanPaymentService>().Prepare(charId, requestId).GetAwaiter().GetResult();
-                    else response = command != null ? service.Execute(new Actor(client), command) : service.Query(charId, query!);
+                    else if (tag != MessageTag.ClanPreparePayment)
+                    {
+                        response = command != null ? service.Execute(new Actor(client), command) : service.Query(charId, query!);
+                        if (response.Success) response.MoneyVip = client.CharacterData!.MoneyVip;
+                    }
+                    if (response != null)
+                    {
+                        Reply(tag, response);
+                        return;
+                    }
                 }
+                response ??= await Program.App.Services.GetRequiredService<ClanPaymentService>().Prepare(charId, requestId);
                 Reply(tag, response);
+            }
+            catch (ClanRuleException ex)
+            {
+                Reply(tag, new ClanResponse { RequestId = requestId, Code = ex.Code });
             }
             catch (Exception ex)
             {
@@ -116,7 +128,14 @@ public sealed class ClanHandler : IClientHandler
             finally { Interlocked.Exchange(ref busy, 0); }
         });
     }
-    private void Reply(MessageTag tag, ClanResponse response) => client.Send(tag, JsonConvert.SerializeObject(response));
+    private void Reply(MessageTag tag, ClanResponse response)
+    {
+        lock (client.CharacterLock)
+        {
+            if (!left && client.IsLoggedIn() && client.CharacterData?.Id == charId)
+                client.Send(tag, JsonConvert.SerializeObject(response));
+        }
+    }
     private sealed class Actor(Client client) : IClanActor
     {
         public object SyncRoot => client.CharacterLock;

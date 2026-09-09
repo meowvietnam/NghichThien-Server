@@ -1,7 +1,7 @@
 #nullable disable
 using System;
 
-// Keep byte-for-byte identical to the Unity copy. JSON wire contract v1.
+// Keep byte-for-byte identical to the Unity copy. JSON wire contract v2.
 namespace Network.Models.Clans
 {
     public enum ClanCommandType
@@ -106,12 +106,37 @@ namespace Network.Models.Clans
         public int ClanId { get; set; }
         public long Version { get; set; }
         public int? LinhThach { get; set; }
+        public int? MoneyVip { get; set; }
+        public ClanPaymentDto[] Payments { get; set; }
+        public ClanInheritanceDto[] Inheritances { get; set; }
         public long NextCursor { get; set; }
         public ClanDetailDto Detail { get; set; }
         public ClanSummaryDto[] Clans { get; set; }
         public ClanMemberDto[] Members { get; set; }
         public ClanApplicationDto[] Applications { get; set; }
         public ClanLogDto[] Logs { get; set; }
+    }
+    public class ClanPaymentDto
+    {
+        public long OrderId { get; set; }
+        public long Amount { get; set; }
+        public string CheckoutUrl { get; set; }
+        public int Status { get; set; }
+        public DateTime ExpiresAt { get; set; }
+        public int? ClanId { get; set; }
+    }
+    public class ClanInheritanceDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int Effect { get; set; }
+        public int Element { get; set; }
+        public int Value { get; set; }
+        public long UnlockCost { get; set; }
+        public long LearnCost { get; set; }
+        public int MinClanLevel { get; set; }
+        public bool Unlocked { get; set; }
+        public bool Learned { get; set; }
     }
     // Invalidation only: no private data. Fetch an authorized snapshot after this event.
     public class ClanChangedDto

@@ -6,14 +6,14 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MTS.Data;
-using MTS.Game;
 using MTS.Models;
 using Newtonsoft.Json;
 using Network.Models.Clans;
 
 namespace MTS.Services.Clans;
 
-public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory, IOptions<ClanOptions> options)
+public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory, IOptions<ClanOptions> options,
+    IClanWorldCatalog world)
 {
     private readonly ClanOptions settings = options.Value;
     private static void Require(bool condition, string code)
@@ -33,6 +33,7 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 Require(actor.CharId > 0, "CharacterRequired");
                 Require(request.RequestId != Guid.Empty, "RequestIdRequired");
                 Require(Enum.IsDefined(request.Command), "InvalidCommand");
+                Require(settings.IsValid(), "InvalidClanConfiguration");
                 var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request))));
                 // Capture once under CharacterLock. No mutation of live stats until commit is known.
                 var walletBefore = actor.MoneyVip;
@@ -60,9 +61,11 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                         db.ClanAuditLogs.Add(new ClanAuditLog { ClanId = clan.Id, ActorCharId = actor.CharId,
                             TargetCharId = request.TargetCharId > 0 ? request.TargetCharId : null,
                             Action = request.Command.ToString(), RequestId = request.RequestId, CreatedAt = now,
-                            Data = JsonConvert.SerializeObject(new { request.Role, request.Amount, request.Approve }) });
+                            Data = JsonConvert.SerializeObject(new { request.Role, request.Approve, request.FreeDonation,
+                                request.DonationCount, request.InheritanceId, request.CreationPaymentMethod, request.PaymentOrderId }) });
                         db.ClanOutboxEvents.Add(new ClanOutboxEvent { EventId = Guid.NewGuid(), ClanId = clan.Id,
-                            TargetCharId = request.TargetCharId > 0 ? request.TargetCharId : actor.CharId,
+                            TargetCharId = request.Command is ClanCommandType.Kick or ClanCommandType.ReviewApplication or
+                                ClanCommandType.ChangeRole or ClanCommandType.TransferLeadership ? request.TargetCharId : actor.CharId,
                             ClanVersion = clan.Version, EventType = request.Command.ToString(), CreatedAt = now, NextAttemptAt = now });
                         db.ClanCommandReceipts.Add(new ClanCommandReceipt { ActorCharId = actor.CharId,
                             RequestId = request.RequestId, CommandType = request.Command.ToString(), PayloadHash = hash,
@@ -84,6 +87,7 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 if (walletAfter.HasValue) actor.MoneyVip = walletAfter.Value;
                 // A replay returns today's wallet, never an old balance from the saved receipt.
                 result.LinhThach = null;
+                result.MoneyVip = actor.MoneyVip;
                 return result;
             }
             catch (ClanRuleException ex)
@@ -131,7 +135,10 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
     {
         if (r.Command == ClanCommandType.Create)
         {
-            Require(GameConfig.MapManager.Maps.Any(x => x.Id == r.CastleNodeId), "InvalidCastleNode");
+            Require(world.Contains(r.CastleNodeId), "InvalidCastleNode");
+            Require(r.CreationPaymentMethod is 0 or 1, "InvalidPaymentMethod");
+            if (r.CreationPaymentMethod == 0)
+                Require(settings.CreationMoneyVipCost > 0, "CreationPriceNotConfigured");
             CanJoin(db, actor.CharId, now);
             var name = Regex.Replace((r.Name ?? "").Normalize(NormalizationForm.FormC).Trim(), @"\s+", " ");
             Require(name.Length is >= 2 and <= 64 && !name.Any(char.IsControl), "InvalidName");
@@ -146,11 +153,18 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
             db.SaveChanges();
             db.ClanMembers.Add(new ClanMember { CharId = actor.CharId, ClanId = created.Id, JoinedAt = now });
             CancelOtherApplications(db, actor.CharId, now);
-            if (settings.CreationMoneyVipCost > 0)
+            if (r.CreationPaymentMethod == 0)
             {
                 Debit(db, actor.CharId, walletBefore, settings.CreationMoneyVipCost, ref walletAfter);
                 Ledger(db, created.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterMoneyVip,
                     -settings.CreationMoneyVipCost, walletAfter!.Value, "Create", now);
+            }
+            else
+            {
+                var payment = db.ClanCreationPayments.SingleOrDefault(x => x.OrderId == r.PaymentOrderId && x.CharId == actor.CharId);
+                Require(payment is { Status: ClanCreationPaymentStatus.Paid, ConsumedByClanId: null }, "PaidCreationRequired");
+                payment!.Status = ClanCreationPaymentStatus.Consumed;
+                payment.ConsumedByClanId = created.Id;
             }
             return created;
         }
@@ -254,7 +268,8 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 break;
             case ClanCommandType.Donate:
                 Require(member != null, "NotMember");
-                Require(settings.DonationUnitMoneyVip > 0 && r.Amount == 0 && r.DonationCount is 1 or 10, "DonationPriceNotConfigured");
+                Require(settings.DonationUnitMoneyVip > 0, "DonationPriceNotConfigured");
+                Require(r.Amount == 0 && r.DonationCount is 1 or 10, "InvalidDonationCount");
                 Require(!r.FreeDonation || r.DonationCount == 1, "InvalidDonationCount");
                 var day = now.AddHours(settings.CalendarUtcOffsetHours);
                 var periodId = day.Year * 10000 + day.Month * 100 + day.Day;
@@ -272,7 +287,7 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                     Debit(db, actor.CharId, walletBefore, contribution, ref walletAfter);
                     Ledger(db, clan!.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterMoneyVip, -contribution, walletAfter!.Value, "Donate", now);
                 }
-                counter.Value += r.DonationCount;
+                counter.Value = checked(counter.Value + r.DonationCount);
                 counter.Version++;
                 clan!.JadeFunds = checked(clan.JadeFunds + contribution);
                 member!.AvailableContribution = checked(member.AvailableContribution + contribution);
@@ -281,10 +296,44 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.JadeFunds, contribution, clan.JadeFunds, "Donate", now);
                 Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Contribution, contribution, member.AvailableContribution, "Donate", now);
                 break;
+            case ClanCommandType.UnlockInheritance:
+                Permission(clan!, member, ClanPermission.EditSettings);
+                var unlock = Inheritance(r.InheritanceId);
+                Require(clan!.Level >= unlock.MinClanLevel, "ClanLevelTooLow");
+                Require(!db.ClanInheritances.Any(x => x.ClanId == clan.Id && x.InheritanceId == unlock.Id), "InheritanceAlreadyUnlocked");
+                Require(clan.JadeFunds >= unlock.UnlockCost, "InsufficientClanFunds");
+                clan.JadeFunds -= unlock.UnlockCost;
+                db.ClanInheritances.Add(new ClanInheritance { ClanId = clan.Id, InheritanceId = unlock.Id,
+                    UnlockedByCharId = actor.CharId, UnlockedAt = now });
+                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.JadeFunds, -unlock.UnlockCost, clan.JadeFunds, "UnlockInheritance", now);
+                break;
+            case ClanCommandType.LearnInheritance:
+                Require(member != null, "NotMember");
+                var learn = Inheritance(r.InheritanceId);
+                Require(db.ClanInheritances.Any(x => x.ClanId == clan!.Id && x.InheritanceId == learn.Id), "InheritanceLocked");
+                Require(!db.ClanMemberInheritances.Any(x => x.CharId == actor.CharId && x.ClanId == clan!.Id && x.InheritanceId == learn.Id), "InheritanceAlreadyLearned");
+                Require(member!.AvailableContribution >= learn.LearnCost, "InsufficientContribution");
+                member.AvailableContribution -= learn.LearnCost;
+                member.ActiveInheritanceId = learn.Id;
+                member.Version++;
+                db.ClanMemberInheritances.Add(new ClanMemberInheritance { CharId = actor.CharId, ClanId = clan!.Id,
+                    InheritanceId = learn.Id, LearnedAt = now });
+                Ledger(db, clan!.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Contribution, -learn.LearnCost, member.AvailableContribution, "LearnInheritance", now);
+                break;
+            case ClanCommandType.SelectInheritance:
+                Require(member != null, "NotMember");
+                if (r.InheritanceId != 0)
+                {
+                    Inheritance(r.InheritanceId);
+                    Require(db.ClanMemberInheritances.Any(x => x.CharId == actor.CharId && x.ClanId == clan!.Id && x.InheritanceId == r.InheritanceId), "InheritanceNotLearned");
+                }
+                member!.ActiveInheritanceId = r.InheritanceId == 0 ? null : r.InheritanceId;
+                member.Version++;
+                break;
             case ClanCommandType.Dissolve:
                 Permission(clan!, member, ClanPermission.Dissolve);
                 Require(clan!.MemberCount == 1, "MembersMustLeaveFirst");
-                Require(clan.Funds == 0, "ClanHasFunds");
+                Require(clan.Funds == 0 && clan.JadeFunds == 0, "ClanHasFunds");
                 RemoveMember(db, clan, member!, ClanLeaveReason.Dissolved, now);
                 clan.Status = ClanStatus.Dissolved;
                 clan.DissolvedAt = now;
@@ -310,6 +359,15 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
         Require(db.Characters.Where(x => x.Id == charId)
             .ExecuteUpdate(s => s.SetProperty(x => x.MoneyVip, balance)) == 1, "CharacterRequired");
         after = balance;
+    }
+
+    private ClanInheritanceDefinition Inheritance(int id) => settings.Inheritances.FirstOrDefault(x => x.Id == id)
+        ?? throw new ClanRuleException("InheritanceNotFound");
+
+    private int PeriodId(DateTime now)
+    {
+        var day = now.AddHours(settings.CalendarUtcOffsetHours);
+        return day.Year * 10000 + day.Month * 100 + day.Day;
     }
 
     private static void Ledger(AppDbContext db, int clanId, int actorId, Guid requestId, ClanLedgerAccount account,
