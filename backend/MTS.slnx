@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="../../../Library/Network/Network/Network.csproj" />
   <Project Path="../../../Library/NetworkServer/NetworkServer/NetworkServer.csproj" />
+  <Project Path="MTS.Tests/MTS.Tests.csproj" />
   <Project Path="MTS/MTS.csproj" />
 </Solution>

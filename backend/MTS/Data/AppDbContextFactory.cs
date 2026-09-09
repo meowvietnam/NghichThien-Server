@@ -8,6 +8,14 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
+        // Generate migrations without connecting to an application database.
+        if (args.Contains("--offline-migrations"))
+        {
+            var offline = new DbContextOptionsBuilder<AppDbContext>();
+            offline.UseMySql("Server=127.0.0.1;Database=mts_schema_only;User=migration;Password=unused",
+                new MySqlServerVersion(new Version(8, 0, 36)));
+            return new AppDbContext(offline.Options);
+        }
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())

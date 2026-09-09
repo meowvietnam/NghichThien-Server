@@ -535,6 +535,9 @@ public class Client : ClientConnection, IRequester<MessageTag>
     {
         var module = CoreModule;
 
+        module.RemoveHandler<ClanHandler>();
+        module.AddHandler(new ClanHandler(this));
+
         module.RemoveHandler<MailHandler>();
         var mailHandler = new MailHandler(this);
         module.AddHandler(mailHandler);

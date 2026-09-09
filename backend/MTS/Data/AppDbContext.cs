@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace MTS.Data;
 
-public class AppDbContext : DbContext
+public partial class AppDbContext : DbContext
 {
     public DbSet<GuestAccount> GuestAccounts { get; set; }
     public DbSet<GoogleAccount> GoogleAccounts { get; set; }
@@ -116,6 +116,7 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        ConfigureClans(modelBuilder);
         var json = "json";
         var blob = "blob";
         modelBuilder.Entity<GuestAccount>(e =>

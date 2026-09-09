@@ -1,14 +1,17 @@
 namespace MTS.Models;
+
 public class ClanMember
 {
-    public int ClanId { get; set; }
     public int CharId { get; set; }
-    public ClanRole Role { get; set; }
+    public int ClanId { get; set; }
+    // Leader is derived from Clan.LeaderCharId; never persist Leader here.
+    public ClanRole Role { get; set; } = ClanRole.Member;
+    public long TotalContribution { get; set; }
+    public long AvailableContribution { get; set; }
+    public DateTime JoinedAt { get; set; }
+    public long Version { get; set; } = 1;
 
-
-    public bool HasPermission(ClanPermission permission)
-    {
-        var permissions = ClanRolePermissions.GetPermissions(Role);
-        return permissions.HasFlag(permission);
-    }
+    public bool HasPermission(ClanPermission permission) =>
+        permission != ClanPermission.None &&
+        (ClanRolePermissions.GetPermissions(Role) & permission) == permission;
 }

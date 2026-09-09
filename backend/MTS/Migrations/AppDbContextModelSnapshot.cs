@@ -222,6 +222,441 @@ namespace MTS.Migrations
                     b.ToTable("CharacterStats");
                 });
 
+            modelBuilder.Entity("MTS.Models.Clan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Announcement")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("varchar(1024)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<DateTime?>("DissolvedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EmblemId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Experience")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Funds")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<byte>("JoinPolicy")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("LeaderCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MemberCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .UseCollation("utf8mb4_bin");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaderCharId");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Clans", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Clan_Funds", "`Funds` >= 0");
+
+                            t.HasCheckConstraint("CK_Clan_Members", "`MemberCount` >= 0 AND `MemberCount` <= `MaxMembers`");
+                        });
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanApplication", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ReviewedByCharId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedByCharId");
+
+                    b.HasIndex("CharId", "Status");
+
+                    b.HasIndex("ClanId", "CharId")
+                        .IsUnique();
+
+                    b.HasIndex("ClanId", "Status", "CreatedAt", "Id");
+
+                    b.ToTable("ClanApplications");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanAuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("ActorCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int?>("TargetCharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanId", "Id");
+
+                    b.ToTable("ClanAuditLogs");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanCommandReceipt", b =>
+                {
+                    b.Property<int>("ActorCharId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("CommandType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("ResultPayload")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.HasKey("ActorCharId", "RequestId");
+
+                    b.ToTable("ClanCommandReceipts");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanLedgerEntry", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<byte>("AccountType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("ActorCharId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("BalanceAfter")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Delta")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorCharId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("ClanId", "Id");
+
+                    b.ToTable("ClanLedgerEntries");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMember", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("AvailableContribution")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("Role")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<long>("TotalContribution")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CharId");
+
+                    b.HasIndex("ClanId", "CharId");
+
+                    b.ToTable("ClanMembers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ClanMember_Contribution", "`TotalContribution` >= 0 AND `AvailableContribution` >= 0");
+
+                            t.HasCheckConstraint("CK_ClanMember_Role", "`Role` >= 0 AND `Role` <= 2");
+                        });
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMemberPeriodStats", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ScopeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PeriodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CounterType")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CharId", "ScopeId", "PeriodId", "CounterType");
+
+                    b.ToTable("ClanMemberPeriodStats");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMembershipState", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastClanId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("LeaveReason")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<DateTime?>("LeftAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("NextJoinAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CharId");
+
+                    b.HasIndex("LastClanId");
+
+                    b.ToTable("ClanMembershipStates");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanOutboxEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ClanVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime>("NextAttemptAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TargetCharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanId");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("PublishedAt", "NextAttemptAt", "Id");
+
+                    b.ToTable("ClanOutboxEvents");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanRewardClaim", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ClaimedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("RewardKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<int>("SourceClanId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceClanId");
+
+                    b.HasIndex("CharId", "RewardKey")
+                        .IsUnique();
+
+                    b.ToTable("ClanRewardClaims");
+                });
+
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
                 {
                     b.Property<int>("CharId")
@@ -1461,6 +1896,130 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharacterData");
+                });
+
+            modelBuilder.Entity("MTS.Models.Clan", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("LeaderCharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanApplication", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByCharId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanAuditLog", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanCommandReceipt", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("ActorCharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanLedgerEntry", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("ActorCharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMember", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMemberPeriodStats", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMembershipState", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("LastClanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanOutboxEvent", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanRewardClaim", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("SourceClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
