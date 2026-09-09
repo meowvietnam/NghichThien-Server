@@ -129,11 +129,11 @@ public static class Program
 
             builder.Services.AddOptions<MTS.Services.Clans.ClanOptions>()
                 .Bind(builder.Configuration.GetSection("Clan"))
-                .Validate(x => x.CreationCost >= 0 && x.InitialCapacity > 0 && x.InitialCapacity <= x.MaxCapacity &&
+                .Validate(x => x.CreationMoneyVipCost >= 0 && x.CreationPayOsVnd >= 0 && x.DonationUnitMoneyVip >= 0 && x.InitialCapacity > 0 && x.InitialCapacity <= x.MaxCapacity &&
                     x.MaxCapacity <= 1000 && x.JoinCooldownHours >= 0 && x.JoinCooldownHours <= 8760 &&
                     x.ApplicationLifetimeHours > 0 && x.ApplicationLifetimeHours <= 8760 &&
                     x.MaxPendingApplications > 0 && x.MaxPendingApplications <= 100 &&
-                    x.DailyDonationLimit > 0 && x.CalendarUtcOffsetHours is >= -12 and <= 14, "Invalid Clan settings")
+                    x.DonationUnitMoneyVip <= int.MaxValue / 10 && x.CalendarUtcOffsetHours is >= -12 and <= 14, "Invalid Clan settings")
                 .ValidateOnStart();
             builder.Services.AddSingleton<MTS.Services.Clans.ClanService>();
             builder.Services.AddSingleton<MTS.Services.Clans.ClanRealtimeService>();

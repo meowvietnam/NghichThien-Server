@@ -120,10 +120,10 @@ public sealed class ClanHandler : IClientHandler
         public object SyncRoot => client.CharacterLock;
         public int CharId => client.CharacterData!.Id;
         public int Level => client.CharacterData!.Progression.Level;
-        public int LinhThach
+        public int MoneyVip
         {
-            get => client.CharacterData!.Stats.LinhThach;
-            set => client.CharacterData!.Stats.SetLinhThach(value);
+            get => client.CharacterData!.MoneyVip;
+            set => client.CharacterData!.SetMoneyVip(value);
         }
     }
 }

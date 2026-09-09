@@ -7,9 +7,10 @@ namespace Network.Models.Clans
     public enum ClanCommandType
     {
         Create, Apply, CancelApplication, ReviewApplication, Leave, Kick,
-        ChangeRole, TransferLeadership, UpdateSettings, Donate, Dissolve
+        ChangeRole, TransferLeadership, UpdateSettings, Donate, Dissolve,
+        UnlockInheritance, LearnInheritance, SelectInheritance
     }
-    public enum ClanQueryType { Search, Detail, Members, Applications, MyApplications, Audit, Ledger, Mine }
+    public enum ClanQueryType { Search, Detail, Members, Applications, MyApplications, Audit, Ledger, Mine, Inheritances, Payments }
     public class ClanCommandRequest
     {
         public Guid RequestId { get; set; }
@@ -26,6 +27,12 @@ namespace Network.Models.Clans
         public int MinLevel { get; set; }
         public int Role { get; set; }
         public int Amount { get; set; }
+        public bool FreeDonation { get; set; }
+        public int DonationCount { get; set; } = 1;
+        public int CastleNodeId { get; set; }
+        public int CreationPaymentMethod { get; set; } // 0 = jade, 1 = paid PayOS entitlement
+        public long PaymentOrderId { get; set; }
+        public int InheritanceId { get; set; }
         public bool Approve { get; set; }
     }
     public class ClanQueryRequest
@@ -54,6 +61,11 @@ namespace Network.Models.Clans
         public string Announcement { get; set; } = "";
         public int LeaderCharId { get; set; }
         public long Funds { get; set; }
+        public long JadeFunds { get; set; }
+        public int? CastleNodeId { get; set; }
+        public bool FreeDonationAvailable { get; set; }
+        public int DonationUnitMoneyVip { get; set; }
+        public int? ActiveInheritanceId { get; set; }
         public long Version { get; set; }
         public int MyRole { get; set; } = -1;
         public long MyContribution { get; set; }

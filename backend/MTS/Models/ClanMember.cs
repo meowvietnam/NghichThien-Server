@@ -6,6 +6,7 @@ public class ClanMember
     public int ClanId { get; set; }
     // Leader is derived from Clan.LeaderCharId; never persist Leader here.
     public ClanRole Role { get; set; } = ClanRole.Member;
+    public int? ActiveInheritanceId { get; set; }
     public long TotalContribution { get; set; }
     public long AvailableContribution { get; set; }
     public DateTime JoinedAt { get; set; }
