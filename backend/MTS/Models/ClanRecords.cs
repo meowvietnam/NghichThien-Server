@@ -33,7 +33,9 @@ public enum ClanLedgerAccount : byte
 {
     Funds,
     Contribution,
-    CharacterLinhThach
+    CharacterLinhThach,
+    CharacterMoneyVip,
+    JadeFunds
 }
 
 public class ClanMembershipState

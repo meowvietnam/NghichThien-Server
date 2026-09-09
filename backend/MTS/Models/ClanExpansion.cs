@@ -2,7 +2,8 @@ namespace MTS.Models;
 
 public enum ClanCreationPaymentStatus : byte { Pending, Paid, Consumed }
 
-// A paid entitlement survives name conflicts, joining another Clan, and delayed webhooks.
+// A successful payment grants a creation right. It is deliberately separate from a
+// Clan name, so a duplicate name or a full Clan cannot lose a paid order.
 public class ClanCreationPayment
 {
     public long OrderId { get; set; }
@@ -17,7 +18,6 @@ public class ClanCreationPayment
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public DateTime? PaidAt { get; set; }
-    public long Version { get; set; } = 1;
 }
 
 public class ClanInheritance

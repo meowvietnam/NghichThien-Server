@@ -7,7 +7,8 @@ namespace Network.Models.Clans
     public enum ClanCommandType
     {
         Create, Apply, CancelApplication, ReviewApplication, Leave, Kick,
-        ChangeRole, TransferLeadership, UpdateSettings, Donate, Dissolve, UnlockInheritance, LearnInheritance, SelectInheritance
+        ChangeRole, TransferLeadership, UpdateSettings, Donate, Dissolve,
+        UnlockInheritance, LearnInheritance, SelectInheritance
     }
     public enum ClanQueryType { Search, Detail, Members, Applications, MyApplications, Audit, Ledger, Mine, Inheritances, Payments }
     public class ClanCommandRequest
@@ -25,11 +26,11 @@ namespace Network.Models.Clans
         public int JoinPolicy { get; set; } = 1;
         public int MinLevel { get; set; }
         public int Role { get; set; }
-        public int Amount { get; set; } // Legacy: must remain 0 for donations in v2.
+        public int Amount { get; set; }
         public bool FreeDonation { get; set; }
         public int DonationCount { get; set; } = 1;
         public int CastleNodeId { get; set; }
-        public int CreationPaymentMethod { get; set; } // 0 = Tiên Ngọc, 1 = paid PayOS entitlement
+        public int CreationPaymentMethod { get; set; } // 0 = jade, 1 = paid PayOS entitlement
         public long PaymentOrderId { get; set; }
         public int InheritanceId { get; set; }
         public bool Approve { get; set; }
@@ -59,13 +60,13 @@ namespace Network.Models.Clans
         public string Description { get; set; } = "";
         public string Announcement { get; set; } = "";
         public int LeaderCharId { get; set; }
-        public long JadeFunds { get; set; }
         public long Funds { get; set; }
-        public long Version { get; set; }
+        public long JadeFunds { get; set; }
         public int? CastleNodeId { get; set; }
         public bool FreeDonationAvailable { get; set; }
         public int DonationUnitMoneyVip { get; set; }
         public int? ActiveInheritanceId { get; set; }
+        public long Version { get; set; }
         public int MyRole { get; set; } = -1;
         public long MyContribution { get; set; }
         public long MyAvailableContribution { get; set; }
@@ -104,38 +105,13 @@ namespace Network.Models.Clans
         public string Code { get; set; } = "";
         public int ClanId { get; set; }
         public long Version { get; set; }
-        public int? LinhThach { get; set; } // v1 compatibility; no longer modified by Clan.
-        public int? MoneyVip { get; set; }
-        public ClanInheritanceDto[] Inheritances { get; set; }
-        public ClanPaymentDto[] Payments { get; set; }
+        public int? LinhThach { get; set; }
         public long NextCursor { get; set; }
         public ClanDetailDto Detail { get; set; }
         public ClanSummaryDto[] Clans { get; set; }
         public ClanMemberDto[] Members { get; set; }
         public ClanApplicationDto[] Applications { get; set; }
         public ClanLogDto[] Logs { get; set; }
-    }
-    public class ClanInheritanceDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public int Effect { get; set; }
-        public int Element { get; set; }
-        public int Value { get; set; }
-        public long UnlockCost { get; set; }
-        public long LearnCost { get; set; }
-        public int MinClanLevel { get; set; }
-        public bool Unlocked { get; set; }
-        public bool Learned { get; set; }
-    }
-    public class ClanPaymentDto
-    {
-        public long OrderId { get; set; }
-        public long Amount { get; set; }
-        public string CheckoutUrl { get; set; }
-        public int Status { get; set; }
-        public DateTime ExpiresAt { get; set; }
-        public int? ClanId { get; set; }
     }
     // Invalidation only: no private data. Fetch an authorized snapshot after this event.
     public class ClanChangedDto

@@ -235,6 +235,9 @@ namespace MTS.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("varchar(1024)");
 
+                    b.Property<int?>("CastleNodeId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -258,6 +261,9 @@ namespace MTS.Migrations
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
+
+                    b.Property<long>("JadeFunds")
+                        .HasColumnType("bigint");
 
                     b.Property<byte>("JoinPolicy")
                         .HasColumnType("tinyint unsigned");
@@ -434,6 +440,78 @@ namespace MTS.Migrations
                     b.ToTable("ClanCommandReceipts");
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanCreationPayment", b =>
+                {
+                    b.Property<long>("OrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CheckoutUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("varchar(1024)");
+
+                    b.Property<int?>("ConsumedByClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PaymentLinkId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<string>("PaymentReference")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.HasKey("OrderId");
+
+                    b.HasIndex("ConsumedByClanId");
+
+                    b.HasIndex("CharId", "RequestId")
+                        .IsUnique();
+
+                    b.ToTable("ClanCreationPayments");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanInheritance", b =>
+                {
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InheritanceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UnlockedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UnlockedByCharId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClanId", "InheritanceId");
+
+                    b.ToTable("ClanInheritances");
+                });
+
             modelBuilder.Entity("MTS.Models.ClanLedgerEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -487,6 +565,9 @@ namespace MTS.Migrations
                     b.Property<int>("CharId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ActiveInheritanceId")
+                        .HasColumnType("int");
+
                     b.Property<long>("AvailableContribution")
                         .HasColumnType("bigint");
 
@@ -516,6 +597,27 @@ namespace MTS.Migrations
 
                             t.HasCheckConstraint("CK_ClanMember_Role", "`Role` >= 0 AND `Role` <= 2");
                         });
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMemberInheritance", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InheritanceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LearnedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("CharId", "ClanId", "InheritanceId");
+
+                    b.HasIndex("ClanId", "InheritanceId");
+
+                    b.ToTable("ClanMemberInheritances");
                 });
 
             modelBuilder.Entity("MTS.Models.ClanMemberPeriodStats", b =>
@@ -1945,6 +2047,29 @@ namespace MTS.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanCreationPayment", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ConsumedByClanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanInheritance", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.ClanLedgerEntry", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", null)
@@ -1971,6 +2096,21 @@ namespace MTS.Migrations
                     b.HasOne("MTS.Models.Clan", null)
                         .WithMany()
                         .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMemberInheritance", b =>
+                {
+                    b.HasOne("MTS.Models.ClanMember", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.ClanInheritance", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId", "InheritanceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

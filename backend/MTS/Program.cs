@@ -129,20 +129,12 @@ public static class Program
 
             builder.Services.AddOptions<MTS.Services.Clans.ClanOptions>()
                 .Bind(builder.Configuration.GetSection("Clan"))
-                .Validate(x => x.CreationMoneyVipCost >= 0 && x.CreationPayOsVnd >= 0 && x.InitialCapacity > 0 && x.InitialCapacity <= x.MaxCapacity &&
+                .Validate(x => x.CreationMoneyVipCost >= 0 && x.CreationPayOsVnd >= 0 && x.DonationUnitMoneyVip >= 0 && x.InitialCapacity > 0 && x.InitialCapacity <= x.MaxCapacity &&
                     x.MaxCapacity <= 1000 && x.JoinCooldownHours >= 0 && x.JoinCooldownHours <= 8760 &&
                     x.ApplicationLifetimeHours > 0 && x.ApplicationLifetimeHours <= 8760 &&
                     x.MaxPendingApplications > 0 && x.MaxPendingApplications <= 100 &&
-                    x.DonationUnitMoneyVip >= 0 && x.DonationUnitMoneyVip <= int.MaxValue / 10 &&
-                    x.Inheritances != null && x.Inheritances.All(i => i.Id > 0 && !string.IsNullOrWhiteSpace(i.Name) && i.Name.Length <= 64 &&
-                        i.Effect is 1 or 2 && (i.Effect != 1 || i.Element is >= 1 and <= 5) && i.Value is > 0 and <= 10000 &&
-                        i.UnlockCost >= 0 && i.LearnCost >= 0 && i.MinClanLevel > 0) &&
-                    x.Inheritances.Select(i => i.Id).Distinct().Count() == x.Inheritances.Length && x.CalendarUtcOffsetHours is >= -12 and <= 14, "Invalid Clan settings")
+                    x.DonationUnitMoneyVip <= int.MaxValue / 10 && x.CalendarUtcOffsetHours is >= -12 and <= 14, "Invalid Clan settings")
                 .ValidateOnStart();
-            builder.Services.AddSingleton<MTS.Services.Clans.IClanWorldCatalog, MTS.Services.Clans.ClanWorldCatalog>();
-            builder.Services.AddSingleton<MTS.Services.Clans.IClanPaymentGateway, MTS.Services.Clans.ClanPaymentGateway>();
-            builder.Services.AddSingleton<MTS.Services.Clans.ClanPaymentService>();
-            builder.Services.AddSingleton<MTS.Services.Clans.ClanCombatService>();
             builder.Services.AddSingleton<MTS.Services.Clans.ClanService>();
             builder.Services.AddSingleton<MTS.Services.Clans.ClanRealtimeService>();
             builder.Services.AddHostedService<MTS.Services.Clans.ClanOutboxWorker>();
