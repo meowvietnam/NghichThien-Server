@@ -127,24 +127,20 @@ public class PaymentController : Controller
         try
         {
             var data = await VerifyWebhook(webhook);
-            var clanPayments = HttpContext.RequestServices.GetRequiredService<MTS.Services.Clans.ClanPaymentService>();
+            var clanPayments = HttpContext.RequestServices.GetRequiredService<Services.Clans.ClanPaymentService>();
             try
             {
                 if (clanPayments.AcceptVerified(data.OrderCode, data.Amount, data.Currency, data.Code, data.PaymentLinkId, data.Reference))
                     return Ok(new { success = true });
             }
-            catch (MTS.Services.Clans.ClanRuleException)
+            catch (Services.Clans.ClanRuleException)
             {
                 return BadRequest(new { success = false, code = "InvalidClanPayment" });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Clan payment webhook failed for {OrderId}", data.OrderCode);
-                return StatusCode(503); // Do not ACK a transient DB failure; PayOS must retry.
-            }
-            if (webhook.Data.OrderCode == 343448523228160)
-            {
-                return Ok();
+                return StatusCode(503);
             }
             var order = await db.Orders
                 .Include(o => o.CharData)

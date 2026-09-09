@@ -161,6 +161,7 @@ public static class Program
             builder.Services.Configure<CloudflareR2Options>(
                 builder.Configuration.GetSection(CloudflareR2Options.SectionName));
             builder.Services.AddSingleton<CloudflareR2Service>();
+            builder.Services.AddTransient<MTS.Services.Clans.ClanImageService>();
             builder.Services.AddScoped<JwtService>();
             App = builder.Build();
             Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();

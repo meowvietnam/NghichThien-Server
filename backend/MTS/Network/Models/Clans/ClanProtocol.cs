@@ -1,7 +1,14 @@
 #nullable disable
 using System;
+using MemoryPack;
+#if UNITY_5_3_OR_NEWER
+using Base;
+using CreateCharacter;
+#else
+using MTS.Models;
+#endif
 
-// Keep byte-for-byte identical to the Unity copy. JSON wire contract v2.
+// Keep byte-for-byte identical to the Unity copy. MemoryPack wire contract v3. Preserve member declaration order.
 namespace Network.Models.Clans
 {
     public enum ClanCommandType
@@ -11,7 +18,8 @@ namespace Network.Models.Clans
         UnlockInheritance, LearnInheritance, SelectInheritance
     }
     public enum ClanQueryType { Search, Detail, Members, Applications, MyApplications, Audit, Ledger, Mine, Inheritances, Payments }
-    public class ClanCommandRequest
+    [MemoryPackable]
+    public partial class ClanCommandRequest
     {
         public Guid RequestId { get; set; }
         public ClanCommandType Command { get; set; }
@@ -30,12 +38,13 @@ namespace Network.Models.Clans
         public bool FreeDonation { get; set; }
         public int DonationCount { get; set; } = 1;
         public int CastleNodeId { get; set; }
-        public int CreationPaymentMethod { get; set; } // 0 = jade, 1 = paid PayOS entitlement
+        public int CreationPaymentMethod { get; set; }
         public long PaymentOrderId { get; set; }
         public int InheritanceId { get; set; }
         public bool Approve { get; set; }
     }
-    public class ClanQueryRequest
+    [MemoryPackable]
+    public partial class ClanQueryRequest
     {
         public Guid RequestId { get; set; }
         public ClanQueryType Query { get; set; }
@@ -44,7 +53,8 @@ namespace Network.Models.Clans
         public long AfterId { get; set; }
         public int Limit { get; set; } = 20;
     }
-    public class ClanSummaryDto
+    [MemoryPackable]
+    public partial class ClanSummaryDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = "";
@@ -54,8 +64,10 @@ namespace Network.Models.Clans
         public int MaxMembers { get; set; }
         public int JoinPolicy { get; set; }
         public int MinLevel { get; set; }
+        public string ImageUrl { get; set; }
     }
-    public class ClanDetailDto : ClanSummaryDto
+    [MemoryPackable]
+    public partial class ClanDetailDto : ClanSummaryDto
     {
         public string Description { get; set; } = "";
         public string Announcement { get; set; } = "";
@@ -71,15 +83,19 @@ namespace Network.Models.Clans
         public long MyContribution { get; set; }
         public long MyAvailableContribution { get; set; }
     }
-    public class ClanMemberDto
+    [MemoryPackable]
+    public partial class ClanMemberDto
     {
         public int CharId { get; set; }
         public string Name { get; set; } = "";
         public int Role { get; set; }
         public long Contribution { get; set; }
         public DateTime JoinedAt { get; set; }
+        public Gender Gender { get; set; }
+        public Appearance Appearance { get; set; } = new Appearance();
     }
-    public class ClanApplicationDto
+    [MemoryPackable]
+    public partial class ClanApplicationDto
     {
         public long Id { get; set; }
         public int ClanId { get; set; }
@@ -88,7 +104,8 @@ namespace Network.Models.Clans
         public int Status { get; set; }
         public DateTime ExpiresAt { get; set; }
     }
-    public class ClanLogDto
+    [MemoryPackable]
+    public partial class ClanLogDto
     {
         public long Id { get; set; }
         public int ActorCharId { get; set; }
@@ -98,7 +115,8 @@ namespace Network.Models.Clans
         public long BalanceAfter { get; set; }
         public DateTime CreatedAt { get; set; }
     }
-    public class ClanResponse
+    [MemoryPackable]
+    public partial class ClanResponse
     {
         public Guid RequestId { get; set; }
         public bool Success { get; set; }
@@ -116,7 +134,8 @@ namespace Network.Models.Clans
         public ClanApplicationDto[] Applications { get; set; }
         public ClanLogDto[] Logs { get; set; }
     }
-    public class ClanPaymentDto
+    [MemoryPackable]
+    public partial class ClanPaymentDto
     {
         public long OrderId { get; set; }
         public long Amount { get; set; }
@@ -125,7 +144,8 @@ namespace Network.Models.Clans
         public DateTime ExpiresAt { get; set; }
         public int? ClanId { get; set; }
     }
-    public class ClanInheritanceDto
+    [MemoryPackable]
+    public partial class ClanInheritanceDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -138,8 +158,8 @@ namespace Network.Models.Clans
         public bool Unlocked { get; set; }
         public bool Learned { get; set; }
     }
-    // Invalidation only: no private data. Fetch an authorized snapshot after this event.
-    public class ClanChangedDto
+    [MemoryPackable]
+    public partial class ClanChangedDto
     {
         public Guid EventId { get; set; }
         public int ClanId { get; set; }

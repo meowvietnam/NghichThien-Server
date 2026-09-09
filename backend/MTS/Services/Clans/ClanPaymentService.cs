@@ -48,7 +48,7 @@ public sealed class ClanPaymentService(IDbContextFactory<AppDbContext> factory, 
     {
         if (charId <= 0 || requestId == Guid.Empty) throw new ClanRuleException("InvalidRequest");
         if (!options.Value.IsValid()) throw new ClanRuleException("InvalidClanConfiguration");
-        using var strategyDb = factory.CreateDbContext();
+        await using var strategyDb = await factory.CreateDbContextAsync();
         var payment = strategyDb.Database.CreateExecutionStrategy().Execute(() => {
             using var db = factory.CreateDbContext();
             using var tx = db.Database.BeginTransaction(IsolationLevel.Serializable);
@@ -83,7 +83,8 @@ public sealed class ClanPaymentService(IDbContextFactory<AppDbContext> factory, 
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.CheckoutUrl, link.Url).SetProperty(x => x.PaymentLinkId, link.Id));
             if (updated != 1) throw new ClanRuleException("InvalidPayment");
         }
-        using var read = factory.CreateDbContext();
+
+        await using var read = await factory.CreateDbContextAsync();
         payment = read.ClanCreationPayments.AsNoTracking().Single(x => x.OrderId == payment.OrderId);
         return new ClanResponse { RequestId = requestId, Success = true, Code = "Ok", Payments = [ToDto(payment)] };
     }
@@ -109,7 +110,6 @@ public sealed class ClanPaymentService(IDbContextFactory<AppDbContext> factory, 
                 payment.PaidAt = DateTime.UtcNow;
                 db.SaveChanges();
             }
-            // Delayed verified payment is honored even after link expiry. Duplicate callbacks succeed.
             tx.Commit();
             return payment.CharId;
         });

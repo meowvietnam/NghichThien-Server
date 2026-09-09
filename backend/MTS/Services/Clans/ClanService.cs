@@ -35,7 +35,6 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 Require(Enum.IsDefined(request.Command), "InvalidCommand");
                 Require(settings.IsValid(), "InvalidClanConfiguration");
                 var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request))));
-                // Capture once under CharacterLock. No mutation of live stats until commit is known.
                 var walletBefore = actor.MoneyVip;
                 int? walletAfter = null;
                 var commitAttempted = false;
@@ -55,7 +54,7 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                         walletAfter = null;
                         var now = DateTime.UtcNow;
                         var clan = Apply(db, actor, request, now, walletBefore, ref walletAfter);
-                        db.SaveChanges(); // obtains generated ClanId, still inside the transaction
+                        db.SaveChanges();
                         var response = new ClanResponse { RequestId = request.RequestId, Success = true,
                             Code = "Ok", ClanId = clan.Id, Version = clan.Version };
                         db.ClanAuditLogs.Add(new ClanAuditLog { ClanId = clan.Id, ActorCharId = actor.CharId,

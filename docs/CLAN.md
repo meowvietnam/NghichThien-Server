@@ -86,7 +86,7 @@ Trước khi bật: cấu hình PayOS và kiểm tra webhook trong môi trườn
 
 ## API client và đồng bộ
 
-Hai phía phải cùng cập nhật protocol v2. Tag TCP: `ClanCommand=3600`, `ClanQuery=3601`, `ClanChanged=3602`, `ClanPreparePayment=3603`.
+Hai phía phải cùng cập nhật protocol v3 (MemoryPack), không tương thích với gói JSON v2. Tag TCP: `ClanCommand=3600`, `ClanQuery=3601`, `ClanChanged=3602`, `ClanPreparePayment=3603`. Client dùng `MemRequestWait`, server dùng `MemSend`; DTO hai phía phải giống nhau và giữ nguyên thứ tự khai báo thuộc tính. Receipt/audit trong DB vẫn giữ JSON để đọc lại lịch sử và retry cũ; chỉ giao thức TCP đổi sang MemoryPack.
 
 - `PreparePaymentAsync(requestId)`: giữ nguyên GUID khi timeout; trả `Payments[0]` gồm mã đơn, số tiền, URL, trạng thái và hạn thanh toán. Tối đa 3 đơn pending chưa hết hạn mỗi nhân vật. Giá được lưu lúc tạo đơn, thay cấu hình không đổi đơn cũ.
 - `QueryAsync(Payments)`: đọc đơn của chính nhân vật kể cả chưa có Clan; phân trang theo mã đơn giảm dần. Không dùng return URL làm bằng chứng đã trả tiền.
@@ -98,6 +98,14 @@ Hai phía phải cùng cập nhật protocol v2. Tag TCP: `ClanCommand=3600`, `C
 Response thành công có `MoneyVip` hiện tại của nhân vật; Unity áp trên main thread trước khi gửi request Clan tiếp theo. Replay không khôi phục số dư cũ. Client làm mới snapshot khi có invalidation hoặc reconnect. Outbox hiện truyền trong một process server; chạy nhiều instance cần cơ chế phát event liên process.
 
 ## Lỗi nghiệp vụ và kiểm thử
+
+### Upload ảnh Clan
+
+`POST /clans/{clanId}/image`, JWT Bearer có claim `charId`, multipart field `file`. Chỉ trưởng Clan đang hoạt động được đổi ảnh. Nhận JPEG/PNG/WebP tối đa 5 MiB, kích thước tối đa 4096×4096; server lấy frame đầu, auto-orient, crop giữa và resize chính xác 128×128, xuất PNG bỏ EXIF/ICC/XMP. Không tin extension hoặc Content-Type từ client.
+
+Ảnh được upload qua `CloudflareR2Service` vào `clans/{clanId}/{guid}.png`. Cần cấu hình `R2:AccountId`, `AccessKeyId`, `SecretAccessKey`, `BucketName`, `PublicBaseUrl` (HTTPS công khai). Sau upload server kiểm tra lại trưởng Clan và version, ghi `ImageUrl`, tăng version và tạo audit/outbox cùng transaction. Thành công trả HTTP 204; Unity `ClanHandler.UploadImageAsync(apiBaseUrl, bearerToken, clanId, imageBytes)` tải lại Mine. Search/Detail/Mine đều trả ImageUrl qua MemoryPack; dùng EmblemId làm fallback khi chưa có ảnh. UI chọn file và hiển thị ảnh cần gọi API này.
+
+URL mỗi lần thay ảnh là duy nhất để tránh cache cũ. HTTP 409 báo Clan đã thay đổi trong lúc upload, tải lại snapshot rồi thử lại. R2 và DB không có transaction chung: ảnh cũ hoặc upload không gắn được vào DB vẫn giữ trên R2; cần job đối chiếu URL đang dùng trước khi dọn, không xóa object chỉ vì mất ACK commit. Chưa có job dọn tự động. Cập nhật cả client/server khi thêm ImageUrl vào DTO.
 
 Giá 0 tắt phương thức tương ứng; cấu hình âm hoặc truyền thừa không hợp lệ bị từ chối. Các mã lỗi chính: `InvalidCastleNode`, `InvalidPaymentMethod`, `PaidCreationRequired`, `PaymentLinkExpired`, `InvalidPayment`, `InsufficientFunds`, `FreeDonationUsed`, `InvalidDonationCount`, `ClanHasFunds`, `InheritanceLocked`, `InheritanceNotLearned`, `InsufficientClanFunds`, `InsufficientContribution`.
 

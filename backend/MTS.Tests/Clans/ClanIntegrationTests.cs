@@ -104,6 +104,25 @@ public class ClanIntegrationTests(ClanDatabase database) : IClassFixture<ClanDat
     }
 
     [MySqlFact]
+    public void Member_query_includes_visuals_and_keeps_members_without_appearance()
+    {
+        var actor = database.NewActor(); var recruit = database.NewActor(); var service = database.Service();
+        var id = Create(service, actor, true); Run(service, recruit, Command(ClanCommandType.Apply, id));
+        using (var db = database.CreateDbContext())
+        {
+            db.Characters.Where(x => x.Id == actor.CharId).ExecuteUpdate(s => s.SetProperty(x => x.Gender, Gender.Female));
+            db.Appearances.Add(new Appearance { CharId = actor.CharId, Skins = new() { ["hair"] = "hair-2" } });
+            db.SaveChanges();
+        }
+        var response = Query(service, actor, ClanQueryType.Members, id);
+        Assert.True(response.Success, response.Code);
+        Assert.Equal(2, response.Members.Length);
+        var visual = Assert.Single(response.Members, x => x.CharId == actor.CharId);
+        Assert.Equal(Gender.Female, visual.Gender); Assert.Equal("hair-2", visual.Appearance.Skins["hair"]);
+        Assert.Empty(Assert.Single(response.Members, x => x.CharId == recruit.CharId).Appearance.Skins);
+    }
+
+    [MySqlFact]
     public void Duplicate_donation_debits_once_and_does_not_restore_old_wallet_on_replay()
     {
         var actor = database.NewActor(); var service = database.Service(); var id = Create(service, actor);

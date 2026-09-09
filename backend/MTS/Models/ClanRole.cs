@@ -1,6 +1,6 @@
 namespace MTS.Models;
 
-public enum ClanRole : byte
+public enum ClanRole
 {
     Member = 0,
     Elder = 1,
