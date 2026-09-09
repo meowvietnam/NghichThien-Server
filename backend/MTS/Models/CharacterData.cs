@@ -343,7 +343,6 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             if (addedSpendingMoneyVips.Count > 0)
             {
                 db.SpendingMoneyVips.AddRange(addedSpendingMoneyVips);
-                addedSpendingMoneyVips.Clear();
             }
         }
 
@@ -352,7 +351,6 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             if (useDans.Count > 0)
             {
                 db.UseDans.AddRange(useDans);
-                useDans.Clear();
             }
         }
 
@@ -414,9 +412,29 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
 
     public void AcceptChanges()
     {
+        lock (addedSpendingMoneyVips)
+        {
+            addedSpendingMoneyVips.Clear();
+        }
+        lock (useDans)
+        {
+            useDans.Clear();
+        }
+        if (!EquipmentManager.IsDefault())
+        {
+            EquipmentManager.AcceptChanges();
+        }
+        if (!Social.IsDefault())
+        {
+            Social.AcceptChanges();
+        }
         if (!InventoryManager.IsDefault())
         {
             InventoryManager.AcceptChanges();
+        }
+        if (!EventManager.IsDefault())
+        {
+            EventManager.AcceptChanges();
         }
     }
 

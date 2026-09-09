@@ -89,8 +89,15 @@ public partial class Social
         lock (modifyRelationships)
         {
             modifyRelationships.Apply(db, db.Relationships);
-            modifyRelationships.Clear();
         }
         return Task.CompletedTask;
+    }
+
+    public void AcceptChanges()
+    {
+        lock (modifyRelationships)
+        {
+            modifyRelationships.Clear();
+        }
     }
 }

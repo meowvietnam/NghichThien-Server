@@ -328,7 +328,6 @@ public partial class DongPhu
             }
 
             db.DongPhuHistories.AddRange(addedHistories);
-            addedHistories.Clear();
         }
     }
 
@@ -337,11 +336,10 @@ public partial class DongPhu
         lock (dongPhuLock)
         {
             likesTracking.Apply(db, db.DongPhuLikes);
-            likesTracking.Clear();
         }
     }
 
-    public async Task SaveChanges(AppDbContext db)
+    public void SaveChanges(AppDbContext db)
     {
         lock (dongPhuLock)
         {
@@ -355,7 +353,6 @@ public partial class DongPhu
                             .SetProperty(x => x.CurrentWateringHelpCount, CurrentWateringHelpCount)
                             .SetProperty(x => x.LastReset, LastReset)
                     );
-                dirty = false;
             }
 
             SaveHistories(db);
@@ -363,6 +360,16 @@ public partial class DongPhu
             Garden.SaveChanges(db);
             Shop.SaveChanges(db);
             Inventory.SaveChanges(db);
+            db.SaveChangesAsync().GetAwaiter().GetResult();
+            dirty = false;
+            lock (addedHistories)
+            {
+                addedHistories.Clear();
+            }
+            likesTracking.Clear();
+            Garden.AcceptChanges();
+            Shop.AcceptChanges();
+            Inventory.AcceptChanges();
         }
     }
 
@@ -383,9 +390,20 @@ public partial class DongPhu
 
     public BuySeedResult BuySeed(BuySeed request, CharacterData charData)
     {
-        var result =  Shop.Buy(request, charData, Inventory);
-        AddHistory($"Bạn vừa mua thành công x{result.Seed.Count} Id: {result.Seed.HerbId} [${FormatCount(charData.Stats.LinhThach)}]");
-        return result;
+        lock (dongPhuLock)
+        {
+            var result = Shop.Buy(request, charData, Inventory);
+            AddHistory($"Bạn vừa mua thành công x{result.Seed.Count} Id: {result.Seed.HerbId} [${FormatCount(charData.Stats.LinhThach)}]");
+            return result;
+        }
+    }
+
+    public void ReloadShop()
+    {
+        lock (dongPhuLock)
+        {
+            Shop.ResetDaily();
+        }
     }
 
     public DongPhuLevelConfig GetLevelConfig()

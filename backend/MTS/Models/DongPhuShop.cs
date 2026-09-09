@@ -186,6 +186,13 @@ public partial class DongPhuShop
             }
 
             seedsTracking.Apply(db, db.SeedItemShops);
+        }
+    }
+
+    public void AcceptChanges()
+    {
+        lock (shopLock)
+        {
             seedsTracking.Clear();
             dirty = false;
         }

@@ -424,7 +424,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     public void ReloadShop()
     {
         var myDongPhu = MyDongPhu();
-        myDongPhu.Shop.ResetDaily();
+        myDongPhu.ReloadShop();
         var result = new ReloadDpShopResult()
         {
             Success = true,
