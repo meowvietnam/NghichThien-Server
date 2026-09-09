@@ -278,4 +278,5 @@ public enum MessageTag
     ClanCommand = 3600,
     ClanQuery = 3601,
     ClanChanged = 3602,
+    ClanPreparePayment = 3603,
 }

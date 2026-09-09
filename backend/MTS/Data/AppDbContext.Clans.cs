@@ -16,8 +16,36 @@ public partial class AppDbContext
     public DbSet<ClanCommandReceipt> ClanCommandReceipts => Set<ClanCommandReceipt>();
     public DbSet<ClanOutboxEvent> ClanOutboxEvents => Set<ClanOutboxEvent>();
 
+    public DbSet<ClanCreationPayment> ClanCreationPayments => Set<ClanCreationPayment>();
+    public DbSet<ClanInheritance> ClanInheritances => Set<ClanInheritance>();
+    public DbSet<ClanMemberInheritance> ClanMemberInheritances => Set<ClanMemberInheritance>();
+
     public static void ConfigureClans(ModelBuilder b)
     {
+        b.Entity<ClanCreationPayment>(e =>
+        {
+            e.HasKey(x => x.OrderId);
+            e.Property(x => x.OrderId).ValueGeneratedNever();
+            e.HasIndex(x => new { x.CharId, x.RequestId }).IsUnique();
+            e.HasIndex(x => new { x.CharId, x.Status });
+            e.Property(x => x.CheckoutUrl).HasMaxLength(1024);
+            e.Property(x => x.PaymentLinkId).HasMaxLength(128);
+            e.Property(x => x.PaymentReference).HasMaxLength(128);
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasOne<CharacterData>().WithMany().HasForeignKey(x => x.CharId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Clan>().WithMany().HasForeignKey(x => x.ConsumedByClanId).OnDelete(DeleteBehavior.Restrict);
+        });
+        b.Entity<ClanInheritance>(e =>
+        {
+            e.HasKey(x => new { x.ClanId, x.InheritanceId });
+            e.HasOne<Clan>().WithMany().HasForeignKey(x => x.ClanId).OnDelete(DeleteBehavior.Restrict);
+        });
+        b.Entity<ClanMemberInheritance>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.ClanId, x.InheritanceId });
+            e.HasOne<ClanMember>().WithMany().HasForeignKey(x => x.CharId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<ClanInheritance>().WithMany().HasForeignKey(x => new { x.ClanId, x.InheritanceId }).OnDelete(DeleteBehavior.Restrict);
+        });
         b.Entity<Clan>(e =>
         {
             e.HasKey(x => x.Id);
@@ -30,7 +58,7 @@ public partial class AppDbContext
             e.Property(x => x.Version).IsConcurrencyToken();
             e.HasOne<CharacterData>().WithMany().HasForeignKey(x => x.LeaderCharId).OnDelete(DeleteBehavior.Restrict);
             e.ToTable("Clans", t => {
-                t.HasCheckConstraint("CK_Clan_Funds", "`Funds` >= 0");
+                t.HasCheckConstraint("CK_Clan_Funds", "`Funds` >= 0 AND `JadeFunds` >= 0");
                 t.HasCheckConstraint("CK_Clan_Members", "`MemberCount` >= 0 AND `MemberCount` <= `MaxMembers`");
             });
         });

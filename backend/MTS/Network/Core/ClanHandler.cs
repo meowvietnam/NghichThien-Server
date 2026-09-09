@@ -22,7 +22,7 @@ public sealed class ClanHandler : IClientHandler
         service = Program.App.Services.GetRequiredService<ClanService>();
         realtime = Program.App.Services.GetRequiredService<ClanRealtimeService>();
     }
-    public MessageTag[] HandleTag => [MessageTag.ClanCommand, MessageTag.ClanQuery];
+    public MessageTag[] HandleTag => [MessageTag.ClanCommand, MessageTag.ClanQuery, MessageTag.ClanPreparePayment];
     public void OnEnter()
     {
         realtime.Subscribe(charId, Push);
@@ -61,7 +61,7 @@ public sealed class ClanHandler : IClientHandler
             var json = StringEncode.Encoding.GetString(message.Reader.GetNext(byteLength));
             if (json.Length > 8192) throw new JsonException("Invalid payload size");
             var jsonSettings = new JsonSerializerSettings { MaxDepth = 8, TypeNameHandling = TypeNameHandling.None };
-            if (tag == MessageTag.ClanCommand)
+            if (tag is MessageTag.ClanCommand or MessageTag.ClanPreparePayment)
             {
                 command = JsonConvert.DeserializeObject<ClanCommandRequest>(json, jsonSettings) ?? throw new JsonException();
                 requestId = command.RequestId;
@@ -102,6 +102,8 @@ public sealed class ClanHandler : IClientHandler
                 {
                     if (left || !client.IsLoggedIn() || client.CharacterData?.Id != charId)
                         response = new ClanResponse { RequestId = requestId, Code = "CharacterRequired" };
+                    else if (tag == MessageTag.ClanPreparePayment)
+                        response = Program.App.Services.GetRequiredService<ClanPaymentService>().Prepare(charId, requestId).GetAwaiter().GetResult();
                     else response = command != null ? service.Execute(new Actor(client), command) : service.Query(charId, query!);
                 }
                 Reply(tag, response);
@@ -120,10 +122,10 @@ public sealed class ClanHandler : IClientHandler
         public object SyncRoot => client.CharacterLock;
         public int CharId => client.CharacterData!.Id;
         public int Level => client.CharacterData!.Progression.Level;
-        public int LinhThach
+        public int MoneyVip
         {
-            get => client.CharacterData!.Stats.LinhThach;
-            set => client.CharacterData!.Stats.SetLinhThach(value);
+            get => client.CharacterData!.MoneyVip;
+            set => client.CharacterData!.SetMoneyVip(value);
         }
     }
 }

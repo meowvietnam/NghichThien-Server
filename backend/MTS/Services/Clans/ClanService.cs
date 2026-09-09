@@ -12,7 +12,7 @@ using Network.Models.Clans;
 
 namespace MTS.Services.Clans;
 
-public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory, IOptions<ClanOptions> options)
+public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory, IOptions<ClanOptions> options, IClanWorldCatalog world)
 {
     private readonly ClanOptions settings = options.Value;
     private static void Require(bool condition, string code)
@@ -34,7 +34,7 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 Require(Enum.IsDefined(request.Command), "InvalidCommand");
                 var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request))));
                 // Capture once under CharacterLock. No mutation of live stats until commit is known.
-                var walletBefore = actor.LinhThach;
+                var walletBefore = actor.MoneyVip;
                 int? walletAfter = null;
                 var commitAttempted = false;
                 using var strategyDb = factory.CreateDbContext();
@@ -80,9 +80,9 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                     else if (ex is DbUpdateException) throw new ClanRuleException("ConflictRetry");
                     else throw;
                 }
-                if (walletAfter.HasValue) actor.LinhThach = walletAfter.Value;
+                if (walletAfter.HasValue) actor.MoneyVip = walletAfter.Value;
                 // A replay returns today's wallet, never an old balance from the saved receipt.
-                result.LinhThach = actor.LinhThach;
+                result.MoneyVip = actor.MoneyVip;
                 return result;
             }
             catch (ClanRuleException ex)
@@ -130,13 +130,15 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
     {
         if (r.Command == ClanCommandType.Create)
         {
+            Require(world.Contains(r.CastleNodeId), "InvalidCastleNode");
+            Require(r.CreationPaymentMethod is 0 or 1, "InvalidPaymentMethod");
             CanJoin(db, actor.CharId, now);
             var name = Regex.Replace((r.Name ?? "").Normalize(NormalizationForm.FormC).Trim(), @"\s+", " ");
             Require(name.Length is >= 2 and <= 64 && !name.Any(char.IsControl), "InvalidName");
             var normalized = NormalizeName(name);
             Require(!db.Clans.Any(x => x.NormalizedName == normalized), "NameTaken");
             ValidateSettings(r);
-            var created = new Clan { Name = name, NormalizedName = normalized, EmblemId = r.EmblemId,
+            var created = new Clan { CastleNodeId = r.CastleNodeId, Name = name, NormalizedName = normalized, EmblemId = r.EmblemId,
                 Description = r.Description, Announcement = r.Announcement, LeaderCharId = actor.CharId,
                 MaxMembers = settings.InitialCapacity, MemberCount = 1, JoinPolicy = (ClanJoinPolicy)r.JoinPolicy,
                 MinLevel = r.MinLevel, CreatedAt = now, UpdatedAt = now };
@@ -144,11 +146,20 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
             db.SaveChanges();
             db.ClanMembers.Add(new ClanMember { CharId = actor.CharId, ClanId = created.Id, JoinedAt = now });
             CancelOtherApplications(db, actor.CharId, now);
-            if (settings.CreationCost > 0)
+            if (r.CreationPaymentMethod == 0)
             {
-                Debit(db, actor.CharId, walletBefore, settings.CreationCost, ref walletAfter);
-                Ledger(db, created.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterLinhThach,
-                    -settings.CreationCost, walletAfter!.Value, "Create", now);
+                Require(settings.CreationMoneyVipCost > 0, "CreationPriceNotConfigured");
+                Debit(db, actor.CharId, walletBefore, settings.CreationMoneyVipCost, ref walletAfter);
+                Ledger(db, created.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterMoneyVip,
+                    -settings.CreationMoneyVipCost, walletAfter!.Value, "Create", now);
+            }
+            else
+            {
+                var payment = db.ClanCreationPayments.SingleOrDefault(x => x.OrderId == r.PaymentOrderId && x.CharId == actor.CharId);
+                Require(payment?.Status == ClanCreationPaymentStatus.Paid, "PaidCreationRequired");
+                payment!.Status = ClanCreationPaymentStatus.Consumed;
+                payment.ConsumedByClanId = created.Id;
+                payment.Version++;
             }
             return created;
         }
@@ -252,32 +263,70 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
                 break;
             case ClanCommandType.Donate:
                 Require(member != null, "NotMember");
-                Require(r.Amount > 0 && r.Amount <= settings.DailyDonationLimit, "InvalidAmount");
-                var day = now.AddHours(settings.CalendarUtcOffsetHours);
-                var periodId = day.Year * 10000 + day.Month * 100 + day.Day;
+                Require(r.Amount == 0 && r.DonationCount is 1 or 10, "InvalidDonationCount");
+                Require(!r.FreeDonation || r.DonationCount == 1, "InvalidDonationCount");
+                Require(settings.DonationUnitMoneyVip > 0, "DonationPriceNotConfigured");
+                var periodId = PeriodId(now);
+                var counterName = r.FreeDonation ? "FreeDonation" : "PaidDonationCount";
                 var counter = db.ClanMemberPeriodStats.SingleOrDefault(x => x.CharId == actor.CharId &&
-                    x.ScopeId == 0 && x.PeriodId == periodId && x.CounterType == "Donation");
+                    x.ScopeId == 0 && x.PeriodId == periodId && x.CounterType == counterName);
                 if (counter == null)
                 {
-                    counter = new ClanMemberPeriodStats { CharId = actor.CharId, PeriodId = periodId, CounterType = "Donation" };
+                    counter = new ClanMemberPeriodStats { CharId = actor.CharId, PeriodId = periodId, CounterType = counterName };
                     db.ClanMemberPeriodStats.Add(counter);
                 }
-                Require(counter.Value <= settings.DailyDonationLimit - r.Amount, "DailyLimit");
-                Debit(db, actor.CharId, walletBefore, r.Amount, ref walletAfter);
-                counter.Value += r.Amount;
+                Require(!r.FreeDonation || counter.Value == 0, "FreeDonationUsed");
+                var donated = checked(settings.DonationUnitMoneyVip * r.DonationCount);
+                if (!r.FreeDonation)
+                {
+                    Debit(db, actor.CharId, walletBefore, donated, ref walletAfter);
+                    Ledger(db, clan!.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterMoneyVip, -donated, walletAfter!.Value, "Donate", now);
+                }
+                counter.Value = checked(counter.Value + r.DonationCount);
                 counter.Version++;
-                clan!.Funds = checked(clan.Funds + r.Amount);
-                member!.AvailableContribution = checked(member.AvailableContribution + r.Amount);
-                member.TotalContribution = checked(member.TotalContribution + r.Amount);
+                clan!.JadeFunds = checked(clan.JadeFunds + donated);
+                member!.AvailableContribution = checked(member.AvailableContribution + donated);
+                member.TotalContribution = checked(member.TotalContribution + donated);
                 member.Version++;
-                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.CharacterLinhThach, -r.Amount, walletAfter!.Value, "Donate", now);
-                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Funds, r.Amount, clan.Funds, "Donate", now);
-                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Contribution, r.Amount, member.AvailableContribution, "Donate", now);
+                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.JadeFunds, donated, clan.JadeFunds, "Donate", now);
+                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Contribution, donated, member.AvailableContribution, "Donate", now);
+                break;
+            case ClanCommandType.UnlockInheritance:
+                Permission(clan!, member, ClanPermission.EditSettings);
+                var unlock = Inheritance(r.InheritanceId);
+                Require(clan!.Level >= unlock.MinClanLevel, "ClanLevelTooLow");
+                Require(!db.ClanInheritances.Any(x => x.ClanId == clan.Id && x.InheritanceId == unlock.Id), "InheritanceAlreadyUnlocked");
+                Require(clan.JadeFunds >= unlock.UnlockCost, "InsufficientClanFunds");
+                clan.JadeFunds -= unlock.UnlockCost;
+                db.ClanInheritances.Add(new ClanInheritance { ClanId = clan.Id, InheritanceId = unlock.Id, UnlockedByCharId = actor.CharId, UnlockedAt = now });
+                Ledger(db, clan.Id, actor.CharId, r.RequestId, ClanLedgerAccount.JadeFunds, -unlock.UnlockCost, clan.JadeFunds, "UnlockInheritance", now);
+                break;
+            case ClanCommandType.LearnInheritance:
+                Require(member != null, "NotMember");
+                var learn = Inheritance(r.InheritanceId);
+                Require(db.ClanInheritances.Any(x => x.ClanId == clan!.Id && x.InheritanceId == learn.Id), "InheritanceLocked");
+                Require(!db.ClanMemberInheritances.Any(x => x.CharId == actor.CharId && x.ClanId == clan!.Id && x.InheritanceId == learn.Id), "InheritanceAlreadyLearned");
+                Require(member!.AvailableContribution >= learn.LearnCost, "InsufficientContribution");
+                member.AvailableContribution -= learn.LearnCost;
+                member.ActiveInheritanceId = learn.Id;
+                member.Version++;
+                db.ClanMemberInheritances.Add(new ClanMemberInheritance { CharId = actor.CharId, ClanId = clan!.Id, InheritanceId = learn.Id, LearnedAt = now });
+                Ledger(db, clan!.Id, actor.CharId, r.RequestId, ClanLedgerAccount.Contribution, -learn.LearnCost, member.AvailableContribution, "LearnInheritance", now);
+                break;
+            case ClanCommandType.SelectInheritance:
+                Require(member != null, "NotMember");
+                if (r.InheritanceId != 0)
+                {
+                    Inheritance(r.InheritanceId);
+                    Require(db.ClanMemberInheritances.Any(x => x.CharId == actor.CharId && x.ClanId == clan!.Id && x.InheritanceId == r.InheritanceId), "InheritanceNotLearned");
+                }
+                member!.ActiveInheritanceId = r.InheritanceId == 0 ? null : r.InheritanceId;
+                member.Version++;
                 break;
             case ClanCommandType.Dissolve:
                 Permission(clan!, member, ClanPermission.Dissolve);
                 Require(clan!.MemberCount == 1, "MembersMustLeaveFirst");
-                Require(clan.Funds == 0, "ClanHasFunds");
+                Require(clan.Funds == 0 && clan.JadeFunds == 0, "ClanHasFunds");
                 RemoveMember(db, clan, member!, ClanLeaveReason.Dissolved, now);
                 clan.Status = ClanStatus.Dissolved;
                 clan.DissolvedAt = now;
@@ -295,13 +344,21 @@ public sealed partial class ClanService(IDbContextFactory<AppDbContext> factory,
         return clan;
     }
 
+    private int PeriodId(DateTime now)
+    {
+        var day = now.AddHours(settings.CalendarUtcOffsetHours);
+        return day.Year * 10000 + day.Month * 100 + day.Day;
+    }
+    private ClanInheritanceDefinition Inheritance(int id) => settings.Inheritances.FirstOrDefault(x => x.Id == id)
+        ?? throw new ClanRuleException("InheritanceNotFound");
+
     private static void Debit(AppDbContext db, int charId, int currentBalance, int amount, ref int? after)
     {
         Require(currentBalance >= amount, "InsufficientFunds");
         var balance = currentBalance - amount;
         // Only this column is written. Live RAM is authoritative in the current single-session server.
-        Require(db.CharacterStats.Where(x => x.CharId == charId)
-            .ExecuteUpdate(s => s.SetProperty(x => x.LinhThach, balance)) == 1, "CharacterRequired");
+        Require(db.Characters.Where(x => x.Id == charId)
+            .ExecuteUpdate(s => s.SetProperty(x => x.MoneyVip, balance)) == 1, "CharacterRequired");
         after = balance;
     }
 

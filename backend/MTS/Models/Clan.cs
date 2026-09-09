@@ -9,9 +9,11 @@ public class Clan
     public int EmblemId { get; set; }
     public string Description { get; set; } = "";
     public string Announcement { get; set; } = "";
+    public int? CastleNodeId { get; set; }
     public int LeaderCharId { get; set; }
     public int Level { get; set; } = 1;
     public long Experience { get; set; }
+    public long JadeFunds { get; set; }
     public long Funds { get; set; }
     public int MemberCount { get; set; }
     public int MaxMembers { get; set; }
