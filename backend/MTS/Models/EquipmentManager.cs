@@ -360,8 +360,6 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
             if (isDirty1)
             {
                 tracking.Apply(db);
-                tracking.Clear();
-                isDirty1 = false;
             }
 
             shouldSaveSlots = isDirty2;
@@ -407,6 +405,15 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
 
                 throw;
             }
+        }
+    }
+
+    public void AcceptChanges()
+    {
+        lock (equipmentLock)
+        {
+            tracking.Clear();
+            isDirty1 = false;
         }
     }
 

@@ -52,6 +52,7 @@ public class Startup : BackgroundService
         // await AddEvents(db);
     }
 
+
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.EventManagers

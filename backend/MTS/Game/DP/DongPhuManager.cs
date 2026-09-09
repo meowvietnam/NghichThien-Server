@@ -62,12 +62,14 @@ public static class DongPhuManager
     {
         try
         {
-            if (reference.States.Count == 0)
+            if (reference.HasNoStates())
             {
                 var id = reference.DongPhu.CharId;
-                if (references.TryRemove(id, out var dongPhu))
+                var saved = await reference.SaveChanges();
+                if (saved && reference.HasNoStates())
                 {
-                    await dongPhu.SaveChanges();
+                    ((ICollection<KeyValuePair<int, DongPhuReference>>)references)
+                        .Remove(new KeyValuePair<int, DongPhuReference>(id, reference));
                 }
             }
         }
@@ -299,10 +301,14 @@ public static class DongPhuManager
         }
         else
         {
-            if (reference.States.Count == 0)
+            if (reference.HasNoStates())
             {
-                await reference.SaveChanges();
-                references.TryRemove(reference.DongPhu.CharId, out var _);
+                var saved = await reference.SaveChanges();
+                if (saved && reference.HasNoStates())
+                {
+                    ((ICollection<KeyValuePair<int, DongPhuReference>>)references)
+                        .Remove(new KeyValuePair<int, DongPhuReference>(reference.DongPhu.CharId, reference));
+                }
             }
         }
 

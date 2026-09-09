@@ -42,9 +42,6 @@ public partial class CharacterData
             .ValueTangQuaNPCWithItem(item.Id, npcRef.CharStats.Progression.Level);
         if (value.Item1 < 0)
         {
-            Log.Warning(
-                "NPC gift rejected: invalid gift value; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}, Value={Value}",
-                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count, value.Item1);
             throw new InvalidException(Strings.NpcGiftValueInvalid);
         }
         var count = item.Count;
@@ -134,9 +131,6 @@ public partial class CharacterData
 
         if (!isHasItem)
         {
-            Log.Warning(
-                "NPC gift rejected: item not owned or not enough quantity; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}, Count={Count}",
-                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id, request.ItemRef.Count);
             throw new InvalidException(Strings.HackerTangQuaNPC);
         }
 
@@ -148,9 +142,6 @@ public partial class CharacterData
             request.ItemRef.Type == ItemType.PhongCu && request.ItemRef.Id == phongCuEquip ||
             request.ItemRef.Type == ItemType.TrangSuc && request.ItemRef.Id == trangSucEquip)
         {
-            Log.Warning(
-                "NPC gift rejected: equipped item cannot be gifted; CharacterId={CharacterId}, NpcId={NpcId}, ItemType={ItemType}, ItemId={ItemId}",
-                Id, request.IdChar, request.ItemRef.Type, request.ItemRef.Id);
             throw new InvalidException(Strings.HackerTangQuaNPC);
         }
 
@@ -278,21 +269,14 @@ public partial class CharacterData
 
             if (!baseSkillsCheck.Contains(request.IdSkill))
             {
-                Log.Warning(
-                    "NPC skill request rejected: skill not available on NPC; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, Relationship={Relationship}",
-                    Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationType);
                 throw new InvalidException(Strings.HackerSkillNotExistOnNpc);
             }
 
             InventoryManager.AddToInventory(new List<ItemRef> { itemRefSkill });
             Social.RelationshipAddValue((ushort)request.IdChar, -requireRelationShip);
-            // giảm độ hảo cảm của npc đó với user giảm đi requireRelationShip
         }
         else
         {
-            Log.Warning(
-                "NPC skill request rejected: relationship is not enough; CharacterId={CharacterId}, NpcId={NpcId}, SkillType={SkillType}, SkillId={SkillId}, RelationshipValue={RelationshipValue}",
-                Id, request.IdChar, request.TypeSkill, request.IdSkill, currentRelationshipValue);
             throw new InvalidException(Strings.NpcSkillRequestInvalid);
         }
 

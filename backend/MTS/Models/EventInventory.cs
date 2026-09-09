@@ -84,8 +84,16 @@ public class EventInventory
             if (dirty)
             {
                 trackingItems.Apply(db,db.ItemEvents);
-                dirty = false;
             }
+        }
+    }
+
+    public void AcceptChanges()
+    {
+        lock (lockObject)
+        {
+            trackingItems.Clear();
+            dirty = false;
         }
     }
 }

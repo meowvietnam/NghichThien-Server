@@ -192,6 +192,13 @@ public partial class PlantGarden
         {
             tracking.Slots.Apply(db, db.PlantingSlots);
             tracking.Seeds.Apply(db, db.PlantSeeds);
+        }
+    }
+
+    public void AcceptChanges()
+    {
+        lock (gardenLock)
+        {
             tracking.Clear();
         }
     }

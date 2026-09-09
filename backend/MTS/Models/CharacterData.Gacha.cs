@@ -152,10 +152,6 @@ public partial class CharacterData
     {
         var tier = RollSkillTier(special);
         var tierOrder = GetSkillTierFallbackOrder(tier);
-        if (special)
-        {
-            Log.Information("Special: {tiers}", string.Join(", ", tierOrder.Select(x => x.ToString())));
-        }
         foreach (var checkTier in tierOrder)
         {
             var validCongPhaps = GameConfig.NDCPTTManager.CongPhaps

@@ -37,7 +37,7 @@ public static class EventShopService
             throw new InvalidException("Sự kiện không diễn ra");
         }
 
-        var data = new HandleOrderRechargeEvent1()
+        var data = new HandleOrderEventShop()
         {
             Order = order
         };

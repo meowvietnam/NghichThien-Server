@@ -73,6 +73,12 @@ public partial class DongPhuInventory
                 return;
             }
             seedsTracking.Apply(db, db.Seeds);
+        }
+    }
+    public void AcceptChanges()
+    {
+        lock(inventoryLock)
+        {
             seedsTracking.Clear();
             dirty = false;
         }

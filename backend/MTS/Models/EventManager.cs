@@ -52,4 +52,9 @@ public class EventManager
             await @event.SaveChanges(db);
         }
     }
+
+    public void AcceptChanges()
+    {
+        Inventory.AcceptChanges();
+    }
 }

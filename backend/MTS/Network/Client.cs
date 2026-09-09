@@ -303,23 +303,22 @@ public class Client : ClientConnection, IRequester<MessageTag>
                 lock (CharacterLock)
                 {
                     CharacterData?.SaveChanges(db).GetAwaiter().GetResult();
-                }
 
-                try
-                {
-                    db.SaveChangesAsync().GetAwaiter().GetResult();
-                }
-                catch (DbUpdateConcurrencyException ex)
-                {
-                    Log.Error(
-                        ex,
-                        "DbUpdateConcurrencyException: {EntryCount} conflicted entries",
-                        ex.Entries.Count
-                    );
-                    foreach (var entry in ex.Entries)
+                    try
                     {
-                        var entityType = entry.Metadata;
-                        var primaryKey = entityType.FindPrimaryKey();
+                        db.SaveChangesAsync().GetAwaiter().GetResult();
+                    }
+                    catch (DbUpdateConcurrencyException ex)
+                    {
+                        Log.Error(
+                            ex,
+                            "DbUpdateConcurrencyException: {EntryCount} conflicted entries",
+                            ex.Entries.Count
+                        );
+                        foreach (var entry in ex.Entries)
+                        {
+                            var entityType = entry.Metadata;
+                            var primaryKey = entityType.FindPrimaryKey();
 
                         var keyValues = primaryKey?.Properties
                             .Select(property =>
@@ -503,10 +502,8 @@ public class Client : ClientConnection, IRequester<MessageTag>
                         }
                     }
 
-                    throw;
-                }
-                lock (CharacterLock)
-                {
+                        throw;
+                    }
                     CharacterData?.AcceptChanges();
                 }
             }

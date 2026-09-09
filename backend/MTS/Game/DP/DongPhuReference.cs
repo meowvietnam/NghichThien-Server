@@ -9,6 +9,7 @@ public class DongPhuReference
     public DongPhu DongPhu { get; private set; }
     public HashSet<DongPhuState> States { get; private set; } = new();
     private object stateLock = new();
+    private SemaphoreSlim saveLock = new(1, 1);
 
     public DongPhuReference(DongPhu dongPhu)
     {
@@ -34,17 +35,31 @@ public class DongPhuReference
         }
     }
 
-    public async Task SaveChanges()
+    public bool HasNoStates()
     {
+        lock (stateLock)
+        {
+            return States.Count == 0;
+        }
+    }
+
+    public async Task<bool> SaveChanges()
+    {
+        await saveLock.WaitAsync();
         try
         {
             await using var db = await Program.CreateDbAsync();
-            await DongPhu.SaveChanges(db);
-            await db.SaveChangesAsync();
+            DongPhu.SaveChanges(db);
+            return true;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error saving changes DongPhu");
+            return false;
+        }
+        finally
+        {
+            saveLock.Release();
         }
     }
 }
