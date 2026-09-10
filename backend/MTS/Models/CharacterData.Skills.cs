@@ -667,9 +667,11 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.ConvertElementalSkillItemTypeInvalid);
         }
+
+        var exclusiveIds = new[] { 105, 702 };
         IEnumerable<BaseSkill> skillCollectionEnumerable = type == ItemType.ThanThong
             ? GameConfig.NDCPTTManager.ThanThongs
-            : GameConfig.NDCPTTManager.CongPhaps;
+            : GameConfig.NDCPTTManager.CongPhaps.Where(x => !exclusiveIds.Contains(x.Id));
         var skillCollection = skillCollectionEnumerable.ToArray();
         var skills = items.Select(x =>
         {
