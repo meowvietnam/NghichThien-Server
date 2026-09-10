@@ -12,6 +12,17 @@ public class MapManager : IMemorySerializable<MapManager>
     private Dictionary<int,Map> MapsDict = new Dictionary<int, Map>();
     private const string MapNotFound = "Map không tồn tại";
     private const string PathNotFound = "Không tìm thấy dường đi tới";
+
+    public Map GetMap(int id)
+    {
+        if (!MapsDict.TryGetValue(id, out var map))
+        {
+            throw new InvalidException(MapNotFound);
+        }
+
+        return map;
+    }
+
     public void Deserialize(IReader reader, ref MapManager value)
     {
         var length = reader.Read<int>();

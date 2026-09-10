@@ -17,7 +17,8 @@ public enum OrderType
     Pack,
     DongPhu,
     RechargeEvent1,
-    EventShop
+    EventShop,
+    CreateClan
 }
 [MemoryPackable]
 public partial class Order

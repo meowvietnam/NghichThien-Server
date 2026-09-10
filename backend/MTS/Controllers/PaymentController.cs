@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Exceptions;
+using MTS.Game.Clan;
 using MTS.Game.DP;
 using MTS.IAP;
 using MTS.Localization;
@@ -202,6 +203,10 @@ public class PaymentController : Controller
             else if (order.OrderType == OrderType.EventShop)
             {
                 await EventShopService.Handle(order, db);
+            }
+            else if (order.OrderType == OrderType.CreateClan)
+            {
+                await ClanManager.Handle(order, db);
             }
             else
             {

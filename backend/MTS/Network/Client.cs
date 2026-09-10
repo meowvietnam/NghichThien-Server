@@ -617,6 +617,10 @@ public class Client : ClientConnection, IRequester<MessageTag>
         var eventHandler = new Core.EventHandler(this);
         module.RemoveHandler<Core.EventHandler>();
         module.AddHandler(eventHandler);
+
+        var clanHandler = new ClanHandler(this);
+        module.RemoveHandler<ClanHandler>();
+        module.AddHandler(clanHandler);
         
         ChangeState(new AllMaps(this));
     }

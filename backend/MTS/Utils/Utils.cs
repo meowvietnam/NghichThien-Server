@@ -61,7 +61,30 @@ public static class Utils
 
         return new string(result);
     }
+    public static string NormalizeSearchText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
 
+        text = text.Trim().ToLowerInvariant();
+
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder();
+
+        foreach (var c in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+        return sb
+            .ToString()
+            .Normalize(NormalizationForm.FormC)
+            .Replace('đ', 'd');
+    }
     public static string FormatCount(long money)
     {
         return money.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));

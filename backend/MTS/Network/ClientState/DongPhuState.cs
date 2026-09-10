@@ -272,7 +272,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
             SlotIndex = result.SlotIndex
         };
         client.MemSend(MessageTag.HarvestSlotResult, result);
-        observer.SendAllIgnore(this, MessageTag.HarvetSlotNotify, notify);
+        observer.SendAllIgnore(this, MessageTag.HarvestSlotNotify, notify);
     }
 
     private BuySeedResult BuySeed(BuySeed request)

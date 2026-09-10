@@ -7,7 +7,6 @@ public class TcpClient : Tcp<MessageTag>
     public TcpClient(NativeTcp client) : base(client)
     {
     }
-
     protected override void OnReconnected()
     {
         ReconnectedSuccess?.Invoke();

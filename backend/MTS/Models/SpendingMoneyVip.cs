@@ -12,7 +12,9 @@ public enum SpendFor
     Arena = 16,
     TrungSinh = 32,
     UpgradeDongPhu = 48,
-    EventShop = 56
+    EventShop = 56,
+    CreateClan = 64,
+    ClanContribution = 72
 }
 
 [MemoryPackable]

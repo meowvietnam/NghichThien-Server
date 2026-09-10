@@ -70,6 +70,9 @@ public class AppDbContext : DbContext
     public DbSet<Event> Events { get; private set; }
     public DbSet<EventInventory> EventInventories { get; private set; }
     public DbSet<ItemEvent> ItemEvents { get; private set; }
+    public DbSet<Clan> Clans { get; private set; }
+    public DbSet<ClanMember> ClanMembers { get; private set; }
+    public DbSet<ClanJoinRequest> ClanJoinRequests { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -148,6 +151,42 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.User)
                 .WithMany(x => x.CharacterDatas)
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Clan>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => x.NormalizeName).IsUnique();
+            e.Property(x => x.Name).HasMaxLength(64);
+            e.Property(x => x.NormalizeName).HasMaxLength(64);
+            e.Property(x => x.Description).HasMaxLength(512);
+            e.Property(x => x.Announcement).HasMaxLength(512);
+            e.Property(x => x.ImageUrl).HasMaxLength(512);
+            e.HasMany(x => x.Members)
+                .WithOne()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.JoinRequests)
+                .WithOne()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ClanMember>(e =>
+        {
+            e.HasKey(x => new { x.ClanId, x.CharId });
+            e.HasIndex(x => x.CharId).IsUnique();
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ClanJoinRequest>(e =>
+        {
+            e.HasKey(x => new { x.ClanId, x.CharId });
+            e.HasOne(x => x.CharData)
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<Progression>(e =>

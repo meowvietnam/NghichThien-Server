@@ -222,6 +222,119 @@ namespace MTS.Migrations
                     b.ToTable("CharacterStats");
                 });
 
+            modelBuilder.Entity("MTS.Models.Clan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Announcement")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<long>("Exp")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Funds")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<int>("LeaderCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MemberCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NormalizeName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("NormalizeName")
+                        .IsUnique();
+
+                    b.ToTable("Clans");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanJoinRequest", b =>
+                {
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("ClanId", "CharId");
+
+                    b.HasIndex("CharId");
+
+                    b.ToTable("ClanJoinRequests");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMember", b =>
+                {
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ContribPoints")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("JoinAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastFreeContributionAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("Role")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.HasKey("ClanId", "CharId");
+
+                    b.HasIndex("CharId")
+                        .IsUnique();
+
+                    b.ToTable("ClanMembers");
+                });
+
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
                 {
                     b.Property<int>("CharId")
@@ -1463,6 +1576,40 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanJoinRequest", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany("JoinRequests")
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanMember", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", "CharData")
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany("Members")
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CharData");
+                });
+
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", null)
@@ -2009,6 +2156,13 @@ namespace MTS.Migrations
 
                     b.Navigation("Stats")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.Clan", b =>
+                {
+                    b.Navigation("JoinRequests");
+
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("MTS.Models.DongPhu", b =>
