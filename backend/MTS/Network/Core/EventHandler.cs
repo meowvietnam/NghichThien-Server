@@ -1,4 +1,5 @@
 using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 
 namespace MTS.Network.Core;
@@ -45,7 +46,7 @@ public class EventHandler : IClientHandler
         else if (tag == MessageTag.GetAllActiveEvents)
         {
             var events = eventManager.GetActiveEvents()
-                .Where(x => !(x.GameEvent is RechargeEvent1))
+                .Where(x => !(x.GameEvent is RechargeEvent1 || x.GameEvent is EventShop))
                 .Select(x => x.Id).ToArray();
             client.MemSend(MessageTag.GetAllActiveEvents, events);
         }
