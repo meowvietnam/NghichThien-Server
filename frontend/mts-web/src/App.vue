@@ -11,6 +11,9 @@
         Tải game
       </Button>
     </div>
+    <a href="https://zalo.me/g/n876cseg8jpcqjon2yq1" target="_blank" rel="noopener noreferrer" class="zalo-floating-button">
+      <img src="./assets/images/zalo-icon.svg" alt="Zalo" />
+    </a>
   </div>
 </template>
 
@@ -73,5 +76,28 @@ const download = () => {
   .app-background {
     background-position: center top;
   }
+}
+
+.zalo-floating-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zalo-floating-button:hover {
+  transform: scale(1.1);
+}
+.zalo-floating-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 </style>

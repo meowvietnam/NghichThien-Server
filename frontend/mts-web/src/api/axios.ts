@@ -3,7 +3,7 @@
 import axios from 'axios';
 const downloadUrls = {
   android: "https://play.google.com/store/apps/details?id=com.DreamCultivationGame.NghchThinSkyBreaker",
-  ios: "https://testflight.apple.com/join/uaemyD25",
+  ios: "https://apps.apple.com/vn/app/ngh%E1%BB%8Bch-thi%C3%AAn-sky-breaker/id6797402488?l=vi",
 }
 const hostnameMap = {
   'localhost': {
