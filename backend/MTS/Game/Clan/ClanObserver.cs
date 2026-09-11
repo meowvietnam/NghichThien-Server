@@ -44,6 +44,14 @@ public sealed class ClanObserver
         }
     }
 
+    public bool HasNoStates()
+    {
+        lock (stateLock)
+        {
+            return States.Count == 0;
+        }
+    }
+
     public void SendAll<T>(MessageTag tag, T data)
     {
         lock (stateLock)

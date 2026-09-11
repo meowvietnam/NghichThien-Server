@@ -19,7 +19,7 @@ public sealed class ClanCreationGate
     public int RefCount;
 }
 
-public static class ClanManager
+public static partial class ClanManager
 {
     private static readonly ConcurrentDictionary<int, ClanObserver> Observers = new();
     private static readonly ConcurrentDictionary<int, ClanReference> References = new();
@@ -32,12 +32,9 @@ public static class ClanManager
         CreateClanVndPrice = 500_0000,
         CreateMaxMember = 10,
         ContributionMoneyVipPerTime = 100,
-        MaxContributionTimesPerRequest = 10
+        MaxContributionTimesPerRequest = 10,
+        RolePermissions = ClanRolePermissions.Permissions
     };
-    static ClanManager()
-    {
-        Task.Run(SaveChangesLoop);
-    }
 
     public static async Task<ClanReference> FindReference(int clanId)
     {
@@ -68,16 +65,20 @@ public static class ClanManager
 
     public static async Task<Models.Clan[]> SearchClans(string name, int limit)
     {
+        limit = Math.Clamp(limit, 1, 50);
         await using var db = await Program.CreateDbAsync();
         var nomalizeName = Utils.Utils.NormalizeSearchText(name);
         var clans = await db.Clans
+            .AsNoTracking()
             .Where(x => x.NormalizeName.Contains(nomalizeName))
             .OrderByDescending(x => x.NormalizeName == nomalizeName)
             .ThenByDescending(x => x.NormalizeName.StartsWith(nomalizeName))
             .ThenBy(x => x.Name)
             .Take(limit)
             .ToArrayAsync();
-        return clans;
+        return clans
+            .Select(x => x.CloneAsView())
+            .ToArray();
     }
     
     public static async Task<Models.Clan?> ViewClan(int id)
@@ -98,6 +99,7 @@ public static class ClanManager
                 .Include(x => x.Members)
                 .ThenInclude(x => x.CharData)
                 .ThenInclude(x => x.Progression)
+                .Include(x => x.ShopItems)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
@@ -169,9 +171,9 @@ public static class ClanManager
             throw new InvalidException("Tên tông môn không hợp lệ");
         }
 
-        if (clanName.Length > 64)
+        if (clanName.Length > 15)
         {
-            throw new InvalidException("Tên tông môn tối đa 64 ký tự");
+            throw new InvalidException("Tên tông môn tối đa 15 ký tự");
         }
 
         if ((request.Description?.Length ?? 0) > 512)
@@ -669,9 +671,17 @@ public static class ClanManager
 
             await using var db = await Program.CreateDbAsync();
             await using var tx = await db.Database.BeginTransactionAsync();
+            List<ClanShopItem> returnedShopItems;
 
             if (deleteClan)
             {
+                returnedShopItems = await db.ClanShopItems
+                    .Where(x => x.ClanId == clanId)
+                    .ToListAsync();
+                ReturnClanShopItems(db, returnedShopItems);
+                await db.ClanShopItems
+                    .Where(x => x.ClanId == clanId)
+                    .ExecuteDeleteAsync();
                 await db.ClanJoinRequests
                     .Where(x => x.ClanId == clanId)
                     .ExecuteDeleteAsync();
@@ -688,6 +698,13 @@ public static class ClanManager
             }
             else
             {
+                returnedShopItems = await db.ClanShopItems
+                    .Where(x => x.ClanId == clanId && x.OwnerCharId == charId)
+                    .ToListAsync();
+                ReturnClanShopItems(db, returnedShopItems);
+                await db.ClanShopItems
+                    .Where(x => x.ClanId == clanId && x.OwnerCharId == charId)
+                    .ExecuteDeleteAsync();
                 var deletedMember = await db.ClanMembers
                     .Where(x => x.ClanId == clanId && x.CharId == charId)
                     .ExecuteDeleteAsync();
@@ -705,6 +722,11 @@ public static class ClanManager
                 }
             }
 
+            if (returnedShopItems.Count > 0)
+            {
+                await db.SaveChangesAsync();
+            }
+
             await tx.CommitAsync();
 
             if (deleteClan)
@@ -714,10 +736,22 @@ public static class ClanManager
             else
             {
                 clan.Members.RemoveAll(x => x.CharId == charId);
+                foreach (var shopItem in returnedShopItems)
+                {
+                    clan.ShopItems.RemoveAll(x => x.Id == shopItem.Id);
+                }
                 clan.MemberCount = Math.Max(0, clan.MemberCount - 1);
                 MemberClanIds.TryRemove(charId, out _);
                 if (Observers.TryGetValue(clanId, out var observer))
                 {
+                    foreach (var shopItem in returnedShopItems)
+                    {
+                        observer.SendAll(MessageTag.ClanShopItemRemoved, new ClanShopItemRemoved
+                        {
+                            ClanId = clanId,
+                            ShopItemId = shopItem.Id
+                        });
+                    }
                     observer.NotifyRemoveMember(charId, reason);
                 }
             }
@@ -774,52 +808,18 @@ public static class ClanManager
 
     public static void OnRemoveState(ClanObserver observer, IClanObserverState state)
     {
-        if (observer.States.Count == 0)
+        if (observer.HasNoStates())
         {
             Observers.TryRemove(observer.Clan.Id, out _);
         }
     }
 
-    public static async Task OnRemoveState(ClanReference reference, IClanObserverState state)
+    public static void OnRemoveState(ClanReference reference, IClanObserverState state)
     {
-        try
+        if (reference.HasNoStates())
         {
-            if (reference.HasNoStates())
-            {
-                var saved = await reference.SaveChanges();
-                if (saved && reference.HasNoStates())
-                {
-                    ((ICollection<KeyValuePair<int, ClanReference>>)References)
-                        .Remove(new KeyValuePair<int, ClanReference>(reference.Clan.Id, reference));
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    public static async Task SaveChanges()
-    {
-        foreach (var reference in References.Values)
-        {
-            await reference.SaveChanges();
-        }
-    }
-
-    private static async Task SaveChangesLoop()
-    {
-        while (true)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(10));
-            try
-            {
-                await SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Clan SaveChangesLoop");
-            }
+            ((ICollection<KeyValuePair<int, ClanReference>>)References)
+                .Remove(new KeyValuePair<int, ClanReference>(reference.Clan.Id, reference));
         }
     }
 
@@ -857,6 +857,7 @@ public static class ClanManager
                 .Include(x => x.JoinRequests)
                 .ThenInclude(x => x.CharData)
                 .ThenInclude(x => x.Progression)
+                .Include(x => x.ShopItems)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == clanId);
             if (clan == null)
@@ -906,6 +907,36 @@ public static class ClanManager
             .FirstOrDefaultAsync(x => x.Id == charId);
     }
 
+    private static void ReturnClanShopItems(AppDbContext db, IEnumerable<ClanShopItem> shopItems)
+    {
+        foreach (var group in shopItems.GroupBy(x => new { x.OwnerCharId, x.ItemId, x.ItemType }))
+        {
+            var total = group.Sum(x => (long)x.Count);
+            if (total <= 0 || total > int.MaxValue)
+            {
+                throw new InvalidException("Số lượng vật phẩm kho tông môn không hợp lệ");
+            }
+
+            var item = db.Items.SingleOrDefault(x => x.CharId == group.Key.OwnerCharId &&
+                x.Id == group.Key.ItemId && x.Type == group.Key.ItemType);
+            if (item == null)
+            {
+                db.Items.Add(new ItemRef(group.Key.ItemId, group.Key.ItemType, (int)total)
+                {
+                    CharId = group.Key.OwnerCharId
+                });
+            }
+            else if ((long)item.Count + total > int.MaxValue)
+            {
+                throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
+            }
+            else
+            {
+                item.Count += (int)total;
+            }
+        }
+    }
+
     private static string NormalizeClanName(string name)
     {
         return string.Join(" ", (name ?? string.Empty)
@@ -940,12 +971,8 @@ public static class ClanManager
             reference = await CreateClan(request);
             if (reference.HasNoStates())
             {
-                var saved = await reference.SaveChanges();
-                if (saved && reference.HasNoStates())
-                {
-                    ((ICollection<KeyValuePair<int, ClanReference>>)References)
-                        .Remove(new KeyValuePair<int, ClanReference>(reference.Clan.Id, reference));
-                }
+                ((ICollection<KeyValuePair<int, ClanReference>>)References)
+                    .Remove(new KeyValuePair<int, ClanReference>(reference.Clan.Id, reference));
             }
         }
         var purchase = new IapPurchase

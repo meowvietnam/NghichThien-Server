@@ -2,12 +2,17 @@ namespace MTS.Models;
 
 public static class ClanRolePermissions
 {
+    public static readonly Dictionary<ClanRole, ClanPermission> Permissions = new()
+    {
+        [ClanRole.Leader] = ClanPermission.AddMember
+                            | ClanPermission.KickMember
+                            | ClanPermission.AddShopItem
+                            | ClanPermission.RemoveShopItem,
+        [ClanRole.Member] = ClanPermission.None
+    };
+
     public static ClanPermission GetPermissions(ClanRole role)
     {
-        return role switch
-        {
-            ClanRole.Leader => ClanPermission.AddMember | ClanPermission.KickMember,
-            _ => ClanPermission.None
-        };
+        return Permissions.GetValueOrDefault(role, ClanPermission.None);
     }
 }

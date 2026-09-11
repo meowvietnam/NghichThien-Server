@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using MemoryPack;
-using MTS.Data;
-
 namespace MTS.Models;
 [MemoryPackable]
 public partial record Clan
@@ -23,6 +21,7 @@ public partial record Clan
     public DateTime CreatedAt { get; set; }
     public List<ClanMember> Members { get; set; } = new();
     public List<ClanJoinRequest> JoinRequests { get; set; } = new();
+    public List<ClanShopItem> ShopItems { get; set; } = new();
 
     public Clan CloneAsView()
     {
@@ -32,7 +31,4 @@ public partial record Clan
         };
     }
 
-    public void SaveChanges(AppDbContext db)
-    {
-    }
 }

@@ -8,7 +8,7 @@ Tông Môn là tổ chức xã hội, một nhân vật chỉ thuộc một Tôn
 
 ## Tạo Tông Môn và thành
 
-Người tạo gửi tên, biểu tượng, chính sách tuyển và `CastleNodeId`. Server chuẩn hóa tên, kiểm tra node tồn tại trong `maps.bin`, xác nhận người tạo chưa thuộc Clan, sau đó tạo Clan và thành viên đầu tiên trong một transaction.
+Người tạo gửi tên, biểu tượng, chính sách tuyển và `CastleNodeId`. Tên Clan tối đa 15 ký tự sau khi trim khoảng trắng. Server chuẩn hóa tên, kiểm tra node tồn tại trong `maps.bin`, xác nhận người tạo chưa thuộc Clan, sau đó tạo Clan và thành viên đầu tiên trong một transaction.
 
 `CastleNodeId` là node AllMaps của thành. Nhiều Clan có thể chọn cùng node; client chỉ tạo icon thành khi snapshot nói người xem là thành viên. Snapshot công khai không được trả node thành.
 

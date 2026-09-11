@@ -73,6 +73,7 @@ public class AppDbContext : DbContext
     public DbSet<Clan> Clans { get; private set; }
     public DbSet<ClanMember> ClanMembers { get; private set; }
     public DbSet<ClanJoinRequest> ClanJoinRequests { get; private set; }
+    public DbSet<ClanShopItem> ClanShopItems { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -158,8 +159,8 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Name).IsUnique();
             e.HasIndex(x => x.NormalizeName).IsUnique();
-            e.Property(x => x.Name).HasMaxLength(64);
-            e.Property(x => x.NormalizeName).HasMaxLength(64);
+            e.Property(x => x.Name).HasMaxLength(15);
+            e.Property(x => x.NormalizeName).HasMaxLength(15);
             e.Property(x => x.Description).HasMaxLength(512);
             e.Property(x => x.Announcement).HasMaxLength(512);
             e.Property(x => x.ImageUrl).HasMaxLength(512);
@@ -168,6 +169,10 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.ClanId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.JoinRequests)
+                .WithOne()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.ShopItems)
                 .WithOne()
                 .HasForeignKey(x => x.ClanId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -187,6 +192,17 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.CharData)
                 .WithMany()
                 .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ClanShopItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.ClanId);
+            e.HasIndex(x => x.OwnerCharId);
+            e.Ignore(x => x.Item);
+            e.HasOne<CharacterData>()
+                .WithMany()
+                .HasForeignKey(x => x.OwnerCharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<Progression>(e =>

@@ -13,27 +13,102 @@ public class ClanHandler : IClientHandler, IClanObserverState
     private Client client;
     private CharacterData charData;
     private bool isReady;
+    private bool isDisposed;
     private ClanObserver? observer;
     private ClanReference? reference;
+    private Task watchTask = Task.CompletedTask;
     private readonly object lockObject = new();
 
     public ClanHandler(Client client)
     {
         this.client = client;
         charData = client.CharacterData;
+        client.OnLogout += OnLogout;
+        client.OnDisconnectedSessionExpired += OnDisconnectedSessionExpired;
+        client.OnOtherClientLogin += OnOtherClientLogin;
+        client.OnReconnectedSuccess += OnReconnectedSuccess;
     }
 
-    public async void OnEnter()
+    private void OnReconnectedSuccess()
+    {
+        if (isDisposed)
+        {
+            return;
+        }
+
+        watchTask = WatchMyClan(true);
+    }
+
+    private void OnOtherClientLogin(Client obj)
+    {
+        UnwatchClan();
+        DisposeClientEvents();
+    }
+
+    private void OnDisconnectedSessionExpired(Client obj)
+    {
+        if (!obj.IsOnline())
+        {
+            UnwatchClan();
+            DisposeClientEvents();
+        }
+    }
+
+    private void OnLogout(Client obj)
+    {
+        UnwatchClan();
+        DisposeClientEvents();
+    }
+
+    public void OnEnter()
+    {
+        watchTask = WatchMyClan(false);
+    }
+
+    private async Task WatchMyClan(bool syncToClient)
     {
         try
         {
-            reference = await ClanManager.FindReferenceByMember(CharId);
-            var clanId = reference.Clan.Id;
-            (observer, reference) = await ClanManager.WatchClan(clanId, this);
+            var currentReference = await ClanManager.FindReferenceByMember(CharId);
+            var clanId = currentReference.Clan.Id;
+            ClanObserver watchedObserver;
+            ClanReference watchedReference;
+            var shouldUnwatchCurrent = false;
+            lock (lockObject)
+            {
+                if (reference?.Clan.Id == clanId && observer != null)
+                {
+                    if (syncToClient)
+                    {
+                        MemSend(MessageTag.NewClan, GetMyClan());
+                    }
+
+                    return;
+                }
+
+                shouldUnwatchCurrent = reference != null || observer != null;
+            }
+
+            if (shouldUnwatchCurrent)
+            {
+                UnwatchClan();
+            }
+
+            (watchedObserver, watchedReference) = await ClanManager.WatchClan(clanId, this);
+            lock (lockObject)
+            {
+                observer = watchedObserver;
+                reference = watchedReference;
+            }
+
+            if (syncToClient)
+            {
+                MemSend(MessageTag.NewClan, GetMyClan());
+            }
         }
-        catch (InvalidException e)
+        catch (InvalidException)
         {
-            
+            UnwatchClan();
         }
         finally
         {
@@ -106,7 +181,10 @@ public class ClanHandler : IClientHandler, IClanObserverState
     }
     public Clan? GetMyClan()
     {
-        return reference?.Clan ?? null;
+        lock (lockObject)
+        {
+            return reference?.Clan ?? null;
+        }
     }
     public async Task OnClanCreated(Clan clan)
     {
@@ -125,6 +203,12 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 var result = CreateClan(request).GetAwaiter().GetResult();
                 MemSend(MessageTag.CreateClanRequest, result);
             }
+        }
+        else if (tag == MessageTag.GetClanRequest)
+        {
+            reader.MemRead<GetClanRequest>();
+            var result = GetClan().GetAwaiter().GetResult();
+            MemSend(MessageTag.GetClanRequest, result);
         }
         else if (tag == MessageTag.UploadClanImageRequest)
         {
@@ -171,11 +255,139 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(MessageTag.ClanContributionRequest, result);
             }
         }
+        else if (tag == MessageTag.SearchClanRequest)
+        {
+            var request = reader.MemRead<SearchClanRequest>();
+            var result = SearchClan(request).GetAwaiter().GetResult();
+            MemSend(MessageTag.SearchClanRequest, result);
+        }
+        else if (tag == MessageTag.GetClanShopRequest)
+        {
+            reader.MemRead<GetClanShopRequest>();
+            lock (client.CharacterLock)
+            {
+                MemSend(tag, GetShop());
+            }
+        }
+        else if (tag == MessageTag.BuyClanShopRequest)
+        {
+            var request = reader.MemRead<BuyClanShopRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = BuyShopItem(request).GetAwaiter().GetResult();
+                MemSend(tag, result);
+            }
+        }
+        else if (tag == MessageTag.AddClanShopItemRequest)
+        {
+            var request = reader.MemRead<AddClanShopItemRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = AddShopItem(request).GetAwaiter().GetResult();
+                MemSend(tag, result);
+            }
+        }
+        else if (tag == MessageTag.RemoveClanShopItemRequest)
+        {
+            var request = reader.MemRead<RemoveClanShopItemRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = RemoveShopItem(request).GetAwaiter().GetResult();
+                MemSend(tag, result);
+            }
+        }
+    }
+
+    public async Task<GetClanResult> GetClan()
+    {
+        await watchTask;
+        return new GetClanResult
+        {
+            Success = true,
+            Clan = GetMyClan(),
+            Config = GetConfig()
+        };
+    }
+
+    public GetClanShopResult GetShop()
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return ClanManager.GetShop(clanReference, CharId);
+        }
+        catch (InvalidException e)
+        {
+            return new GetClanShopResult { Success = false, Message = e.Message };
+        }
+    }
+
+    public async Task<BuyClanShopResult> BuyShopItem(BuyClanShopRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return await ClanManager.BuyShopItem(clanReference, charData, request);
+        }
+        catch (InvalidException e)
+        {
+            return new BuyClanShopResult
+            {
+                Success = false, Message = e.Message,
+                ShopItemId = request.ShopItemId, Quantity = request.Quantity
+            };
+        }
+    }
+
+    public async Task<AddClanShopItemResult> AddShopItem(AddClanShopItemRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            var actorMember = ActorMember();
+            if (actorMember == null || !actorMember.HasPermission(ClanPermission.AddShopItem))
+            {
+                throw new InvalidException("Không có quyền thêm vật phẩm vào kho tông môn");
+            }
+
+            return await ClanManager.AddShopItem(clanReference, charData, request);
+        }
+        catch (InvalidException e)
+        {
+            return new AddClanShopItemResult { Success = false, Message = e.Message };
+        }
+    }
+
+    public async Task<RemoveClanShopItemResult> RemoveShopItem(RemoveClanShopItemRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            var actorMember = ActorMember();
+            if (actorMember == null || !actorMember.HasPermission(ClanPermission.RemoveShopItem))
+            {
+                throw new InvalidException("Không có quyền xóa vật phẩm khỏi kho tông môn");
+            }
+
+            return await ClanManager.RemoveShopItem(clanReference, charData, request);
+        }
+        catch (InvalidException e)
+        {
+            return new RemoveClanShopItemResult
+            {
+                Success = false,
+                ShopItemId = request.ShopItemId,
+                Message = e.Message
+            };
+        }
     }
 
     public ClanMember? ActorMember()
     {
-        return reference?.Clan.Members.FirstOrDefault(x => x.CharId == CharId) ?? null;
+        lock (lockObject)
+        {
+            return reference?.Clan.Members.FirstOrDefault(x => x.CharId == CharId) ?? null;
+        }
     }
     public async Task<AddClanMemberResult> AddMember(AddClanMemberRequest request)
     {
@@ -235,6 +447,30 @@ public class ClanHandler : IClientHandler, IClanObserverState
             {
                 Success = false,
                 NewMoneyVip = charData.MoneyVip,
+                Message = e.Message
+            };
+        }
+
+        return result;
+    }
+
+    public async Task<SearchClanResult> SearchClan(SearchClanRequest request)
+    {
+        SearchClanResult result;
+        try
+        {
+            var clans = await ClanManager.SearchClans(request.Name, request.Limit);
+            result = new SearchClanResult
+            {
+                Success = true,
+                Clans = clans
+            };
+        }
+        catch (InvalidException e)
+        {
+            result = new SearchClanResult
+            {
+                Success = false,
                 Message = e.Message
             };
         }
@@ -373,10 +609,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
 
         lock (lockObject)
         {
-            observer?.RemoveState(this);
-            reference?.RemoveState(this);
-            observer = null;
-            reference = null;
+            UnwatchClanUnsafe();
         }
     }
 
@@ -395,6 +628,36 @@ public class ClanHandler : IClientHandler, IClanObserverState
         }
     }
 
+    private void UnwatchClan()
+    {
+        lock (lockObject)
+        {
+            UnwatchClanUnsafe();
+        }
+    }
+
+    private void UnwatchClanUnsafe()
+    {
+        observer?.RemoveState(this);
+        reference?.RemoveState(this);
+        observer = null;
+        reference = null;
+    }
+
+    private void DisposeClientEvents()
+    {
+        if (isDisposed)
+        {
+            return;
+        }
+
+        isDisposed = true;
+        client.OnLogout -= OnLogout;
+        client.OnDisconnectedSessionExpired -= OnDisconnectedSessionExpired;
+        client.OnOtherClientLogin -= OnOtherClientLogin;
+        client.OnReconnectedSuccess -= OnReconnectedSuccess;
+    }
+
     public void MemSend<T>(MessageTag tag, T data)
     {
         if (!isReady) return;
@@ -405,17 +668,27 @@ public class ClanHandler : IClientHandler, IClanObserverState
     private static readonly MessageTag[] handlers =
     [
         MessageTag.CreateClanRequest,
+        MessageTag.GetClanRequest,
         MessageTag.UploadClanImageRequest,
         MessageTag.AddClanMemberRequest,
         MessageTag.KickClanMemberRequest,
         MessageTag.LeaveClanRequest,
-        MessageTag.ClanContributionRequest
+        MessageTag.ClanContributionRequest,
+        MessageTag.SearchClanRequest,
+        MessageTag.GetClanShopRequest,
+        MessageTag.BuyClanShopRequest,
+        MessageTag.AddClanShopItemRequest,
+        MessageTag.RemoveClanShopItemRequest
     ];
     public MessageTag[] HandleTag => handlers;
     public void OnLeave()
     {
+        UnwatchClan();
+        DisposeClientEvents();
     }
     public void OnDisconnect(IProtocol<MessageTag> protocol)
     {
+        UnwatchClan();
+        DisposeClientEvents();
     }
 }

@@ -10,6 +10,8 @@ public partial class ClanMember
     public int CharId { get; set; }
     public long ContribPoints { get; set; }
     public DateTime LastFreeContributionAt { get; set; }
+    public int ShopItemsAddedToday { get; set; }
+    public DateTime LastShopItemAddedAt { get; set; }
     public ClanRole Role { get; set; }
     public DateTime JoinAt { get; set; } = DateTime.UtcNow;
     [NotMapped] public string Name => CharData.Name;

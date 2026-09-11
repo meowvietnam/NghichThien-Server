@@ -267,16 +267,16 @@ namespace MTS.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
 
                     b.Property<int>("NodeId")
                         .HasColumnType("int");
 
                     b.Property<string>("NormalizeName")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
 
                     b.HasKey("Id");
 
@@ -324,8 +324,14 @@ namespace MTS.Migrations
                     b.Property<DateTime>("LastFreeContributionAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("LastShopItemAddedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<byte>("Role")
                         .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("ShopItemsAddedToday")
+                        .HasColumnType("int");
 
                     b.HasKey("ClanId", "CharId");
 
@@ -333,6 +339,44 @@ namespace MTS.Migrations
                         .IsUnique();
 
                     b.ToTable("ClanMembers");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanShopItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<ushort>("ItemId")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<byte>("ItemType")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("OwnerCharId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Price")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanId");
+
+                    b.HasIndex("OwnerCharId");
+
+                    b.ToTable("ClanShopItems");
                 });
 
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
@@ -1610,6 +1654,21 @@ namespace MTS.Migrations
                     b.Navigation("CharData");
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanShopItem", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany("ShopItems")
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerCharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.CongPhap", b =>
                 {
                     b.HasOne("MTS.Models.InventoryManager", null)
@@ -2163,6 +2222,8 @@ namespace MTS.Migrations
                     b.Navigation("JoinRequests");
 
                     b.Navigation("Members");
+
+                    b.Navigation("ShopItems");
                 });
 
             modelBuilder.Entity("MTS.Models.DongPhu", b =>
