@@ -37,7 +37,6 @@ public partial class BuyClanShopResult : Result
 public partial class AddClanShopItemRequest
 {
     public MTS.Models.ItemRef Item { get; set; } = new();
-    public long Price { get; set; }
 }
 
 [MemoryPackable]

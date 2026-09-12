@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
+using MTS.Game.ItemProvider;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -30,7 +31,8 @@ public static partial class ClanManager
         ClanReference reference, CharacterData character, AddClanShopItemRequest request)
     {
         var deposit = request.Item.DeepClone();
-        ValidateShopItem(deposit, request.Price);
+        ValidateShopItem(deposit);
+        var price = GetClanShopPrice(deposit, character.InventoryManager);
 
         var clan = reference.Clan;
         var clanId = clan.Id;
@@ -91,7 +93,7 @@ public static partial class ClanManager
                     ClanId = clanId,
                     OwnerCharId = character.Id,
                     Item = deposit.DeepClone(),
-                    Price = request.Price,
+                    Price = price,
                     CreatedAt = createdAt
                 };
                 await db.ClanShopItems.AddAsync(shopItem);
@@ -209,7 +211,9 @@ public static partial class ClanManager
                 throw new InvalidException("Kho tông môn không đủ số lượng vật phẩm");
 
             var reward = new ItemRef(offer.ItemId, offer.ItemType, request.Quantity);
-            ValidateShopItem(reward, offer.Price);
+            ValidateShopItem(reward);
+            if (offer.Price <= 0)
+                throw new InvalidException("Giá vật phẩm trong kho tông môn không hợp lệ");
             long cost;
             try
             {
@@ -310,12 +314,33 @@ public static partial class ClanManager
         }
     }
 
-    private static void ValidateShopItem(ItemRef item, long price)
+    private static void ValidateShopItem(ItemRef item)
     {
-        if (price <= 0 || item.Count <= 0 ||
+        if (item.Count <= 0 ||
             item.Type is not (ItemType.Herb or ItemType.LinhDan or ItemType.ThanThong
                 or ItemType.CongPhap or ItemType.Recipe or ItemType.Material))
             throw new InvalidException("Cấu hình vật phẩm kho tông môn không hợp lệ");
+    }
+
+    private static long GetClanShopPrice(ItemRef item, InventoryManager inventory)
+    {
+        try
+        {
+            var provider = ItemProviderFactory.GetProvider(item.Type, inventory)
+                ?? throw new InvalidException("Không tìm thấy cấu hình giá vật phẩm");
+            var price = provider.GetPriceItemSell(item.Id);
+            if (price <= 0)
+                throw new InvalidException("Giá vật phẩm kho tông môn không hợp lệ");
+            return price;
+        }
+        catch (InvalidException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new InvalidException("Không thể xác định giá vật phẩm kho tông môn");
+        }
     }
 
     private static ClanCreationGate AcquireGate(int clanId)

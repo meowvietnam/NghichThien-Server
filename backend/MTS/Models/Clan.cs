@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
 namespace MTS.Models;
 [MemoryPackable]
@@ -22,6 +23,24 @@ public partial record Clan
     public List<ClanMember> Members { get; set; } = new();
     public List<ClanJoinRequest> JoinRequests { get; set; } = new();
     public List<ClanShopItem> ShopItems { get; set; } = new();
+    [MemoryPackIgnore]
+    public List<ClanInheritanceEffect> InheritanceEffects { get; set; } = new();
+    [NotMapped]
+    public List<ClanInheritanceEffect> StartTurnEffects { get; set; } = new();
+    [NotMapped]
+    public List<ClanInheritanceEffect> EndTurnEffects { get; set; } = new();
+
+    public void RefreshInheritanceViews()
+    {
+        StartTurnEffects = InheritanceEffects
+            .Where(x => x.Trigger == ClanInheritanceTrigger.StartTurn)
+            .OrderBy(x => x.SlotIndex)
+            .ToList();
+        EndTurnEffects = InheritanceEffects
+            .Where(x => x.Trigger == ClanInheritanceTrigger.EndTurn)
+            .OrderBy(x => x.SlotIndex)
+            .ToList();
+    }
 
     public Clan CloneAsView()
     {

@@ -338,6 +338,15 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(MessageTag.RejectClanJoinRequestRequest, result);
             }
         }
+        else if (tag == MessageTag.SetClanInheritanceRequest)
+        {
+            var request = reader.MemRead<SetClanInheritanceRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = SetInheritance(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.SetClanInheritanceRequest, result);
+            }
+        }
     }
 
     public async Task<Clan?> ViewClan(int id)
@@ -353,6 +362,24 @@ public class ClanHandler : IClientHandler, IClanObserverState
             Clan = GetMyClan(),
             Config = GetConfig()
         };
+    }
+
+    public async Task<SetClanInheritanceResult> SetInheritance(SetClanInheritanceRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return await ClanManager.SetInheritance(clanReference, charData, request);
+        }
+        catch (InvalidException e)
+        {
+            return new SetClanInheritanceResult
+            {
+                Success = false,
+                Message = e.Message,
+                NewMoneyVip = charData.MoneyVip
+            };
+        }
     }
 
     public GetClanShopResult GetShop()
@@ -818,6 +845,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.RequestJoinClanRequest,
         MessageTag.ApproveClanJoinRequestRequest,
         MessageTag.RejectClanJoinRequestRequest,
+        MessageTag.SetClanInheritanceRequest,
         MessageTag.ViewClanRequest
     ];
     public MessageTag[] HandleTag => handlers;

@@ -8,4 +8,5 @@ public enum ClanPermission : uint
     AddShopItem = 1 << 2,
     RemoveShopItem = 1 << 3,
     AssignRole = 1 << 4,
+    ManageInheritance = 1 << 5,
 }

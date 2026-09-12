@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game.AllMaps;
+using MTS.Game.BaseSkill;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network;
@@ -33,7 +34,29 @@ public static partial class ClanManager
         CreateMaxMember = 10,
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
-        RolePermissions = ClanRolePermissions.Permissions
+        RolePermissions = ClanRolePermissions.Permissions,
+        BaseInheritanceSlots = 1,
+        InheritanceSlotsPerLevel = 1,
+        MaxInheritanceSlotsPerColumn = 10,
+        ChangeInheritanceMoneyVipCost = 1_000,
+        InheritanceBaseValue = 1,
+        InheritanceValuePerClanLevel = 1,
+        InheritanceBuffWhitelist =
+        [
+            EBuffAndDeBuff.HoTrao,
+            EBuffAndDeBuff.KiemKhi,
+            EBuffAndDeBuff.SucThe,
+            EBuffAndDeBuff.GiamTonThuong,
+            EBuffAndDeBuff.TriLieu,
+            EBuffAndDeBuff.TuKhi,
+            EBuffAndDeBuff.SucLuc,
+            EBuffAndDeBuff.TangToc,
+            EBuffAndDeBuff.TichHoa,
+            EBuffAndDeBuff.TichKim,
+            EBuffAndDeBuff.TichMoc,
+            EBuffAndDeBuff.TichThuy
+        ],
+        ClanLevelRequiredTotalExp = [0, 10_000, 30_000, 70_000, 150_000, 300_000, 600_000, 1_200_000, 2_400_000, 5_000_000]
     };
 
     private static async Task<T> ExecuteClanTransactionAsync<T>(Func<AppDbContext, Task<T>> operation)
@@ -113,8 +136,10 @@ public static partial class ClanManager
                 .Include(x => x.Members)
                 .ThenInclude(x => x.CharData)
                 .ThenInclude(x => x.Progression)
+                .Include(x => x.InheritanceEffects)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == id);
+            clan?.RefreshInheritanceViews();
         }
         return clan;
     }
@@ -906,6 +931,7 @@ public static partial class ClanManager
                 .ThenInclude(x => x.CharData)
                 .ThenInclude(x => x.Progression)
                 .Include(x => x.ShopItems)
+                .Include(x => x.InheritanceEffects)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == clanId);
             if (clan == null)
@@ -917,6 +943,8 @@ public static partial class ClanManager
             {
                 MemberClanIds[member.CharId] = clan.Id;
             }
+
+            clan.RefreshInheritanceViews();
 
             reference = new ClanReference(clan);
             References.TryAdd(clanId, reference);

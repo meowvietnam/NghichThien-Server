@@ -289,6 +289,37 @@ namespace MTS.Migrations
                     b.ToTable("Clans");
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanInheritanceEffect", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BuffType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlotIndex")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Trigger")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanId", "Trigger", "SlotIndex")
+                        .IsUnique();
+
+                    b.ToTable("ClanInheritanceEffects");
+                });
+
             modelBuilder.Entity("MTS.Models.ClanJoinRequest", b =>
                 {
                     b.Property<int>("ClanId")
@@ -1620,6 +1651,17 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.ClanInheritanceEffect", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", "Clan")
+                        .WithMany("InheritanceEffects")
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Clan");
+                });
+
             modelBuilder.Entity("MTS.Models.ClanJoinRequest", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", "CharData")
@@ -2219,6 +2261,8 @@ namespace MTS.Migrations
 
             modelBuilder.Entity("MTS.Models.Clan", b =>
                 {
+                    b.Navigation("InheritanceEffects");
+
                     b.Navigation("JoinRequests");
 
                     b.Navigation("Members");

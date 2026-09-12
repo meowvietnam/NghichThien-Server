@@ -14,7 +14,8 @@ public enum SpendFor
     UpgradeDongPhu = 48,
     EventShop = 56,
     CreateClan = 64,
-    ClanContribution = 72
+    ClanContribution = 72,
+    ChangeClanInheritance = 80
 }
 
 [MemoryPackable]

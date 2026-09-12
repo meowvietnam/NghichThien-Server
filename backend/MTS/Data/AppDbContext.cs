@@ -74,6 +74,7 @@ public class AppDbContext : DbContext
     public DbSet<ClanMember> ClanMembers { get; private set; }
     public DbSet<ClanJoinRequest> ClanJoinRequests { get; private set; }
     public DbSet<ClanShopItem> ClanShopItems { get; private set; }
+    public DbSet<ClanInheritanceEffect> ClanInheritanceEffects { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -176,6 +177,10 @@ public class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(x => x.ClanId)
                 .OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.InheritanceEffects)
+                .WithOne(x => x.Clan)
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<ClanMember>(e =>
         {
@@ -204,6 +209,11 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.OwnerCharId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ClanInheritanceEffect>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.ClanId, x.Trigger, x.SlotIndex }).IsUnique();
         });
         modelBuilder.Entity<Progression>(e =>
         {
