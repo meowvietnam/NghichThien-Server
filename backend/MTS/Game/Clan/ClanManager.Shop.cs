@@ -53,44 +53,54 @@ public static partial class ClanManager
                 throw new InvalidException("Đã đạt giới hạn thêm vật phẩm vào kho hôm nay");
 
             var inventory = character.InventoryManager;
-            await using var db = await Program.CreateDbAsync();
             ClanShopItem shopItem = null!;
             ItemRef? inventoryItem;
+            int remaining;
             lock (inventory.SyncRoot)
             {
                 var collection = (HashSet<ItemRef>)inventory.GetItemCollection(deposit.Type).Collection;
                 if (!collection.TryGetValue(deposit, out var owned) || owned.Count < deposit.Count)
                     throw new InvalidException("Vật phẩm không đủ trong túi");
+                remaining = owned.Count - deposit.Count;
+            }
 
-                var remaining = owned.Count - deposit.Count;
-                db.Database.CreateExecutionStrategy().ExecuteInTransaction(() =>
+            var createdAt = DateTime.UtcNow;
+            await ExecuteClanTransactionAsync(async db =>
+            {
+                if (shopItem?.Id > 0 &&
+                    await db.ClanShopItems.AsNoTracking().AnyAsync(x => x.Id == shopItem.Id && x.ClanId == clanId) &&
+                    await db.ClanMembers.AsNoTracking().AnyAsync(x => x.ClanId == clanId &&
+                        x.CharId == character.Id && x.ShopItemsAddedToday == addedToday + deposit.Count &&
+                        x.LastShopItemAddedAt == today))
                 {
-                    db.ChangeTracker.Clear();
-                    var updated = db.ClanMembers
-                        .Where(x => x.ClanId == clanId && x.CharId == character.Id &&
-                                    x.ShopItemsAddedToday == member.ShopItemsAddedToday &&
-                                    x.LastShopItemAddedAt == member.LastShopItemAddedAt)
-                        .ExecuteUpdate(x => x
-                            .SetProperty(m => m.ShopItemsAddedToday, addedToday + deposit.Count)
-                            .SetProperty(m => m.LastShopItemAddedAt, today));
-                    if (updated != 1)
-                        throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
+                    return true;
+                }
 
-                    shopItem = new ClanShopItem
-                    {
-                        ClanId = clanId,
-                        OwnerCharId = character.Id,
-                        Item = deposit.DeepClone(),
-                        Price = request.Price,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    db.ClanShopItems.Add(shopItem);
-                    db.SaveChanges();
-                }, () => shopItem.Id > 0 &&
-                    db.ClanShopItems.AsNoTracking().Any(x => x.Id == shopItem.Id && x.ClanId == clanId) &&
-                    db.ClanMembers.AsNoTracking().Any(x => x.ClanId == clanId && x.CharId == character.Id &&
-                        x.ShopItemsAddedToday == addedToday + deposit.Count && x.LastShopItemAddedAt == today));
+                var updated = await db.ClanMembers
+                    .Where(x => x.ClanId == clanId && x.CharId == character.Id &&
+                                x.ShopItemsAddedToday == member.ShopItemsAddedToday &&
+                                x.LastShopItemAddedAt == member.LastShopItemAddedAt)
+                    .ExecuteUpdateAsync(x => x
+                        .SetProperty(m => m.ShopItemsAddedToday, addedToday + deposit.Count)
+                        .SetProperty(m => m.LastShopItemAddedAt, today));
+                if (updated != 1)
+                    throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
+                shopItem = new ClanShopItem
+                {
+                    ClanId = clanId,
+                    OwnerCharId = character.Id,
+                    Item = deposit.DeepClone(),
+                    Price = request.Price,
+                    CreatedAt = createdAt
+                };
+                await db.ClanShopItems.AddAsync(shopItem);
+                await db.SaveChangesAsync();
+                return true;
+            });
+
+            lock (inventory.SyncRoot)
+            {
                 inventory.Decrease(deposit);
                 inventoryItem = remaining > 0 ? new ItemRef(deposit.Id, deposit.Type, remaining) : null;
             }
@@ -135,27 +145,29 @@ public static partial class ClanManager
 
             var returnedItem = shopItem.Item.DeepClone();
             var inventory = character.InventoryManager;
-            await using var db = await Program.CreateDbAsync();
             ItemRef inventoryItem;
+            int total;
             lock (inventory.SyncRoot)
             {
                 var collection = (HashSet<ItemRef>)inventory.GetItemCollection(returnedItem.Type).Collection;
                 collection.TryGetValue(returnedItem, out var owned);
                 if ((long)(owned?.Count ?? 0) + returnedItem.Count > int.MaxValue)
                     throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
-                var total = (owned?.Count ?? 0) + returnedItem.Count;
+                total = (owned?.Count ?? 0) + returnedItem.Count;
+            }
 
-                db.Database.CreateExecutionStrategy().ExecuteInTransaction(() =>
-                {
-                    db.ChangeTracker.Clear();
-                    var deleted = db.ClanShopItems
-                        .Where(x => x.Id == shopItem.Id && x.ClanId == clanId && x.OwnerCharId == character.Id)
-                        .ExecuteDelete();
-                    if (deleted != 1)
-                        throw new InvalidException("Vật phẩm không có trong kho tông môn");
-                }, () =>
-                    !db.ClanShopItems.AsNoTracking().Any(x => x.Id == shopItem.Id && x.ClanId == clanId));
+            await using (var db = await Program.CreateDbAsync())
+            {
+                // A single ExecuteDelete is already atomic; no user transaction is needed.
+                var deleted = await db.ClanShopItems
+                    .Where(x => x.Id == shopItem.Id && x.ClanId == clanId && x.OwnerCharId == character.Id)
+                    .ExecuteDeleteAsync();
+                if (deleted != 1 && await db.ClanShopItems.AnyAsync(x => x.Id == shopItem.Id && x.ClanId == clanId))
+                    throw new InvalidException("Vật phẩm không có trong kho tông môn");
+            }
 
+            lock (inventory.SyncRoot)
+            {
                 inventory.Add(returnedItem);
                 inventoryItem = new ItemRef(returnedItem.Id, returnedItem.Type, total);
             }
@@ -212,46 +224,54 @@ public static partial class ClanManager
                 throw new InvalidException("Không đủ điểm cống hiến");
 
             var inventory = character.InventoryManager;
-            await using var db = await Program.CreateDbAsync();
-            BuyClanShopResult result;
             var removeOffer = offer.Count == request.Quantity;
+            int total;
             lock (inventory.SyncRoot)
             {
                 var collection = (HashSet<ItemRef>)inventory.GetItemCollection(reward.Type).Collection;
                 collection.TryGetValue(reward, out var owned);
                 if ((long)(owned?.Count ?? 0) + reward.Count > int.MaxValue)
                     throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
-                var total = (owned?.Count ?? 0) + reward.Count;
-                var points = member.ContribPoints - cost;
-                var newShopCount = offer.Count - request.Quantity;
-                db.Database.CreateExecutionStrategy().ExecuteInTransaction(() =>
-                {
-                    db.ChangeTracker.Clear();
-                    var updated = db.ClanMembers
-                        .Where(x => x.ClanId == clanId && x.CharId == character.Id &&
-                                    x.ContribPoints == member.ContribPoints && x.ContribPoints >= cost)
-                        .ExecuteUpdate(x => x.SetProperty(m => m.ContribPoints, m => m.ContribPoints - cost));
-                    if (updated != 1)
-                        throw new InvalidException("Không đủ điểm cống hiến hoặc đã rời tông môn");
+                total = (owned?.Count ?? 0) + reward.Count;
+            }
 
-                    updated = db.ClanShopItems
-                        .Where(x => x.Id == offer.Id && x.ClanId == clanId && x.Count == offer.Count && x.Count >= request.Quantity)
-                        .ExecuteUpdate(x => x.SetProperty(s => s.Count, s => s.Count - request.Quantity));
-                    if (updated != 1)
-                        throw new InvalidException("Kho tông môn không đủ số lượng vật phẩm");
-                    if (newShopCount == 0)
-                    {
-                        db.ClanShopItems
-                            .Where(x => x.Id == offer.Id && x.ClanId == clanId && x.Count == 0)
-                            .ExecuteDelete();
-                    }
-                }, () =>
-                    db.ClanMembers.AsNoTracking().Any(x => x.ClanId == clanId &&
-                        x.CharId == character.Id && x.ContribPoints == points) &&
+            var points = member.ContribPoints - cost;
+            var newShopCount = offer.Count - request.Quantity;
+            await ExecuteClanTransactionAsync(async db =>
+            {
+                var alreadyCommitted = await db.ClanMembers.AsNoTracking().AnyAsync(x =>
+                        x.ClanId == clanId && x.CharId == character.Id && x.ContribPoints == points) &&
                     (newShopCount == 0
-                        ? !db.ClanShopItems.AsNoTracking().Any(x => x.Id == offer.Id && x.ClanId == clanId)
-                        : db.ClanShopItems.AsNoTracking().Any(x => x.Id == offer.Id && x.ClanId == clanId && x.Count == newShopCount)));
+                        ? !await db.ClanShopItems.AsNoTracking().AnyAsync(x => x.Id == offer.Id && x.ClanId == clanId)
+                        : await db.ClanShopItems.AsNoTracking().AnyAsync(x =>
+                            x.Id == offer.Id && x.ClanId == clanId && x.Count == newShopCount));
+                if (alreadyCommitted) return true;
 
+                var updated = await db.ClanMembers
+                    .Where(x => x.ClanId == clanId && x.CharId == character.Id &&
+                                x.ContribPoints == member.ContribPoints && x.ContribPoints >= cost)
+                    .ExecuteUpdateAsync(x => x.SetProperty(m => m.ContribPoints, points));
+                if (updated != 1)
+                    throw new InvalidException("Không đủ điểm cống hiến hoặc đã rời tông môn");
+
+                updated = await db.ClanShopItems
+                    .Where(x => x.Id == offer.Id && x.ClanId == clanId &&
+                        x.Count == offer.Count && x.Count >= request.Quantity)
+                    .ExecuteUpdateAsync(x => x.SetProperty(s => s.Count, newShopCount));
+                if (updated != 1)
+                    throw new InvalidException("Kho tông môn không đủ số lượng vật phẩm");
+                if (newShopCount == 0)
+                {
+                    await db.ClanShopItems
+                        .Where(x => x.Id == offer.Id && x.ClanId == clanId && x.Count == 0)
+                        .ExecuteDeleteAsync();
+                }
+
+                return true;
+            });
+
+            lock (inventory.SyncRoot)
+            {
                 inventory.Add(reward);
                 member.ContribPoints = points;
                 if (removeOffer)
@@ -263,13 +283,14 @@ public static partial class ClanManager
                     offer.Count = newShopCount;
                 }
 
-                result = new BuyClanShopResult
-                {
-                    Success = true, ShopItemId = request.ShopItemId, Quantity = request.Quantity,
-                    Cost = cost, ContribPoints = points,
-                    InventoryItem = new ItemRef(reward.Id, reward.Type, total)
-                };
             }
+
+            var result = new BuyClanShopResult
+            {
+                Success = true, ShopItemId = request.ShopItemId, Quantity = request.Quantity,
+                Cost = cost, ContribPoints = points,
+                InventoryItem = new ItemRef(reward.Id, reward.Type, total)
+            };
 
             NotifyClanMemberPointsChanged(clanId, character.Id, member.ContribPoints);
             if (removeOffer)

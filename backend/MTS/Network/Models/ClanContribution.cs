@@ -13,4 +13,6 @@ public partial class ClanContribution
     public long Amount { get; set; }
     public long ClanFunds { get; set; }
     public long MemberContribPoints { get; set; }
+    public System.DateTime LastFreeContributionAt { get; set; }
+    public int FreeContributionTimesRemaining { get; set; }
 }

@@ -43,7 +43,8 @@ public static partial class ClanManager
             var affected = await db.ClanMembers
                 .Where(member => member.ClanId == clanId && member.CharId == targetCharId && member.Role == oldRole)
                 .ExecuteUpdateAsync(update => update.SetProperty(member => member.Role, role));
-            if (affected != 1)
+            if (affected != 1 && !await db.ClanMembers.AsNoTracking().AnyAsync(member =>
+                    member.ClanId == clanId && member.CharId == targetCharId && member.Role == role))
                 throw new InvalidException("Dữ liệu thành viên đã thay đổi, vui lòng thử lại");
 
             target.Role = role;

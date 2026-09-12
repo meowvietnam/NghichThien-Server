@@ -299,4 +299,10 @@ public enum MessageTag
     ViewClanRequest = 3682,
     SetClanMemberRoleRequest = 3686,
     ClanMemberRoleChanged = 3690,
+    RequestJoinClanRequest = 3691,
+    RequestJoinClanResult = 3692,
+    ClanJoinRequestAdded = 3693,
+    ApproveClanJoinRequestRequest = 3694,
+    RejectClanJoinRequestRequest = 3695,
+    ClanJoinRequestRemoved = 3696,
 }

@@ -311,6 +311,33 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(MessageTag.SetClanMemberRoleRequest, result);
             }
         }
+        else if (tag == MessageTag.RequestJoinClanRequest)
+        {
+            var request = reader.MemRead<RequestJoinClanRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = RequestJoinClan(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.RequestJoinClanRequest, result);
+            }
+        }
+        else if (tag == MessageTag.ApproveClanJoinRequestRequest)
+        {
+            var request = reader.MemRead<ApproveClanJoinRequestRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = ApproveJoinRequest(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.ApproveClanJoinRequestRequest, result);
+            }
+        }
+        else if (tag == MessageTag.RejectClanJoinRequestRequest)
+        {
+            var request = reader.MemRead<RejectClanJoinRequestRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = RejectJoinRequest(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.RejectClanJoinRequestRequest, result);
+            }
+        }
     }
 
     public async Task<Clan?> ViewClan(int id)
@@ -457,6 +484,77 @@ public class ClanHandler : IClientHandler, IClanObserverState
         catch (InvalidException e)
         {
             return new SetClanMemberRoleResult { Success = false, Message = e.Message };
+        }
+    }
+
+    public async Task<RequestJoinClanResult> RequestJoinClan(RequestJoinClanRequest request)
+    {
+        try
+        {
+            if (reference != null)
+            {
+                throw new InvalidException("Đã gia nhập tông môn");
+            }
+
+            await ClanManager.RequestJoinClan(request.ClanId, charData);
+            return new RequestJoinClanResult { Success = true };
+        }
+        catch (InvalidException e)
+        {
+            return new RequestJoinClanResult { Success = false, Message = e.Message };
+        }
+    }
+
+    public async Task<ApproveClanJoinRequestResult> ApproveJoinRequest(ApproveClanJoinRequestRequest request)
+    {
+        try
+        {
+            if (reference == null)
+            {
+                throw new InvalidException("Chưa gia nhập tông môn");
+            }
+
+            var actorMember = ActorMember();
+            if (actorMember == null || !actorMember.HasPermission(ClanPermission.AddMember))
+            {
+                throw new InvalidException("Không có quyền phê duyệt đơn xin gia nhập");
+            }
+
+            var member = await ClanManager.ApproveJoinRequest(reference, request.CharId);
+            return new ApproveClanJoinRequestResult { Success = true, Member = member };
+        }
+        catch (InvalidException e)
+        {
+            return new ApproveClanJoinRequestResult { Success = false, Message = e.Message };
+        }
+    }
+
+    public async Task<RejectClanJoinRequestResult> RejectJoinRequest(RejectClanJoinRequestRequest request)
+    {
+        try
+        {
+            if (reference == null)
+            {
+                throw new InvalidException("Chưa gia nhập tông môn");
+            }
+
+            var actorMember = ActorMember();
+            if (actorMember == null || !actorMember.HasPermission(ClanPermission.AddMember))
+            {
+                throw new InvalidException("Không có quyền từ chối đơn xin gia nhập");
+            }
+
+            var charId = await ClanManager.RejectJoinRequest(reference, request.CharId);
+            return new RejectClanJoinRequestResult { Success = true, CharId = charId };
+        }
+        catch (InvalidException e)
+        {
+            return new RejectClanJoinRequestResult
+            {
+                Success = false,
+                CharId = request.CharId,
+                Message = e.Message
+            };
         }
     }
 
@@ -716,7 +814,11 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.BuyClanShopRequest,
         MessageTag.AddClanShopItemRequest,
         MessageTag.RemoveClanShopItemRequest,
-        MessageTag.SetClanMemberRoleRequest
+        MessageTag.SetClanMemberRoleRequest,
+        MessageTag.RequestJoinClanRequest,
+        MessageTag.ApproveClanJoinRequestRequest,
+        MessageTag.RejectClanJoinRequestRequest,
+        MessageTag.ViewClanRequest
     ];
     public MessageTag[] HandleTag => handlers;
     public void OnLeave()
