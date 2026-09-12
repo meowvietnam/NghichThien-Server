@@ -296,4 +296,7 @@ public enum MessageTag
     ClanShopItemRemoved = 3668,
     ClanShopItemChanged = 3672,
     GetClanRequest = 3676,
+    ViewClanRequest = 3682,
+    SetClanMemberRoleRequest = 3686,
+    ClanMemberRoleChanged = 3690,
 }

@@ -296,8 +296,27 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(tag, result);
             }
         }
+        else if (tag == MessageTag.ViewClanRequest)
+        {
+            var id = reader.MemRead<int>();
+            var clan = ViewClan(id).GetAwaiter().GetResult();
+            MemSend(MessageTag.ViewClanRequest, clan);
+        }
+        else if (tag == MessageTag.SetClanMemberRoleRequest)
+        {
+            var request = reader.MemRead<SetClanMemberRoleRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = SetMemberRole(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.SetClanMemberRoleRequest, result);
+            }
+        }
     }
 
+    public async Task<Clan?> ViewClan(int id)
+    {
+        return await ClanManager.ViewClan(id);
+    }
     public async Task<GetClanResult> GetClan()
     {
         await watchTask;
@@ -403,6 +422,10 @@ public class ClanHandler : IClientHandler, IClanObserverState
             {
                 throw new InvalidException("Không có quyền thêm thành viên");
             }
+            if (!Enum.IsDefined(request.Role) || request.Role >= actorMember.Role)
+            {
+                throw new InvalidException("Chỉ được cấp chức vụ thấp hơn chức vụ của bạn");
+            }
 
             var member = await ClanManager.AddMember(reference, request.CharId, request.Role);
             result = new AddClanMemberResult
@@ -421,6 +444,20 @@ public class ClanHandler : IClientHandler, IClanObserverState
         }
 
         return result;
+    }
+
+    public async Task<SetClanMemberRoleResult> SetMemberRole(SetClanMemberRoleRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            var change = await ClanManager.SetMemberRole(clanReference, CharId, request.CharId, request.Role);
+            return new SetClanMemberRoleResult { Success = true, Change = change };
+        }
+        catch (InvalidException e)
+        {
+            return new SetClanMemberRoleResult { Success = false, Message = e.Message };
+        }
     }
 
     public async Task<ClanContributionResult> Contribute(ClanContributionRequest request)
@@ -678,7 +715,8 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.GetClanShopRequest,
         MessageTag.BuyClanShopRequest,
         MessageTag.AddClanShopItemRequest,
-        MessageTag.RemoveClanShopItemRequest
+        MessageTag.RemoveClanShopItemRequest,
+        MessageTag.SetClanMemberRoleRequest
     ];
     public MessageTag[] HandleTag => handlers;
     public void OnLeave()

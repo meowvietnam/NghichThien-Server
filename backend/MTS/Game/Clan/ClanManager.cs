@@ -99,11 +99,9 @@ public static partial class ClanManager
                 .Include(x => x.Members)
                 .ThenInclude(x => x.CharData)
                 .ThenInclude(x => x.Progression)
-                .Include(x => x.ShopItems)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
-
         return clan;
     }
 

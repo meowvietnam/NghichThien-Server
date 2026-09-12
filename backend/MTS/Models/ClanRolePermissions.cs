@@ -7,7 +7,8 @@ public static class ClanRolePermissions
         [ClanRole.Leader] = ClanPermission.AddMember
                             | ClanPermission.KickMember
                             | ClanPermission.AddShopItem
-                            | ClanPermission.RemoveShopItem,
+                            | ClanPermission.RemoveShopItem
+                            | ClanPermission.AssignRole,
         [ClanRole.Member] = ClanPermission.None
     };
 
