@@ -302,6 +302,7 @@ public static class EventService
                     Id = 1,
                     Amount = 100_000,
                     MoneyVip = 22_000,
+                    BonusMoneyVip = (int)(6_900 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
@@ -317,6 +318,7 @@ public static class EventService
                     Id = 2,
                     Amount = 500_000,
                     MoneyVip = 120_000,
+                    BonusMoneyVip = (int)(39_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
@@ -332,6 +334,7 @@ public static class EventService
                     Id = 3,
                     Amount = 1_000_000,
                     MoneyVip = 300_000,
+                    BonusMoneyVip = (int)(81_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
@@ -347,6 +350,7 @@ public static class EventService
                     Id = 4,
                     Amount = 50_000,
                     MoneyVip = 11_000,
+                    BonusMoneyVip = (int)(3_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
@@ -362,6 +366,7 @@ public static class EventService
                     Id = 5,
                     Amount = 250_000,
                     MoneyVip = 60_000,
+                    BonusMoneyVip = (int)(19_000 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
@@ -377,6 +382,7 @@ public static class EventService
                     Id = 6,
                     Amount = 500_000,
                     MoneyVip = 150_000,
+                    BonusMoneyVip = (int)(39_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()

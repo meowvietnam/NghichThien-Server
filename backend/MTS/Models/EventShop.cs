@@ -109,7 +109,7 @@ public partial class EventShop : IGameEvent
                 };
                 await db.IapPurchases.AddAsync(purchase);
                 item.HasBuy = true;
-                var mail = CreateMail(item);
+                var mail = CreateMail(item, includeRechargeBonus: true);
                 var mailManager = new MailManager(charData, charData.Client);
                 await mailManager.SendMail(mail, db, true);
                 return new HandleOrderEventShopResult()
@@ -139,7 +139,7 @@ public partial class EventShop : IGameEvent
                     throw new InvalidException(Strings.NotEnoughMoneyVip);
                 }
                 item.HasBuy = true;
-                var mail = CreateMail(item);
+                var mail = CreateMail(item, includeRechargeBonus: false);
                 var mailManager = new MailManager(charData, charData.Client);
                 await mailManager.SendMail(mail, db, true);
                 charData.SetMoneyVip(remaining);
@@ -163,9 +163,17 @@ public partial class EventShop : IGameEvent
         return null;
     }
 
-    public Mail CreateMail(ItemEventShop item)
+    public Mail CreateMail(ItemEventShop item, bool includeRechargeBonus)
     {
         var rewards = item.GetRewards();
+        if (includeRechargeBonus && item.BonusMoneyVip > 0)
+        {
+            rewards.Add(new MailRewardMoneyVip
+            {
+                MoneyVip = item.BonusMoneyVip
+            });
+        }
+
         var mail = new Mail()
         {
             CharId = charData.Id,

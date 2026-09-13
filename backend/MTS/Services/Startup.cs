@@ -50,8 +50,15 @@ public class Startup : BackgroundService
         Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
             Utils.Utils.FormatCount(estimate));
         // await AddEvents(db);
+        // await DeleteAllEvents(db);
     }
 
+    private async Task DeleteAllEvents(AppDbContext db)
+    {
+        await db.Events.ExecuteDeleteAsync();
+        await db.SaveChangesAsync();
+        Log.Information("Oke");
+    }
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.EventManagers
@@ -60,9 +67,12 @@ public class Startup : BackgroundService
         
         foreach (var charId in charIds)
         {
-            var @event = EventService.CreateEvents().First(x => x.GameEvent is EventShop);
-            @event.CharId = charId;
-            await db.Events.AddAsync(@event);
+            var events = EventService.CreateEvents();
+            foreach (var @event in events)
+            {
+                @event.CharId = charId;
+                await db.Events.AddAsync(@event);
+            }
         }
         await db.SaveChangesAsync();
         Log.Information("Oke");
