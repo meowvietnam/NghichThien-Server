@@ -256,9 +256,7 @@ public class CreateCharacterService
         {
             throw new InvalidException($"{Strings.NotEnoughNatural}: {money}");
         }
-
-        // Nhân vật mới vào game chỉ có 1/2 HP tối đa, kèm 100k Linh Thạch khởi đầu.
-        stats.SetValue(StatType.Hp, stats.SinhMenh / 2);
+        stats.SetHp(stats.SinhMenh / 3);
         stats.SetLinhThach(stats.LinhThach + GameConfig.NewCharacterLinhThachBonus);
         Char.Stats = stats;
     }

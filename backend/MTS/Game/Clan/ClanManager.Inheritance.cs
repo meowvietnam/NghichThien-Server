@@ -42,8 +42,9 @@ public static partial class ClanManager
                 : Config.InheritanceBaseValue;
             if (baseValue < 0)
                 throw new InvalidException("Cấu hình giá trị truyền thừa không hợp lệ");
-            var maxValue = checked(baseValue * 3);
-            return Random.Shared.Next(baseValue, maxValue + 1);
+            var minValue = baseValue / 2;
+            var maxValue = checked(baseValue * 2);
+            return Random.Shared.Next(minValue, maxValue + 1);
         }
         catch (OverflowException)
         {
@@ -70,7 +71,7 @@ public static partial class ClanManager
         var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
             ?? throw new InvalidException("Chưa gia nhập tông môn");
         if (!actorMember.HasPermission(ClanPermission.ManageInheritance))
-            throw new InvalidException("Chỉ Tộc Chủ được quản lý truyền thừa");
+            throw new InvalidException("Không có quyền quản lý truyền thừa");
 
         var clanId = clan.Id;
         var gate = AcquireGate(clanId);

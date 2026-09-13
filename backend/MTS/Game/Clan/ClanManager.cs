@@ -472,6 +472,8 @@ public static partial class ClanManager
                 throw new InvalidException("Đã gia nhập tông môn");
             }
 
+            ValidateUniqueRole(clan, role, charId);
+
             var joinedAt = DateTime.UtcNow;
             var member = await ExecuteClanTransactionAsync(async db =>
             {
@@ -481,6 +483,10 @@ public static partial class ClanManager
                     if (existing.ClanId == clanId) return existing;
                     throw new InvalidException("Đã gia nhập tông môn");
                 }
+
+                if (IsUniqueRole(role) && await db.ClanMembers.AnyAsync(x =>
+                        x.ClanId == clanId && x.Role == role && x.CharId != charId))
+                    throw new InvalidException($"Tông môn chỉ được có 1 {GetRoleName(role)}");
 
                 var persistedMember = new ClanMember
                 {
@@ -887,6 +893,30 @@ public static partial class ClanManager
     public static void RememberMember(int charId, int clanId)
     {
         MemberClanIds[charId] = clanId;
+    }
+
+    private static bool IsUniqueRole(ClanRole role)
+    {
+        return role is ClanRole.ViceLeader or ClanRole.Elder;
+    }
+
+    private static void ValidateUniqueRole(Models.Clan clan, ClanRole role, int targetCharId)
+    {
+        if (!IsUniqueRole(role)) return;
+
+        if (clan.Members.Any(x => x.Role == role && x.CharId != targetCharId))
+            throw new InvalidException($"Tông môn chỉ được có 1 {GetRoleName(role)}");
+    }
+
+    private static string GetRoleName(ClanRole role)
+    {
+        return role switch
+        {
+            ClanRole.ViceLeader => "Phó Tộc Chủ",
+            ClanRole.Elder => "Trưởng Lão",
+            ClanRole.Leader => "Tộc Chủ",
+            _ => "Đệ tử"
+        };
     }
 
     private static ClanMapNode ToMapNode(Models.Clan clan)

@@ -37,9 +37,14 @@ public static partial class ClanManager
                 throw new InvalidException("Chỉ được cấp chức vụ thấp hơn chức vụ của bạn");
             if (target.Role == role)
                 throw new InvalidException("Thành viên đã có chức vụ này");
+            ValidateUniqueRole(clan, role, targetCharId);
 
             var oldRole = target.Role;
             await using var db = await Program.CreateDbAsync();
+            if (IsUniqueRole(role) && await db.ClanMembers.AnyAsync(member =>
+                    member.ClanId == clanId && member.Role == role && member.CharId != targetCharId))
+                throw new InvalidException($"Tông môn chỉ được có 1 {GetRoleName(role)}");
+
             var affected = await db.ClanMembers
                 .Where(member => member.ClanId == clanId && member.CharId == targetCharId && member.Role == oldRole)
                 .ExecuteUpdateAsync(update => update.SetProperty(member => member.Role, role));
