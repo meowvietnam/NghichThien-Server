@@ -23,15 +23,20 @@ public static partial class ClanManager
         return (int)Math.Clamp(slots, 0, Config.MaxInheritanceSlotsPerColumn);
     }
 
-    public static int GetInheritanceValue(int clanLevel)
+    public static int GetInheritanceValue(EffectType? effectType)
     {
-        if (Config.InheritanceBaseValue < 0 || Config.InheritanceValuePerClanLevel < 0)
+        if (Config.InheritanceBaseValue < 0)
             throw new InvalidException("Cấu hình giá trị truyền thừa không hợp lệ");
 
         try
         {
-            return checked(Config.InheritanceBaseValue +
-                           Math.Max(0, clanLevel - 1) * Config.InheritanceValuePerClanLevel);
+            var baseValue = effectType.HasValue
+                ? GameConfig.ClanBuffResources.GetBaseValueOf(effectType.Value)
+                : Config.InheritanceBaseValue;
+            if (baseValue < 0)
+                throw new InvalidException("Cấu hình giá trị truyền thừa không hợp lệ");
+            var maxValue = checked(baseValue * 3);
+            return Random.Shared.Next(baseValue, maxValue + 1);
         }
         catch (OverflowException)
         {
@@ -68,10 +73,9 @@ public static partial class ClanManager
             var current = clan.InheritanceEffects.FirstOrDefault(x =>
                 x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
             var oldMoneyVip = actor.MoneyVip;
-            var desiredValue = GetInheritanceValue(clan.Level);
             var ramChanged = request.EffectType == null
                 ? current != null
-                : current == null || current.EffectType != request.EffectType || current.Value != desiredValue;
+                : current == null || current.EffectType != request.EffectType;
             var changingFilledSlot = current != null && current.EffectType != request.EffectType;
             var expectedCost = changingFilledSlot ? Config.ChangeInheritanceMoneyVipCost : 0;
             if (expectedCost < 0)
@@ -79,7 +83,7 @@ public static partial class ClanManager
             if (actor.MoneyVip < expectedCost)
                 throw new InvalidException("Không đủ tiên ngọc để thay đổi truyền thừa");
 
-            var value = desiredValue;
+            var value = request.EffectType.HasValue ? GetInheritanceValue(request.EffectType) : 0;
             var transactionResult = await ExecuteClanTransactionAsync(async db =>
             {
                 var persisted = await db.Set<ClanInheritanceEffect>().FirstOrDefaultAsync(x =>
@@ -87,7 +91,7 @@ public static partial class ClanManager
 
                 var alreadyDesired = request.EffectType == null
                     ? persisted == null
-                    : persisted?.EffectType == request.EffectType && persisted.Value == value;
+                    : persisted?.EffectType == request.EffectType;
                 if (alreadyDesired)
                 {
                     var currentMoney = await db.Characters.Where(x => x.Id == actor.Id)
@@ -199,7 +203,6 @@ public static partial class ClanManager
             catch (OverflowException) { throw new InvalidException("Clan EXP đã đạt giới hạn"); }
 
             var newLevel = Math.Max(clan.Level, ResolveClanLevel(newExp));
-            var newValue = GetInheritanceValue(newLevel);
             await ExecuteClanTransactionAsync(async db =>
             {
                 var updated = await db.Clans
@@ -211,11 +214,6 @@ public static partial class ClanManager
                         x.Id == clanId && x.Exp == newExp && x.Level == newLevel))
                     throw new InvalidException("Dữ liệu cấp tông môn đã thay đổi, vui lòng thử lại");
 
-                if (newLevel != clan.Level)
-                {
-                    await db.Set<ClanInheritanceEffect>().Where(x => x.ClanId == clanId)
-                        .ExecuteUpdateAsync(x => x.SetProperty(e => e.Value, newValue));
-                }
                 return true;
             });
 
@@ -224,7 +222,6 @@ public static partial class ClanManager
             clan.Level = newLevel;
             if (levelChanged)
             {
-                foreach (var effect in clan.InheritanceEffects) effect.Value = newValue;
                 clan.RefreshInheritanceViews();
             }
 
