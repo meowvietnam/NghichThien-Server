@@ -12,7 +12,7 @@ public static partial class ClanManager
     private sealed record InheritanceTransactionResult(
         ClanInheritanceEffect? Effect, int MoneyVip, bool Changed);
 
-    public static int GetInheritanceSlots(int clanLevel)
+    public static int GetInheritanceSlots(int clanLevel, EBuffAndDeBuff buffType)
     {
         if (Config.BaseInheritanceSlots < 0 || Config.InheritanceSlotsPerLevel < 0 ||
             Config.MaxInheritanceSlotsPerColumn < 0)
@@ -48,7 +48,7 @@ public static partial class ClanManager
             throw new InvalidException("Cột truyền thừa không hợp lệ");
 
         var clan = reference.Clan;
-        var slotCount = GetInheritanceSlots(clan.Level);
+        var slotCount = GetInheritanceSlots(clan.Level, request.BuffType);
         if (request.SlotIndex < 0 || request.SlotIndex >= slotCount)
             throw new InvalidException("Ô truyền thừa chưa được mở khóa");
         if (request.BuffType != EBuffAndDeBuff.None &&
@@ -239,7 +239,7 @@ public static partial class ClanManager
                         ClanId = clanId,
                         Level = newLevel,
                         Exp = newExp,
-                        InheritanceSlotsPerColumn = GetInheritanceSlots(newLevel),
+                        InheritanceSlotsPerColumn = GetInheritanceSlots(newLevel, EBuffAndDeBuff.None),
                         Effects = clan.InheritanceEffects.ToArray()
                     });
                 }
