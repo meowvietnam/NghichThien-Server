@@ -364,7 +364,8 @@ public static partial class ClanManager
                 {
                     CharId = leaderCharId,
                     Role = ClanRole.Leader,
-                    JoinAt = now
+                    JoinAt = now,
+                    LastFreeContributionAt = persistedLeader.LastFreeClanContributionAt
                 };
                 var clan = new Models.Clan
                 {
@@ -475,7 +476,8 @@ public static partial class ClanManager
                     ClanId = clanId,
                     CharId = charId,
                     Role = role,
-                    JoinAt = joinedAt
+                    JoinAt = joinedAt,
+                    LastFreeContributionAt = charData.LastFreeClanContributionAt
                 };
                 await db.ClanMembers.AddAsync(persistedMember);
                 await db.ClanJoinRequests
@@ -580,7 +582,10 @@ public static partial class ClanManager
             }
 
             var now = DateTime.UtcNow;
-            var hasFreeContribution = member.LastFreeContributionAt.Date == now.Date;
+            // Lượt miễn phí thuộc về nhân vật, không thuộc về bản ghi membership. Nếu chỉ lưu
+            // ở ClanMember, rời tông môn sẽ xóa dấu này và gia nhập lại sẽ nhận lượt mới.
+            var previousFreeContributionAt = charData.LastFreeClanContributionAt;
+            var hasFreeContribution = previousFreeContributionAt.Date == now.Date;
             var freeTimes = hasFreeContribution ? 0 : 1;
             if (freeTimes > times)
             {
@@ -618,7 +623,7 @@ public static partial class ClanManager
             }
             var lastFreeContributionAt = freeTimes > 0
                 ? now
-                : member.LastFreeContributionAt;
+                : previousFreeContributionAt;
 
             await ExecuteClanTransactionAsync(async db =>
             {
@@ -627,8 +632,10 @@ public static partial class ClanManager
                         x.ContribPoints == newContribPoints &&
                         x.LastFreeContributionAt == lastFreeContributionAt) &&
                     await db.Clans.AsNoTracking().AnyAsync(x => x.Id == clanId && x.Funds == newFunds) &&
-                    (cost == 0 || await db.Characters.AsNoTracking()
-                        .AnyAsync(x => x.Id == charId && x.MoneyVip == remainingMoneyVip));
+                    await db.Characters.AsNoTracking().AnyAsync(x =>
+                        x.Id == charId &&
+                        x.MoneyVip == remainingMoneyVip &&
+                        x.LastFreeClanContributionAt == lastFreeContributionAt);
                 if (alreadyCommitted) return true;
 
                 var updatedMember = await db.ClanMembers
@@ -647,14 +654,19 @@ public static partial class ClanManager
                 if (updatedClan != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
+                var updatedChar = await db.Characters
+                    .Where(x => x.Id == charId &&
+                        x.MoneyVip == charData.MoneyVip &&
+                        x.MoneyVip >= cost &&
+                        x.LastFreeClanContributionAt == previousFreeContributionAt)
+                    .ExecuteUpdateAsync(x => x
+                        .SetProperty(c => c.MoneyVip, remainingMoneyVip)
+                        .SetProperty(c => c.LastFreeClanContributionAt, lastFreeContributionAt));
+                if (updatedChar != 1)
+                    throw new InvalidException("Lượt miễn phí hoặc tiên ngọc đã thay đổi, vui lòng thử lại");
+
                 if (cost > 0)
                 {
-                    var updatedChar = await db.Characters
-                        .Where(x => x.Id == charId && x.MoneyVip == charData.MoneyVip && x.MoneyVip >= cost)
-                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.MoneyVip, remainingMoneyVip));
-                    if (updatedChar != 1)
-                        throw new InvalidException("Không đủ tiên ngọc hoặc dữ liệu nhân vật đã thay đổi");
-
                     await db.SpendingMoneyVips.AddAsync(new SpendingMoneyVip
                     {
                         CharId = charId,
@@ -669,6 +681,7 @@ public static partial class ClanManager
             });
 
             charData.SetMoneyVip(remainingMoneyVip);
+            charData.SetLastFreeClanContributionAt(lastFreeContributionAt);
             clan.Funds = newFunds;
             member.ContribPoints = newContribPoints;
             member.LastFreeContributionAt = lastFreeContributionAt;

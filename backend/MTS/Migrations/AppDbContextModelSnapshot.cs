@@ -124,6 +124,9 @@ namespace MTS.Migrations
                     b.Property<bool>("IsNoAds")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<DateTime>("LastFreeClanContributionAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("LastLogin")
                         .HasColumnType("datetime(6)");
 

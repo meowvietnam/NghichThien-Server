@@ -207,8 +207,25 @@ public class ClanHandler : IClientHandler, IClanObserverState
         else if (tag == MessageTag.GetClanRequest)
         {
             reader.MemRead<GetClanRequest>();
-            var result = GetClan().GetAwaiter().GetResult();
-            MemSend(MessageTag.GetClanRequest, result);
+            GetClanResult result;
+            try
+            {
+                result = GetClan().GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                Serilog.Log.Error(exception, "Không thể tải tông môn; CharacterId={CharacterId}", CharId);
+                result = new GetClanResult
+                {
+                    Success = false,
+                    Message = "Không thể tải thông tin tông môn",
+                    Config = GetConfig()
+                };
+            }
+
+            // Đây là response trực tiếp. Không dùng MemSend của IClanObserverState vì hàm đó
+            // cố ý bỏ broadcast trước khi WatchMyClan hoàn tất và có thể làm request bị timeout.
+            client.MemSend(MessageTag.GetClanRequest, result);
         }
         else if (tag == MessageTag.UploadClanImageRequest)
         {

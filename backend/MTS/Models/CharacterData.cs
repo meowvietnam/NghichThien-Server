@@ -36,6 +36,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public int TrungSinhCount { get; private set; } = 0;
     public int BonusPoint { get; private set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastFreeClanContributionAt { get; private set; }
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
     public Appearance Appearance { get; set; } = new();
@@ -95,6 +96,15 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         if (MoneyVip != value)
         {
             MoneyVip = value;
+            dirty = true;
+        }
+    }
+
+    public void SetLastFreeClanContributionAt(DateTime value)
+    {
+        if (LastFreeClanContributionAt != value)
+        {
+            LastFreeClanContributionAt = value;
             dirty = true;
         }
     }
@@ -334,7 +344,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.CanFly, CanFly)
                         .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount)
                         .SetProperty(x => x.TrungSinhCount, TrungSinhCount)
-                        .SetProperty(x => x.BonusPoint, BonusPoint));
+                        .SetProperty(x => x.BonusPoint, BonusPoint)
+                        .SetProperty(x => x.LastFreeClanContributionAt, LastFreeClanContributionAt));
             dirty = false;
         }
 
