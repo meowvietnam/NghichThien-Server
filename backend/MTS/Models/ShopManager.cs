@@ -10,12 +10,19 @@ using MTS.Localization;
 using MTS.Network.Models;
 using Newtonsoft.Json;
 using MTS.Utils;
+using Serilog;
 
 namespace MTS.Models;
 
 [MemoryPackable]
 public partial class ShopManager
 {
+    private const ushort FirstCharacterDuongDaoThuatId = 2;
+    private const int FirstCharacterDuongDaoThuatCount = 15;
+    private const ushort FirstCharacterSucTheId = 14;
+    private const int FirstCharacterSucTheCount = 1;
+    private const int FirstCharacterRandomShopSkillAllCount = 10;
+
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
     [MemoryPackIgnore]
@@ -40,7 +47,51 @@ public partial class ShopManager
     public void FirstReload()
     {
         ReloadAll();
+        EnsureFirstCharacterShopSkillAllItems();
     }
+
+    private void EnsureFirstCharacterShopSkillAllItems()
+    {
+        KeepFirstCharacterRandomShopSkillAllItems();
+        EnsureMinimumShopItemCount(ShopSkillAll,
+            new ItemRef(FirstCharacterDuongDaoThuatId, ItemType.CongPhap, FirstCharacterDuongDaoThuatCount));
+        EnsureMinimumShopItemCount(ShopSkillAll,
+            new ItemRef(FirstCharacterSucTheId, ItemType.ThanThong, FirstCharacterSucTheCount));
+    }
+
+    private void KeepFirstCharacterRandomShopSkillAllItems()
+    {
+        var specialItems = new[]
+        {
+            new ItemRef(FirstCharacterDuongDaoThuatId, ItemType.CongPhap, FirstCharacterDuongDaoThuatCount),
+            new ItemRef(FirstCharacterSucTheId, ItemType.ThanThong, FirstCharacterSucTheCount)
+        };
+        var randomItems = ShopSkillAll.Items
+            .Where(item => !specialItems.Contains(item))
+            .Take(FirstCharacterRandomShopSkillAllCount)
+            .ToHashSet();
+
+        ShopSkillAll.Items.Clear();
+        foreach (var item in randomItems)
+        {
+            ShopSkillAll.Items.Add(item);
+        }
+
+        ShopSkillAll.Dirty = true;
+    }
+
+    private static void EnsureMinimumShopItemCount(Shop shop, ItemRef requiredItem)
+    {
+        if (shop.Items.TryGetValue(requiredItem, out var existingItem) && existingItem.Count >= requiredItem.Count)
+        {
+            return;
+        }
+
+        shop.Items.Remove(requiredItem);
+        shop.Items.Add(requiredItem);
+        shop.Dirty = true;
+    }
+
     public void ReloadAll()
     {
         var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
@@ -164,13 +215,13 @@ public partial class ShopManager
             case EShopType.ShopVatLieu:
                 return ShopVatLieu;
             case EShopType.Skill:
-                if (monPhai == CharData.MonPhai)
-                {
-                    return ShopSkill;
-                }
                 if (monPhai == EMonPhai.None)
                 {
                     return ShopSkillAll;
+                }
+                if (monPhai == CharData.MonPhai)
+                {
+                    return ShopSkill;
                 }
                 throw new InvalidException(Strings.ShopMonPhaiInvalid);
             default:

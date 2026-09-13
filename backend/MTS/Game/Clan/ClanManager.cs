@@ -38,11 +38,11 @@ public static partial class ClanManager
         BaseInheritanceSlots = 1,
         InheritanceSlotsPerLevel = 1,
         MaxInheritanceSlotsPerColumn = 10,
-        ChangeInheritanceMoneyVipCost = 1_000,
+        ChangeInheritanceMoneyVipCost = 2_000,
         InheritanceBaseValue = 1,
         InheritanceValuePerClanLevel = 1,
         InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
-        ClanLevelRequiredTotalExp = [0, 10_000, 30_000, 70_000, 150_000, 300_000, 600_000, 1_200_000, 2_400_000, 5_000_000]
+        ClanLevelRequiredTotalExp = [0, 1_000, 30_000, 70_000, 150_000, 300_000, 600_000, 1_200_000, 2_400_000, 5_000_000]
     };
 
     private static async Task<T> ExecuteClanTransactionAsync<T>(Func<AppDbContext, Task<T>> operation)
@@ -862,6 +862,44 @@ public static partial class ClanManager
     public static void RememberMember(int charId, int clanId)
     {
         MemberClanIds[charId] = clanId;
+    }
+
+    public static bool TryGetCharacterClanSnapshot(
+        int charId,
+        out int clanId,
+        out string clanName,
+        out string? clanImageUrl,
+        out int clanLevel,
+        out ClanRole clanRole,
+        out ClanInheritanceEffect[] inheritanceEffects)
+    {
+        clanId = 0;
+        clanName = string.Empty;
+        clanImageUrl = null;
+        clanLevel = 0;
+        clanRole = ClanRole.Member;
+        inheritanceEffects = [];
+
+        if (!MemberClanIds.TryGetValue(charId, out var cachedClanId) ||
+            !References.TryGetValue(cachedClanId, out var reference))
+        {
+            return false;
+        }
+
+        var clan = reference.Clan;
+        var member = clan.Members.FirstOrDefault(x => x.CharId == charId);
+        if (member == null)
+        {
+            return false;
+        }
+
+        clanId = clan.Id;
+        clanName = clan.Name;
+        clanImageUrl = clan.ImageUrl;
+        clanLevel = clan.Level;
+        clanRole = member.Role;
+        inheritanceEffects = clan.InheritanceEffects.ToArray();
+        return true;
     }
 
     public static void PublishDeleted(int clanId)

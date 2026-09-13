@@ -364,6 +364,15 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(MessageTag.SetClanInheritanceRequest, result);
             }
         }
+        else if (tag == MessageTag.UpgradeClanWithFundsRequest)
+        {
+            var request = reader.MemRead<UpgradeClanWithFundsRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = UpgradeWithFunds(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.UpgradeClanWithFundsRequest, result);
+            }
+        }
     }
 
     public async Task<Clan?> ViewClan(int id)
@@ -395,6 +404,29 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 Success = false,
                 Message = e.Message,
                 NewMoneyVip = charData.MoneyVip
+            };
+        }
+    }
+
+    public async Task<UpgradeClanWithFundsResult> UpgradeWithFunds(UpgradeClanWithFundsRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return await ClanManager.UpgradeWithFunds(clanReference, charData, request.Funds);
+        }
+        catch (InvalidException e)
+        {
+            var clan = reference?.Clan;
+            return new UpgradeClanWithFundsResult
+            {
+                Success = false,
+                Message = e.Message,
+                ClanFunds = clan?.Funds ?? 0,
+                Exp = clan?.Exp ?? 0,
+                Level = clan?.Level ?? 0,
+                InheritanceSlotsPerColumn = clan == null ? 0 : ClanManager.GetInheritanceSlots(clan.Level),
+                Effects = clan?.InheritanceEffects.ToArray() ?? []
             };
         }
     }
@@ -863,6 +895,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.ApproveClanJoinRequestRequest,
         MessageTag.RejectClanJoinRequestRequest,
         MessageTag.SetClanInheritanceRequest,
+        MessageTag.UpgradeClanWithFundsRequest,
         MessageTag.ViewClanRequest
     ];
     public MessageTag[] HandleTag => handlers;

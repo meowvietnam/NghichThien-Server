@@ -1,4 +1,5 @@
 using MemoryPack;
+using MTS.Game.Clan;
 using MTS.Models;
 
 namespace MTS.Network.Models;
@@ -42,6 +43,13 @@ public partial class CharacterSnapshot
     public int ChuTu2Used { get; set; }
     public int ChuTu1Used { get; set; }
     public int PointArena { get; set; }
+    public bool HasClan { get; set; }
+    public int ClanId { get; set; }
+    public string ClanName { get; set; } = string.Empty;
+    public string? ClanImageUrl { get; set; }
+    public int ClanLevel { get; set; }
+    public ClanRole ClanRole { get; set; }
+    public ClanInheritanceEffect[] ClanInheritanceEffects { get; set; } = [];
     [MemoryPackConstructor]
     public CharacterSnapshot()
     {
@@ -102,5 +110,22 @@ public partial class CharacterSnapshot
         this.DanDoc = c.Stats.DanDoc;
         this.Hp = c.Stats.Hp;
         this.PointArena = c.ArenaManager.Points;
+        if (ClanManager.TryGetCharacterClanSnapshot(
+                c.Id,
+                out var clanId,
+                out var clanName,
+                out var clanImageUrl,
+                out var clanLevel,
+                out var clanRole,
+                out var inheritanceEffects))
+        {
+            this.HasClan = true;
+            this.ClanId = clanId;
+            this.ClanName = clanName;
+            this.ClanImageUrl = clanImageUrl;
+            this.ClanLevel = clanLevel;
+            this.ClanRole = clanRole;
+            this.ClanInheritanceEffects = inheritanceEffects;
+        }
     }
 }

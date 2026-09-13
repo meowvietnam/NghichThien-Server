@@ -309,4 +309,6 @@ public enum MessageTag
     ClanInheritanceChanged = 3698,
     ClanExpChanged = 3699,
     ClanLevelChanged = 3700,
+    UpgradeClanWithFundsRequest = 3701,
+    ClanFundsChanged = 3702,
 }

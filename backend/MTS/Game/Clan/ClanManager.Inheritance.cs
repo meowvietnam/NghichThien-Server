@@ -12,6 +12,13 @@ public static partial class ClanManager
     private sealed record InheritanceTransactionResult(
         ClanInheritanceEffect? Effect, int MoneyVip, bool Changed);
 
+    private sealed record UpgradeClanWithFundsTransactionResult(
+        long FundsSpent,
+        long AddedExp,
+        long ClanFunds,
+        long Exp,
+        int Level);
+
     public static int GetInheritanceSlots(int clanLevel)
     {
         if (Config.BaseInheritanceSlots < 0 || Config.InheritanceSlotsPerLevel < 0 ||
@@ -186,6 +193,117 @@ public static partial class ClanManager
         {
             ReleaseGate(clanId, gate);
         }
+    }
+
+    public static async Task<UpgradeClanWithFundsResult> UpgradeWithFunds(
+        ClanReference reference,
+        CharacterData actor,
+        long funds)
+    {
+        if (funds <= 0)
+            throw new InvalidException("Số quỹ nâng cấp phải lớn hơn 0");
+
+        var clan = reference.Clan;
+        var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
+            ?? throw new InvalidException("Chưa gia nhập tông môn");
+        if (actorMember.Role != ClanRole.Leader && clan.LeaderCharId != actor.Id)
+            throw new InvalidException("Chỉ Tộc Chủ được nâng cấp tông môn");
+        if (clan.Funds < funds)
+            throw new InvalidException("Quỹ tông môn không đủ");
+
+        var addedExp = GetClanUpgradeExpFromFunds(funds);
+        if (addedExp <= 0)
+            throw new InvalidException("EXP nâng cấp phải lớn hơn 0");
+
+        var clanId = clan.Id;
+        var gate = AcquireGate(clanId);
+        await gate.Semaphore.WaitAsync();
+        try
+        {
+            var transactionResult = await ExecuteClanTransactionAsync(async db =>
+            {
+                var persisted = await db.Clans
+                    .Where(x => x.Id == clanId)
+                    .Select(x => new { x.Funds, x.Exp, x.Level })
+                    .SingleAsync();
+                if (persisted.Funds < funds)
+                    throw new InvalidException("Quỹ tông môn không đủ");
+
+                long newFunds;
+                long newExp;
+                try
+                {
+                    newFunds = checked(persisted.Funds - funds);
+                    newExp = checked(persisted.Exp + addedExp);
+                }
+                catch (OverflowException)
+                {
+                    throw new InvalidException("Tài nguyên tông môn đã đạt giới hạn");
+                }
+
+                var newLevel = Math.Max(persisted.Level, ResolveClanLevel(newExp));
+                var updated = await db.Clans
+                    .Where(x => x.Id == clanId &&
+                                x.Funds == persisted.Funds &&
+                                x.Exp == persisted.Exp &&
+                                x.Level == persisted.Level)
+                    .ExecuteUpdateAsync(x => x
+                        .SetProperty(c => c.Funds, newFunds)
+                        .SetProperty(c => c.Exp, newExp)
+                        .SetProperty(c => c.Level, newLevel));
+                if (updated != 1)
+                    throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
+
+                return new UpgradeClanWithFundsTransactionResult(funds, addedExp, newFunds, newExp, newLevel);
+            });
+
+            var levelChanged = clan.Level != transactionResult.Level;
+            clan.Funds = transactionResult.ClanFunds;
+            clan.Exp = transactionResult.Exp;
+            clan.Level = transactionResult.Level;
+            if (levelChanged) clan.RefreshInheritanceViews();
+
+            var effects = clan.InheritanceEffects.ToArray();
+            if (Observers.TryGetValue(clanId, out var observer))
+            {
+                observer.SendAll(MessageTag.ClanFundsChanged,
+                    new ClanFundsChanged { ClanId = clanId, Funds = transactionResult.ClanFunds });
+                observer.SendAll(MessageTag.ClanExpChanged,
+                    new ClanExpChanged { ClanId = clanId, Exp = transactionResult.Exp });
+                if (levelChanged)
+                {
+                    observer.SendAll(MessageTag.ClanLevelChanged, new ClanLevelChanged
+                    {
+                        ClanId = clanId,
+                        Level = transactionResult.Level,
+                        Exp = transactionResult.Exp,
+                        InheritanceSlotsPerColumn = GetInheritanceSlots(transactionResult.Level),
+                        Effects = effects
+                    });
+                }
+            }
+
+            return new UpgradeClanWithFundsResult
+            {
+                Success = true,
+                FundsSpent = transactionResult.FundsSpent,
+                AddedExp = transactionResult.AddedExp,
+                ClanFunds = transactionResult.ClanFunds,
+                Exp = transactionResult.Exp,
+                Level = transactionResult.Level,
+                InheritanceSlotsPerColumn = GetInheritanceSlots(transactionResult.Level),
+                Effects = effects
+            };
+        }
+        finally
+        {
+            ReleaseGate(clanId, gate);
+        }
+    }
+
+    public static long GetClanUpgradeExpFromFunds(long funds)
+    {
+        return funds;
     }
 
     // Nguồn EXP sẽ gọi hàm này sau. Hiện chưa nối vào cống hiến hay gameplay nào.
