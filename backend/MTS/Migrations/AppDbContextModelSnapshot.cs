@@ -286,10 +286,10 @@ namespace MTS.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("NormalizeName")
+                    b.HasIndex("NodeId")
                         .IsUnique();
 
-                    b.HasIndex("NodeId")
+                    b.HasIndex("NormalizeName")
                         .IsUnique();
 
                     b.ToTable("Clans");
@@ -303,11 +303,11 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<byte?>("EffectType")
-                        .HasColumnType("tinyint unsigned");
-
                     b.Property<int>("ClanId")
                         .HasColumnType("int");
+
+                    b.Property<byte?>("EffectType")
+                        .HasColumnType("tinyint unsigned");
 
                     b.Property<int>("SlotIndex")
                         .HasColumnType("int");
@@ -394,6 +394,9 @@ namespace MTS.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<sbyte>("ItemDurability")
+                        .HasColumnType("tinyint");
 
                     b.Property<ushort>("ItemId")
                         .HasColumnType("smallint unsigned");

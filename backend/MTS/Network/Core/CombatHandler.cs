@@ -352,6 +352,11 @@ namespace MTS.Network.Core
                 bonusPoints = charData.BonusPoint;
             }
 
+            if (!IsFinalArenaRank(point))
+            {
+                return null;
+            }
+
             var min = point - 500;
             var max = point + 500;
             await using var db = await Program.CreateDbAsync();
@@ -396,6 +401,19 @@ namespace MTS.Network.Core
 
             await matchPlayerProgression.CharacterData.InventoryManager.LoadEquipments(db);
             return matchPlayerProgression.CharacterData;
+        }
+
+        private static bool IsFinalArenaRank(int point)
+        {
+            var rankValues = GameConfig.TypeRankArenaWithValue;
+            if (rankValues == null || rankValues.Count == 0) return false;
+
+            var currentRank = GameConfig.GetArenaRankWithPoint(point);
+            var finalRank = rankValues
+                .OrderByDescending(x => x.Value)
+                .Select(x => x.Key)
+                .FirstOrDefault();
+            return currentRank == finalRank && finalRank != ETypeArenaRank.None;
         }
 
         private void StartCombat(ETypeCombat type, int level)

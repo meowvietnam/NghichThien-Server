@@ -40,6 +40,7 @@ public class Progression : IMemorySerializable<Progression>
         value.CurrentEnergy = reader.Read<int>();
         value.NgoDaoDiem = reader.Read<int>();
         value.IdCurrentNode = reader.Read<int>();
+        value.MaxLevel = reader.Read<int>();
     }
 
     public bool IsDefault()
@@ -50,7 +51,7 @@ public class Progression : IMemorySerializable<Progression>
     public int ByteSize()
     {
         return Level.ByteSize() + CurrentExp.ByteSize() + CurrentEnergy.ByteSize() + NgoDaoDiem.ByteSize() +
-               IdCurrentNode.ByteSize();
+               IdCurrentNode.ByteSize() + MaxLevel.ByteSize();
     }
 
     public void Serialize(IWriter writer)
@@ -60,6 +61,7 @@ public class Progression : IMemorySerializable<Progression>
         writer.Write(CurrentEnergy);
         writer.Write(NgoDaoDiem);
         writer.Write(IdCurrentNode);
+        writer.Write(MaxLevel);
     }
 
     public void CopyFrom(Progression other)
@@ -70,6 +72,7 @@ public class Progression : IMemorySerializable<Progression>
         CurrentEnergy = other.CurrentEnergy;
         NgoDaoDiem = other.NgoDaoDiem;
         IdCurrentNode = other.IdCurrentNode;
+        MaxLevel = other.MaxLevel;
         CharacterData = other.CharacterData;
     }
 

@@ -9,6 +9,7 @@ public partial class ClanConfig
 {
     public int CreateClanMoneyVipPrice { get; set; }
     public int CreateClanVndPrice { get; set; }
+    public int CreateClanVndBonusMoneyVip { get; set; }
     public int CreateMaxMember { get; set; }
     public int ContributionMoneyVipPerTime { get; set; }
     public int MaxContributionTimesPerRequest { get; set; }

@@ -31,6 +31,7 @@ public static partial class ClanManager
     {
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
+        CreateClanVndBonusMoneyVip = 100_000,
         CreateMaxMember = 10,
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
@@ -291,6 +292,7 @@ public static partial class ClanManager
         string? imageUrl = null,
         CharacterData? leader = null,
         int moneyVipCost = 0,
+        int moneyVipBonus = 0,
         Func<AppDbContext, Task>? transactionWork = null)
     {
         var clanName = NormalizeClanName(name);
@@ -353,6 +355,7 @@ public static partial class ClanManager
                 if (await db.Clans.AnyAsync(x => x.NodeId == nodeId))
                     throw new InvalidException("Vị trí này đã có tông môn");
 
+                var newMoneyVip = persistedLeader.MoneyVip;
                 if (moneyVipCost > 0)
                 {
                     var updated = await db.Characters
@@ -368,6 +371,18 @@ public static partial class ClanManager
                         MoneyVip = moneyVipCost,
                         Time = now
                     });
+                    newMoneyVip -= moneyVipCost;
+                }
+
+                if (moneyVipBonus > 0)
+                {
+                    var updated = await db.Characters
+                        .Where(x => x.Id == leaderCharId && x.MoneyVip <= int.MaxValue - moneyVipBonus)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.MoneyVip, c => c.MoneyVip + moneyVipBonus));
+                    if (updated != 1)
+                        throw new InvalidException("Tiên ngọc đã đạt giới hạn");
+
+                    newMoneyVip += moneyVipBonus;
                 }
 
                 var member = new ClanMember
@@ -397,13 +412,13 @@ public static partial class ClanManager
                 if (transactionWork != null) await transactionWork(db);
                 await db.SaveChangesAsync();
                 return (Clan: clan, Member: member, Leader: persistedLeader,
-                    MoneyVip: persistedLeader.MoneyVip - moneyVipCost);
+                    MoneyVip: newMoneyVip);
             });
 
             var clan = persisted.Clan;
             var member = persisted.Member;
             member.CharData = leader ?? persisted.Leader;
-            if (leader != null && moneyVipCost > 0)
+            if (leader != null && (moneyVipCost > 0 || moneyVipBonus > 0))
                 leader.SetMoneyVip(persisted.MoneyVip);
             MemberClanIds[leaderCharId] = clan.Id;
             var reference = References.GetOrAdd(clan.Id, _ => new ClanReference(clan));
@@ -561,6 +576,11 @@ public static partial class ClanManager
         CharacterData charData,
         int times)
     {
+        if (charData.Progression.MaxLevel < 4)
+        {
+            throw new InvalidException("Từ Trúc Cơ trở lên mới được cống hiến");
+        }
+
         if (times <= 0)
         {
             throw new InvalidException("Số lượt cống hiến không hợp lệ");
@@ -1190,6 +1210,7 @@ public static partial class ClanManager
             request.Announcement,
             request.ImageUrl,
             charData,
+            moneyVipBonus: Config.CreateClanVndBonusMoneyVip,
             transactionWork: async transactionDb =>
             {
                 var persistedOrder = await transactionDb.Orders
