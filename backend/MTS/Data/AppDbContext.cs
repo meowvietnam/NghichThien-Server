@@ -160,6 +160,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Name).IsUnique();
             e.HasIndex(x => x.NormalizeName).IsUnique();
+            e.HasIndex(x => x.NodeId).IsUnique();
             e.Property(x => x.Name).HasMaxLength(15);
             e.Property(x => x.NormalizeName).HasMaxLength(15);
             e.Property(x => x.Description).HasMaxLength(512);

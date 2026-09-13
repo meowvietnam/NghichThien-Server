@@ -289,6 +289,9 @@ namespace MTS.Migrations
                     b.HasIndex("NormalizeName")
                         .IsUnique();
 
+                    b.HasIndex("NodeId")
+                        .IsUnique();
+
                     b.ToTable("Clans");
                 });
 

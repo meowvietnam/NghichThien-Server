@@ -227,6 +227,26 @@ public class ClanHandler : IClientHandler, IClanObserverState
             // cố ý bỏ broadcast trước khi WatchMyClan hoàn tất và có thể làm request bị timeout.
             client.MemSend(MessageTag.GetClanRequest, result);
         }
+        else if (tag == MessageTag.GetClanMapNodesRequest)
+        {
+            reader.MemRead<GetClanMapNodesRequest>();
+            GetClanMapNodesResult result;
+            try
+            {
+                result = GetClanMapNodes().GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                Serilog.Log.Error(exception, "Không thể tải danh sách vị trí tông môn; CharacterId={CharacterId}", CharId);
+                result = new GetClanMapNodesResult
+                {
+                    Success = false,
+                    Message = "Không thể tải danh sách vị trí tông môn"
+                };
+            }
+
+            client.MemSend(MessageTag.GetClanMapNodesRequest, result);
+        }
         else if (tag == MessageTag.UploadClanImageRequest)
         {
             var request = reader.MemRead<UploadImageRequest>();
@@ -387,6 +407,15 @@ public class ClanHandler : IClientHandler, IClanObserverState
             Success = true,
             Clan = GetMyClan(),
             Config = GetConfig()
+        };
+    }
+
+    public async Task<GetClanMapNodesResult> GetClanMapNodes()
+    {
+        return new GetClanMapNodesResult
+        {
+            Success = true,
+            Nodes = await ClanManager.GetClanMapNodes()
         };
     }
 
@@ -896,6 +925,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.RejectClanJoinRequestRequest,
         MessageTag.SetClanInheritanceRequest,
         MessageTag.UpgradeClanWithFundsRequest,
+        MessageTag.GetClanMapNodesRequest,
         MessageTag.ViewClanRequest
     ];
     public MessageTag[] HandleTag => handlers;

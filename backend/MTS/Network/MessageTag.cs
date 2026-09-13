@@ -311,4 +311,6 @@ public enum MessageTag
     ClanLevelChanged = 3700,
     UpgradeClanWithFundsRequest = 3701,
     ClanFundsChanged = 3702,
+    GetClanMapNodesRequest = 3703,
+    ClanMapNodeChanged = 3704,
 }

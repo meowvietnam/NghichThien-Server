@@ -130,6 +130,23 @@ public static partial class ClanManager
         return clan;
     }
 
+    public static async Task<ClanMapNode[]> GetClanMapNodes()
+    {
+        await using var db = await Program.CreateDbAsync();
+        return await db.Clans
+            .AsNoTracking()
+            .Where(x => x.NodeId > 0)
+            .OrderBy(x => x.NodeId)
+            .Select(x => new ClanMapNode
+            {
+                ClanId = x.Id,
+                Name = x.Name,
+                NodeId = x.NodeId,
+                ImageUrl = x.ImageUrl
+            })
+            .ToArrayAsync();
+    }
+
     public static async Task<ClanReference> CreateClan(CreateClanRequest request)
     {
         await ValidateCreateClanRequest(request);
@@ -254,6 +271,11 @@ public static partial class ClanManager
             throw new InvalidException("Tên tông môn đã tồn tại");
         }
 
+        if (await db.Clans.AnyAsync(x => x.NodeId == request.NodeId))
+        {
+            throw new InvalidException("Vị trí này đã có tông môn");
+        }
+
         request.Name = clanName;
         request.Description ??= string.Empty;
         request.Announcement ??= string.Empty;
@@ -328,6 +350,8 @@ public static partial class ClanManager
                     throw new InvalidException("Đã gia nhập tông môn");
                 if (await db.Clans.AnyAsync(x => x.NormalizeName == normalizeName))
                     throw new InvalidException("Tên tông môn đã tồn tại");
+                if (await db.Clans.AnyAsync(x => x.NodeId == nodeId))
+                    throw new InvalidException("Vị trí này đã có tông môn");
 
                 if (moneyVipCost > 0)
                 {
@@ -384,6 +408,7 @@ public static partial class ClanManager
             MemberClanIds[leaderCharId] = clan.Id;
             var reference = References.GetOrAdd(clan.Id, _ => new ClanReference(clan));
             FindOrCreateObserver(reference.Clan);
+            PublishClanMapNodeChanged(reference.Clan);
             return reference;
         }
         finally
@@ -862,6 +887,29 @@ public static partial class ClanManager
     public static void RememberMember(int charId, int clanId)
     {
         MemberClanIds[charId] = clanId;
+    }
+
+    private static ClanMapNode ToMapNode(Models.Clan clan)
+    {
+        return new ClanMapNode
+        {
+            ClanId = clan.Id,
+            Name = clan.Name,
+            NodeId = clan.NodeId,
+            ImageUrl = clan.ImageUrl
+        };
+    }
+
+    private static void PublishClanMapNodeChanged(Models.Clan clan)
+    {
+        if (clan.NodeId <= 0) return;
+
+        var changed = new ClanMapNodeChanged { Node = ToMapNode(clan) };
+        foreach (var client in TcpServer.Instance.GetClientsOnline())
+        {
+            if (!client.IsCharacterSelected()) continue;
+            client.MemSend(MessageTag.ClanMapNodeChanged, changed);
+        }
     }
 
     public static bool TryGetCharacterClanSnapshot(
