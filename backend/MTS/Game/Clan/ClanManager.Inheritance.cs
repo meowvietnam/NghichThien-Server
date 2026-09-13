@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
-using MTS.Game.BaseSkill;
+using MTS.Game.LuyenKhi;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -12,7 +12,7 @@ public static partial class ClanManager
     private sealed record InheritanceTransactionResult(
         ClanInheritanceEffect? Effect, int MoneyVip, bool Changed);
 
-    public static int GetInheritanceSlots(int clanLevel, EBuffAndDeBuff buffType)
+    public static int GetInheritanceSlots(int clanLevel)
     {
         if (Config.BaseInheritanceSlots < 0 || Config.InheritanceSlotsPerLevel < 0 ||
             Config.MaxInheritanceSlotsPerColumn < 0)
@@ -48,11 +48,11 @@ public static partial class ClanManager
             throw new InvalidException("Cột truyền thừa không hợp lệ");
 
         var clan = reference.Clan;
-        var slotCount = GetInheritanceSlots(clan.Level, request.BuffType);
+        var slotCount = GetInheritanceSlots(clan.Level);
         if (request.SlotIndex < 0 || request.SlotIndex >= slotCount)
             throw new InvalidException("Ô truyền thừa chưa được mở khóa");
-        if (request.BuffType != EBuffAndDeBuff.None &&
-            !Config.InheritanceBuffWhitelist.Contains(request.BuffType))
+        if (request.EffectType != null &&
+            !Config.InheritanceBuffWhitelist.Contains(request.EffectType.Value))
             throw new InvalidException("Hiệu ứng không nằm trong danh sách truyền thừa cho phép");
 
         var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
@@ -69,10 +69,10 @@ public static partial class ClanManager
                 x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
             var oldMoneyVip = actor.MoneyVip;
             var desiredValue = GetInheritanceValue(clan.Level);
-            var ramChanged = request.BuffType == EBuffAndDeBuff.None
+            var ramChanged = request.EffectType == null
                 ? current != null
-                : current == null || current.BuffType != request.BuffType || current.Value != desiredValue;
-            var changingFilledSlot = current != null && current.BuffType != request.BuffType;
+                : current == null || current.EffectType != request.EffectType || current.Value != desiredValue;
+            var changingFilledSlot = current != null && current.EffectType != request.EffectType;
             var expectedCost = changingFilledSlot ? Config.ChangeInheritanceMoneyVipCost : 0;
             if (expectedCost < 0)
                 throw new InvalidException("Cấu hình phí thay đổi truyền thừa không hợp lệ");
@@ -85,9 +85,9 @@ public static partial class ClanManager
                 var persisted = await db.Set<ClanInheritanceEffect>().FirstOrDefaultAsync(x =>
                     x.ClanId == clanId && x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
 
-                var alreadyDesired = request.BuffType == EBuffAndDeBuff.None
+                var alreadyDesired = request.EffectType == null
                     ? persisted == null
-                    : persisted?.BuffType == request.BuffType && persisted.Value == value;
+                    : persisted?.EffectType == request.EffectType && persisted.Value == value;
                 if (alreadyDesired)
                 {
                     var currentMoney = await db.Characters.Where(x => x.Id == actor.Id)
@@ -121,7 +121,7 @@ public static partial class ClanManager
                     });
                 }
 
-                if (request.BuffType == EBuffAndDeBuff.None)
+                if (request.EffectType == null)
                 {
                     if (persisted != null) db.Remove(persisted);
                 }
@@ -132,20 +132,20 @@ public static partial class ClanManager
                         ClanId = clanId,
                         Trigger = request.Trigger,
                         SlotIndex = request.SlotIndex,
-                        BuffType = request.BuffType,
+                        EffectType = request.EffectType,
                         Value = value
                     };
                     await db.AddAsync(persisted);
                 }
                 else
                 {
-                    persisted.BuffType = request.BuffType;
+                    persisted.EffectType = request.EffectType;
                     persisted.Value = value;
                 }
 
                 await db.SaveChangesAsync();
                 return new InheritanceTransactionResult(
-                    request.BuffType == EBuffAndDeBuff.None ? null : persisted,
+                    request.EffectType == null ? null : persisted,
                     newMoneyVip,
                     true);
             });
@@ -239,7 +239,7 @@ public static partial class ClanManager
                         ClanId = clanId,
                         Level = newLevel,
                         Exp = newExp,
-                        InheritanceSlotsPerColumn = GetInheritanceSlots(newLevel, EBuffAndDeBuff.None),
+                        InheritanceSlotsPerColumn = GetInheritanceSlots(newLevel),
                         Effects = clan.InheritanceEffects.ToArray()
                     });
                 }

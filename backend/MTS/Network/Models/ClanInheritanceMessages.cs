@@ -1,5 +1,5 @@
 using MemoryPack;
-using MTS.Game.BaseSkill;
+using MTS.Game.LuyenKhi;
 using MTS.Models;
 
 namespace MTS.Network.Models;
@@ -9,8 +9,8 @@ public partial class SetClanInheritanceRequest
 {
     public ClanInheritanceTrigger Trigger { get; set; }
     public int SlotIndex { get; set; }
-    // None xóa hiệu ứng đang có trong ô.
-    public EBuffAndDeBuff BuffType { get; set; }
+    // null xóa hiệu ứng đang có trong ô.
+    public EffectType? EffectType { get; set; }
 }
 
 [MemoryPackable]

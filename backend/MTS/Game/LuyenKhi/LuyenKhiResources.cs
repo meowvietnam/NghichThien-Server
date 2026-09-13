@@ -39,7 +39,7 @@ namespace MTS.Game.LuyenKhi
             value.Materials = reader.ReadArray<Material>();
             value.RewardItems = reader.ReadArray<LuyenKhiRewardItem>();
             value.LianQiEffects = reader.ReadArray<LianQiEffect>();
-            value.EffectTypeConfigs = reader.ReadArray<EffectTypeConfig>();
+            value.EffectTypeConfigs = reader.MemRead<EffectTypeConfig[]>();
             value.Strings = reader.Read<StringDict>();
         }
 
@@ -60,7 +60,7 @@ namespace MTS.Game.LuyenKhi
             writer.WriteArray(Materials);
             writer.WriteArray(RewardItems);
             writer.WriteArray(LianQiEffects);
-            writer.WriteArray(EffectTypeConfigs);
+            writer.MemWrite(EffectTypeConfigs);
             writer.Write(Strings);
         }
 

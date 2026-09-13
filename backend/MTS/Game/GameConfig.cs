@@ -2,6 +2,7 @@ using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.BaseSkill;
+using MTS.Game.Clan;
 using MTS.Game.CreateCharacter;
 using MTS.Game.DP;
 using MTS.Game.Gacha;
@@ -37,12 +38,12 @@ public static class GameConfig
     public static NpcData[] NpcDatas { get; private set; }
     public static LevelResource LevelResource { get; private set; }
     public static CoreResource Core { get; private set; }
+    public static ClanBuffResources ClanBuffResources { get; private set; }
     public static HashSet<ushort> MaterialDotPhas { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
     public const int NewCharacterLinhThachBonus = 100_000;
-
     public static readonly string[] tamCanh = new[]
     {
         "Tâm phiền ý loạn",
@@ -281,5 +282,6 @@ public static class GameConfig
                 .SelectMany(y => y))
             .Select(x=>(ushort)x.Id)
             .ToHashSet();
+        ClanBuffResources = Read<ClanBuffResources>("Data/ClanBuffResources.bin");
     }
 }

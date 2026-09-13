@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MemoryPack;
 using MTS.Models;
-using MTS.Game.BaseSkill;
+using MTS.Game.LuyenKhi;
 
 namespace MTS.Network.Models;
 [MemoryPackable]
@@ -21,7 +21,7 @@ public partial class ClanConfig
     public int ChangeInheritanceMoneyVipCost { get; set; } = 1_000;
     public int InheritanceBaseValue { get; set; } = 1;
     public int InheritanceValuePerClanLevel { get; set; } = 1;
-    public EBuffAndDeBuff[] InheritanceBuffWhitelist { get; set; } = [];
+    public EffectType[] InheritanceBuffWhitelist { get; set; } = [];
     // Mốc EXP tổng; index 0 là cấp 1, index 1 là cấp 2...
     public long[] ClanLevelRequiredTotalExp { get; set; } = [];
 }

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using MemoryPack;
-using MTS.Game.BaseSkill;
+using MTS.Game.LuyenKhi;
 
 namespace MTS.Models;
 
@@ -18,7 +18,7 @@ public partial class ClanInheritanceEffect
     public int ClanId { get; set; }
     public ClanInheritanceTrigger Trigger { get; set; }
     public int SlotIndex { get; set; }
-    public EBuffAndDeBuff BuffType { get; set; }
+    public EffectType? EffectType { get; set; }
     public int Value { get; set; }
 
     [ForeignKey(nameof(ClanId)), MemoryPackIgnore]

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game.AllMaps;
-using MTS.Game.BaseSkill;
+using MTS.Game.LuyenKhi;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network;
@@ -27,7 +27,7 @@ public static partial class ClanManager
     private static readonly ConcurrentDictionary<int, ClanCreationGate> CreationLocks = new();
     private static readonly ConcurrentDictionary<int, int> MemberClanIds = new();
 
-    public static readonly ClanConfig Config = new ClanConfig()
+    public static readonly ClanConfig Config = new()
     {
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
@@ -41,21 +41,7 @@ public static partial class ClanManager
         ChangeInheritanceMoneyVipCost = 1_000,
         InheritanceBaseValue = 1,
         InheritanceValuePerClanLevel = 1,
-        InheritanceBuffWhitelist =
-        [
-            EBuffAndDeBuff.HoTrao,
-            EBuffAndDeBuff.KiemKhi,
-            EBuffAndDeBuff.SucThe,
-            EBuffAndDeBuff.GiamTonThuong,
-            EBuffAndDeBuff.TriLieu,
-            EBuffAndDeBuff.TuKhi,
-            EBuffAndDeBuff.SucLuc,
-            EBuffAndDeBuff.TangToc,
-            EBuffAndDeBuff.TichHoa,
-            EBuffAndDeBuff.TichKim,
-            EBuffAndDeBuff.TichMoc,
-            EBuffAndDeBuff.TichThuy
-        ],
+        InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
         ClanLevelRequiredTotalExp = [0, 10_000, 30_000, 70_000, 150_000, 300_000, 600_000, 1_200_000, 2_400_000, 5_000_000]
     };
 
@@ -162,7 +148,7 @@ public static partial class ClanManager
 
     public static async Task<ClanReference> CreateClan(
         CreateClanRequest request,
-        Models.CharacterData leader)
+        CharacterData leader)
     {
         request.LeaderCharId = leader.Id;
         await ValidateCreateClanRequest(request, leader);

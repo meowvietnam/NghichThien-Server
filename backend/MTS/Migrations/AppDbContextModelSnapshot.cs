@@ -300,8 +300,8 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("BuffType")
-                        .HasColumnType("int");
+                    b.Property<byte?>("EffectType")
+                        .HasColumnType("tinyint unsigned");
 
                     b.Property<int>("ClanId")
                         .HasColumnType("int");
