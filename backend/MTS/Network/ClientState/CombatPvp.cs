@@ -95,6 +95,21 @@ public class CombatPvp : IClientState, ISender<MessageTag>
             var model = reader.MemRead<SyncUsePhapBao>();
             enemy.MemSend(MessageTag.SyncUsePhapBao, model);
         }
+        else if (tag == MessageTag.SyncUseEffectSkill)
+        {
+            var model = reader.MemRead<SyncEffectSkill>();
+            enemy.MemSend(MessageTag.SyncUseEffectSkill, model);
+        }
+        else if (tag == MessageTag.SyncCPDynamic)
+        {
+            var model = reader.MemRead<SyncCPDynamic>();
+            enemy.MemSend(MessageTag.SyncCPDynamic, model);
+        }
+        else if (tag == MessageTag.SyncRemoveEffectSkillNoDestroy)
+        {
+            var model = reader.MemRead<SyncEffectSkill>();
+            enemy.MemSend(MessageTag.SyncRemoveEffectSkillNoDestroy, model);
+        }
         else if (tag == MessageTag.ResultCombatPvp)
         {
             var resultCombat = reader.MemRead<ResultCombat>();

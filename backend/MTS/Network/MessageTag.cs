@@ -273,6 +273,9 @@ public enum MessageTag
     SyncHealing = 3431,
     SyncPlaySkill = 3443,
     SyncUsePhapBao = 3476,
+    SyncUseEffectSkill = 3477,
+    SyncCPDynamic = 3478,
+    SyncRemoveEffectSkillNoDestroy = 3479,
     ResultCombatPvp = 3524,
     YouWinPvp = 3534,
     
