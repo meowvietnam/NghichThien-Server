@@ -4,6 +4,6 @@ public enum ClanRole : byte
 {
     Member,      // Đệ tử
     Elder,       // Trưởng lão
-    ViceLeader,  // Phó Tông Chủ
-    Leader       // Tông Chủ
+    ViceLeader,  // Phó Tộc Chủ
+    Leader       // Tộc Chủ
 }

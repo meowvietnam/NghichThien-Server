@@ -58,7 +58,7 @@ public static partial class ClanManager
         var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
             ?? throw new InvalidException("Chưa gia nhập tông môn");
         if (!actorMember.HasPermission(ClanPermission.ManageInheritance))
-            throw new InvalidException("Chỉ Tông Chủ được quản lý truyền thừa");
+            throw new InvalidException("Chỉ Tộc Chủ được quản lý truyền thừa");
 
         var clanId = clan.Id;
         var gate = AcquireGate(clanId);

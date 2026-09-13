@@ -388,7 +388,7 @@ public partial class CharacterData
     }
     private List<ItemEvent> GenerateItemEvents()
     {
-        return EventService.GenerateItemEvents();
+        return new List<ItemEvent>();
     }
     public List<ItemRef> GenerateMonsterRewards(int monsterLevel)
     {

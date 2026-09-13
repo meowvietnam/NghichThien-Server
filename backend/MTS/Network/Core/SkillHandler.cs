@@ -212,7 +212,7 @@ public class SkillHandler : IClientHandler
         else if (tag == MessageTag.DotPhaCongPhap)
         {
             var request = reader.Read<int>();
-            DotPhaCongPhapResult result = null;
+            DotPhaCongPhapResult result = null!;
             try
             {
                 lock (client.CharacterLock)

@@ -257,7 +257,9 @@ public class CreateCharacterService
             throw new InvalidException($"{Strings.NotEnoughNatural}: {money}");
         }
 
-        stats.SetValue(StatType.Hp, stats.SinhMenh);
+        // Nhân vật mới vào game chỉ có 1/2 HP tối đa, kèm 100k Linh Thạch khởi đầu.
+        stats.SetValue(StatType.Hp, stats.SinhMenh / 2);
+        stats.SetLinhThach(stats.LinhThach + GameConfig.NewCharacterLinhThachBonus);
         Char.Stats = stats;
     }
 
@@ -431,7 +433,7 @@ public class CreateCharacterService
         }
         var shop = Char.ShopManager;
         shop.CharData = Char;
-        shop.ReloadAll();
+        shop.FirstReload();
         var newChar = db.Characters.Add(Char);
         await db.SaveChangesAsync();
         Char = newChar.Entity;

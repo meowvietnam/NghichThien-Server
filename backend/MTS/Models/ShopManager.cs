@@ -37,6 +37,10 @@ public partial class ShopManager
         return CharId == 0;
     }
 
+    public void FirstReload()
+    {
+        ReloadAll();
+    }
     public void ReloadAll()
     {
         var shops = new[] { ShopDuocLieu, ShopVatLieu, ShopSkill };
