@@ -127,11 +127,13 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.NotEnoughMoneyVip);
         }
+
         var owners = InventoryManager.NgoDaos;
         if (!owners.Any())
         {
             throw new InvalidException("Đạo hữu chưa có Ngộ Đạo nào để Tái Ngộ.");
-        }   
+        }
+
         var ngoDaos = GameConfig.NDCPTTManager.NgoDaos;
         var point = 0;
         foreach (var owner in owners)
@@ -141,9 +143,11 @@ public partial class CharacterData
             {
                 continue;
             }
+
             ngoDao.UnBuff(this);
             point += ngoDao.Require;
         }
+
         Progression.SetNgoDaoDiem(Progression.NgoDaoDiem + point);
         SetMoneyVip(remaining);
         InventoryManager.ClearNgoDao();
@@ -157,6 +161,7 @@ public partial class CharacterData
             Stats = new StatsSnapshot(Stats)
         };
     }
+
     public EquipThanThongResult EquipThanThong(EquipThanThong request)
     {
         var thanThongOwner = new ThanThong()
@@ -635,32 +640,35 @@ public partial class CharacterData
     {
         var typeSkill = request.TypeSkill;
         var supportedTypeSkill = new[]
-            {
-                ETypeSkill.Kim,
-                ETypeSkill.Moc,
-                ETypeSkill.Thuy,
-                ETypeSkill.Hoa,
-                ETypeSkill.Tho,
-                ETypeSkill.Than,
-                ETypeSkill.The,
-                ETypeSkill.Kiem,
-                ETypeSkill.Khi,
-                ETypeSkill.TranPhap
+        {
+            ETypeSkill.Kim,
+            ETypeSkill.Moc,
+            ETypeSkill.Thuy,
+            ETypeSkill.Hoa,
+            ETypeSkill.Tho,
+            ETypeSkill.Than,
+            ETypeSkill.The,
+            ETypeSkill.Kiem,
+            ETypeSkill.Khi,
+            ETypeSkill.TranPhap
         };
         if (!supportedTypeSkill.Contains(typeSkill))
         {
             throw new InvalidException(Strings.ConvertElementalSkillTypeSkillInvalid);
         }
+
         var items = request.ItemConverts;
         var count = items.Sum(x => x.Count);
         if (count != 6)
         {
             throw new InvalidException(Strings.ConvertElementalSkillItemCountInvalid);
         }
+
         if (items.Any(x => x.Count == 0))
         {
             throw new InvalidException(Strings.ConvertElementalSkillItemQuantityInvalid);
         }
+
         var supportedType = new[] { ItemType.ThanThong, ItemType.CongPhap };
         var type = supportedType.FirstOrDefault(x => items.All(y => y.Type == x));
         if (!supportedType.Contains(type))
@@ -668,7 +676,7 @@ public partial class CharacterData
             throw new InvalidException(Strings.ConvertElementalSkillItemTypeInvalid);
         }
 
-        var exclusiveIds = new[] { 105, 702 };
+        var exclusiveIds = new[] { 105, 702, 714, 736 };
         IEnumerable<BaseSkill> skillCollectionEnumerable = type == ItemType.ThanThong
             ? GameConfig.NDCPTTManager.ThanThongs
             : GameConfig.NDCPTTManager.CongPhaps.Where(x => !exclusiveIds.Contains(x.Id));
@@ -710,10 +718,12 @@ public partial class CharacterData
                 receiverSkill = listSkill.Random();
             }
         }
+
         if (receiverSkill == null)
         {
             throw new InvalidException(Strings.ConvertElementalSkillResultNotFound);
         }
+
         var itemRef = new ItemRef()
         {
             Type = type,
@@ -726,8 +736,10 @@ public partial class CharacterData
             {
                 InventoryManager.Decrease(item);
             }
+
             InventoryManager.Add(itemRef);
         }
+
         return new ConvertElementalSkillResult()
         {
             Success = true,

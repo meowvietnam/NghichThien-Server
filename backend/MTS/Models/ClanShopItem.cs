@@ -14,6 +14,7 @@ public partial class ClanShopItem
     [MemoryPackIgnore] public ushort ItemId { get; set; }
     [MemoryPackIgnore] public ItemType ItemType { get; set; }
     [MemoryPackIgnore] public int Count { get; set; }
+    public sbyte ItemDurability { get; set; }
     public long Price { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

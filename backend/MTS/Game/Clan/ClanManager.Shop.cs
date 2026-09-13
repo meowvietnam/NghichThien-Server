@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
-using MTS.Game.ItemProvider;
+using MTS.Game.BaseSkill;
+using MTS.Game.LuyenDan;
+using MTS.Game.LuyenKhi;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -10,6 +12,32 @@ namespace MTS.Game.Clan;
 
 public static partial class ClanManager
 {
+    private static readonly Dictionary<Tier, long> ClanHerbPrices = new()
+    {
+        { Tier.NhatPham, 50 },
+        { Tier.NhiPham, 100 },
+        { Tier.TamPham, 200 },
+        { Tier.TuPham, 500 },
+        { Tier.NguPham, 1_000 },
+        { Tier.LucPham, 2_000 }
+    };
+
+    private static readonly Dictionary<Tier, long> ClanMaterialPrices = new()
+    {
+        { Tier.NhiPham, 50 },
+        { Tier.TamPham, 100 },
+        { Tier.TuPham, 200 },
+        { Tier.NguPham, 500 },
+        { Tier.LucPham, 1_000 }
+    };
+
+    private static readonly Dictionary<Tier, long> ClanAuctionTierPrices = new()
+    {
+        { Tier.TuPham, 2_000 },
+        { Tier.NguPham, 5_000 },
+        { Tier.LucPham, 10_000 }
+    };
+
     public static GetClanShopResult GetShop(ClanReference reference, int charId)
     {
         var member = reference.Clan.Members.FirstOrDefault(x => x.CharId == charId)
@@ -32,7 +60,14 @@ public static partial class ClanManager
     {
         var deposit = request.Item.DeepClone();
         ValidateShopItem(deposit);
-        var price = GetClanShopPrice(deposit, character.InventoryManager);
+        var inventory = character.InventoryManager;
+        var requestedItem = deposit.DeepClone();
+        var depositFurnace = GetDepositFurnace(deposit, inventory);
+        if (depositFurnace != null)
+        {
+            deposit = new ItemRef(depositFurnace.Id, ItemType.Furnace, 1);
+        }
+        var price = GetClanShopPrice(deposit, depositFurnace);
 
         var clan = reference.Clan;
         var clanId = clan.Id;
@@ -54,16 +89,24 @@ public static partial class ClanManager
             if ((long)addedToday + deposit.Count > Config.MaxShopItemsAddedPerDay)
                 throw new InvalidException("Đã đạt giới hạn thêm vật phẩm vào kho hôm nay");
 
-            var inventory = character.InventoryManager;
             ClanShopItem shopItem = null!;
             ItemRef? inventoryItem;
             int remaining;
             lock (inventory.SyncRoot)
             {
-                var collection = (HashSet<ItemRef>)inventory.GetItemCollection(deposit.Type).Collection;
-                if (!collection.TryGetValue(deposit, out var owned) || owned.Count < deposit.Count)
-                    throw new InvalidException("Vật phẩm không đủ trong túi");
-                remaining = owned.Count - deposit.Count;
+                if (depositFurnace != null)
+                {
+                    if (!inventory.Furnaces.Contains(depositFurnace))
+                        throw new InvalidException("Vật phẩm không đủ trong túi");
+                    remaining = 0;
+                }
+                else
+                {
+                    var collection = (HashSet<ItemRef>)inventory.GetItemCollection(deposit.Type).Collection;
+                    if (!collection.TryGetValue(deposit, out var owned) || owned.Count < deposit.Count)
+                        throw new InvalidException("Vật phẩm không đủ trong túi");
+                    remaining = owned.Count - deposit.Count;
+                }
             }
 
             var createdAt = DateTime.UtcNow;
@@ -93,6 +136,7 @@ public static partial class ClanManager
                     ClanId = clanId,
                     OwnerCharId = character.Id,
                     Item = deposit.DeepClone(),
+                    ItemDurability = depositFurnace?.Durability ?? 0,
                     Price = price,
                     CreatedAt = createdAt
                 };
@@ -103,8 +147,16 @@ public static partial class ClanManager
 
             lock (inventory.SyncRoot)
             {
-                inventory.Decrease(deposit);
-                inventoryItem = remaining > 0 ? new ItemRef(deposit.Id, deposit.Type, remaining) : null;
+                if (depositFurnace != null)
+                {
+                    inventory.RemoveFurnace(requestedItem.Id);
+                    inventoryItem = null;
+                }
+                else
+                {
+                    inventory.Decrease(deposit);
+                    inventoryItem = remaining > 0 ? new ItemRef(deposit.Id, deposit.Type, remaining) : null;
+                }
             }
 
             member.ShopItemsAddedToday = addedToday + deposit.Count;
@@ -146,16 +198,26 @@ public static partial class ClanManager
                 throw new InvalidException("Chỉ chủ nhân vật phẩm mới được xóa vật phẩm này");
 
             var returnedItem = shopItem.Item.DeepClone();
+            var returnedFurnace = CreateFurnaceFromShopItem(character.Id, shopItem);
             var inventory = character.InventoryManager;
             ItemRef inventoryItem;
             int total;
             lock (inventory.SyncRoot)
             {
-                var collection = (HashSet<ItemRef>)inventory.GetItemCollection(returnedItem.Type).Collection;
-                collection.TryGetValue(returnedItem, out var owned);
-                if ((long)(owned?.Count ?? 0) + returnedItem.Count > int.MaxValue)
-                    throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
-                total = (owned?.Count ?? 0) + returnedItem.Count;
+                if (returnedFurnace != null)
+                {
+                    inventoryItem = null;
+                    total = 0;
+                }
+                else
+                {
+                    var collection = (HashSet<ItemRef>)inventory.GetItemCollection(returnedItem.Type).Collection;
+                    collection.TryGetValue(returnedItem, out var owned);
+                    if ((long)(owned?.Count ?? 0) + returnedItem.Count > int.MaxValue)
+                        throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
+                    total = (owned?.Count ?? 0) + returnedItem.Count;
+                    inventoryItem = new ItemRef(returnedItem.Id, returnedItem.Type, total);
+                }
             }
 
             await using (var db = await Program.CreateDbAsync())
@@ -170,8 +232,10 @@ public static partial class ClanManager
 
             lock (inventory.SyncRoot)
             {
-                inventory.Add(returnedItem);
-                inventoryItem = new ItemRef(returnedItem.Id, returnedItem.Type, total);
+                if (returnedFurnace != null)
+                    inventory.AddFurnace(returnedFurnace);
+                else
+                    inventory.Add(returnedItem);
             }
 
             clan.ShopItems.RemoveAll(x => x.Id == shopItem.Id);
@@ -180,7 +244,8 @@ public static partial class ClanManager
             {
                 Success = true,
                 ShopItemId = shopItem.Id,
-                InventoryItem = inventoryItem
+                InventoryItem = inventoryItem,
+                InventoryFurnace = returnedFurnace
             };
         }
         finally
@@ -211,6 +276,7 @@ public static partial class ClanManager
                 throw new InvalidException("Kho tông môn không đủ số lượng vật phẩm");
 
             var reward = new ItemRef(offer.ItemId, offer.ItemType, request.Quantity);
+            var rewardFurnace = CreateFurnaceFromShopItem(character.Id, offer);
             ValidateShopItem(reward);
             if (offer.Price <= 0)
                 throw new InvalidException("Giá vật phẩm trong kho tông môn không hợp lệ");
@@ -232,11 +298,18 @@ public static partial class ClanManager
             int total;
             lock (inventory.SyncRoot)
             {
-                var collection = (HashSet<ItemRef>)inventory.GetItemCollection(reward.Type).Collection;
-                collection.TryGetValue(reward, out var owned);
-                if ((long)(owned?.Count ?? 0) + reward.Count > int.MaxValue)
-                    throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
-                total = (owned?.Count ?? 0) + reward.Count;
+                if (rewardFurnace != null)
+                {
+                    total = 0;
+                }
+                else
+                {
+                    var collection = (HashSet<ItemRef>)inventory.GetItemCollection(reward.Type).Collection;
+                    collection.TryGetValue(reward, out var owned);
+                    if ((long)(owned?.Count ?? 0) + reward.Count > int.MaxValue)
+                        throw new InvalidException("Số lượng vật phẩm trong túi vượt giới hạn");
+                    total = (owned?.Count ?? 0) + reward.Count;
+                }
             }
 
             var points = member.ContribPoints - cost;
@@ -276,7 +349,10 @@ public static partial class ClanManager
 
             lock (inventory.SyncRoot)
             {
-                inventory.Add(reward);
+                if (rewardFurnace != null)
+                    inventory.AddFurnace(rewardFurnace);
+                else
+                    inventory.Add(reward);
                 member.ContribPoints = points;
                 if (removeOffer)
                 {
@@ -293,7 +369,8 @@ public static partial class ClanManager
             {
                 Success = true, ShopItemId = request.ShopItemId, Quantity = request.Quantity,
                 Cost = cost, ContribPoints = points,
-                InventoryItem = new ItemRef(reward.Id, reward.Type, total)
+                InventoryItem = rewardFurnace == null ? new ItemRef(reward.Id, reward.Type, total) : null,
+                InventoryFurnace = rewardFurnace
             };
 
             NotifyClanMemberPointsChanged(clanId, character.Id, member.ContribPoints);
@@ -317,18 +394,36 @@ public static partial class ClanManager
     private static void ValidateShopItem(ItemRef item)
     {
         if (item.Count <= 0 ||
-            item.Type is not (ItemType.Herb or ItemType.LinhDan or ItemType.ThanThong
+            item.Type is not (ItemType.Herb or ItemType.Furnace or ItemType.LinhDan or ItemType.ThanThong
                 or ItemType.CongPhap or ItemType.Recipe or ItemType.Material))
             throw new InvalidException("Cấu hình vật phẩm kho tông môn không hợp lệ");
     }
 
-    private static long GetClanShopPrice(ItemRef item, InventoryManager inventory)
+    private static long GetClanShopPrice(ItemRef item, FurnaceData? furnace = null)
     {
         try
         {
-            var provider = ItemProviderFactory.GetProvider(item.Type, inventory)
-                ?? throw new InvalidException("Không tìm thấy cấu hình giá vật phẩm");
-            var price = provider.GetPriceItemSell(item.Id);
+            var price = item.Type switch
+            {
+                ItemType.CongPhap => GetClanSkillPrice(GameConfig.NDCPTTManager.GetCongPhapWithId(item.Id)?.eTierSkill,
+                    nhanGiaiPrice: 200, diaGiaiPrice: 2_500, thienGiaiPrice: 5_000),
+                ItemType.ThanThong => GetClanSkillPrice(GameConfig.NDCPTTManager.GetThanThongWithId(item.Id)?.eTierSkill,
+                    nhanGiaiPrice: 100, diaGiaiPrice: 2_000, thienGiaiPrice: 4_000),
+                ItemType.Herb => GetClanTierPrice(
+                    LuyenDanResources.Instance.FindHerb(item.Id)?.Tier,
+                    ClanHerbPrices),
+                ItemType.Material => GetClanTierPrice(
+                    GameConfig.LuyenKhiResources.FindMaterial(item.Id)?.Tier,
+                    ClanMaterialPrices),
+                ItemType.LinhDan => GetClanTierPrice(
+                    LuyenDanResources.Instance.FindLinhDan(item.Id)?.Tier,
+                    ClanAuctionTierPrices),
+                ItemType.Recipe => GetClanTierPrice(
+                    LuyenDanResources.Instance.FindRecipe(item.Id)?.Tier,
+                    ClanAuctionTierPrices),
+                ItemType.Furnace => GetClanFurnacePrice(furnace),
+                _ => 0
+            };
             if (price <= 0)
                 throw new InvalidException("Giá vật phẩm kho tông môn không hợp lệ");
             return price;
@@ -341,6 +436,81 @@ public static partial class ClanManager
         {
             throw new InvalidException("Không thể xác định giá vật phẩm kho tông môn");
         }
+    }
+
+    private static long GetClanSkillPrice(ETierSkill? tier, long nhanGiaiPrice, long diaGiaiPrice, long thienGiaiPrice)
+    {
+        return tier switch
+        {
+            ETierSkill.NhanGiaiHa or ETierSkill.NhanGiaiTrung or ETierSkill.NhanGiaiThuong => nhanGiaiPrice,
+            ETierSkill.DiaGiaiHa or ETierSkill.DiaGiaiTrung or ETierSkill.DiaGiaiThuong => diaGiaiPrice,
+            ETierSkill.ThienGiaiHa or ETierSkill.ThienGiaiTrung or ETierSkill.ThienGiaiThuong => thienGiaiPrice,
+            _ => 0
+        };
+    }
+
+    private static long GetClanTierPrice(Tier? tier, IReadOnlyDictionary<Tier, long> prices)
+    {
+        if (!tier.HasValue) return 0;
+        if (prices.TryGetValue(tier.Value, out var price)) return price;
+
+        var higherTier = NextTier(tier.Value);
+        if (!higherTier.HasValue) return 0;
+
+        var higherPrice = GetClanTierPrice(higherTier.Value, prices);
+        return higherPrice <= 0 ? 0 : higherPrice / 2;
+    }
+
+    private static Tier? NextTier(Tier tier)
+    {
+        return tier switch
+        {
+            Tier.NhatPham => Tier.NhiPham,
+            Tier.NhiPham => Tier.TamPham,
+            Tier.TamPham => Tier.TuPham,
+            Tier.TuPham => Tier.NguPham,
+            Tier.NguPham => Tier.LucPham,
+            _ => null
+        };
+    }
+
+    private static FurnaceData? GetDepositFurnace(ItemRef item, InventoryManager inventory)
+    {
+        if (item.Type != ItemType.Furnace) return null;
+        if (item.Count != 1)
+            throw new InvalidException("Mỗi lần chỉ được thêm 1 đan lô vào kho tông môn");
+
+        lock (inventory.SyncRoot)
+        {
+            var furnaceRef = new FurnaceData { SelfId = item.Id };
+            if (!inventory.Furnaces.TryGetValue(furnaceRef, out var furnace))
+                throw new InvalidException("Vật phẩm không đủ trong túi");
+            return furnace.DeepClone();
+        }
+    }
+
+    private static long GetClanFurnacePrice(FurnaceData? furnace)
+    {
+        if (furnace == null) return 0;
+
+        var tier = LuyenDanResources.Instance.FindItem(furnace)?.Tier;
+        var fullDurabilityPrice = GetClanTierPrice(tier, ClanAuctionTierPrices);
+        if (fullDurabilityPrice <= 0) return 0;
+
+        var durability = Math.Clamp((int)furnace.Durability, 0, 100);
+        return Math.Max(1, fullDurabilityPrice * durability / 100);
+    }
+
+    private static FurnaceData? CreateFurnaceFromShopItem(int charId, ClanShopItem shopItem)
+    {
+        if (shopItem.ItemType != ItemType.Furnace) return null;
+
+        return new FurnaceData
+        {
+            CharId = charId,
+            Id = shopItem.ItemId,
+            Durability = shopItem.ItemDurability > 0 ? shopItem.ItemDurability : (sbyte)100
+        };
     }
 
     private static ClanCreationGate AcquireGate(int clanId)

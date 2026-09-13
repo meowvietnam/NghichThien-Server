@@ -31,6 +31,7 @@ public partial class BuyClanShopResult : Result
     public long ContribPoints { get; set; }
     // Absolute inventory count after purchase, not a reward delta.
     public MTS.Models.ItemRef? InventoryItem { get; set; }
+    public MTS.Models.FurnaceData? InventoryFurnace { get; set; }
 }
 
 [MemoryPackable]
@@ -44,6 +45,7 @@ public partial class AddClanShopItemResult : Result
 {
     public MTS.Models.ClanShopItem? ShopItem { get; set; }
     public MTS.Models.ItemRef? InventoryItem { get; set; }
+    public MTS.Models.FurnaceData? InventoryFurnace { get; set; }
     public int MaxItemsAddedPerDay { get; set; }
     public int ShopItemsAddedToday { get; set; }
 }
@@ -59,6 +61,7 @@ public partial class RemoveClanShopItemResult : Result
 {
     public int ShopItemId { get; set; }
     public MTS.Models.ItemRef? InventoryItem { get; set; }
+    public MTS.Models.FurnaceData? InventoryFurnace { get; set; }
 }
 
 [MemoryPackable]

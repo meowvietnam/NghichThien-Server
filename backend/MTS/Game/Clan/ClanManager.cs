@@ -1100,7 +1100,37 @@ public static partial class ClanManager
 
     private static void ReturnClanShopItems(AppDbContext db, IEnumerable<ClanShopItem> shopItems)
     {
-        foreach (var group in shopItems.GroupBy(x => new { x.OwnerCharId, x.ItemId, x.ItemType }))
+        var items = shopItems.ToArray();
+        var nextFurnaceIds = new Dictionary<int, int>();
+        foreach (var shopItem in items.Where(x => x.ItemType == ItemType.Furnace))
+        {
+            if (!nextFurnaceIds.TryGetValue(shopItem.OwnerCharId, out var nextSelfId))
+            {
+                nextSelfId = db.Furnaces
+                    .Where(x => x.CharId == shopItem.OwnerCharId)
+                    .Select(x => (int)x.SelfId)
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+            }
+
+            if (nextSelfId > ushort.MaxValue)
+            {
+                throw new InvalidException("Số lượng đan lô trong túi vượt giới hạn");
+            }
+
+            db.Furnaces.Add(new FurnaceData
+            {
+                CharId = shopItem.OwnerCharId,
+                SelfId = (ushort)nextSelfId,
+                Id = shopItem.ItemId,
+                Durability = shopItem.ItemDurability > 0 ? shopItem.ItemDurability : (sbyte)100
+            });
+            nextFurnaceIds[shopItem.OwnerCharId] = nextSelfId + 1;
+        }
+
+        foreach (var group in items
+                     .Where(x => x.ItemType != ItemType.Furnace)
+                     .GroupBy(x => new { x.OwnerCharId, x.ItemId, x.ItemType }))
         {
             var total = group.Sum(x => (long)x.Count);
             if (total <= 0 || total > int.MaxValue)
