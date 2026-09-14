@@ -22,6 +22,8 @@ namespace MTS.Models;
 
 public partial class CharacterData
 {
+    private const int MaxTuLuyenMonthsPerAttempt = 10;
+
     public LearnNgoDaoResult LearnNgoDao(int idNgoDao)
     {
         List<(NgoDaoResource, int)> FindResources(ND.NgoDao nd)
@@ -357,7 +359,7 @@ public partial class CharacterData
         }
 
         var months = time.Days / 30;
-        if (months > 120)
+        if (months > MaxTuLuyenMonthsPerAttempt)
         {
             throw new InvalidException(Strings.ExceedLimit);
         }
