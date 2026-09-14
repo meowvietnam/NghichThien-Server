@@ -32,6 +32,7 @@ public static partial class ClanManager
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
         CreateClanVndBonusMoneyVip = 100_000,
+        EnableCreateClanByVnd = true,
         CreateMaxMember = 10,
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
@@ -42,8 +43,9 @@ public static partial class ClanManager
         ChangeInheritanceMoneyVipCost = 2_000,
         InheritanceBaseValue = 1,
         InheritanceValuePerClanLevel = 1,
+        MaxShopItemsAddedPerDay = 3,
         InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
-        ClanLevelRequiredTotalExp = [0, 1_000, 30_000, 70_000, 150_000, 300_000, 600_000, 1_200_000, 2_400_000, 5_000_000]
+        ClanLevelRequiredTotalExp = [0, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000, 2_560_000]
     };
 
     private static async Task<T> ExecuteClanTransactionAsync<T>(Func<AppDbContext, Task<T>> operation)
@@ -233,6 +235,11 @@ public static partial class ClanManager
         if (!Enum.IsDefined(request.CreateBy))
         {
             throw new InvalidException("Phương thức tạo tông môn không hợp lệ");
+        }
+
+        if (request.CreateBy == CreateClanBy.Vnd && !Config.EnableCreateClanByVnd)
+        {
+            throw new InvalidException("Tạo tông môn bằng VND đang tạm đóng");
         }
 
         if (request.MaxMembers < 1)

@@ -290,7 +290,7 @@ public static class EventService
             EndAt = endAt,
             GameEvent = gameEvent2
         };
-        var event3StartAt = new DateTimeOffset(2026, 09, 06, 0, 0, 0, Utc7).UtcDateTime;
+        var event3StartAt = new DateTimeOffset(2026, 09, 14, 0, 0, 0, Utc7).UtcDateTime;
         var event3EndAt = event3StartAt.AddDays(8);
         var gameEvent3 = new EventShop()
         {
@@ -307,7 +307,7 @@ public static class EventService
                     {
                         Item = new ItemRef()
                         {
-                            Id = 702,
+                            Id = 714,
                             Type = ItemType.CongPhap,
                             Count = 1
                         }
@@ -323,7 +323,7 @@ public static class EventService
                     {
                         Item = new ItemRef()
                         {
-                            Id = 702,
+                            Id = 714,
                             Type = ItemType.CongPhap,
                             Count = 6
                         }
@@ -339,7 +339,7 @@ public static class EventService
                     {
                         Item = new ItemRef()
                         {
-                            Id = 702,
+                            Id = 714,
                             Type = ItemType.CongPhap,
                             Count = 15
                         }
@@ -348,14 +348,14 @@ public static class EventService
                 new ()
                 {
                     Id = 4,
-                    Amount = 50_000,
-                    MoneyVip = 11_000,
-                    BonusMoneyVip = (int)(3_300 * 1.3f),
+                    Amount = 100_000,
+                    MoneyVip = 22_000,
+                    BonusMoneyVip = (int)(6_900 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
                         {
-                            Id = 105,
+                            Id = 736,
                             Type = ItemType.CongPhap,
                             Count = 1
                         }
@@ -364,14 +364,14 @@ public static class EventService
                 new ()
                 {
                     Id = 5,
-                    Amount = 250_000,
-                    MoneyVip = 60_000,
-                    BonusMoneyVip = (int)(19_000 * 1.3f),
+                    Amount = 500_000,
+                    MoneyVip = 120_000,
+                    BonusMoneyVip = (int)(39_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
                         {
-                            Id = 105,
+                            Id = 736,
                             Type = ItemType.CongPhap,
                             Count = 6
                         }
@@ -380,19 +380,19 @@ public static class EventService
                 new ()
                 {
                     Id = 6,
-                    Amount = 500_000,
-                    MoneyVip = 150_000,
-                    BonusMoneyVip = (int)(39_300 * 1.3f),
+                    Amount = 1_000_000,
+                    MoneyVip = 300_000,
+                    BonusMoneyVip = (int)(81_300 * 1.3f),
                     Reward = new SkillEventReward()
                     {
                         Item = new ItemRef()
                         {
-                            Id = 105,
+                            Id = 736,
                             Type = ItemType.CongPhap,
                             Count = 15
                         }
                     }
-                }
+                },
             }
         };
         var event3 = new Event()

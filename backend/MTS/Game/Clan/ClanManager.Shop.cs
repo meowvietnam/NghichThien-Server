@@ -38,19 +38,24 @@ public static partial class ClanManager
         { Tier.LucPham, 10_000 }
     };
 
+    public static int GetMaxShopSlots(int clanLevel)
+    {
+        return Math.Max(1, clanLevel) * 3;
+    }
+
     public static GetClanShopResult GetShop(ClanReference reference, int charId)
     {
         var member = reference.Clan.Members.FirstOrDefault(x => x.CharId == charId)
             ?? throw new InvalidException("Chưa gia nhập tông môn");
-        var today = DateTime.UtcNow.Date;
+        var maxShopSlots = GetMaxShopSlots(reference.Clan.Level);
         return new GetClanShopResult
         {
             Success = true,
             Items = reference.Clan.ShopItems.ToArray(),
             ContribPoints = member.ContribPoints,
             MaxQuantityPerRequest = Config.MaxShopQuantityPerRequest,
-            MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
-            ShopItemsAddedToday = member.LastShopItemAddedAt.Date == today ? member.ShopItemsAddedToday : 0
+            MaxItemsAddedPerDay = maxShopSlots,
+            ShopItemsAddedToday = reference.Clan.ShopItems.Count
         };
     }
 
@@ -79,15 +84,17 @@ public static partial class ClanManager
                 ?? throw new InvalidException("Chưa gia nhập tông môn");
             if (!member.HasPermission(ClanPermission.AddShopItem))
                 throw new InvalidException("Không có quyền thêm vật phẩm vào kho tông môn");
-            if (Config.MaxShopItemsAddedPerDay <= 0)
+            var maxShopSlots = GetMaxShopSlots(clan.Level);
+            if (maxShopSlots <= 0)
                 throw new InvalidException("Kho tông môn đang tạm khóa thêm vật phẩm");
 
             var today = DateTime.UtcNow.Date;
             var addedToday = member.LastShopItemAddedAt.Date == today
                 ? member.ShopItemsAddedToday
                 : 0;
-            if ((long)addedToday + deposit.Count > Config.MaxShopItemsAddedPerDay)
-                throw new InvalidException("Đã đạt giới hạn thêm vật phẩm vào kho hôm nay");
+            var newAddedToday = addedToday + 1;
+            if (clan.ShopItems.Count >= maxShopSlots)
+                throw new InvalidException("Kho tông môn đã hết slot treo vật phẩm");
 
             ClanShopItem shopItem = null!;
             ItemRef? inventoryItem;
@@ -115,7 +122,7 @@ public static partial class ClanManager
                 if (shopItem?.Id > 0 &&
                     await db.ClanShopItems.AsNoTracking().AnyAsync(x => x.Id == shopItem.Id && x.ClanId == clanId) &&
                     await db.ClanMembers.AsNoTracking().AnyAsync(x => x.ClanId == clanId &&
-                        x.CharId == character.Id && x.ShopItemsAddedToday == addedToday + deposit.Count &&
+                        x.CharId == character.Id && x.ShopItemsAddedToday == newAddedToday &&
                         x.LastShopItemAddedAt == today))
                 {
                     return true;
@@ -126,7 +133,7 @@ public static partial class ClanManager
                                 x.ShopItemsAddedToday == member.ShopItemsAddedToday &&
                                 x.LastShopItemAddedAt == member.LastShopItemAddedAt)
                     .ExecuteUpdateAsync(x => x
-                        .SetProperty(m => m.ShopItemsAddedToday, addedToday + deposit.Count)
+                        .SetProperty(m => m.ShopItemsAddedToday, newAddedToday)
                         .SetProperty(m => m.LastShopItemAddedAt, today));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
@@ -159,7 +166,7 @@ public static partial class ClanManager
                 }
             }
 
-            member.ShopItemsAddedToday = addedToday + deposit.Count;
+            member.ShopItemsAddedToday = newAddedToday;
             member.LastShopItemAddedAt = today;
             clan.ShopItems.Add(shopItem);
             NotifyClanShopItemAdded(clanId, shopItem);
@@ -168,8 +175,8 @@ public static partial class ClanManager
                 Success = true,
                 ShopItem = shopItem,
                 InventoryItem = inventoryItem,
-                MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
-                ShopItemsAddedToday = member.ShopItemsAddedToday
+                MaxItemsAddedPerDay = maxShopSlots,
+                ShopItemsAddedToday = clan.ShopItems.Count
             };
         }
         finally

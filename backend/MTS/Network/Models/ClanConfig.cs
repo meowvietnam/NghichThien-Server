@@ -14,7 +14,7 @@ public partial class ClanConfig
     public int ContributionMoneyVipPerTime { get; set; }
     public int MaxContributionTimesPerRequest { get; set; }
     public int MaxShopQuantityPerRequest { get; set; } = 100;
-    public int MaxShopItemsAddedPerDay { get; set; } = 100;
+    public int MaxShopItemsAddedPerDay { get; set; } = 3;
     public Dictionary<ClanRole, ClanPermission> RolePermissions { get; set; } = new();
     public int BaseInheritanceSlots { get; set; } = 1;
     public int InheritanceSlotsPerLevel { get; set; } = 1;
@@ -25,4 +25,5 @@ public partial class ClanConfig
     public EffectType[] InheritanceBuffWhitelist { get; set; } = [];
     // Mốc EXP tổng; index 0 là cấp 1, index 1 là cấp 2...
     public long[] ClanLevelRequiredTotalExp { get; set; } = [];
+    public bool EnableCreateClanByVnd { get; set; } = true;
 }
