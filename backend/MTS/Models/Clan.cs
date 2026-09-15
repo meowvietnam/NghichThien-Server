@@ -12,6 +12,8 @@ public partial record Clan
     public int NodeId { get; set; }
     public string? ImageUrl { get; set; }
     public long Funds { get; set; }
+    public long Hon { get; set; }
+    public long MaxHon { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Announcement { get; set; } = string.Empty;
     public int MemberCount { get; set; }

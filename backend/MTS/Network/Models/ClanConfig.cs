@@ -14,6 +14,8 @@ public partial class ClanConfig
     public int CreateMaxMember { get; set; }
     public int MemberSlotLevelInterval { get; set; } = 1;
     public int MemberSlotsPerInterval { get; set; } = 5;
+    public long CreateClanMaxHon { get; set; } = 100;
+    public long MaxHonPerFund { get; set; } = 1;
     public int ContributionMoneyVipPerTime { get; set; }
     public int MaxContributionTimesPerRequest { get; set; }
     public int MaxShopQuantityPerRequest { get; set; } = 100;

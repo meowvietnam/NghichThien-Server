@@ -24,6 +24,18 @@ public static partial class ClanManager
         int Level,
         int MaxMembers);
 
+    private sealed record LuyenHonTransactionResult(
+        long AddedHon,
+        long Hon,
+        long MaxHon);
+
+    private sealed record UpgradeMaxHonTransactionResult(
+        long FundsSpent,
+        long AddedMaxHon,
+        long ClanFunds,
+        long Hon,
+        long MaxHon);
+
     public static int GetInheritanceSlots(int clanLevel)
     {
         if (Config.BaseInheritanceSlots < 0 || Config.InheritanceSlotsPerLevel < 0 ||
@@ -359,6 +371,185 @@ public static partial class ClanManager
     public static long GetClanUpgradeExpFromFunds(long funds)
     {
         return funds;
+    }
+
+    public static async Task<LuyenHonResult> LuyenHon(
+        ClanReference reference,
+        CharacterData actor,
+        long amount)
+    {
+        if (amount <= 0)
+            throw new InvalidException("Số hồn luyện phải lớn hơn 0");
+
+        var clan = reference.Clan;
+        var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
+                          ?? throw new InvalidException("Chưa gia nhập tông môn");
+        if (!actorMember.HasPermission(ClanPermission.ManageHon))
+            throw new InvalidException("Không có quyền luyện hồn tông môn");
+        if (clan.Hon >= clan.MaxHon)
+            throw new InvalidException("Hồn tông môn đã đạt giới hạn");
+
+        var clanId = clan.Id;
+        var gate = AcquireGate(clanId);
+        await gate.Semaphore.WaitAsync();
+        try
+        {
+            var transactionResult = await ExecuteClanTransactionAsync(async db =>
+            {
+                var persisted = await db.Clans
+                    .Where(x => x.Id == clanId)
+                    .Select(x => new { x.Hon, x.MaxHon })
+                    .SingleAsync();
+                if (persisted.Hon >= persisted.MaxHon)
+                    throw new InvalidException("Hồn tông môn đã đạt giới hạn");
+
+                long newHon;
+                try
+                {
+                    var space = checked(persisted.MaxHon - persisted.Hon);
+                    newHon = checked(persisted.Hon + Math.Min(amount, space));
+                }
+                catch (OverflowException)
+                {
+                    throw new InvalidException("Hồn tông môn đã đạt giới hạn");
+                }
+
+                var updated = await db.Clans
+                    .Where(x => x.Id == clanId && x.Hon == persisted.Hon && x.MaxHon == persisted.MaxHon)
+                    .ExecuteUpdateAsync(x => x.SetProperty(c => c.Hon, newHon));
+                if (updated != 1)
+                    throw new InvalidException("Dữ liệu hồn tông môn đã thay đổi, vui lòng thử lại");
+
+                return new LuyenHonTransactionResult(newHon - persisted.Hon, newHon, persisted.MaxHon);
+            });
+
+            clan.Hon = transactionResult.Hon;
+            clan.MaxHon = transactionResult.MaxHon;
+            NotifyClanHonChanged(clanId, clan.Hon, clan.MaxHon);
+
+            return new LuyenHonResult
+            {
+                Success = true,
+                AddedHon = transactionResult.AddedHon,
+                Hon = transactionResult.Hon,
+                MaxHon = transactionResult.MaxHon
+            };
+        }
+        finally
+        {
+            ReleaseGate(clanId, gate);
+        }
+    }
+
+    public static async Task<UpgradeClanMaxHonResult> UpgradeMaxHon(
+        ClanReference reference,
+        CharacterData actor,
+        long funds)
+    {
+        if (funds <= 0)
+            throw new InvalidException("Số quỹ nâng giới hạn hồn phải lớn hơn 0");
+        if (Config.MaxHonPerFund <= 0)
+            throw new InvalidException("Cấu hình nâng giới hạn hồn không hợp lệ");
+
+        var clan = reference.Clan;
+        var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
+                          ?? throw new InvalidException("Chưa gia nhập tông môn");
+        if (!actorMember.HasPermission(ClanPermission.ManageHon))
+            throw new InvalidException("Không có quyền nâng giới hạn hồn tông môn");
+        if (clan.Funds < funds)
+            throw new InvalidException("Quỹ tông môn không đủ");
+
+        long addedMaxHon;
+        try
+        {
+            addedMaxHon = checked(funds * Config.MaxHonPerFund);
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidException("Giới hạn hồn tông môn đã đạt giới hạn");
+        }
+
+        var clanId = clan.Id;
+        var gate = AcquireGate(clanId);
+        await gate.Semaphore.WaitAsync();
+        try
+        {
+            var transactionResult = await ExecuteClanTransactionAsync(async db =>
+            {
+                var persisted = await db.Clans
+                    .Where(x => x.Id == clanId)
+                    .Select(x => new { x.Funds, x.Hon, x.MaxHon })
+                    .SingleAsync();
+                if (persisted.Funds < funds)
+                    throw new InvalidException("Quỹ tông môn không đủ");
+
+                long newFunds;
+                long newMaxHon;
+                try
+                {
+                    newFunds = checked(persisted.Funds - funds);
+                    newMaxHon = checked(persisted.MaxHon + addedMaxHon);
+                }
+                catch (OverflowException)
+                {
+                    throw new InvalidException("Tài nguyên hồn tông môn đã đạt giới hạn");
+                }
+
+                var updated = await db.Clans
+                    .Where(x => x.Id == clanId &&
+                                x.Funds == persisted.Funds &&
+                                x.Hon == persisted.Hon &&
+                                x.MaxHon == persisted.MaxHon)
+                    .ExecuteUpdateAsync(x => x
+                        .SetProperty(c => c.Funds, newFunds)
+                        .SetProperty(c => c.MaxHon, newMaxHon));
+                if (updated != 1)
+                    throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
+
+                return new UpgradeMaxHonTransactionResult(
+                    funds,
+                    addedMaxHon,
+                    newFunds,
+                    persisted.Hon,
+                    newMaxHon);
+            });
+
+            clan.Funds = transactionResult.ClanFunds;
+            clan.Hon = transactionResult.Hon;
+            clan.MaxHon = transactionResult.MaxHon;
+            if (Observers.TryGetValue(clanId, out var observer))
+            {
+                observer.SendAll(MessageTag.ClanFundsChanged,
+                    new ClanFundsChanged { ClanId = clanId, Funds = clan.Funds });
+                observer.SendAll(MessageTag.ClanHonChanged,
+                    new ClanHonChanged { ClanId = clanId, Hon = clan.Hon, MaxHon = clan.MaxHon });
+            }
+
+            return new UpgradeClanMaxHonResult
+            {
+                Success = true,
+                FundsSpent = transactionResult.FundsSpent,
+                AddedMaxHon = transactionResult.AddedMaxHon,
+                ClanFunds = transactionResult.ClanFunds,
+                Hon = transactionResult.Hon,
+                MaxHon = transactionResult.MaxHon
+            };
+        }
+        finally
+        {
+            ReleaseGate(clanId, gate);
+        }
+    }
+
+    private static void NotifyClanHonChanged(int clanId, long hon, long maxHon)
+    {
+        if (!Observers.TryGetValue(clanId, out var observer)) return;
+        observer.SendAll(MessageTag.ClanHonChanged, new ClanHonChanged
+        {
+            ClanId = clanId,
+            Hon = hon,
+            MaxHon = maxHon
+        });
     }
 
     // Nguồn EXP sẽ gọi hàm này sau. Hiện chưa nối vào cống hiến hay gameplay nào.

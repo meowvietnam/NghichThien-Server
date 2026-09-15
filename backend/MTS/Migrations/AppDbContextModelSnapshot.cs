@@ -252,6 +252,9 @@ namespace MTS.Migrations
                     b.Property<long>("Funds")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("Hon")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
@@ -261,6 +264,9 @@ namespace MTS.Migrations
 
                     b.Property<int>("Level")
                         .HasColumnType("int");
+
+                    b.Property<long>("MaxHon")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("MaxMembers")
                         .HasColumnType("int");

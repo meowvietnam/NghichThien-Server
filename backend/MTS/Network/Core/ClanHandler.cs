@@ -393,6 +393,24 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MemSend(MessageTag.UpgradeClanWithFundsRequest, result);
             }
         }
+        else if (tag == MessageTag.LuyenHonRequest)
+        {
+            var request = reader.MemRead<LuyenHonRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = LuyenHon(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.LuyenHonRequest, result);
+            }
+        }
+        else if (tag == MessageTag.UpgradeClanMaxHonRequest)
+        {
+            var request = reader.MemRead<UpgradeClanMaxHonRequest>();
+            lock (client.CharacterLock)
+            {
+                var result = UpgradeMaxHon(request).GetAwaiter().GetResult();
+                MemSend(MessageTag.UpgradeClanMaxHonRequest, result);
+            }
+        }
     }
 
     public async Task<Clan?> ViewClan(int id)
@@ -458,6 +476,47 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 MaxMembers = clan?.MaxMembers ?? 0,
                 InheritanceSlotsPerColumn = clan == null ? 0 : ClanManager.GetInheritanceSlots(clan.Level),
                 Effects = clan?.InheritanceEffects.ToArray() ?? []
+            };
+        }
+    }
+
+    public async Task<LuyenHonResult> LuyenHon(LuyenHonRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return await ClanManager.LuyenHon(clanReference, charData, request.Amount);
+        }
+        catch (InvalidException e)
+        {
+            var clan = reference?.Clan;
+            return new LuyenHonResult
+            {
+                Success = false,
+                Message = e.Message,
+                Hon = clan?.Hon ?? 0,
+                MaxHon = clan?.MaxHon ?? 0
+            };
+        }
+    }
+
+    public async Task<UpgradeClanMaxHonResult> UpgradeMaxHon(UpgradeClanMaxHonRequest request)
+    {
+        try
+        {
+            var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
+            return await ClanManager.UpgradeMaxHon(clanReference, charData, request.Funds);
+        }
+        catch (InvalidException e)
+        {
+            var clan = reference?.Clan;
+            return new UpgradeClanMaxHonResult
+            {
+                Success = false,
+                Message = e.Message,
+                ClanFunds = clan?.Funds ?? 0,
+                Hon = clan?.Hon ?? 0,
+                MaxHon = clan?.MaxHon ?? 0
             };
         }
     }
@@ -927,6 +986,8 @@ public class ClanHandler : IClientHandler, IClanObserverState
         MessageTag.RejectClanJoinRequestRequest,
         MessageTag.SetClanInheritanceRequest,
         MessageTag.UpgradeClanWithFundsRequest,
+        MessageTag.LuyenHonRequest,
+        MessageTag.UpgradeClanMaxHonRequest,
         MessageTag.GetClanMapNodesRequest,
         MessageTag.ViewClanRequest
     ];

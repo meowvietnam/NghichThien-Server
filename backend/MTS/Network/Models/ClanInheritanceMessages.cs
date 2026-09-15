@@ -74,3 +74,41 @@ public partial class UpgradeClanWithFundsResult : Result
     public int InheritanceSlotsPerColumn { get; set; }
     public ClanInheritanceEffect[] Effects { get; set; } = [];
 }
+
+[MemoryPackable]
+public partial class ClanHonChanged
+{
+    public int ClanId { get; set; }
+    public long Hon { get; set; }
+    public long MaxHon { get; set; }
+}
+
+[MemoryPackable]
+public partial class LuyenHonRequest
+{
+    public long Amount { get; set; }
+}
+
+[MemoryPackable]
+public partial class LuyenHonResult : Result
+{
+    public long AddedHon { get; set; }
+    public long Hon { get; set; }
+    public long MaxHon { get; set; }
+}
+
+[MemoryPackable]
+public partial class UpgradeClanMaxHonRequest
+{
+    public long Funds { get; set; }
+}
+
+[MemoryPackable]
+public partial class UpgradeClanMaxHonResult : Result
+{
+    public long FundsSpent { get; set; }
+    public long AddedMaxHon { get; set; }
+    public long ClanFunds { get; set; }
+    public long Hon { get; set; }
+    public long MaxHon { get; set; }
+}

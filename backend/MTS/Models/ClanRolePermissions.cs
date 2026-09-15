@@ -9,7 +9,8 @@ public static class ClanRolePermissions
                             | ClanPermission.AddShopItem
                             | ClanPermission.RemoveShopItem
                             | ClanPermission.AssignRole
-                            | ClanPermission.ManageInheritance,
+                            | ClanPermission.ManageInheritance
+                            | ClanPermission.ManageHon,
         [ClanRole.ViceLeader] = ClanPermission.AddMember
                                 | ClanPermission.KickMember
                                 | ClanPermission.AssignRole,

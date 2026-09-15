@@ -48,6 +48,7 @@ public partial class CharacterSnapshot
     public string ClanName { get; set; } = string.Empty;
     public string? ClanImageUrl { get; set; }
     public int ClanLevel { get; set; }
+    public long Hon { get; set; }
     public ClanRole ClanRole { get; set; }
     public ClanInheritanceEffect[] ClanInheritanceEffects { get; set; } = [];
     [MemoryPackConstructor]
@@ -116,6 +117,8 @@ public partial class CharacterSnapshot
                 out var clanName,
                 out var clanImageUrl,
                 out var clanLevel,
+                out var hon,
+                out var maxHon,
                 out var clanRole,
                 out var inheritanceEffects))
         {
@@ -124,6 +127,7 @@ public partial class CharacterSnapshot
             this.ClanName = clanName;
             this.ClanImageUrl = clanImageUrl;
             this.ClanLevel = clanLevel;
+            this.Hon = hon;
             this.ClanRole = clanRole;
             this.ClanInheritanceEffects = inheritanceEffects;
         }

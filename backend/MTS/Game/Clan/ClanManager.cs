@@ -35,6 +35,8 @@ public static partial class ClanManager
         CreateMaxMember = 10,
         MemberSlotLevelInterval = 3,
         MemberSlotsPerInterval = 1,
+        CreateClanMaxHon = 100,
+        MaxHonPerFund = 1,
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
         RolePermissions = ClanRolePermissions.Permissions,
@@ -400,6 +402,7 @@ public static partial class ClanManager
                     MemberCount = 1,
                     MaxMembers = maxMembers,
                     Level = 1,
+                    MaxHon = Config.CreateClanMaxHon,
                     LeaderCharId = leaderCharId,
                     CreatedAt = now,
                     Members = [member]
@@ -965,6 +968,8 @@ public static partial class ClanManager
         out string clanName,
         out string? clanImageUrl,
         out int clanLevel,
+        out long hon,
+        out long maxHon,
         out ClanRole clanRole,
         out ClanInheritanceEffect[] inheritanceEffects)
     {
@@ -972,6 +977,8 @@ public static partial class ClanManager
         clanName = string.Empty;
         clanImageUrl = null;
         clanLevel = 0;
+        hon = 0;
+        maxHon = 0;
         clanRole = ClanRole.Member;
         inheritanceEffects = [];
 
@@ -992,6 +999,8 @@ public static partial class ClanManager
         clanName = clan.Name;
         clanImageUrl = clan.ImageUrl;
         clanLevel = clan.Level;
+        hon = clan.Hon;
+        maxHon = clan.MaxHon;
         clanRole = member.Role;
         inheritanceEffects = clan.InheritanceEffects.ToArray();
         return true;
