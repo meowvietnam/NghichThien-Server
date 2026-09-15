@@ -12,9 +12,7 @@ public partial class ClanConfig
     public int CreateClanVndPrice { get; set; }
     public int CreateClanVndBonusMoneyVip { get; set; }
     public int CreateMaxMember { get; set; }
-    [MemoryPackIgnore]
     public int MemberSlotLevelInterval { get; set; } = 1;
-    [MemoryPackIgnore]
     public int MemberSlotsPerInterval { get; set; } = 5;
     public int ContributionMoneyVipPerTime { get; set; }
     public int MaxContributionTimesPerRequest { get; set; }
