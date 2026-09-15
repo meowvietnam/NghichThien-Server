@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
+using MTS.IAP;
 using MTS.Localization;
 using PayOS;
 using PayOS.Models.V2.PaymentRequests;
+using Serilog;
 
 namespace MTS.Services;
 
@@ -18,6 +21,30 @@ public class PaymentService : BackgroundService
         this.config = config;
     }
 
+    public static async Task<(long Total, long Estimate)> GetRevenue()
+    {
+        await using var db = await Program.CreateDbAsync();
+        var purchases = await db.IapPurchases
+            .Include(x => x.Product)
+            .ToListAsync();
+        var total = purchases
+            .Sum(x => x.AmountSnapshot);
+        var estimate = purchases.Sum(x =>
+        {
+            if (x.Product != null)
+            {
+                if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
+                {
+                    return (long)(x.Product.Price * 0.7f);
+                }
+
+                return x.Product.Price;
+            }
+
+            return x.AmountSnapshot;
+        });
+        return (total, estimate);
+    }
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Instance = this;

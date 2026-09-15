@@ -18,6 +18,7 @@ public partial class SetClanInheritanceResult : Result
 {
     public ClanInheritanceChanged Change { get; set; } = new();
     public int NewMoneyVip { get; set; }
+    public long ClanFunds { get; set; }
     public int Cost { get; set; }
 }
 
@@ -50,6 +51,7 @@ public partial class ClanLevelChanged
     public int ClanId { get; set; }
     public int Level { get; set; }
     public long Exp { get; set; }
+    public int MaxMembers { get; set; }
     public int InheritanceSlotsPerColumn { get; set; }
     public ClanInheritanceEffect[] Effects { get; set; } = [];
 }
@@ -68,6 +70,7 @@ public partial class UpgradeClanWithFundsResult : Result
     public long ClanFunds { get; set; }
     public long Exp { get; set; }
     public int Level { get; set; }
+    public int MaxMembers { get; set; }
     public int InheritanceSlotsPerColumn { get; set; }
     public ClanInheritanceEffect[] Effects { get; set; } = [];
 }

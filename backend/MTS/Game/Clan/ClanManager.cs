@@ -32,8 +32,9 @@ public static partial class ClanManager
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
         CreateClanVndBonusMoneyVip = 100_000,
-        EnableCreateClanByVnd = true,
         CreateMaxMember = 10,
+        MemberSlotLevelInterval = 3,
+        MemberSlotsPerInterval = 1,
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
         RolePermissions = ClanRolePermissions.Permissions,
@@ -117,18 +118,7 @@ public static partial class ClanManager
         else
         {
             await using var db = await Program.CreateDbAsync();
-            clan = await db.Clans
-                .AsNoTracking()
-                .Include(x => x.Members)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Appearance)
-                .Include(x => x.Members)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Progression)
-                .Include(x => x.InheritanceEffects)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(x => x.Id == id);
-            clan?.RefreshInheritanceViews();
+            clan = await LoadClan(db, id, includeJoinRequests: false, includeShopItems: false);
         }
         return clan;
     }
@@ -1058,24 +1048,7 @@ public static partial class ClanManager
                 return reference;
             }
 
-            var clan = await db.Clans
-                .AsNoTracking()
-                .Include(x => x.Members)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Appearance)
-                .Include(x => x.Members)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Progression)
-                .Include(x => x.JoinRequests)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Appearance)
-                .Include(x => x.JoinRequests)
-                .ThenInclude(x => x.CharData)
-                .ThenInclude(x => x.Progression)
-                .Include(x => x.ShopItems)
-                .Include(x => x.InheritanceEffects)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(x => x.Id == clanId);
+            var clan = await LoadClan(db, clanId, includeJoinRequests: true, includeShopItems: true);
             if (clan == null)
             {
                 throw new InvalidException("Tông môn không tồn tại");
@@ -1102,6 +1075,62 @@ public static partial class ClanManager
                     .Remove(new KeyValuePair<int, ClanCreationGate>(clanId, gate));
             }
         }
+    }
+
+    private static async Task<Models.Clan?> LoadClan(
+        AppDbContext db,
+        int clanId,
+        bool includeJoinRequests,
+        bool includeShopItems)
+    {
+        var clan = await db.Clans
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == clanId);
+        if (clan == null)
+        {
+            return null;
+        }
+
+        var members = await db.ClanMembers
+            .AsNoTracking()
+            .Where(x => x.ClanId == clanId)
+            .Include(x => x.CharData)
+            .ThenInclude(x => x.Appearance)
+            .Include(x => x.CharData)
+            .ThenInclude(x => x.Progression)
+            .OrderByDescending(x => x.Role)
+            .ThenBy(x => x.JoinAt)
+            .ToListAsync();
+        clan.Members = members;
+
+        clan.JoinRequests = includeJoinRequests
+            ? await db.ClanJoinRequests
+                .AsNoTracking()
+                .Where(x => x.ClanId == clanId)
+                .Include(x => x.CharData)
+                .ThenInclude(x => x.Appearance)
+                .Include(x => x.CharData)
+                .ThenInclude(x => x.Progression)
+                .OrderBy(x => x.Created)
+                .ToListAsync()
+            : new List<ClanJoinRequest>();
+
+        clan.ShopItems = includeShopItems
+            ? await db.ClanShopItems
+                .AsNoTracking()
+                .Where(x => x.ClanId == clanId)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync()
+            : new List<ClanShopItem>();
+
+        clan.InheritanceEffects = await db.ClanInheritanceEffects
+            .AsNoTracking()
+            .Where(x => x.ClanId == clanId)
+            .OrderBy(x => x.Trigger)
+            .ThenBy(x => x.SlotIndex)
+            .ToListAsync();
+        clan.RefreshInheritanceViews();
+        return clan;
     }
 
     private static ClanObserver FindOrCreateObserver(Models.Clan clan)

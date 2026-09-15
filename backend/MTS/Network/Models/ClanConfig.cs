@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MemoryPack;
+using MTS.Game;
 using MTS.Models;
 using MTS.Game.LuyenKhi;
 
@@ -11,6 +12,10 @@ public partial class ClanConfig
     public int CreateClanVndPrice { get; set; }
     public int CreateClanVndBonusMoneyVip { get; set; }
     public int CreateMaxMember { get; set; }
+    [MemoryPackIgnore]
+    public int MemberSlotLevelInterval { get; set; } = 1;
+    [MemoryPackIgnore]
+    public int MemberSlotsPerInterval { get; set; } = 5;
     public int ContributionMoneyVipPerTime { get; set; }
     public int MaxContributionTimesPerRequest { get; set; }
     public int MaxShopQuantityPerRequest { get; set; } = 100;
@@ -23,7 +28,6 @@ public partial class ClanConfig
     public int InheritanceBaseValue { get; set; } = 1;
     public int InheritanceValuePerClanLevel { get; set; } = 1;
     public EffectType[] InheritanceBuffWhitelist { get; set; } = [];
-    // Mốc EXP tổng; index 0 là cấp 1, index 1 là cấp 2...
     public long[] ClanLevelRequiredTotalExp { get; set; } = [];
-    public bool EnableCreateClanByVnd { get; set; } = true;
+    public bool EnableCreateClanByVnd => GameConfig.EnableWebPay;
 }

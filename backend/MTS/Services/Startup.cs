@@ -28,172 +28,34 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-        var purchases = await db.IapPurchases
-            .Include(x => x.Product)
-            .ToListAsync(stoppingToken);
-        var total = purchases
-            .Sum(x => x.AmountSnapshot);
-        var estimate = purchases.Sum(x =>
-        {
-            if (x.Product != null)
-            {
-                if (x.Store == Store.GooglePlay || x.Store == Store.AppStore)
-                {
-                    return (long)(x.Product.Price * 0.7f);
-                }
-
-                return x.Product.Price;
-            }
-
-            return x.AmountSnapshot;
-        });
-        Log.Information("Total: {Total} VNĐ, Estimate: {Estimate} VNĐ", Utils.Utils.FormatCount(total),
-            Utils.Utils.FormatCount(estimate));
-        await DeleteAllEvents(db);
-        await AddEvents(db);
-        // await SendOpenServerRechargeMoneyVipBonus(db, new DateTime(2026, 9, 14, 0, 0, 0, DateTimeKind.Utc));
-        // var result = await AppDbContextMerge.Merge("Server=localhost;Port=3306;Database=MTS_Backup_09;User=root;Password=Linhdz123@;",
-        //     "Server=localhost;Port=3306;Database=MTS_Backup_08;User=root;Password=Linhdz123@;",
-        //     new AppDbContextMergeOptions
-        //     {
-        //         DryRun = false,
-        //         SourceSuffix = "B"
-        //     });
-        // Log.Information("Fail rows: {rows}", result.FailedRows);
-        // Log.Information("Skip rows: {rows}", result.SkippedRows);
-        // Log.Information("Insert rows: {rows}", result.InsertedRows);
-        // Log.Information("Source rows: {rows}", result.SourceRows);
-        // Log.Information("---------------------------------");
-        // foreach (var r in result.Tables)
-        // {
-        //     Log.Information("Table name: {name}", r.TableName);
-        //     Log.Information("Fail rows: {rows}", r.FailedRows);
-        //     Log.Information("Skip rows: {rows}", r.SkippedRows);
-        //     Log.Information("Insert rows: {rows}", r.InsertedRows);
-        //     Log.Information("Source rows: {rows}", r.SourceRows);
-        //     Log.Information("Erros: {e}", string.Join(", ", r.Errors));
-        //     Log.Information("--------------------------------");
-        // }
     }
 
-    private async Task DeleteAllEvents(AppDbContext db)
+    private async Task UpdateEvent(AppDbContext db)
     {
-        await db.Events.ExecuteDeleteAsync();
+        var events = await db.Events.ToListAsync();
+        foreach (var @event in events)
+        {
+            if (@event.GameEvent is EventShop s)
+            {
+                foreach (var i in s.Items)
+                {
+                    i.HasBuy = false;
+                }
+
+                db.Entry(@event).Property(x => x.GameEvent).IsModified = true;
+            }
+        }
         await db.SaveChangesAsync();
         Log.Information("Oke");
     }
-
-    private async Task SendOpenServerRechargeMoneyVipBonus(
-        AppDbContext db,
-        DateTime fromUtc,
-        DateTime? toUtc = null,
-        int multiplier = 2)
-    {
-        if (multiplier <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(multiplier), "Multiplier must be positive.");
-        }
-
-        var endUtc = toUtc ?? DateTime.UtcNow;
-        const string bonusTitle = "Phần thưởng nạp open server";
-        var purchaseMoneyVipByChar = await db.IapPurchases
-            .AsNoTracking()
-            .Where(x => x.CharId != null
-                        && x.PurchaseDate >= fromUtc
-                        && x.PurchaseDate <= endUtc
-                        && x.MoneyVipSnapshot > 0)
-            .GroupBy(x => x.CharId!.Value)
-            .Select(x => new
-            {
-                CharId = x.Key,
-                MoneyVip = x.Sum(p => p.MoneyVipSnapshot)
-            })
-            .ToDictionaryAsync(x => x.CharId, x => x.MoneyVip);
-
-        var eventRechargeMails = await db.Mails
-            .AsNoTracking()
-            .Where(x => x.CreatedAt >= fromUtc
-                        && x.CreatedAt <= endUtc
-                        && x.Title == "Phần thưởng nạp tiền")
-            .Select(x => new
-            {
-                x.CharId,
-                x.Rewards
-            })
-            .ToListAsync();
-
-        foreach (var mail in eventRechargeMails)
-        {
-            var moneyVip = mail.Rewards
-                .OfType<MailRewardMoneyVip>()
-                .Sum(x => (long)x.MoneyVip);
-            if (moneyVip <= 0)
-            {
-                continue;
-            }
-
-            purchaseMoneyVipByChar.TryGetValue(mail.CharId, out var currentMoneyVip);
-            purchaseMoneyVipByChar[mail.CharId] = currentMoneyVip + moneyVip;
-        }
-
-        if (purchaseMoneyVipByChar.Count <= 0)
-        {
-            Log.Information("Open server recharge MoneyVip bonus: no eligible recharge found.");
-            return;
-        }
-
-        var charIds = purchaseMoneyVipByChar.Keys.ToArray();
-        var rewardedCharIds = await db.Mails
-            .AsNoTracking()
-            .Where(x => charIds.Contains(x.CharId) && x.Title == bonusTitle)
-            .Select(x => x.CharId)
-            .Distinct()
-            .ToArrayAsync();
-        var rewardedSet = rewardedCharIds.ToHashSet();
-        var mails = new List<Mail>();
-        foreach (var (charId, moneyVip) in purchaseMoneyVipByChar.OrderBy(x => x.Key))
-        {
-            if (rewardedSet.Contains(charId))
-            {
-                continue;
-            }
-
-            var rewardMoneyVip = checked((int)(moneyVip * multiplier));
-            mails.Add(new Mail
-            {
-                CharId = charId,
-                Title = bonusTitle,
-                Content =
-                    $"Cảm ơn đạo hữu đã ủng hộ giai đoạn open server. Bạn nhận thêm x{multiplier} Tiên Ngọc từ các gói nạp có thưởng Tiên Ngọc.",
-                Rewards = new List<IMailReward>
-                {
-                    new MailRewardMoneyVip
-                    {
-                        MoneyVip = rewardMoneyVip
-                    }
-                }
-            });
-        }
-
-        if (mails.Count <= 0)
-        {
-            Log.Information("Open server recharge MoneyVip bonus: all eligible characters were already rewarded.");
-            return;
-        }
-
-        await db.Mails.AddRangeAsync(mails);
-        await db.SaveChangesAsync();
-        Log.Information("Open server recharge MoneyVip bonus sent: {MailCount} mails, {MoneyVip} MoneyVip.",
-            mails.Count,
-            Utils.Utils.FormatCount(mails.Sum(x => x.Rewards.OfType<MailRewardMoneyVip>().Sum(r => r.MoneyVip))));
-    }
+    
 
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.EventManagers
             .Select(x => x.CharId)
             .ToArrayAsync();
-        
+
         foreach (var charId in charIds)
         {
             var events = EventService.CreateEvents();
@@ -203,7 +65,218 @@ public class Startup : BackgroundService
                 await db.Events.AddAsync(@event);
             }
         }
+
         await db.SaveChangesAsync();
         Log.Information("Oke");
+    }
+
+    private async Task ForceMoveOverflowClanMembers(
+        AppDbContext db,
+        int sourceClanId,
+        int targetClanId,
+        CancellationToken stoppingToken = default)
+    {
+        if (sourceClanId <= 0) throw new ArgumentOutOfRangeException(nameof(sourceClanId));
+        if (targetClanId <= 0) throw new ArgumentOutOfRangeException(nameof(targetClanId));
+        if (sourceClanId == targetClanId)
+        {
+            throw new ArgumentException("Clan nguồn và clan đích không được trùng nhau.");
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(stoppingToken);
+        var sourceClan = await db.Clans
+            .FirstOrDefaultAsync(x => x.Id == sourceClanId, stoppingToken)
+            ?? throw new InvalidOperationException($"Không tìm thấy clan nguồn {sourceClanId}.");
+        var targetClan = await db.Clans
+            .FirstOrDefaultAsync(x => x.Id == targetClanId, stoppingToken)
+            ?? throw new InvalidOperationException($"Không tìm thấy clan đích {targetClanId}.");
+
+        var sourceMembers = await db.ClanMembers
+            .Include(x => x.CharData)
+            .ThenInclude(x => x.Progression)
+            .Where(x => x.ClanId == sourceClanId)
+            .ToListAsync(stoppingToken);
+        var targetMemberCount = await db.ClanMembers
+            .CountAsync(x => x.ClanId == targetClanId, stoppingToken);
+        var overflowCount = sourceMembers.Count - sourceClan.MaxMembers;
+        if (overflowCount <= 0)
+        {
+            sourceClan.MemberCount = sourceMembers.Count;
+            targetClan.MemberCount = targetMemberCount;
+            await db.SaveChangesAsync(stoppingToken);
+            await transaction.CommitAsync(stoppingToken);
+            Log.Information("Clan {SourceClanId} không quá slot: {MemberCount}/{MaxMembers}.",
+                sourceClanId,
+                sourceMembers.Count,
+                sourceClan.MaxMembers);
+            return;
+        }
+
+        var targetFreeSlots = Math.Max(0, targetClan.MaxMembers - targetMemberCount);
+        var moveCount = Math.Min(overflowCount, targetFreeSlots);
+        if (moveCount <= 0)
+        {
+            sourceClan.MemberCount = sourceMembers.Count;
+            targetClan.MemberCount = targetMemberCount;
+            await db.SaveChangesAsync(stoppingToken);
+            await transaction.CommitAsync(stoppingToken);
+            Log.Warning("Clan đích {TargetClanId} không còn slot trống: {MemberCount}/{MaxMembers}.",
+                targetClanId,
+                targetMemberCount,
+                targetClan.MaxMembers);
+            return;
+        }
+
+        var movedMembers = sourceMembers
+            .Where(x => x.Role != ClanRole.Leader && x.CharId != sourceClan.LeaderCharId)
+            .OrderBy(x => x.ContribPoints)
+            .ThenBy(x => x.CharData.Progression.Level)
+            .ThenBy(x => x.JoinAt)
+            .Take(moveCount)
+            .ToList();
+        if (movedMembers.Count <= 0)
+        {
+            Log.Warning("Clan {SourceClanId} quá slot nhưng không có thành viên hợp lệ để chuyển.", sourceClanId);
+            return;
+        }
+
+        var movedCharIds = movedMembers.Select(x => x.CharId).ToArray();
+        await db.ClanJoinRequests
+            .Where(x => x.ClanId == targetClanId && movedCharIds.Contains(x.CharId))
+            .ExecuteDeleteAsync(stoppingToken);
+
+        var movedAt = DateTime.UtcNow;
+        var targetMembers = movedMembers
+            .Select(x => new ClanMember
+            {
+                ClanId = targetClanId,
+                CharId = x.CharId,
+                ContribPoints = x.ContribPoints,
+                LastFreeContributionAt = x.LastFreeContributionAt,
+                ShopItemsAddedToday = x.ShopItemsAddedToday,
+                LastShopItemAddedAt = x.LastShopItemAddedAt,
+                Role = ClanRole.Member,
+                JoinAt = movedAt
+            })
+            .ToList();
+        db.ClanMembers.RemoveRange(movedMembers);
+        await db.ClanMembers.AddRangeAsync(targetMembers, stoppingToken);
+
+        sourceClan.MemberCount = sourceMembers.Count - movedMembers.Count;
+        targetClan.MemberCount = targetMemberCount + movedMembers.Count;
+        await db.SaveChangesAsync(stoppingToken);
+        await transaction.CommitAsync(stoppingToken);
+
+        Log.Information(
+            "Đã chuyển {MoveCount} thành viên từ clan {SourceClanId} sang clan {TargetClanId}: {CharIds}.",
+            movedMembers.Count,
+            sourceClanId,
+            targetClanId,
+            string.Join(", ", movedCharIds));
+    }
+
+    private async Task ForceMoveAllOverflowClanMembers(
+        AppDbContext db,
+        CancellationToken stoppingToken = default)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(stoppingToken);
+        var clans = await db.Clans
+            .OrderBy(x => x.Id)
+            .ToListAsync(stoppingToken);
+        var memberCounts = await db.ClanMembers
+            .GroupBy(x => x.ClanId)
+            .Select(x => new { ClanId = x.Key, Count = x.Count() })
+            .ToDictionaryAsync(x => x.ClanId, x => x.Count, stoppingToken);
+        var clanById = clans.ToDictionary(x => x.Id);
+        var currentCounts = clans.ToDictionary(
+            x => x.Id,
+            x => memberCounts.TryGetValue(x.Id, out var count) ? count : 0);
+        var freeSlots = clans.ToDictionary(
+            x => x.Id,
+            x => Math.Max(0, x.MaxMembers - currentCounts[x.Id]));
+        var overflowClans = clans
+            .Where(x => currentCounts[x.Id] > x.MaxMembers)
+            .OrderByDescending(x => currentCounts[x.Id] - x.MaxMembers)
+            .ThenBy(x => x.Id)
+            .ToList();
+        var totalMoved = 0;
+        foreach (var sourceClan in overflowClans)
+        {
+            var overflowCount = currentCounts[sourceClan.Id] - sourceClan.MaxMembers;
+            if (overflowCount <= 0) continue;
+
+            var sourceMembers = await db.ClanMembers
+                .Include(x => x.CharData)
+                .ThenInclude(x => x.Progression)
+                .Where(x => x.ClanId == sourceClan.Id)
+                .ToListAsync(stoppingToken);
+            var candidates = sourceMembers
+                .Where(x => x.Role != ClanRole.Leader && x.CharId != sourceClan.LeaderCharId)
+                .OrderBy(x => x.ContribPoints)
+                .ThenBy(x => x.CharData.Progression.MaxLevel)
+                .ThenBy(x => x.JoinAt)
+                .Take(overflowCount)
+                .ToList();
+            if (candidates.Count <= 0)
+            {
+                Log.Warning("Clan {SourceClanId} quá slot nhưng không có thành viên hợp lệ để chuyển.",
+                    sourceClan.Id);
+                continue;
+            }
+
+            foreach (var member in candidates)
+            {
+                var targetClan = clans
+                    .Where(x => x.Id != sourceClan.Id && freeSlots[x.Id] > 0)
+                    .OrderByDescending(x => freeSlots[x.Id])
+                    .ThenBy(x => currentCounts[x.Id])
+                    .ThenBy(x => x.Id)
+                    .FirstOrDefault();
+                if (targetClan == null)
+                {
+                    Log.Warning("Không còn clan đích có slot trống để chuyển tiếp từ clan {SourceClanId}.",
+                        sourceClan.Id);
+                    break;
+                }
+
+                await db.ClanJoinRequests
+                    .Where(x => x.ClanId == targetClan.Id && x.CharId == member.CharId)
+                    .ExecuteDeleteAsync(stoppingToken);
+                db.ClanMembers.Remove(member);
+                await db.ClanMembers.AddAsync(new ClanMember
+                {
+                    ClanId = targetClan.Id,
+                    CharId = member.CharId,
+                    ContribPoints = member.ContribPoints,
+                    LastFreeContributionAt = member.LastFreeContributionAt,
+                    ShopItemsAddedToday = member.ShopItemsAddedToday,
+                    LastShopItemAddedAt = member.LastShopItemAddedAt,
+                    Role = ClanRole.Member,
+                    JoinAt = DateTime.UtcNow
+                }, stoppingToken);
+
+                currentCounts[sourceClan.Id]--;
+                currentCounts[targetClan.Id]++;
+                freeSlots[targetClan.Id]--;
+                totalMoved++;
+                Log.Information(
+                    "Chuyển CharId {CharId} từ clan {SourceClanId} sang clan {TargetClanId}.",
+                    member.CharId,
+                    sourceClan.Id,
+                    targetClan.Id);
+            }
+        }
+
+        foreach (var (clanId, count) in currentCounts)
+        {
+            if (clanById.TryGetValue(clanId, out var clan))
+            {
+                clan.MemberCount = count;
+            }
+        }
+
+        await db.SaveChangesAsync(stoppingToken);
+        await transaction.CommitAsync(stoppingToken);
+        Log.Information("Quét quá slot tông môn xong, đã chuyển {TotalMoved} thành viên.", totalMoved);
     }
 }

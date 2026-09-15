@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -22,6 +23,8 @@ public sealed class CloudflareR2Service : IDisposable
         {
             ServiceURL = $"https://{this.options.AccountId}.r2.cloudflarestorage.com",
             ForcePathStyle = true,
+            RetryMode = RequestRetryMode.Standard,
+            MaxErrorRetry = 5
         });
     }
 

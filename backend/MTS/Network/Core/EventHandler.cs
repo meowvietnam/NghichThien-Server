@@ -1,4 +1,5 @@
 using MTS.Exceptions;
+using MTS.Models;
 using MTS.Network.Models;
 
 namespace MTS.Network.Core;

@@ -31,7 +31,7 @@ public class AuctionService : BackgroundService
                "\n" +
                "Tại Hội Đấu Giá (Thiên Cơ Các)";
     }
-
+    
     private static string Color(string value, string color)
     {
         return $"<color={color}>{value}</color>";

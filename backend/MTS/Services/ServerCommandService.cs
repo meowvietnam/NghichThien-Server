@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using MTS.Game;
 using MTS.Network;
+using Serilog;
 using Spectre.Console;
 
 namespace MTS.Services;
@@ -87,6 +89,12 @@ public class ServerCommandService : BackgroundService
             case "quit":
                 StopServer();
                 break;
+            case "revenue":
+                await PrintRevenue();
+                break;
+            case "toggle_web_pay":
+                ToggleWebPay();
+                break;
             default:
                 ServerConsole.WriteWarning($"Unknown command: {command}");
                 PrintHelp();
@@ -111,11 +119,19 @@ public class ServerCommandService : BackgroundService
             ("gc", "Force garbage collection and print reclaimed memory"),
             ("clear", "Clear console"),
             ("stop", "Stop the server gracefully"),
+            ("revenue", "Show revenue"),
+            ("toggle_web_pay","Toggle disable/enable web pay")
         };
 
         ServerConsole.WriteTable("Commands", ["Command", "Description"], rows);
     }
 
+    private static void ToggleWebPay()
+    {
+        GameConfig.EnableWebPay = !GameConfig.EnableWebPay;
+        var status = GameConfig.EnableWebPay ? "Enable" : "Disable";
+        Log.Information("Enable web pay status: {status}", status);
+    }
     private void PrintStatus()
     {
         var server = TcpServer.Instance;
@@ -155,6 +171,12 @@ public class ServerCommandService : BackgroundService
         ServerConsole.WriteTable("Online Characters", ["Id", "Name", "Level"], characters);
     }
 
+    private static async Task PrintRevenue()
+    {
+        var (total, estimate) = await PaymentService.GetRevenue();
+        var revenue = ($"{Utils.Utils.FormatCount(total)} VNĐ", $"{Utils.Utils.FormatCount(estimate)} VNĐ");
+        ServerConsole.WriteTable("Revenue", ["Total", "Estimate"], [revenue]);
+    }
     private async Task SaveClientsAsync()
     {
         if (TcpServer.Instance == null)

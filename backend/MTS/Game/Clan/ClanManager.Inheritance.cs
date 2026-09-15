@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game.LuyenKhi;
 using MTS.Models;
@@ -10,14 +11,15 @@ namespace MTS.Game.Clan;
 public static partial class ClanManager
 {
     private sealed record InheritanceTransactionResult(
-        ClanInheritanceEffect? Effect, int MoneyVip, bool Changed);
+        ClanInheritanceEffect? Effect, long ClanFunds, int Cost, bool Changed);
 
     private sealed record UpgradeClanWithFundsTransactionResult(
         long FundsSpent,
         long AddedExp,
         long ClanFunds,
         long Exp,
-        int Level);
+        int Level,
+        int MaxMembers);
 
     public static int GetInheritanceSlots(int clanLevel)
     {
@@ -52,6 +54,40 @@ public static partial class ClanManager
         }
     }
 
+    private static int GetLeveledInheritanceValue(EffectType? effectType, int clanLevel)
+    {
+        var value = GetInheritanceValue(effectType);
+        try
+        {
+            return checked(value * Math.Max(1, clanLevel));
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidException("Giá trị truyền thừa vượt giới hạn");
+        }
+    }
+
+    private static async Task ValidateGiamTonThuongTotalLimit(
+        AppDbContext db,
+        int clanId,
+        ClanInheritanceTrigger trigger,
+        int slotIndex,
+        EffectType? effectType,
+        int value)
+    {
+        var otherTotal = await db.Set<ClanInheritanceEffect>()
+            .Where(x => x.ClanId == clanId &&
+                        x.EffectType == EffectType.GiamTonThuong &&
+                        (x.Trigger != trigger || x.SlotIndex != slotIndex))
+            .SumAsync(x => (int?)x.Value) ?? 0;
+        var total = otherTotal + (effectType == EffectType.GiamTonThuong ? value : 0);
+
+        if (total > 50)
+        {
+            throw new InvalidException("Tổng truyền thừa Giảm Tổn Thương tối đa 50 điểm");
+        }
+    }
+
     public static async Task<SetClanInheritanceResult> SetInheritance(
         ClanReference reference,
         CharacterData actor,
@@ -80,7 +116,6 @@ public static partial class ClanManager
         {
             var current = clan.InheritanceEffects.FirstOrDefault(x =>
                 x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
-            var oldMoneyVip = actor.MoneyVip;
             var ramChanged = request.EffectType == null
                 ? current != null
                 : current == null || current.EffectType != request.EffectType;
@@ -88,10 +123,10 @@ public static partial class ClanManager
             var expectedCost = changingFilledSlot ? Config.ChangeInheritanceMoneyVipCost : 0;
             if (expectedCost < 0)
                 throw new InvalidException("Cấu hình phí thay đổi truyền thừa không hợp lệ");
-            if (actor.MoneyVip < expectedCost)
-                throw new InvalidException("Không đủ tiên ngọc để thay đổi truyền thừa");
+            if (clan.Funds < expectedCost)
+                throw new InvalidException("Quỹ tông môn không đủ để thay đổi truyền thừa");
 
-            var value = request.EffectType.HasValue ? GetInheritanceValue(request.EffectType) : 0;
+            var value = request.EffectType.HasValue ? GetLeveledInheritanceValue(request.EffectType, clan.Level) : 0;
             var transactionResult = await ExecuteClanTransactionAsync(async db =>
             {
                 var persisted = await db.Set<ClanInheritanceEffect>().FirstOrDefaultAsync(x =>
@@ -102,35 +137,36 @@ public static partial class ClanManager
                     : persisted?.EffectType == request.EffectType;
                 if (alreadyDesired)
                 {
-                    var currentMoney = await db.Characters.Where(x => x.Id == actor.Id)
-                        .Select(x => x.MoneyVip).SingleAsync();
-                    return new InheritanceTransactionResult(persisted, currentMoney, false);
+                    var unchangedFunds = await db.Clans.Where(x => x.Id == clanId)
+                        .Select(x => x.Funds).SingleAsync();
+                    return new InheritanceTransactionResult(persisted, unchangedFunds, 0, false);
                 }
+
+                await ValidateGiamTonThuongTotalLimit(
+                    db,
+                    clanId,
+                    request.Trigger,
+                    request.SlotIndex,
+                    request.EffectType,
+                    value);
 
                 var cost = persisted != null ? Config.ChangeInheritanceMoneyVipCost : 0;
                 if (cost < 0)
                     throw new InvalidException("Cấu hình phí thay đổi truyền thừa không hợp lệ");
 
-                var currentMoneyVip = await db.Characters.Where(x => x.Id == actor.Id)
-                    .Select(x => x.MoneyVip).SingleAsync();
-                var newMoneyVip = currentMoneyVip - cost;
-                if (newMoneyVip < 0)
-                    throw new InvalidException("Không đủ tiên ngọc để thay đổi truyền thừa");
+                var currentFunds = await db.Clans.Where(x => x.Id == clanId)
+                    .Select(x => x.Funds).SingleAsync();
+                var newFunds = currentFunds - cost;
+                if (newFunds < 0)
+                    throw new InvalidException("Quỹ tông môn không đủ để thay đổi truyền thừa");
 
                 if (cost > 0)
                 {
-                    var updated = await db.Characters
-                        .Where(x => x.Id == actor.Id && x.MoneyVip == currentMoneyVip)
-                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.MoneyVip, newMoneyVip));
+                    var updated = await db.Clans
+                        .Where(x => x.Id == clanId && x.Funds == currentFunds && x.Funds >= cost)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.Funds, newFunds));
                     if (updated != 1)
-                        throw new InvalidException("Tiên ngọc đã thay đổi, vui lòng thử lại");
-                    await db.SpendingMoneyVips.AddAsync(new SpendingMoneyVip
-                    {
-                        CharId = actor.Id,
-                        SpendFor = SpendFor.ChangeClanInheritance,
-                        MoneyVip = cost,
-                        Time = DateTime.UtcNow
-                    });
+                        throw new InvalidException("Quỹ tông môn đã thay đổi, vui lòng thử lại");
                 }
 
                 if (request.EffectType == null)
@@ -158,11 +194,12 @@ public static partial class ClanManager
                 await db.SaveChangesAsync();
                 return new InheritanceTransactionResult(
                     request.EffectType == null ? null : persisted,
-                    newMoneyVip,
+                    newFunds,
+                    cost,
                     true);
             });
 
-            actor.SetMoneyVip(transactionResult.MoneyVip);
+            clan.Funds = transactionResult.ClanFunds;
             clan.InheritanceEffects.RemoveAll(x =>
                 x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
             if (transactionResult.Effect != null)
@@ -180,14 +217,22 @@ public static partial class ClanManager
                 Effect = transactionResult.Effect
             };
             if (ramChanged && Observers.TryGetValue(clanId, out var observer))
+            {
+                if (transactionResult.Cost > 0)
+                {
+                    observer.SendAll(MessageTag.ClanFundsChanged,
+                        new ClanFundsChanged { ClanId = clanId, Funds = transactionResult.ClanFunds });
+                }
                 observer.SendAll(MessageTag.ClanInheritanceChanged, change);
+            }
 
             return new SetClanInheritanceResult
             {
                 Success = true,
                 Change = change,
-                NewMoneyVip = transactionResult.MoneyVip,
-                Cost = Math.Max(0, oldMoneyVip - transactionResult.MoneyVip)
+                NewMoneyVip = actor.MoneyVip,
+                ClanFunds = transactionResult.ClanFunds,
+                Cost = transactionResult.Cost
             };
         }
         finally
@@ -225,7 +270,7 @@ public static partial class ClanManager
             {
                 var persisted = await db.Clans
                     .Where(x => x.Id == clanId)
-                    .Select(x => new { x.Funds, x.Exp, x.Level })
+                    .Select(x => new { x.Funds, x.Exp, x.Level, x.MaxMembers })
                     .SingleAsync();
                 if (persisted.Funds < funds)
                     throw new InvalidException("Quỹ tông môn không đủ");
@@ -242,7 +287,13 @@ public static partial class ClanManager
                     throw new InvalidException("Tài nguyên tông môn đã đạt giới hạn");
                 }
 
-                var newLevel = Math.Max(persisted.Level, ResolveClanLevel(newExp));
+                var (newLevel, remainingExp) = ResolveClanLevelProgress(
+                    persisted.Level,
+                    newExp);
+                var newMaxMembers = GetMaxMembersAfterLevelUp(
+                    persisted.MaxMembers,
+                    persisted.Level,
+                    newLevel);
                 var updated = await db.Clans
                     .Where(x => x.Id == clanId &&
                                 x.Funds == persisted.Funds &&
@@ -250,18 +301,26 @@ public static partial class ClanManager
                                 x.Level == persisted.Level)
                     .ExecuteUpdateAsync(x => x
                         .SetProperty(c => c.Funds, newFunds)
-                        .SetProperty(c => c.Exp, newExp)
-                        .SetProperty(c => c.Level, newLevel));
+                        .SetProperty(c => c.Exp, remainingExp)
+                        .SetProperty(c => c.Level, newLevel)
+                        .SetProperty(c => c.MaxMembers, newMaxMembers));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
-                return new UpgradeClanWithFundsTransactionResult(funds, addedExp, newFunds, newExp, newLevel);
+                return new UpgradeClanWithFundsTransactionResult(
+                    funds,
+                    addedExp,
+                    newFunds,
+                    remainingExp,
+                    newLevel,
+                    newMaxMembers);
             });
 
             var levelChanged = clan.Level != transactionResult.Level;
             clan.Funds = transactionResult.ClanFunds;
             clan.Exp = transactionResult.Exp;
             clan.Level = transactionResult.Level;
+            clan.MaxMembers = transactionResult.MaxMembers;
             if (levelChanged) clan.RefreshInheritanceViews();
 
             var effects = clan.InheritanceEffects.ToArray();
@@ -278,6 +337,7 @@ public static partial class ClanManager
                         ClanId = clanId,
                         Level = transactionResult.Level,
                         Exp = transactionResult.Exp,
+                        MaxMembers = transactionResult.MaxMembers,
                         InheritanceSlotsPerColumn = GetInheritanceSlots(transactionResult.Level),
                         Effects = effects
                     });
@@ -292,6 +352,7 @@ public static partial class ClanManager
                 ClanFunds = transactionResult.ClanFunds,
                 Exp = transactionResult.Exp,
                 Level = transactionResult.Level,
+                MaxMembers = transactionResult.MaxMembers,
                 InheritanceSlotsPerColumn = GetInheritanceSlots(transactionResult.Level),
                 Effects = effects
             };
@@ -321,24 +382,27 @@ public static partial class ClanManager
             try { newExp = checked(clan.Exp + amount); }
             catch (OverflowException) { throw new InvalidException("Clan EXP đã đạt giới hạn"); }
 
-            var newLevel = Math.Max(clan.Level, ResolveClanLevel(newExp));
+            var (newLevel, remainingExp) = ResolveClanLevelProgress(clan.Level, newExp);
+            var newMaxMembers = GetMaxMembersAfterLevelUp(clan.MaxMembers, clan.Level, newLevel);
             await ExecuteClanTransactionAsync(async db =>
             {
                 var updated = await db.Clans
                     .Where(x => x.Id == clanId && x.Exp == clan.Exp && x.Level == clan.Level)
                     .ExecuteUpdateAsync(x => x
-                        .SetProperty(c => c.Exp, newExp)
-                        .SetProperty(c => c.Level, newLevel));
+                        .SetProperty(c => c.Exp, remainingExp)
+                        .SetProperty(c => c.Level, newLevel)
+                        .SetProperty(c => c.MaxMembers, newMaxMembers));
                 if (updated != 1 && !await db.Clans.AnyAsync(x =>
-                        x.Id == clanId && x.Exp == newExp && x.Level == newLevel))
+                        x.Id == clanId && x.Exp == remainingExp && x.Level == newLevel && x.MaxMembers == newMaxMembers))
                     throw new InvalidException("Dữ liệu cấp tông môn đã thay đổi, vui lòng thử lại");
 
                 return true;
             });
 
             var levelChanged = clan.Level != newLevel;
-            clan.Exp = newExp;
+            clan.Exp = remainingExp;
             clan.Level = newLevel;
+            clan.MaxMembers = newMaxMembers;
             if (levelChanged)
             {
                 clan.RefreshInheritanceViews();
@@ -347,14 +411,15 @@ public static partial class ClanManager
             if (Observers.TryGetValue(clanId, out var observer))
             {
                 observer.SendAll(MessageTag.ClanExpChanged,
-                    new ClanExpChanged { ClanId = clanId, Exp = newExp });
+                    new ClanExpChanged { ClanId = clanId, Exp = remainingExp });
                 if (levelChanged)
                 {
                     observer.SendAll(MessageTag.ClanLevelChanged, new ClanLevelChanged
                     {
                         ClanId = clanId,
                         Level = newLevel,
-                        Exp = newExp,
+                        Exp = remainingExp,
+                        MaxMembers = newMaxMembers,
                         InheritanceSlotsPerColumn = GetInheritanceSlots(newLevel),
                         Effects = clan.InheritanceEffects.ToArray()
                     });
@@ -367,21 +432,47 @@ public static partial class ClanManager
         }
     }
 
-    private static int ResolveClanLevel(long totalExp)
+    private static (int Level, long Exp) ResolveClanLevelProgress(int currentLevel, long currentExp)
     {
         var milestones = Config.ClanLevelRequiredTotalExp;
-        if (milestones.Length == 0) return 1;
+        if (milestones.Length == 0) return (Math.Max(1, currentLevel), currentExp);
         if (milestones[0] != 0)
             throw new InvalidException("Mốc EXP cấp 1 của tông môn phải bằng 0");
 
-        var level = 1;
         for (var index = 0; index < milestones.Length; index++)
         {
             if (milestones[index] < 0 || index > 0 && milestones[index] <= milestones[index - 1])
                 throw new InvalidException("Các mốc EXP tông môn phải tăng dần và không âm");
-            if (totalExp < milestones[index]) break;
-            level = index + 1;
         }
-        return level;
+
+        var level = Math.Clamp(currentLevel, 1, milestones.Length);
+        var exp = currentExp;
+        while (level < milestones.Length)
+        {
+            var required = milestones[level] - milestones[level - 1];
+            if (exp < required) break;
+
+            exp -= required;
+            level++;
+        }
+
+        return (level, exp);
+    }
+
+    private static int GetMaxMembersAfterLevelUp(int currentMaxMembers, int currentLevel, int newLevel)
+    {
+        var levelInterval = Math.Max(1, Config.MemberSlotLevelInterval);
+        var slotsPerInterval = Math.Max(0, Config.MemberSlotsPerInterval);
+        var oldMilestone = Math.Max(0, currentLevel - 1) / levelInterval;
+        var newMilestone = Math.Max(0, newLevel - 1) / levelInterval;
+        var milestonesPassed = Math.Max(0, newMilestone - oldMilestone);
+        try
+        {
+            return checked(currentMaxMembers + milestonesPassed * slotsPerInterval);
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidException("Số slot thành viên tông môn đã đạt giới hạn");
+        }
     }
 }

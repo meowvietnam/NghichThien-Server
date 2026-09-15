@@ -1,5 +1,6 @@
 using MTS.Data;
 using MTS.Exceptions;
+using MTS.Game;
 using MTS.Network.Models;
 
 namespace MTS.Models;
@@ -23,7 +24,12 @@ public class EventManager
     }
     public List<Event> GetActiveEvents()
     {
-        return Events.Where(x => x.IsInEvent()).ToList();
+        var query = Events.Where(x => x.IsInEvent());
+        if (!GameConfig.EnableWebPay)
+        {
+            query = query.Where(x => !(x.GameEvent is RechargeEvent1 || x.GameEvent is EventShop));
+        }
+        return query.ToList();
     }
 
     public Event GetEvent(ushort id)

@@ -44,6 +44,8 @@ public static class GameConfig
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
     public const int NewCharacterLinhThachBonus = 20_000;
+    public static bool EnableWebPay { get; set; } = true;
+    
     public static readonly string[] tamCanh = new[]
     {
         "Tâm phiền ý loạn",

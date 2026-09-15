@@ -47,15 +47,18 @@ public static partial class ClanManager
     {
         var member = reference.Clan.Members.FirstOrDefault(x => x.CharId == charId)
             ?? throw new InvalidException("Chưa gia nhập tông môn");
-        var maxShopSlots = GetMaxShopSlots(reference.Clan.Level);
+        var today = DateTime.UtcNow.Date;
+        var addedToday = member.LastShopItemAddedAt.Date == today
+            ? member.ShopItemsAddedToday
+            : 0;
         return new GetClanShopResult
         {
             Success = true,
             Items = reference.Clan.ShopItems.ToArray(),
             ContribPoints = member.ContribPoints,
             MaxQuantityPerRequest = Config.MaxShopQuantityPerRequest,
-            MaxItemsAddedPerDay = maxShopSlots,
-            ShopItemsAddedToday = reference.Clan.ShopItems.Count
+            MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
+            ShopItemsAddedToday = addedToday
         };
     }
 
@@ -87,12 +90,24 @@ public static partial class ClanManager
             var maxShopSlots = GetMaxShopSlots(clan.Level);
             if (maxShopSlots <= 0)
                 throw new InvalidException("Kho tông môn đang tạm khóa thêm vật phẩm");
+            if (Config.MaxShopItemsAddedPerDay <= 0)
+                throw new InvalidException("Hôm nay không thể thêm vật phẩm vào kho tông môn");
 
             var today = DateTime.UtcNow.Date;
             var addedToday = member.LastShopItemAddedAt.Date == today
                 ? member.ShopItemsAddedToday
                 : 0;
-            var newAddedToday = addedToday + 1;
+            int newAddedToday;
+            try
+            {
+                newAddedToday = checked(addedToday + deposit.Count);
+            }
+            catch (OverflowException)
+            {
+                throw new InvalidException("Số lượng vật phẩm thêm vào kho hôm nay vượt giới hạn");
+            }
+            if (newAddedToday > Config.MaxShopItemsAddedPerDay)
+                throw new InvalidException("Đã vượt giới hạn số lượng vật phẩm thêm vào kho hôm nay");
             if (clan.ShopItems.Count >= maxShopSlots)
                 throw new InvalidException("Kho tông môn đã hết slot treo vật phẩm");
 
@@ -175,8 +190,8 @@ public static partial class ClanManager
                 Success = true,
                 ShopItem = shopItem,
                 InventoryItem = inventoryItem,
-                MaxItemsAddedPerDay = maxShopSlots,
-                ShopItemsAddedToday = clan.ShopItems.Count
+                MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
+                ShopItemsAddedToday = newAddedToday
             };
         }
         finally

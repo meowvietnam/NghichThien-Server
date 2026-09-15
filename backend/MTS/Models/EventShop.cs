@@ -108,7 +108,7 @@ public partial class EventShop : IGameEvent
                     PurchaseTokenHash = Array.Empty<byte>()
                 };
                 await db.IapPurchases.AddAsync(purchase);
-                item.HasBuy = true;
+                item.HasBuy = false;
                 var mail = CreateMail(item, includeRechargeBonus: true);
                 var mailManager = new MailManager(charData, charData.Client);
                 await mailManager.SendMail(mail, db, true);
@@ -138,7 +138,7 @@ public partial class EventShop : IGameEvent
                 {
                     throw new InvalidException(Strings.NotEnoughMoneyVip);
                 }
-                item.HasBuy = true;
+                item.HasBuy = false;
                 var mail = CreateMail(item, includeRechargeBonus: false);
                 var mailManager = new MailManager(charData, charData.Client);
                 await mailManager.SendMail(mail, db, true);

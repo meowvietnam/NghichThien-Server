@@ -432,7 +432,8 @@ public class ClanHandler : IClientHandler, IClanObserverState
             {
                 Success = false,
                 Message = e.Message,
-                NewMoneyVip = charData.MoneyVip
+                NewMoneyVip = charData.MoneyVip,
+                ClanFunds = reference?.Clan.Funds ?? 0
             };
         }
     }
@@ -454,6 +455,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 ClanFunds = clan?.Funds ?? 0,
                 Exp = clan?.Exp ?? 0,
                 Level = clan?.Level ?? 0,
+                MaxMembers = clan?.MaxMembers ?? 0,
                 InheritanceSlotsPerColumn = clan == null ? 0 : ClanManager.GetInheritanceSlots(clan.Level),
                 Effects = clan?.InheritanceEffects.ToArray() ?? []
             };
