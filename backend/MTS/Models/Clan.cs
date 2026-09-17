@@ -23,9 +23,9 @@ public partial record Clan
     public int Level { get; set; }
     public long Exp { get; set; }
     public int LeaderCharId { get; set; }
-    // Mốc thời gian gần nhất có người được PHONG LÊN từng chức vụ độc quyền này (không tính
-    // giáng chức về Member); dùng để tính cooldown trước khi phong lại đúng chức vụ đó.
+    [MemoryPackIgnore]
     public DateTime LastViceLeaderAssignedAt { get; set; }
+    [MemoryPackIgnore]
     public DateTime LastElderAssignedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<ClanMember> Members { get; set; } = new();

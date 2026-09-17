@@ -29,25 +29,14 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await using var db = await Program.CreateDbAsync();
     }
 
-    private async Task UpdateEvent(AppDbContext db)
+    private async Task RemoveEvents(AppDbContext db)
     {
-        var events = await db.Events.ToListAsync();
-        foreach (var @event in events)
-        {
-            if (@event.GameEvent is EventShop s)
-            {
-                foreach (var i in s.Items)
-                {
-                    i.HasBuy = false;
-                }
-
-                db.Entry(@event).Property(x => x.GameEvent).IsModified = true;
-            }
-        }
+        await db.Events.ExecuteDeleteAsync();
         await db.SaveChangesAsync();
-        Log.Information("Oke");
+        Log.Information("oke");
     }
     
     
@@ -66,7 +55,6 @@ public class Startup : BackgroundService
                 await db.Events.AddAsync(@event);
             }
         }
-
         await db.SaveChangesAsync();
         Log.Information("Oke");
     }

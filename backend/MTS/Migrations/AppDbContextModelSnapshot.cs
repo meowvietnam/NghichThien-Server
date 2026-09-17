@@ -265,6 +265,12 @@ namespace MTS.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
 
+                    b.Property<DateTime>("LastElderAssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastViceLeaderAssignedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("LeaderCharId")
                         .HasColumnType("int");
 

@@ -297,7 +297,7 @@ public static class EventService
             Title = "Công Pháp Đặc biệt nên mua khi đánh pvp thời gian thực, gia tộc chiến...",
             Items = new List<ItemEventShop>()
             {
-                new ()
+                new()
                 {
                     Id = 1,
                     Amount = 100_000,
@@ -313,7 +313,7 @@ public static class EventService
                         }
                     }
                 },
-                new ()
+                new()
                 {
                     Id = 2,
                     Amount = 500_000,
@@ -329,7 +329,7 @@ public static class EventService
                         }
                     }
                 },
-                new ()
+                new()
                 {
                     Id = 3,
                     Amount = 1_000_000,
@@ -345,7 +345,7 @@ public static class EventService
                         }
                     }
                 },
-                new ()
+                new()
                 {
                     Id = 4,
                     Amount = 100_000,
@@ -361,7 +361,7 @@ public static class EventService
                         }
                     }
                 },
-                new ()
+                new()
                 {
                     Id = 5,
                     Amount = 500_000,
@@ -377,7 +377,7 @@ public static class EventService
                         }
                     }
                 },
-                new ()
+                new()
                 {
                     Id = 6,
                     Amount = 1_000_000,
@@ -388,6 +388,102 @@ public static class EventService
                         Item = new ItemRef()
                         {
                             Id = 736,
+                            Type = ItemType.CongPhap,
+                            Count = 15
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 7,
+                    Amount = 100_000,
+                    MoneyVip = 22_000,
+                    BonusMoneyVip = (int)(6_900 * 1.3f),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 558,
+                            Type = ItemType.CongPhap,
+                            Count = 1
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 8,
+                    Amount = 500_000,
+                    MoneyVip = 120_000,
+                    BonusMoneyVip = (int)(39_300 * 1.3f),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 558,
+                            Type = ItemType.CongPhap,
+                            Count = 6
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 9,
+                    Amount = 1_000_000,
+                    MoneyVip = 300_000,
+                    BonusMoneyVip = (int)(81_300 * 1.3f),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 558,
+                            Type = ItemType.CongPhap,
+                            Count = 15
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 10,
+                    Amount = 100_000 / 2,
+                    MoneyVip = 22_000 / 2,
+                    BonusMoneyVip = (int)(6_900 * 1.3f / 2),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
+                            Type = ItemType.CongPhap,
+                            Count = 1
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 11,
+                    Amount = 500_000 / 2,
+                    MoneyVip = 120_000 / 2,
+                    BonusMoneyVip = (int)(39_300 * 1.3f / 2),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
+                            Type = ItemType.CongPhap,
+                            Count = 6
+                        }
+                    }
+                },
+                new()
+                {
+                    Id = 12,
+                    Amount = 1_000_000 / 2,
+                    MoneyVip = 300_000 / 2,
+                    BonusMoneyVip = (int)(81_300 * 1.3f / 2),
+                    Reward = new SkillEventReward()
+                    {
+                        Item = new ItemRef()
+                        {
+                            Id = 105,
                             Type = ItemType.CongPhap,
                             Count = 15
                         }

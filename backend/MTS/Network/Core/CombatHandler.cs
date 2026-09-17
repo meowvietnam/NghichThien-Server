@@ -66,8 +66,11 @@ namespace MTS.Network.Core
                     lock (client.CharacterLock)
                     {
                         var charData = client.CharacterData;
-                        result = charData.ResultCombat(request);
-                        EndCombat(result.Reward);
+                        if (charData != null)
+                        {
+                            result = charData.ResultCombat(request);
+                            EndCombat(result.Reward);
+                        }
                     }
                 }
                 catch (InvalidException e)

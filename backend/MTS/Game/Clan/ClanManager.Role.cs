@@ -38,6 +38,26 @@ public static partial class ClanManager
             if (target.Role == role)
                 throw new InvalidException("Thành viên đã có chức vụ này");
             ValidateUniqueRole(clan, role, targetCharId);
+            var now = DateTime.UtcNow;
+            DateTime? lastRoleAssignedAt = role switch
+            {
+                Models.ClanRole.ViceLeader => clan.LastViceLeaderAssignedAt,
+                Models.ClanRole.Elder => clan.LastElderAssignedAt,
+                _ => null
+            };
+            if (lastRoleAssignedAt != null)
+            {
+                if (Config.RoleAssignCooldownHours < 0)
+                    throw new InvalidException("Cấu hình cooldown phong chức không hợp lệ");
+
+                var readyAt = lastRoleAssignedAt.Value.AddHours(Config.RoleAssignCooldownHours);
+                if (now < readyAt)
+                {
+                    var remainingHours = Math.Ceiling((readyAt - now).TotalHours);
+                    throw new InvalidException(
+                        $"Chức vụ {GetRoleName(role)} vừa được phong gần đây, cần chờ thêm {remainingHours} giờ nữa mới được phong lại");
+                }
+            }
 
             var oldRole = target.Role;
             await using var db = await Program.CreateDbAsync();
@@ -51,6 +71,19 @@ public static partial class ClanManager
             if (affected != 1 && !await db.ClanMembers.AsNoTracking().AnyAsync(member =>
                     member.ClanId == clanId && member.CharId == targetCharId && member.Role == role))
                 throw new InvalidException("Dữ liệu thành viên đã thay đổi, vui lòng thử lại");
+
+            if (role == Models.ClanRole.ViceLeader)
+            {
+                await db.Clans.Where(x => x.Id == clanId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(c => c.LastViceLeaderAssignedAt, now));
+                clan.LastViceLeaderAssignedAt = now;
+            }
+            else if (role == Models.ClanRole.Elder)
+            {
+                await db.Clans.Where(x => x.Id == clanId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(c => c.LastElderAssignedAt, now));
+                clan.LastElderAssignedAt = now;
+            }
 
             target.Role = role;
             var change = new ClanMemberRoleChanged

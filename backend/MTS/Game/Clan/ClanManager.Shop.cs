@@ -40,7 +40,7 @@ public static partial class ClanManager
 
     public static int GetMaxShopSlots(int clanLevel)
     {
-        return Math.Max(1, clanLevel) * 3;
+        return Math.Max(1, clanLevel) * 1;
     }
 
     public static GetClanShopResult GetShop(ClanReference reference, int charId)

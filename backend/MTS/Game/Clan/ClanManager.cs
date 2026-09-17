@@ -59,7 +59,8 @@ public static partial class ClanManager
         InheritanceValuePerClanLevel = 1,
         InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
         ClanLevelRequiredTotalExp = [0, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000, 2_560_000],
-        LeaveClanCooldownHours = 24
+        LeaveClanCooldownHours = 24,
+        RoleAssignCooldownHours = 24
     };
 
     static ClanManager()
