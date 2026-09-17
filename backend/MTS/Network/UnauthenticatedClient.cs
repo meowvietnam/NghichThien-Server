@@ -2,10 +2,7 @@ using MTS.Exceptions;
 using MTS.Localization;
 using MTS.Models;
 using MTS.Network.Models;
-using Network;
 using NativeTcp = System.Net.Sockets.TcpClient;
-using Network.Extensions;
-using Network.Extensions.MemoryPack;
 
 namespace MTS.Network;
 
@@ -21,7 +18,7 @@ public class UnauthenticatedClient : ClientConnection
     {
         private static readonly string[] acceptVersions =
         [
-            "apk_v1.6.2", "ios_v1.6.0", "ios_v1.6.1", "ios_v1.6.2"
+            "apk_v1.6.5", "ios_v1.6.5", "apk_v1.6.6", "ios_v1.6.6"
         ];
 
         public void OnEnter()

@@ -37,6 +37,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public int BonusPoint { get; private set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastFreeClanContributionAt { get; private set; }
+    // Mốc thời gian tự rời tông môn gần nhất, dùng để tính cooldown trước khi được xin gia nhập tông môn khác.
+    public DateTime LastLeaveClanAt { get; private set; }
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
     public Appearance Appearance { get; set; } = new();
@@ -105,6 +107,15 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
         if (LastFreeClanContributionAt != value)
         {
             LastFreeClanContributionAt = value;
+            dirty = true;
+        }
+    }
+
+    public void SetLastLeaveClanAt(DateTime value)
+    {
+        if (LastLeaveClanAt != value)
+        {
+            LastLeaveClanAt = value;
             dirty = true;
         }
     }
@@ -345,7 +356,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.CurrentFreeAdsMoneyVipCount, CurrentFreeAdsMoneyVipCount)
                         .SetProperty(x => x.TrungSinhCount, TrungSinhCount)
                         .SetProperty(x => x.BonusPoint, BonusPoint)
-                        .SetProperty(x => x.LastFreeClanContributionAt, LastFreeClanContributionAt));
+                        .SetProperty(x => x.LastFreeClanContributionAt, LastFreeClanContributionAt)
+                        .SetProperty(x => x.LastLeaveClanAt, LastLeaveClanAt));
             dirty = false;
         }
 

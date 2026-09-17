@@ -1,6 +1,7 @@
 using MTS.Exceptions;
 using MTS.Game;
 using MTS.Game.BaseSkill;
+using MTS.Game.Clan;
 using MTS.Game.LuyenDan;
 using MTS.Localization;
 using MTS.Network.Models;
@@ -270,6 +271,9 @@ public partial class CharacterData
             };
             var newPoints = MonsterKill.Points + addPoints;
             MonsterKill.SetPoints(newPoints);
+            // Fire-and-forget: không chặn luồng xử lý kết quả combat chờ DB;
+            // TryAddSoulEssenceFromMonsterKill tự bắt và log lỗi bên trong.
+            _ = ClanManager.TryAddSoulEssenceFromMonsterKill(Id);
         }
 
         Stats.SetTamCanh(newTamCanh);

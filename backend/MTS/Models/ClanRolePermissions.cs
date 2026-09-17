@@ -13,10 +13,14 @@ public static class ClanRolePermissions
                             | ClanPermission.ManageHon,
         [ClanRole.ViceLeader] = ClanPermission.AddMember
                                 | ClanPermission.KickMember
-                                | ClanPermission.AssignRole,
+                                | ClanPermission.AssignRole
+                                | ClanPermission.AddShopItem
+                                | ClanPermission.RemoveShopItem,
         [ClanRole.Elder] = ClanPermission.AddMember
                            | ClanPermission.KickMember
-                           | ClanPermission.AssignRole,
+                           | ClanPermission.AssignRole
+                           | ClanPermission.AddShopItem
+                           | ClanPermission.RemoveShopItem,
         [ClanRole.Member] = ClanPermission.None
     };
 

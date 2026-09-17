@@ -495,7 +495,10 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 Success = false,
                 Message = e.Message,
                 Hon = clan?.Hon ?? 0,
-                MaxHon = clan?.MaxHon ?? 0
+                MaxHon = clan?.MaxHon ?? 0,
+                HonLimitLevel = clan?.HonLimitLevel ?? 0,
+                SoulEssence = clan?.SoulEssence ?? 0,
+                MaxSoulEssence = clan == null ? 0 : ClanManager.GetMaxSoulEssence(clan.HonLimitLevel)
             };
         }
     }
@@ -505,7 +508,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
         try
         {
             var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
-            return await ClanManager.UpgradeMaxHon(clanReference, charData, request.Funds);
+            return await ClanManager.UpgradeMaxHon(clanReference, charData, request.LimitLevel);
         }
         catch (InvalidException e)
         {
@@ -516,7 +519,10 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 Message = e.Message,
                 ClanFunds = clan?.Funds ?? 0,
                 Hon = clan?.Hon ?? 0,
-                MaxHon = clan?.MaxHon ?? 0
+                MaxHon = clan?.MaxHon ?? 0,
+                HonLimitLevel = clan?.HonLimitLevel ?? 0,
+                SoulEssence = clan?.SoulEssence ?? 0,
+                MaxSoulEssence = clan == null ? 0 : ClanManager.GetMaxSoulEssence(clan.HonLimitLevel)
             };
         }
     }
@@ -831,7 +837,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
                 throw new InvalidException("Chưa gia nhập tông môn");
             }
 
-            var member = await ClanManager.LeaveClan(reference, CharId);
+            var member = await ClanManager.LeaveClan(reference, charData);
             result = new LeaveClanResult
             {
                 Success = true,

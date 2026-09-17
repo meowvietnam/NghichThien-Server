@@ -127,6 +127,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("LastFreeClanContributionAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("LastLeaveClanAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("LastLogin")
                         .HasColumnType("datetime(6)");
 
@@ -255,6 +258,9 @@ namespace MTS.Migrations
                     b.Property<long>("Hon")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("HonLimitLevel")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
@@ -286,6 +292,9 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("varchar(15)");
+
+                    b.Property<long>("SoulEssence")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 

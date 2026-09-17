@@ -139,6 +139,7 @@ public static class Program
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();
             builder.Services.AddHostedService<PaymentService>();
+            builder.Services.AddHostedService<ClanSoulEssenceFlushService>();
             builder.Services.AddHostedService<Startup>();
             var configuration = builder.Configuration;
             payOSClient = new PayOSClient(

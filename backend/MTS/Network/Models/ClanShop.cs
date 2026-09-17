@@ -10,7 +10,6 @@ public partial class GetClanShopResult : Result
     public MTS.Models.ClanShopItem[] Items { get; set; } = [];
     public long ContribPoints { get; set; }
     public int MaxQuantityPerRequest { get; set; }
-    public int MaxItemsAddedPerDay { get; set; }
     public int ShopItemsAddedToday { get; set; }
 }
 
@@ -46,7 +45,6 @@ public partial class AddClanShopItemResult : Result
     public MTS.Models.ClanShopItem? ShopItem { get; set; }
     public MTS.Models.ItemRef? InventoryItem { get; set; }
     public MTS.Models.FurnaceData? InventoryFurnace { get; set; }
-    public int MaxItemsAddedPerDay { get; set; }
     public int ShopItemsAddedToday { get; set; }
 }
 

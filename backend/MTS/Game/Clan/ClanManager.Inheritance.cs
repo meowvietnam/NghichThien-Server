@@ -5,6 +5,7 @@ using MTS.Game.LuyenKhi;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
+using Serilog;
 
 namespace MTS.Game.Clan;
 
@@ -26,15 +27,85 @@ public static partial class ClanManager
 
     private sealed record LuyenHonTransactionResult(
         long AddedHon,
+        long SoulEssenceSpent,
         long Hon,
-        long MaxHon);
+        long MaxHon,
+        int HonLimitLevel,
+        long SoulEssence,
+        long MaxSoulEssence);
 
     private sealed record UpgradeMaxHonTransactionResult(
         long FundsSpent,
         long AddedMaxHon,
         long ClanFunds,
         long Hon,
-        long MaxHon);
+        long MaxHon,
+        int HonLimitLevel,
+        long SoulEssence,
+        long MaxSoulEssence);
+
+    public static long GetMaxHon(int honLimitLevel)
+    {
+        var index = checked(honLimitLevel - 1);
+        if (index < 0 || index >= Config.MaxHonByLimitLevel.Length)
+            throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
+
+        var maxHon = Config.MaxHonByLimitLevel[index];
+        if (maxHon <= 0)
+            throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
+
+        return maxHon;
+    }
+
+    public static long GetMaxSoulEssence(int honLimitLevel)
+    {
+        var index = checked(honLimitLevel - 1);
+        if (index < 0 || index >= Config.MaxSoulEssenceByLimitLevel.Length)
+            throw new InvalidException("Cấu hình giới hạn Hồn Tinh không hợp lệ");
+
+        var maxSoulEssence = Config.MaxSoulEssenceByLimitLevel[index];
+        if (maxSoulEssence < 0)
+            throw new InvalidException("Cấu hình giới hạn Hồn Tinh không hợp lệ");
+
+        return maxSoulEssence;
+    }
+
+    // Chi phí Hồn Tinh để luyện điểm Hồn thứ honPoint (đếm từ 1, honPoint = Hồn hiện tại + 1).
+    // Chi phí không cố định: cứ mỗi SoulEssenceHonCostTierSize điểm Hồn thì tăng thêm 1 bậc,
+    // mỗi bậc cộng thêm SoulEssenceHonCostGrowthPerTier so với bậc trước.
+    // Ví dụ Base=1000, TierSize=50, GrowthPerTier=1000: điểm Hồn 1-50 tốn 1000, 51-100 tốn 2000,
+    // 101-150 tốn 3000...
+    public static long GetSoulEssenceCostForHonPoint(long honPoint)
+    {
+        if (honPoint <= 0)
+            throw new InvalidException("Điểm Hồn không hợp lệ");
+        if (Config.SoulEssenceHonCostTierSize <= 0 || Config.SoulEssenceHonCostBase < 0 ||
+            Config.SoulEssenceHonCostGrowthPerTier < 0)
+            throw new InvalidException("Cấu hình chi phí luyện hồn không hợp lệ");
+
+        var tier = (honPoint - 1) / Config.SoulEssenceHonCostTierSize;
+        try
+        {
+            return checked(Config.SoulEssenceHonCostBase + tier * Config.SoulEssenceHonCostGrowthPerTier);
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidException("Chi phí luyện hồn vượt giới hạn");
+        }
+    }
+
+    public static long GetHonLimitUpgradeCost(int honLimitLevel)
+    {
+        var index = checked(honLimitLevel - 1);
+        if (index <= 0 || index >= Config.UpgradeHonLimitFundCostByLevel.Length)
+            throw new InvalidException("Cấu hình giá mở giới hạn hồn không hợp lệ");
+
+        var cost = Config.UpgradeHonLimitFundCostByLevel[index];
+        if (cost < 0)
+            throw new InvalidException("Cấu hình giá mở giới hạn hồn không hợp lệ");
+
+        return cost;
+    }
 
     public static int GetInheritanceSlots(int clanLevel)
     {
@@ -398,41 +469,81 @@ public static partial class ClanManager
             {
                 var persisted = await db.Clans
                     .Where(x => x.Id == clanId)
-                    .Select(x => new { x.Hon, x.MaxHon })
+                    .Select(x => new { x.Hon, x.MaxHon, x.HonLimitLevel, x.SoulEssence })
                     .SingleAsync();
                 if (persisted.Hon >= persisted.MaxHon)
                     throw new InvalidException("Hồn tông môn đã đạt giới hạn");
 
+                // Chi phí mỗi điểm Hồn tăng dần theo bậc (GetSoulEssenceCostForHonPoint) nên không
+                // thể chia đều số Hồn Tinh hiện có cho một đơn giá cố định; mua từng điểm Hồn một
+                // cho tới khi hết Hồn Tinh, hết chỗ trống (MaxHon) hoặc đủ số lượng yêu cầu.
                 long newHon;
+                long addedHon = 0;
+                long soulEssenceSpent = 0;
                 try
                 {
                     var space = checked(persisted.MaxHon - persisted.Hon);
-                    newHon = checked(persisted.Hon + Math.Min(amount, space));
+                    var maxAddable = Math.Min(amount, space);
+                    var remainingSoulEssence = persisted.SoulEssence;
+                    while (addedHon < maxAddable)
+                    {
+                        var nextHonPoint = checked(persisted.Hon + addedHon + 1);
+                        var cost = GetSoulEssenceCostForHonPoint(nextHonPoint);
+                        if (remainingSoulEssence < cost) break;
+
+                        remainingSoulEssence -= cost;
+                        soulEssenceSpent = checked(soulEssenceSpent + cost);
+                        addedHon++;
+                    }
+                    newHon = checked(persisted.Hon + addedHon);
                 }
                 catch (OverflowException)
                 {
                     throw new InvalidException("Hồn tông môn đã đạt giới hạn");
                 }
+                if (addedHon <= 0)
+                    throw new InvalidException("Hồn Tinh tông môn không đủ");
+
+                var newSoulEssence = persisted.SoulEssence - soulEssenceSpent;
+                var maxSoulEssence = GetMaxSoulEssence(persisted.HonLimitLevel);
 
                 var updated = await db.Clans
-                    .Where(x => x.Id == clanId && x.Hon == persisted.Hon && x.MaxHon == persisted.MaxHon)
-                    .ExecuteUpdateAsync(x => x.SetProperty(c => c.Hon, newHon));
+                    .Where(x => x.Id == clanId &&
+                                x.Hon == persisted.Hon &&
+                                x.MaxHon == persisted.MaxHon &&
+                                x.SoulEssence == persisted.SoulEssence)
+                    .ExecuteUpdateAsync(x => x
+                        .SetProperty(c => c.Hon, newHon)
+                        .SetProperty(c => c.SoulEssence, newSoulEssence));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu hồn tông môn đã thay đổi, vui lòng thử lại");
 
-                return new LuyenHonTransactionResult(newHon - persisted.Hon, newHon, persisted.MaxHon);
+                return new LuyenHonTransactionResult(
+                    addedHon,
+                    soulEssenceSpent,
+                    newHon,
+                    persisted.MaxHon,
+                    persisted.HonLimitLevel,
+                    newSoulEssence,
+                    maxSoulEssence);
             });
 
             clan.Hon = transactionResult.Hon;
             clan.MaxHon = transactionResult.MaxHon;
-            NotifyClanHonChanged(clanId, clan.Hon, clan.MaxHon);
+            clan.HonLimitLevel = transactionResult.HonLimitLevel;
+            clan.SoulEssence = transactionResult.SoulEssence;
+            NotifyClanHonChanged(clan);
 
             return new LuyenHonResult
             {
                 Success = true,
                 AddedHon = transactionResult.AddedHon,
+                SoulEssenceSpent = transactionResult.SoulEssenceSpent,
                 Hon = transactionResult.Hon,
-                MaxHon = transactionResult.MaxHon
+                MaxHon = transactionResult.MaxHon,
+                HonLimitLevel = transactionResult.HonLimitLevel,
+                SoulEssence = transactionResult.SoulEssence,
+                MaxSoulEssence = transactionResult.MaxSoulEssence
             };
         }
         finally
@@ -444,30 +555,26 @@ public static partial class ClanManager
     public static async Task<UpgradeClanMaxHonResult> UpgradeMaxHon(
         ClanReference reference,
         CharacterData actor,
-        long funds)
+        int requestedLimitLevel)
     {
-        if (funds <= 0)
-            throw new InvalidException("Số quỹ nâng giới hạn hồn phải lớn hơn 0");
-        if (Config.MaxHonPerFund <= 0)
-            throw new InvalidException("Cấu hình nâng giới hạn hồn không hợp lệ");
-
         var clan = reference.Clan;
         var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
                           ?? throw new InvalidException("Chưa gia nhập tông môn");
         if (!actorMember.HasPermission(ClanPermission.ManageHon))
             throw new InvalidException("Không có quyền nâng giới hạn hồn tông môn");
+
+        var nextLimitLevel = clan.HonLimitLevel + 1;
+        var limitLevel = requestedLimitLevel <= 0 ? nextLimitLevel : requestedLimitLevel;
+        if (limitLevel != nextLimitLevel)
+            throw new InvalidException("Chỉ có thể mở giới hạn hồn từng cấp");
+
+        var newMaxHon = GetMaxHon(limitLevel);
+        var newMaxSoulEssence = GetMaxSoulEssence(limitLevel);
+        var funds = GetHonLimitUpgradeCost(limitLevel);
+        if (newMaxHon <= clan.MaxHon)
+            throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
         if (clan.Funds < funds)
             throw new InvalidException("Quỹ tông môn không đủ");
-
-        long addedMaxHon;
-        try
-        {
-            addedMaxHon = checked(funds * Config.MaxHonPerFund);
-        }
-        catch (OverflowException)
-        {
-            throw new InvalidException("Giới hạn hồn tông môn đã đạt giới hạn");
-        }
 
         var clanId = clan.Id;
         var gate = AcquireGate(clanId);
@@ -478,31 +585,38 @@ public static partial class ClanManager
             {
                 var persisted = await db.Clans
                     .Where(x => x.Id == clanId)
-                    .Select(x => new { x.Funds, x.Hon, x.MaxHon })
+                    .Select(x => new { x.Funds, x.Hon, x.MaxHon, x.HonLimitLevel, x.SoulEssence })
                     .SingleAsync();
+                var persistedNextLimitLevel = persisted.HonLimitLevel + 1;
+                if (limitLevel != persistedNextLimitLevel)
+                    throw new InvalidException("Chỉ có thể mở giới hạn hồn từng cấp");
                 if (persisted.Funds < funds)
                     throw new InvalidException("Quỹ tông môn không đủ");
 
                 long newFunds;
-                long newMaxHon;
+                long addedMaxHon;
                 try
                 {
                     newFunds = checked(persisted.Funds - funds);
-                    newMaxHon = checked(persisted.MaxHon + addedMaxHon);
+                    addedMaxHon = checked(newMaxHon - persisted.MaxHon);
                 }
                 catch (OverflowException)
                 {
                     throw new InvalidException("Tài nguyên hồn tông môn đã đạt giới hạn");
                 }
+                if (addedMaxHon <= 0)
+                    throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
 
                 var updated = await db.Clans
                     .Where(x => x.Id == clanId &&
                                 x.Funds == persisted.Funds &&
                                 x.Hon == persisted.Hon &&
-                                x.MaxHon == persisted.MaxHon)
+                                x.MaxHon == persisted.MaxHon &&
+                                x.HonLimitLevel == persisted.HonLimitLevel)
                     .ExecuteUpdateAsync(x => x
                         .SetProperty(c => c.Funds, newFunds)
-                        .SetProperty(c => c.MaxHon, newMaxHon));
+                        .SetProperty(c => c.MaxHon, newMaxHon)
+                        .SetProperty(c => c.HonLimitLevel, limitLevel));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
@@ -511,18 +625,22 @@ public static partial class ClanManager
                     addedMaxHon,
                     newFunds,
                     persisted.Hon,
-                    newMaxHon);
+                    newMaxHon,
+                    limitLevel,
+                    persisted.SoulEssence,
+                    newMaxSoulEssence);
             });
 
             clan.Funds = transactionResult.ClanFunds;
             clan.Hon = transactionResult.Hon;
             clan.MaxHon = transactionResult.MaxHon;
+            clan.HonLimitLevel = transactionResult.HonLimitLevel;
+            clan.SoulEssence = transactionResult.SoulEssence;
             if (Observers.TryGetValue(clanId, out var observer))
             {
                 observer.SendAll(MessageTag.ClanFundsChanged,
                     new ClanFundsChanged { ClanId = clanId, Funds = clan.Funds });
-                observer.SendAll(MessageTag.ClanHonChanged,
-                    new ClanHonChanged { ClanId = clanId, Hon = clan.Hon, MaxHon = clan.MaxHon });
+                observer.SendAll(MessageTag.ClanHonChanged, CreateClanHonChanged(clan));
             }
 
             return new UpgradeClanMaxHonResult
@@ -532,7 +650,10 @@ public static partial class ClanManager
                 AddedMaxHon = transactionResult.AddedMaxHon,
                 ClanFunds = transactionResult.ClanFunds,
                 Hon = transactionResult.Hon,
-                MaxHon = transactionResult.MaxHon
+                MaxHon = transactionResult.MaxHon,
+                HonLimitLevel = transactionResult.HonLimitLevel,
+                SoulEssence = transactionResult.SoulEssence,
+                MaxSoulEssence = transactionResult.MaxSoulEssence
             };
         }
         finally
@@ -541,15 +662,126 @@ public static partial class ClanManager
         }
     }
 
-    private static void NotifyClanHonChanged(int clanId, long hon, long maxHon)
+    private static void NotifyClanHonChanged(Models.Clan clan)
     {
+        var clanId = clan.Id;
         if (!Observers.TryGetValue(clanId, out var observer)) return;
-        observer.SendAll(MessageTag.ClanHonChanged, new ClanHonChanged
+        observer.SendAll(MessageTag.ClanHonChanged, CreateClanHonChanged(clan));
+    }
+
+    private static ClanHonChanged CreateClanHonChanged(Models.Clan clan)
+    {
+        return new ClanHonChanged
         {
-            ClanId = clanId,
-            Hon = hon,
-            MaxHon = maxHon
-        });
+            ClanId = clan.Id,
+            Hon = clan.Hon,
+            MaxHon = clan.MaxHon,
+            HonLimitLevel = clan.HonLimitLevel,
+            SoulEssence = clan.SoulEssence,
+            MaxSoulEssence = GetMaxSoulEssence(clan.HonLimitLevel)
+        };
+    }
+
+    // Chỉ dồn Hồn Tinh vào bộ đếm tạm trong RAM (không đụng DB/gate), để hàm này gọi được
+    // trực tiếp trên luồng xử lý kết quả combat mỗi lần giết quái mà không gây độ trễ hay
+    // tranh chấp gate với các mutation khác của tông môn (Funds, Shop, Inheritance...).
+    // ClanSoulEssenceFlushService sẽ định kỳ gom và ghi xuống DB qua FlushPendingSoulEssence.
+    public static void AddSoulEssenceFromMonsterKill(ClanReference reference)
+    {
+        QueuePendingSoulEssence(reference.Clan.Id, Config.MonsterKillSoulEssenceReward);
+    }
+
+    public static async Task TryAddSoulEssenceFromMonsterKill(int charId)
+    {
+        try
+        {
+            var reference = await FindReferenceByMember(charId);
+            AddSoulEssenceFromMonsterKill(reference);
+        }
+        catch (InvalidException)
+        {
+        }
+        catch (Exception ex)
+        {
+            // Gọi fire-and-forget từ luồng combat nên phải tự bắt hết lỗi ở đây,
+            // tránh exception "mồ côi" không ai quan sát.
+            Log.Error(ex, "Không thể cộng Hồn Tinh từ giết quái cho nhân vật {CharId}", charId);
+        }
+    }
+
+    private static void QueuePendingSoulEssence(int clanId, long amount)
+    {
+        if (amount <= 0) return;
+        PendingSoulEssence.AddOrUpdate(clanId, amount, (_, existing) => existing + amount);
+    }
+
+    // Được ClanSoulEssenceFlushService gọi định kỳ: lấy hết Hồn Tinh đang chờ của từng
+    // tông môn đang có farm và ghi xuống DB thành một lần cộng duy nhất mỗi tông môn mỗi
+    // chu kỳ, thay vì một lần ghi DB cho mỗi lượt giết quái.
+    public static async Task FlushPendingSoulEssence()
+    {
+        if (PendingSoulEssence.IsEmpty) return;
+
+        foreach (var clanId in PendingSoulEssence.Keys.ToArray())
+        {
+            if (!PendingSoulEssence.TryRemove(clanId, out var amount) || amount <= 0) continue;
+
+            try
+            {
+                var reference = await FindReference(clanId);
+                await AddSoulEssence(reference, amount);
+            }
+            catch (InvalidException ex)
+            {
+                // Tông môn không còn tồn tại hoặc dữ liệu đã đổi giữa chừng; bỏ qua phần
+                // Hồn Tinh đang chờ của tông môn này thay vì làm hỏng cả lượt flush.
+                Log.Warning(ex, "Không thể flush Hồn Tinh cho tông môn {ClanId}", clanId);
+            }
+        }
+    }
+
+    public static async Task AddSoulEssence(ClanReference reference, long amount)
+    {
+        if (amount <= 0) throw new InvalidException("Số Hồn Tinh cộng thêm phải lớn hơn 0");
+        var clan = reference.Clan;
+        var clanId = clan.Id;
+        var gate = AcquireGate(clanId);
+        await gate.Semaphore.WaitAsync();
+        try
+        {
+            var transactionResult = await ExecuteClanTransactionAsync(async db =>
+            {
+                var persisted = await db.Clans
+                    .Where(x => x.Id == clanId)
+                    .Select(x => new { x.HonLimitLevel, x.SoulEssence })
+                    .SingleAsync();
+                var maxSoulEssence = GetMaxSoulEssence(persisted.HonLimitLevel);
+                long newSoulEssence;
+                try
+                {
+                    newSoulEssence = Math.Min(maxSoulEssence, checked(persisted.SoulEssence + amount));
+                }
+                catch (OverflowException)
+                {
+                    newSoulEssence = maxSoulEssence;
+                }
+                var updated = await db.Clans
+                    .Where(x => x.Id == clanId && x.SoulEssence == persisted.SoulEssence)
+                    .ExecuteUpdateAsync(x => x.SetProperty(c => c.SoulEssence, newSoulEssence));
+                if (updated != 1)
+                    throw new InvalidException("Dữ liệu Hồn Tinh tông môn đã thay đổi, vui lòng thử lại");
+
+                return (persisted.HonLimitLevel, SoulEssence: newSoulEssence);
+            });
+
+            clan.HonLimitLevel = transactionResult.HonLimitLevel;
+            clan.SoulEssence = transactionResult.SoulEssence;
+            NotifyClanHonChanged(clan);
+        }
+        finally
+        {
+            ReleaseGate(clanId, gate);
+        }
     }
 
     // Nguồn EXP sẽ gọi hàm này sau. Hiện chưa nối vào cống hiến hay gameplay nào.

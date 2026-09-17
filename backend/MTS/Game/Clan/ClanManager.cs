@@ -25,18 +25,29 @@ public static partial class ClanManager
     private static readonly ConcurrentDictionary<int, ClanObserver> Observers = new();
     private static readonly ConcurrentDictionary<int, ClanReference> References = new();
     private static readonly ConcurrentDictionary<int, ClanCreationGate> CreationLocks = new();
+
     private static readonly ConcurrentDictionary<int, int> MemberClanIds = new();
+
+    // Hồn Tinh cộng dồn từ farm quái, chờ ClanSoulEssenceFlushService ghi xuống DB theo chu kỳ
+    // thay vì ghi mỗi lần giết quái (xem QueuePendingSoulEssence/FlushPendingSoulEssence).
+    private static readonly ConcurrentDictionary<int, long> PendingSoulEssence = new();
 
     public static readonly ClanConfig Config = new()
     {
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
         CreateClanVndBonusMoneyVip = 100_000,
-        CreateMaxMember = 10,
+        CreateMaxMember = 15,
         MemberSlotLevelInterval = 3,
         MemberSlotsPerInterval = 1,
-        CreateClanMaxHon = 100,
-        MaxHonPerFund = 1,
+        CreateClanHonLimitLevel = 1,
+        SoulEssenceHonCostBase = 1_000,
+        SoulEssenceHonCostTierSize = 50,
+        SoulEssenceHonCostGrowthPerTier = 1_000,
+        MonsterKillSoulEssenceReward = 1,
+        MaxHonByLimitLevel = [],
+        MaxSoulEssenceByLimitLevel = [],
+        UpgradeHonLimitFundCostByLevel = [],
         ContributionMoneyVipPerTime = 100,
         MaxContributionTimesPerRequest = 10,
         RolePermissions = ClanRolePermissions.Permissions,
@@ -46,10 +57,22 @@ public static partial class ClanManager
         ChangeInheritanceMoneyVipCost = 2_000,
         InheritanceBaseValue = 1,
         InheritanceValuePerClanLevel = 1,
-        MaxShopItemsAddedPerDay = 3,
         InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
-        ClanLevelRequiredTotalExp = [0, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000, 2_560_000]
+        ClanLevelRequiredTotalExp = [0, 10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000, 2_560_000],
+        LeaveClanCooldownHours = 24
     };
+
+    static ClanManager()
+    {
+        var limitHonLevel = 100;
+        var maxHonByLimitLevel = Enumerable.Range(0, limitHonLevel).Select(x => (x + 1) * 10L).ToArray();
+        var maxSoulEssenceByLimitLevel = Enumerable.Range(0, limitHonLevel).Select(x => (x + 1) * 1000L).ToArray();
+        var upgradeHonLimitFundCostByLevel =
+            Enumerable.Range(0, limitHonLevel).Select(x => 1000L * ((x + 10) / 10)).ToArray();
+        Config.MaxHonByLimitLevel = maxHonByLimitLevel;
+        Config.MaxSoulEssenceByLimitLevel = maxSoulEssenceByLimitLevel;
+        Config.UpgradeHonLimitFundCostByLevel = upgradeHonLimitFundCostByLevel;
+    }
 
     private static async Task<T> ExecuteClanTransactionAsync<T>(Func<AppDbContext, Task<T>> operation)
     {
@@ -109,7 +132,7 @@ public static partial class ClanManager
             .Select(x => x.CloneAsView())
             .ToArray();
     }
-    
+
     public static async Task<Models.Clan?> ViewClan(int id)
     {
         Models.Clan? clan;
@@ -122,6 +145,7 @@ public static partial class ClanManager
             await using var db = await Program.CreateDbAsync();
             clan = await LoadClan(db, id, includeJoinRequests: false, includeShopItems: false);
         }
+
         return clan;
     }
 
@@ -250,7 +274,8 @@ public static partial class ClanManager
             throw new InvalidException("Không thể chọn cứ điểm chiến đấu làm vị trí tông môn");
         }
 
-        if (request.CreateBy == CreateClanBy.MoneyVip && leader != null && leader.MoneyVip < Config.CreateClanMoneyVipPrice)
+        if (request.CreateBy == CreateClanBy.MoneyVip && leader != null &&
+            leader.MoneyVip < Config.CreateClanMoneyVipPrice)
         {
             throw new InvalidException("Không đủ tiên ngọc");
         }
@@ -327,14 +352,14 @@ public static partial class ClanManager
             var persisted = await ExecuteClanTransactionAsync(async db =>
             {
                 var persistedLeader = await LoadCharForClan(db, leaderCharId)
-                    ?? throw new InvalidException("Nhân vật không tồn tại");
+                                      ?? throw new InvalidException("Nhân vật không tồn tại");
 
                 // A retry after an uncertain commit must observe the clan created by the
                 // previous attempt and must not charge the leader a second time.
                 var existingClan = await db.Clans
                     .Include(x => x.Members)
                     .FirstOrDefaultAsync(x => x.LeaderCharId == leaderCharId &&
-                        x.NormalizeName == normalizeName && x.NodeId == nodeId);
+                                              x.NormalizeName == normalizeName && x.NodeId == nodeId);
                 if (existingClan != null)
                 {
                     if (transactionWork != null)
@@ -342,6 +367,7 @@ public static partial class ClanManager
                         await transactionWork(db);
                         await db.SaveChangesAsync();
                     }
+
                     var existingMember = existingClan.Members.First(x => x.CharId == leaderCharId);
                     return (Clan: existingClan, Member: existingMember,
                         Leader: persistedLeader, MoneyVip: persistedLeader.MoneyVip);
@@ -402,7 +428,8 @@ public static partial class ClanManager
                     MemberCount = 1,
                     MaxMembers = maxMembers,
                     Level = 1,
-                    MaxHon = Config.CreateClanMaxHon,
+                    MaxHon = GetMaxHon(Config.CreateClanHonLimitLevel),
+                    HonLimitLevel = Config.CreateClanHonLimitLevel,
                     LeaderCharId = leaderCharId,
                     CreatedAt = now,
                     Members = [member]
@@ -588,7 +615,8 @@ public static partial class ClanManager
 
         if (times > Config.MaxContributionTimesPerRequest)
         {
-            throw new InvalidException($"Chỉ được cống hiến tối đa {Config.MaxContributionTimesPerRequest} lượt mỗi lần");
+            throw new InvalidException(
+                $"Chỉ được cống hiến tối đa {Config.MaxContributionTimesPerRequest} lượt mỗi lần");
         }
 
         var amountPerTime = Config.ContributionMoneyVipPerTime;
@@ -641,6 +669,7 @@ public static partial class ClanManager
             {
                 throw new InvalidException("Giá trị cống hiến vượt giới hạn");
             }
+
             var remainingMoneyVip = charData.MoneyVip - cost;
             if (remainingMoneyVip < 0)
             {
@@ -658,6 +687,7 @@ public static partial class ClanManager
             {
                 throw new InvalidException("Tài nguyên tông môn đã đạt giới hạn");
             }
+
             var lastFreeContributionAt = freeTimes > 0
                 ? now
                 : previousFreeContributionAt;
@@ -665,20 +695,21 @@ public static partial class ClanManager
             await ExecuteClanTransactionAsync(async db =>
             {
                 var alreadyCommitted = await db.ClanMembers.AsNoTracking().AnyAsync(x =>
-                        x.ClanId == clanId && x.CharId == charId &&
-                        x.ContribPoints == newContribPoints &&
-                        x.LastFreeContributionAt == lastFreeContributionAt) &&
-                    await db.Clans.AsNoTracking().AnyAsync(x => x.Id == clanId && x.Funds == newFunds) &&
-                    await db.Characters.AsNoTracking().AnyAsync(x =>
-                        x.Id == charId &&
-                        x.MoneyVip == remainingMoneyVip &&
-                        x.LastFreeClanContributionAt == lastFreeContributionAt);
+                                           x.ClanId == clanId && x.CharId == charId &&
+                                           x.ContribPoints == newContribPoints &&
+                                           x.LastFreeContributionAt == lastFreeContributionAt) &&
+                                       await db.Clans.AsNoTracking()
+                                           .AnyAsync(x => x.Id == clanId && x.Funds == newFunds) &&
+                                       await db.Characters.AsNoTracking().AnyAsync(x =>
+                                           x.Id == charId &&
+                                           x.MoneyVip == remainingMoneyVip &&
+                                           x.LastFreeClanContributionAt == lastFreeContributionAt);
                 if (alreadyCommitted) return true;
 
                 var updatedMember = await db.ClanMembers
                     .Where(x => x.ClanId == clanId && x.CharId == charId &&
-                        x.ContribPoints == member.ContribPoints &&
-                        x.LastFreeContributionAt == member.LastFreeContributionAt)
+                                x.ContribPoints == member.ContribPoints &&
+                                x.LastFreeContributionAt == member.LastFreeContributionAt)
                     .ExecuteUpdateAsync(x => x
                         .SetProperty(m => m.ContribPoints, newContribPoints)
                         .SetProperty(m => m.LastFreeContributionAt, lastFreeContributionAt));
@@ -693,9 +724,9 @@ public static partial class ClanManager
 
                 var updatedChar = await db.Characters
                     .Where(x => x.Id == charId &&
-                        x.MoneyVip == charData.MoneyVip &&
-                        x.MoneyVip >= cost &&
-                        x.LastFreeClanContributionAt == previousFreeContributionAt)
+                                x.MoneyVip == charData.MoneyVip &&
+                                x.MoneyVip >= cost &&
+                                x.LastFreeClanContributionAt == previousFreeContributionAt)
                     .ExecuteUpdateAsync(x => x
                         .SetProperty(c => c.MoneyVip, remainingMoneyVip)
                         .SetProperty(c => c.LastFreeClanContributionAt, lastFreeContributionAt));
@@ -756,8 +787,9 @@ public static partial class ClanManager
         }
     }
 
-    public static async Task<ClanMember> LeaveClan(ClanReference reference, int charId)
+    public static async Task<ClanMember> LeaveClan(ClanReference reference, CharacterData charData)
     {
+        var charId = charData.Id;
         if (charId <= 0)
         {
             throw new InvalidException("Thành viên không hợp lệ");
@@ -775,7 +807,10 @@ public static partial class ClanManager
             throw new InvalidException("Tông chủ không thể rời tông môn khi còn thành viên");
         }
 
-        return await RemoveMember(reference, member, ClanRemoveMemberReason.Leave);
+        var result = await RemoveMember(reference, member, ClanRemoveMemberReason.Leave);
+        // Chỉ tính cooldown khi TỰ rời (không áp dụng khi bị kick, vì KickMember không đi qua đây).
+        charData.SetLastLeaveClanAt(DateTime.UtcNow);
+        return result;
     }
 
     private static async Task<ClanMember> RemoveMember(
@@ -863,6 +898,7 @@ public static partial class ClanManager
                 {
                     clan.ShopItems.RemoveAll(x => x.Id == shopItem.Id);
                 }
+
                 clan.MemberCount = Math.Max(0, clan.MemberCount - 1);
                 MemberClanIds.TryRemove(charId, out _);
                 if (Observers.TryGetValue(clanId, out var observer))
@@ -875,6 +911,7 @@ public static partial class ClanManager
                             ShopItemId = shopItem.Id
                         });
                     }
+
                     observer.NotifyRemoveMember(charId, reason);
                 }
             }
@@ -1204,7 +1241,7 @@ public static partial class ClanManager
             }
 
             var item = db.Items.SingleOrDefault(x => x.CharId == group.Key.OwnerCharId &&
-                x.Id == group.Key.ItemId && x.Type == group.Key.ItemType);
+                                                     x.Id == group.Key.ItemId && x.Type == group.Key.ItemType);
             if (item == null)
             {
                 db.Items.Add(new ItemRef(group.Key.ItemId, group.Key.ItemType, (int)total)
@@ -1259,9 +1296,9 @@ public static partial class ClanManager
             transactionWork: async transactionDb =>
             {
                 var persistedOrder = await transactionDb.Orders
-                    .Include(x => x.Purchase)
-                    .FirstOrDefaultAsync(x => x.OrderId == order.OrderId)
-                    ?? throw new InvalidException("Đơn thanh toán không tồn tại");
+                                         .Include(x => x.Purchase)
+                                         .FirstOrDefaultAsync(x => x.OrderId == order.OrderId)
+                                     ?? throw new InvalidException("Đơn thanh toán không tồn tại");
 
                 if (persistedOrder.Status == OrderStatus.Complete)
                 {

@@ -17,6 +17,18 @@ public static partial class ClanManager
             throw new InvalidException("Đã gia nhập tông môn");
         }
 
+        // Cooldown chỉ áp dụng khi TỰ rời tông môn (LeaveClan); bị kick thì không bị chặn.
+        if (Config.LeaveClanCooldownHours > 0 && charData.LastLeaveClanAt != default)
+        {
+            var availableAt = charData.LastLeaveClanAt.AddHours(Config.LeaveClanCooldownHours);
+            if (DateTime.UtcNow < availableAt)
+            {
+                var remainingHours = Math.Max(1, (int)Math.Ceiling((availableAt - DateTime.UtcNow).TotalHours));
+                throw new InvalidException(
+                    $"Vừa rời tông môn, cần chờ thêm khoảng {remainingHours} giờ mới được xin gia nhập tông môn khác");
+            }
+        }
+
         var reference = await FindReference(clanId);
         var clan = reference.Clan;
         var gate = AcquireGate(clanId);

@@ -81,6 +81,9 @@ public partial class ClanHonChanged
     public int ClanId { get; set; }
     public long Hon { get; set; }
     public long MaxHon { get; set; }
+    public int HonLimitLevel { get; set; }
+    public long SoulEssence { get; set; }
+    public long MaxSoulEssence { get; set; }
 }
 
 [MemoryPackable]
@@ -93,13 +96,18 @@ public partial class LuyenHonRequest
 public partial class LuyenHonResult : Result
 {
     public long AddedHon { get; set; }
+    public long SoulEssenceSpent { get; set; }
     public long Hon { get; set; }
     public long MaxHon { get; set; }
+    public int HonLimitLevel { get; set; }
+    public long SoulEssence { get; set; }
+    public long MaxSoulEssence { get; set; }
 }
 
 [MemoryPackable]
 public partial class UpgradeClanMaxHonRequest
 {
+    public int LimitLevel { get; set; }
     public long Funds { get; set; }
 }
 
@@ -111,4 +119,7 @@ public partial class UpgradeClanMaxHonResult : Result
     public long ClanFunds { get; set; }
     public long Hon { get; set; }
     public long MaxHon { get; set; }
+    public int HonLimitLevel { get; set; }
+    public long SoulEssence { get; set; }
+    public long MaxSoulEssence { get; set; }
 }

@@ -14,6 +14,8 @@ public partial record Clan
     public long Funds { get; set; }
     public long Hon { get; set; }
     public long MaxHon { get; set; }
+    public int HonLimitLevel { get; set; } = 1;
+    public long SoulEssence { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Announcement { get; set; } = string.Empty;
     public int MemberCount { get; set; }
@@ -21,6 +23,10 @@ public partial record Clan
     public int Level { get; set; }
     public long Exp { get; set; }
     public int LeaderCharId { get; set; }
+    // Mốc thời gian gần nhất có người được PHONG LÊN từng chức vụ độc quyền này (không tính
+    // giáng chức về Member); dùng để tính cooldown trước khi phong lại đúng chức vụ đó.
+    public DateTime LastViceLeaderAssignedAt { get; set; }
+    public DateTime LastElderAssignedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<ClanMember> Members { get; set; } = new();
     public List<ClanJoinRequest> JoinRequests { get; set; } = new();

@@ -234,7 +234,6 @@ public class AuctionManager
                 Item = furnaceItems[0]
             },
 
-            // 2. Bắt đầu tăng giá trị
             new
             {
                 Status = AuctionSessionStatus.NotStarted,
@@ -260,7 +259,6 @@ public class AuctionManager
                 Item = furnaceItems[1]
             },
 
-            // 3. Mid game
             new
             {
                 Status = AuctionSessionStatus.NotStarted,

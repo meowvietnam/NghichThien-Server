@@ -57,7 +57,6 @@ public static partial class ClanManager
             Items = reference.Clan.ShopItems.ToArray(),
             ContribPoints = member.ContribPoints,
             MaxQuantityPerRequest = Config.MaxShopQuantityPerRequest,
-            MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
             ShopItemsAddedToday = addedToday
         };
     }
@@ -90,8 +89,6 @@ public static partial class ClanManager
             var maxShopSlots = GetMaxShopSlots(clan.Level);
             if (maxShopSlots <= 0)
                 throw new InvalidException("Kho tông môn đang tạm khóa thêm vật phẩm");
-            if (Config.MaxShopItemsAddedPerDay <= 0)
-                throw new InvalidException("Hôm nay không thể thêm vật phẩm vào kho tông môn");
 
             var today = DateTime.UtcNow.Date;
             var addedToday = member.LastShopItemAddedAt.Date == today
@@ -106,10 +103,8 @@ public static partial class ClanManager
             {
                 throw new InvalidException("Số lượng vật phẩm thêm vào kho hôm nay vượt giới hạn");
             }
-            if (newAddedToday > Config.MaxShopItemsAddedPerDay)
-                throw new InvalidException("Đã vượt giới hạn số lượng vật phẩm thêm vào kho hôm nay");
-            if (clan.ShopItems.Count >= maxShopSlots)
-                throw new InvalidException("Kho tông môn đã hết slot treo vật phẩm");
+            if (newAddedToday > maxShopSlots)
+                throw new InvalidException("Số lượng vật phẩm thêm vào kho hôm nay vượt giới hạn");
 
             ClanShopItem shopItem = null!;
             ItemRef? inventoryItem;
@@ -190,7 +185,6 @@ public static partial class ClanManager
                 Success = true,
                 ShopItem = shopItem,
                 InventoryItem = inventoryItem,
-                MaxItemsAddedPerDay = Config.MaxShopItemsAddedPerDay,
                 ShopItemsAddedToday = newAddedToday
             };
         }
@@ -442,7 +436,7 @@ public static partial class ClanManager
                     ClanAuctionTierPrices),
                 ItemType.Recipe => GetClanTierPrice(
                     LuyenDanResources.Instance.FindRecipe(item.Id)?.Tier,
-                    ClanAuctionTierPrices),
+                    ClanAuctionTierPrices) * 2,
                 ItemType.Furnace => GetClanFurnacePrice(furnace),
                 _ => 0
             };

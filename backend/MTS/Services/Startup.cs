@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
 using MTS.Game.BaseSkill;
+using MTS.Game.Clan;
+using MTS.Game.DP;
 using MTS.Game.Gacha;
 using MTS.Game.Resources;
 using MTS.IAP;
@@ -27,7 +29,6 @@ public class Startup : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var db = await Program.CreateDbAsync();
     }
 
     private async Task UpdateEvent(AppDbContext db)
@@ -49,7 +50,7 @@ public class Startup : BackgroundService
         Log.Information("Oke");
     }
     
-
+    
     private async Task AddEvents(AppDbContext db)
     {
         var charIds = await db.EventManagers
