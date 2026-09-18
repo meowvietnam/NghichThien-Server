@@ -452,7 +452,7 @@ public partial class CharacterData
             var newTuoiTac = Stats.TuoiTac + time;
             InventoryManager.Add(congPhap);
             Stats.SetLinhThach(remaining);
-            Stats.SetTuoiTac(newTuoiTac);
+            SetTuoiTacSpecial(newTuoiTac);
             cpRef.Count -= 1;
             if (cpRef.Count < 1)
             {
@@ -470,7 +470,7 @@ public partial class CharacterData
                 Id = id,
                 Type = type,
                 RemainingMoney = remaining,
-                NewTuoiTac = newTuoiTac,
+                NewTuoiTac = Stats.TuoiTac,
                 CamNgos = camNgoList,
                 NewNgoDaoDiem = newNgoDaoDiem,
             };
@@ -500,7 +500,6 @@ public partial class CharacterData
             }
 
             double totalDays = (double)tt.baseTimeLearn / Stats.NgoTinh;
-
             var time = TimeSpan.FromDays(totalDays);
             var provider = ItemProviderFactory.GetProvider<SkillProvider>(type, InventoryManager);
             var price = provider.GetPriceItemBuy(id);
@@ -518,7 +517,7 @@ public partial class CharacterData
             var newTuoiTac = Stats.TuoiTac + time;
             InventoryManager.Add(thanThong);
             Stats.SetLinhThach(remaining);
-            Stats.SetTuoiTac(newTuoiTac);
+            SetTuoiTacSpecial(newTuoiTac);
             ttRef.Count -= 1;
             if (ttRef.Count < 1)
             {
@@ -537,13 +536,23 @@ public partial class CharacterData
                 Id = id,
                 Type = type,
                 RemainingMoney = remaining,
-                NewTuoiTac = newTuoiTac,
+                NewTuoiTac = Stats.TuoiTac,
                 CamNgos = camNgoList,
                 NewNgoDaoDiem = newNgoDaoDiem,
             };
         }
 
         throw new InvalidException(Strings.NotSupportItemType);
+    }
+
+    public void SetTuoiTacSpecial(TimeSpan tuoiTac)
+    {
+        if (Progression.MaxLevel > 3)
+        {
+            Stats.SetTuoiTac(tuoiTac);
+            return;
+        }
+        Progression.OnSetTuoiTac(Stats.TuoiTac, tuoiTac);
     }
 
     public DotPhaCongPhapResult? DotPhaCongPhap(int request)

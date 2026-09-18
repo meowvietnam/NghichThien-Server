@@ -228,13 +228,12 @@ namespace MTS.Network.ClientState
                 throw new InvalidException(Strings.DeleteAccountFailed);
             }
 
-            var characterIds = user.CharacterDatas.Select(x => x.Id).ToArray();
-            if (characterIds.Length > 0 &&
+            var characterIds = user.CharacterDatas.Select(x => x.Id).ToList();
+            if (characterIds.Count > 0 &&
                 await db.ClanMembers.AsNoTracking().AnyAsync(x => characterIds.Contains(x.CharId)))
             {
                 throw new InvalidException(Strings.DeleteAccountInClan);
             }
-
             try
             {
                 DbEvent.InvokeUserDeleted(user);

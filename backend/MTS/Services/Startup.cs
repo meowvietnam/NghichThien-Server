@@ -32,6 +32,37 @@ public class Startup : BackgroundService
         await using var db = await Program.CreateDbAsync();
     }
 
+    public async Task Gift(AppDbContext db)
+    {
+        var mail = new Mail()
+        {
+            CharId = 4894,
+            Title = "Quà tặng đặc biệt",
+            Content = "Đạo hữu nhận được phần quà gồm 50.000 Tiên Ngọc và 3 Công Pháp Hư Vô Kiếm.!",
+            Rewards = new List<IMailReward>()
+            {
+                new MailRewardMoney()
+                {
+                    Money = 67
+                },
+                new MailRewardMoneyVip()
+                {
+                    MoneyVip = 50_000
+                },
+                new MailRewardItem()
+                {
+                    Item = new ItemRef()
+                    {
+                        Id = 714,
+                        Type = ItemType.CongPhap,
+                        Count = 3
+                    }
+                }
+            }
+        };
+        await db.Mails.AddAsync(mail);
+        await db.SaveChangesAsync();
+    }
     private async Task RemoveEvents(AppDbContext db)
     {
         await db.Events.ExecuteDeleteAsync();

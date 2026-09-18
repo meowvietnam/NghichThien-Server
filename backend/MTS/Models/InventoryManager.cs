@@ -517,7 +517,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                             actualCount++;
                         }
                     }
-
+                    
                     var success = actualCount > 0;
                     if (!success)
                     {
@@ -1057,7 +1057,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
             var dayCost = equipmentTier.DayCost;
             var stats = CharacterData.Stats;
             var newTuoiTac = stats.TuoiTac.Add(TimeSpan.FromDays(dayCost));
-            stats.SetTuoiTac(newTuoiTac);
+            CharacterData.SetTuoiTacSpecial(newTuoiTac);
             var equipment = new Equipment()
             {
                 Id = (ushort)item.Id,
@@ -1090,7 +1090,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
                 Success = true,
                 Message = LuyenKhiMessage.Success,
                 Item = equipment,
-                NewTuoiTac = newTuoiTac,
+                NewTuoiTac = stats.TuoiTac,
                 Modify = modify
             };
         }

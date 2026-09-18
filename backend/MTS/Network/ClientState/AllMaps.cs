@@ -1,3 +1,4 @@
+using Amazon.S3.Model;
 using MTS.Exceptions;
 using MTS.Game;
 using MTS.Network.Models;
@@ -127,7 +128,7 @@ public class AllMaps : IClientState
                     var stats = charData.Stats;
                     var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
                     var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
-                    stats.SetTuoiTac(newAge);
+                    charData.SetTuoiTacSpecial(newAge);
                     charData.Progression.SetIdCurrentNode(id);
                     charData.Progression.SetCurrentEnergy(newEnergy);
                     var charsOnline = GetCharsOnlineThisNode();
@@ -138,7 +139,7 @@ public class AllMaps : IClientState
                         Energy = newEnergy,
                         Path = pathIds,
                         CharactersOnline = charsOnline,
-                        NewAge = newAge
+                        NewAge = charData.Stats.TuoiTac
                     };
                     var playerMoving = new PlayerMoving()
                     {
