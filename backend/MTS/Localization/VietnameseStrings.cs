@@ -9,6 +9,7 @@ public class VietnameseStrings : ILanguageStrings
     public override string AdminGoogleAccountNotFound => "Không tìm thấy tài khoản Google admin!";
     public override string NotLoggedIn => "Bạn chưa đăng nhập!";
     public override string DeleteAccountFailed => "Xóa tài khoản thất bại!";
+    public override string DeleteAccountInClan => "Bạn phải rời tông môn trước khi xóa tài khoản!";
     public override string ClientOnline => "Tài khoản đang đăng nhập nơi khác!";
     public override string ReconnectClientNotFound => "Không tìm thấy phiên kết nối để khôi phục!";
     public override string UsernameRequired => "Vui lòng nhập tên đăng nhập!";

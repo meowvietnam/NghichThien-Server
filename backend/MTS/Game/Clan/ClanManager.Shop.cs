@@ -38,23 +38,36 @@ public static partial class ClanManager
         { Tier.LucPham, 10_000 }
     };
 
+    // Số lượt treo vật phẩm tối đa MỖI NGÀY của CẢ TÔNG MÔN (dùng chung cho mọi thành viên),
+    // không còn là hạn mức riêng của từng người.
     public static int GetMaxShopSlots(int clanLevel)
     {
-        return Math.Max(1, clanLevel) * 1;
+        return Math.Max(1, clanLevel) * 3;
+    }
+
+    // Lượt treo vật phẩm trong kho tông môn reset theo NGÀY GIỜ VIỆT NAM (UTC+7), không phải theo
+    // ngày UTC - tức là mốc reset là 00:00 giờ Việt Nam (tương đương 17:00 UTC ngày hôm trước).
+    private static readonly TimeSpan ShopResetTimeZoneOffset = TimeSpan.FromHours(7);
+
+    private static DateTime GetShopResetDate(DateTime utcNow)
+    {
+        return (utcNow + ShopResetTimeZoneOffset).Date;
     }
 
     public static GetClanShopResult GetShop(ClanReference reference, int charId)
     {
-        var member = reference.Clan.Members.FirstOrDefault(x => x.CharId == charId)
+        var clan = reference.Clan;
+        var member = clan.Members.FirstOrDefault(x => x.CharId == charId)
             ?? throw new InvalidException("Chưa gia nhập tông môn");
-        var today = DateTime.UtcNow.Date;
-        var addedToday = member.LastShopItemAddedAt.Date == today
-            ? member.ShopItemsAddedToday
+        var today = GetShopResetDate(DateTime.UtcNow);
+        // Lượt treo vật phẩm được tính chung cho cả tông môn, không tách riêng theo từng thành viên.
+        var addedToday = clan.LastShopItemAddedAt.Date == today
+            ? clan.ShopItemsAddedToday
             : 0;
         return new GetClanShopResult
         {
             Success = true,
-            Items = reference.Clan.ShopItems.ToArray(),
+            Items = clan.ShopItems.ToArray(),
             ContribPoints = member.ContribPoints,
             MaxQuantityPerRequest = Config.MaxShopQuantityPerRequest,
             ShopItemsAddedToday = addedToday
@@ -90,9 +103,10 @@ public static partial class ClanManager
             if (maxShopSlots <= 0)
                 throw new InvalidException("Kho tông môn đang tạm khóa thêm vật phẩm");
 
-            var today = DateTime.UtcNow.Date;
-            var addedToday = member.LastShopItemAddedAt.Date == today
-                ? member.ShopItemsAddedToday
+            // Lượt treo vật phẩm được tính chung cho cả tông môn, không tách riêng theo từng thành viên.
+            var today = GetShopResetDate(DateTime.UtcNow);
+            var addedToday = clan.LastShopItemAddedAt.Date == today
+                ? clan.ShopItemsAddedToday
                 : 0;
             int newAddedToday;
             try
@@ -131,20 +145,19 @@ public static partial class ClanManager
             {
                 if (shopItem?.Id > 0 &&
                     await db.ClanShopItems.AsNoTracking().AnyAsync(x => x.Id == shopItem.Id && x.ClanId == clanId) &&
-                    await db.ClanMembers.AsNoTracking().AnyAsync(x => x.ClanId == clanId &&
-                        x.CharId == character.Id && x.ShopItemsAddedToday == newAddedToday &&
-                        x.LastShopItemAddedAt == today))
+                    await db.Clans.AsNoTracking().AnyAsync(x => x.Id == clanId &&
+                        x.ShopItemsAddedToday == newAddedToday && x.LastShopItemAddedAt == today))
                 {
                     return true;
                 }
 
-                var updated = await db.ClanMembers
-                    .Where(x => x.ClanId == clanId && x.CharId == character.Id &&
-                                x.ShopItemsAddedToday == member.ShopItemsAddedToday &&
-                                x.LastShopItemAddedAt == member.LastShopItemAddedAt)
+                var updated = await db.Clans
+                    .Where(x => x.Id == clanId &&
+                                x.ShopItemsAddedToday == clan.ShopItemsAddedToday &&
+                                x.LastShopItemAddedAt == clan.LastShopItemAddedAt)
                     .ExecuteUpdateAsync(x => x
-                        .SetProperty(m => m.ShopItemsAddedToday, newAddedToday)
-                        .SetProperty(m => m.LastShopItemAddedAt, today));
+                        .SetProperty(c => c.ShopItemsAddedToday, newAddedToday)
+                        .SetProperty(c => c.LastShopItemAddedAt, today));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
@@ -176,8 +189,8 @@ public static partial class ClanManager
                 }
             }
 
-            member.ShopItemsAddedToday = newAddedToday;
-            member.LastShopItemAddedAt = today;
+            clan.ShopItemsAddedToday = newAddedToday;
+            clan.LastShopItemAddedAt = today;
             clan.ShopItems.Add(shopItem);
             NotifyClanShopItemAdded(clanId, shopItem);
             return new AddClanShopItemResult

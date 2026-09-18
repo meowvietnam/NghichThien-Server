@@ -16,6 +16,8 @@ public partial record Clan
     public long MaxHon { get; set; }
     public int HonLimitLevel { get; set; } = 1;
     public long SoulEssence { get; set; }
+    public int ShopItemsAddedToday { get; set; }
+    public DateTime LastShopItemAddedAt { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Announcement { get; set; } = string.Empty;
     public int MemberCount { get; set; }

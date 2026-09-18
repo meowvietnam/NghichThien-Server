@@ -142,8 +142,6 @@ public class Startup : BackgroundService
                 CharId = x.CharId,
                 ContribPoints = x.ContribPoints,
                 LastFreeContributionAt = x.LastFreeContributionAt,
-                ShopItemsAddedToday = x.ShopItemsAddedToday,
-                LastShopItemAddedAt = x.LastShopItemAddedAt,
                 Role = ClanRole.Member,
                 JoinAt = movedAt
             })
@@ -238,8 +236,6 @@ public class Startup : BackgroundService
                     CharId = member.CharId,
                     ContribPoints = member.ContribPoints,
                     LastFreeContributionAt = member.LastFreeContributionAt,
-                    ShopItemsAddedToday = member.ShopItemsAddedToday,
-                    LastShopItemAddedAt = member.LastShopItemAddedAt,
                     Role = ClanRole.Member,
                     JoinAt = DateTime.UtcNow
                 }, stoppingToken);

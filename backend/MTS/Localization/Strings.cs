@@ -17,6 +17,7 @@ public static class Strings
     public static string AdminGoogleAccountNotFound => _current.AdminGoogleAccountNotFound;
     public static string NotLoggedIn => _current.NotLoggedIn;
     public static string DeleteAccountFailed => _current.DeleteAccountFailed;
+    public static string DeleteAccountInClan => _current.DeleteAccountInClan;
     public static string ClientOnline => _current.ClientOnline;
     public static string ReconnectClientNotFound => _current.ReconnectClientNotFound;
     public static string UsernameRequired => _current.UsernameRequired;

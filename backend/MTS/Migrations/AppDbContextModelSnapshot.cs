@@ -268,6 +268,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("LastElderAssignedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("LastShopItemAddedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("LastViceLeaderAssignedAt")
                         .HasColumnType("datetime(6)");
 
@@ -298,6 +301,9 @@ namespace MTS.Migrations
                         .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("varchar(15)");
+
+                    b.Property<int>("ShopItemsAddedToday")
+                        .HasColumnType("int");
 
                     b.Property<long>("SoulEssence")
                         .HasColumnType("bigint");
@@ -382,14 +388,8 @@ namespace MTS.Migrations
                     b.Property<DateTime>("LastFreeContributionAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("LastShopItemAddedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<byte>("Role")
                         .HasColumnType("tinyint unsigned");
-
-                    b.Property<int>("ShopItemsAddedToday")
-                        .HasColumnType("int");
 
                     b.HasKey("ClanId", "CharId");
 

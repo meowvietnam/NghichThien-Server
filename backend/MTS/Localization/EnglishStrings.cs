@@ -9,6 +9,7 @@ public class EnglishStrings : ILanguageStrings
     public override string AdminGoogleAccountNotFound => "Admin Google account was not found!";
     public override string NotLoggedIn => "You are not logged in!";
     public override string DeleteAccountFailed => "Failed to delete account!";
+    public override string DeleteAccountInClan => "You must leave your clan before deleting your account!";
     public override string ClientOnline => "Account is already logged in elsewhere!";
     public override string ReconnectClientNotFound => "Reconnect session was not found!";
     public override string UsernameRequired => "Please enter a username!";

@@ -10,6 +10,7 @@ public abstract class ILanguageStrings
     public abstract string AdminGoogleAccountNotFound { get; }
     public abstract string NotLoggedIn { get; }
     public abstract string DeleteAccountFailed { get; }
+    public abstract string DeleteAccountInClan { get; }
     public abstract string ClientOnline { get; }
     public abstract string ReconnectClientNotFound { get; }
     public abstract string UsernameRequired { get; }
