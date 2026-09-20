@@ -319,4 +319,8 @@ public enum MessageTag
     LuyenHonRequest = 3705,
     UpgradeClanMaxHonRequest = 3706,
     ClanHonChanged = 3707,
+    
+    
+    SyncEndTurnBoss = 3781,
+    
 }

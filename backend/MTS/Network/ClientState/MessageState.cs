@@ -13,6 +13,7 @@ namespace MTS.Network.ClientState
         AuctionState,
         TrungSinh,
         DongPhuState,
-        CombatPvp
+        CombatPvp,
+        BossState
     }
 }
