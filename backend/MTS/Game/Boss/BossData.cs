@@ -5,8 +5,8 @@ namespace MTS.Game.Boss;
 [MemoryPackable]
 public partial class BossData
 {
-    public int SkinId { get; set; }
-    public CharacterWrapper CharWrapper { get; set; }
+    public int SkinId { get; private set; }
+    public CharacterWrapper CharWrapper { get; private set; }
 
     public BossData DeepClone()
     {

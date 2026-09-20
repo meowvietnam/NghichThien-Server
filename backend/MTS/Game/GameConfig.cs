@@ -2,6 +2,7 @@ using MemoryPack;
 using MTS.Converter;
 using MTS.Game.AllMaps;
 using MTS.Game.BaseSkill;
+using MTS.Game.Boss;
 using MTS.Game.Clan;
 using MTS.Game.CreateCharacter;
 using MTS.Game.DP;
@@ -39,6 +40,7 @@ public static class GameConfig
     public static LevelResource LevelResource { get; private set; }
     public static CoreResource Core { get; private set; }
     public static ClanBuffResources ClanBuffResources { get; private set; }
+    public static BossData[] BossDatas { get; private set; }
     public static HashSet<ushort> MaterialDotPhas { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
@@ -57,7 +59,7 @@ public static class GameConfig
         "Vật ta hợp nhất",
     };
 
-    public static readonly int[] tamCanhRequireEnd = new int[]
+    public static readonly int[] tamCanhRequireEnd = new []
     {
         0,
         49,
@@ -67,7 +69,7 @@ public static class GameConfig
         1999,
     };
 
-    public static readonly string[] danDocText = new string[]
+    public static readonly string[] danDocText = new []
     {
         "Thân thể khỏe mạnh",
         "Thân thể không ngại",
@@ -77,7 +79,7 @@ public static class GameConfig
         "Độc phát thân vong",
     };
 
-    public static readonly int[] danDocRequireEnd = new int[]
+    public static readonly int[] danDocRequireEnd = new []
     {
         20,
         50,
@@ -86,17 +88,17 @@ public static class GameConfig
         120,
     };
 
-    public static Dictionary<BaseSkill.ETierSkill, int> PriceTTWithTier = new Dictionary<BaseSkill.ETierSkill, int>
+    public static Dictionary<ETierSkill, int> PriceTTWithTier = new()
     {
-        { BaseSkill.ETierSkill.NhanGiaiHa, 25 },
-        { BaseSkill.ETierSkill.NhanGiaiTrung, 50 },
-        { BaseSkill.ETierSkill.NhanGiaiThuong, 75 },
-        { BaseSkill.ETierSkill.DiaGiaiHa, 600 },
-        { BaseSkill.ETierSkill.DiaGiaiTrung, 800 },
-        { BaseSkill.ETierSkill.DiaGiaiThuong, 1000 },
-        { BaseSkill.ETierSkill.ThienGiaiHa, 18000 },
-        { BaseSkill.ETierSkill.ThienGiaiTrung, 30000 },
-        { BaseSkill.ETierSkill.ThienGiaiThuong, 50000 },
+        { ETierSkill.NhanGiaiHa, 25 },
+        { ETierSkill.NhanGiaiTrung, 50 },
+        { ETierSkill.NhanGiaiThuong, 75 },
+        { ETierSkill.DiaGiaiHa, 600 },
+        { ETierSkill.DiaGiaiTrung, 800 },
+        { ETierSkill.DiaGiaiThuong, 1000 },
+        { ETierSkill.ThienGiaiHa, 18000 },
+        { ETierSkill.ThienGiaiTrung, 30000 },
+        { ETierSkill.ThienGiaiThuong, 50000 },
     };
 
     public static readonly Dictionary<Tier, int> PriceVatLieuWithTier = new()
