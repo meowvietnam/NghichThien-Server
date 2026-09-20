@@ -15,7 +15,8 @@ public enum SpendFor
     EventShop = 56,
     CreateClan = 64,
     ClanContribution = 72,
-    ChangeClanInheritance = 80
+    ChangeClanInheritance = 80,
+    UpgradeClanHonLimit = 88
 }
 
 [MemoryPackable]

@@ -391,6 +391,9 @@ namespace MTS.Migrations
                     b.Property<byte>("Role")
                         .HasColumnType("tinyint unsigned");
 
+                    b.Property<long>("TotalContribPoints")
+                        .HasColumnType("bigint");
+
                     b.HasKey("ClanId", "CharId");
 
                     b.HasIndex("CharId")

@@ -508,7 +508,7 @@ public class ClanHandler : IClientHandler, IClanObserverState
         try
         {
             var clanReference = reference ?? throw new InvalidException("Chưa gia nhập tông môn");
-            return await ClanManager.UpgradeMaxHon(clanReference, charData, request.LimitLevel);
+            return await ClanManager.UpgradeMaxHon(clanReference, charData, request);
         }
         catch (InvalidException e)
         {

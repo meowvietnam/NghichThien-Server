@@ -78,6 +78,10 @@ public static partial class ClanManager
     public static async Task<AddClanShopItemResult> AddShopItem(
         ClanReference reference, CharacterData character, AddClanShopItemRequest request)
     {
+        if (character.Progression.MaxLevel < 4)
+        {
+            throw new InvalidException("Yêu cầu đạt Trúc cơ sơ kỳ");
+        }
         var deposit = request.Item.DeepClone();
         ValidateShopItem(deposit);
         var inventory = character.InventoryManager;

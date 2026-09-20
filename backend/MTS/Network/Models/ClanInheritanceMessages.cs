@@ -11,6 +11,8 @@ public partial class SetClanInheritanceRequest
     public int SlotIndex { get; set; }
     // null xóa hiệu ứng đang có trong ô.
     public EffectType? EffectType { get; set; }
+    public int ExpectedContribPointsCost { get; set; } = -1;
+    public int ExpectedMoneyVipCost { get; set; } = -1;
 }
 
 [MemoryPackable]
@@ -20,6 +22,9 @@ public partial class SetClanInheritanceResult : Result
     public int NewMoneyVip { get; set; }
     public long ClanFunds { get; set; }
     public int Cost { get; set; }
+    public int MoneyVipCost { get; set; }
+    public bool RequiresConfirmation { get; set; }
+    public long ContribPoints { get; set; }
 }
 
 [MemoryPackable]
@@ -109,11 +114,18 @@ public partial class UpgradeClanMaxHonRequest
 {
     public int LimitLevel { get; set; }
     public long Funds { get; set; }
+    public long ExpectedContribPointsCost { get; set; } = -1;
+    public long ExpectedMoneyVipCost { get; set; } = -1;
 }
 
 [MemoryPackable]
 public partial class UpgradeClanMaxHonResult : Result
 {
+    public long ContribPointsCost { get; set; }
+    public long ContribPoints { get; set; }
+    public long MoneyVipCost { get; set; }
+    public int NewMoneyVip { get; set; }
+    public bool RequiresConfirmation { get; set; }
     public long FundsSpent { get; set; }
     public long AddedMaxHon { get; set; }
     public long ClanFunds { get; set; }

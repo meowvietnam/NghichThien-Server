@@ -54,7 +54,7 @@ public static partial class ClanManager
         BaseInheritanceSlots = 1,
         InheritanceSlotsPerLevel = 1,
         MaxInheritanceSlotsPerColumn = 10,
-        ChangeInheritanceMoneyVipCost = 2_000,
+        ChangeInheritanceContribPointsCost = 4_000,
         InheritanceBaseValue = 1,
         InheritanceValuePerClanLevel = 1,
         InheritanceBuffWhitelist = GameConfig.ClanBuffResources.EffectTypeConfigs.Select(x => x.Type).ToArray(),
@@ -69,7 +69,7 @@ public static partial class ClanManager
         var maxHonByLimitLevel = Enumerable.Range(0, limitHonLevel).Select(x => (x + 1) * 10L).ToArray();
         var maxSoulEssenceByLimitLevel = Enumerable.Range(0, limitHonLevel).Select(x => (x + 1) * 1000L).ToArray();
         var upgradeHonLimitFundCostByLevel =
-            Enumerable.Range(0, limitHonLevel).Select(x => 1000L * ((x + 10) / 10)).ToArray();
+            Enumerable.Range(0, limitHonLevel).Select(x => 2000L * ((x + 10) / 10)).ToArray();
         Config.MaxHonByLimitLevel = maxHonByLimitLevel;
         Config.MaxSoulEssenceByLimitLevel = maxSoulEssenceByLimitLevel;
         Config.UpgradeHonLimitFundCostByLevel = upgradeHonLimitFundCostByLevel;
@@ -679,10 +679,12 @@ public static partial class ClanManager
 
             long newFunds;
             long newContribPoints;
+            long newTotalContribPoints;
             try
             {
                 newFunds = checked(clan.Funds + amount);
                 newContribPoints = checked(member.ContribPoints + amount);
+                newTotalContribPoints = checked(member.TotalContribPoints + amount);
             }
             catch (OverflowException)
             {
@@ -698,6 +700,7 @@ public static partial class ClanManager
                 var alreadyCommitted = await db.ClanMembers.AsNoTracking().AnyAsync(x =>
                                            x.ClanId == clanId && x.CharId == charId &&
                                            x.ContribPoints == newContribPoints &&
+                                           x.TotalContribPoints == newTotalContribPoints &&
                                            x.LastFreeContributionAt == lastFreeContributionAt) &&
                                        await db.Clans.AsNoTracking()
                                            .AnyAsync(x => x.Id == clanId && x.Funds == newFunds) &&
@@ -710,9 +713,11 @@ public static partial class ClanManager
                 var updatedMember = await db.ClanMembers
                     .Where(x => x.ClanId == clanId && x.CharId == charId &&
                                 x.ContribPoints == member.ContribPoints &&
+                                x.TotalContribPoints == member.TotalContribPoints &&
                                 x.LastFreeContributionAt == member.LastFreeContributionAt)
                     .ExecuteUpdateAsync(x => x
                         .SetProperty(m => m.ContribPoints, newContribPoints)
+                        .SetProperty(m => m.TotalContribPoints, newTotalContribPoints)
                         .SetProperty(m => m.LastFreeContributionAt, lastFreeContributionAt));
                 if (updatedMember != 1)
                     throw new InvalidException("Dữ liệu cống hiến đã thay đổi, vui lòng thử lại");
@@ -753,6 +758,7 @@ public static partial class ClanManager
             charData.SetLastFreeClanContributionAt(lastFreeContributionAt);
             clan.Funds = newFunds;
             member.ContribPoints = newContribPoints;
+            member.TotalContribPoints = newTotalContribPoints;
             member.LastFreeContributionAt = lastFreeContributionAt;
 
             var contribution = new ClanContribution
@@ -765,6 +771,7 @@ public static partial class ClanManager
                 Amount = amount,
                 ClanFunds = newFunds,
                 MemberContribPoints = newContribPoints,
+                MemberTotalContribPoints = newTotalContribPoints,
                 LastFreeContributionAt = lastFreeContributionAt,
                 FreeContributionTimesRemaining = 0
             };

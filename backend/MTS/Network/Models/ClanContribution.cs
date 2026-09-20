@@ -15,4 +15,5 @@ public partial class ClanContribution
     public long MemberContribPoints { get; set; }
     public System.DateTime LastFreeContributionAt { get; set; }
     public int FreeContributionTimesRemaining { get; set; }
+    public long MemberTotalContribPoints { get; set; }
 }

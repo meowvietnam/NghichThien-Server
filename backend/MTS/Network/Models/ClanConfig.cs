@@ -51,7 +51,7 @@ public partial class ClanConfig
     // Trần số ô truyền thừa tối đa mỗi cột (StartTurn/EndTurn).
     public int MaxInheritanceSlotsPerColumn { get; set; } = 10;
     // Phí Tiên Ngọc để đổi hiệu ứng trong một ô truyền thừa đã có sẵn.
-    public int ChangeInheritanceMoneyVipCost { get; set; } = 2_000;
+    public int ChangeInheritanceContribPointsCost { get; set; } = 4_000;
     // Giá trị hiệu ứng truyền thừa cơ bản ở cấp 1.
     public int InheritanceBaseValue { get; set; } = 1;
     // Giá trị hiệu ứng truyền thừa cộng thêm mỗi cấp tông môn.

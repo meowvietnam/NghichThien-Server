@@ -13,9 +13,12 @@ public static partial class ClanManager
 {
     private sealed record InheritanceTransactionResult(
         ClanInheritanceEffect? Effect,
-        long ClanFunds,
+        long ContribPoints,
         int Cost,
-        bool Changed);
+        bool Changed,
+        int MoneyVipCost = 0,
+        int? NewMoneyVip = null,
+        bool RequiresConfirmation = false);
 
     private sealed record UpgradeClanWithFundsTransactionResult(
         long FundsSpent,
@@ -35,14 +38,17 @@ public static partial class ClanManager
         long MaxSoulEssence);
 
     private sealed record UpgradeMaxHonTransactionResult(
-        long FundsSpent,
+        long ContribPointsCost,
         long AddedMaxHon,
-        long ClanFunds,
+        long ContribPoints,
         long Hon,
         long MaxHon,
         int HonLimitLevel,
         long SoulEssence,
-        long MaxSoulEssence);
+        long MaxSoulEssence,
+        long MoneyVipCost,
+        int NewMoneyVip,
+        bool RequiresConfirmation = false);
 
     public static long GetMaxHon(int honLimitLevel)
     {
@@ -122,18 +128,10 @@ public static partial class ClanManager
     {
         if (Config.InheritanceBaseValue < 0)
             throw new InvalidException("Cấu hình giá trị truyền thừa không hợp lệ");
-
         try
         {
-            var baseValue = effectType.HasValue
-                ? GameConfig.ClanBuffResources.GetBaseValueOf(effectType.Value)
-                : Config.InheritanceBaseValue;
-            if (baseValue < 0)
-                throw new InvalidException("Cấu hình giá trị truyền thừa không hợp lệ");
-            var scaledBaseValue = checked(baseValue * Math.Max(1, clanLevel));
-            var minValue = scaledBaseValue / 2;
-            var maxValue = checked(scaledBaseValue * 2);
-            return (int)Random.Shared.NextInt64(minValue, (long)maxValue + 1);
+            var (min,max) = GameConfig.ClanBuffResources.GetBuffValueRangeOf(effectType, clanLevel);
+            return (int)Random.Shared.NextInt64(min, (long)max + 1);
         }
         catch (OverflowException)
         {
@@ -193,14 +191,8 @@ public static partial class ClanManager
             var ramChanged = request.EffectType == null
                 ? current != null
                 : current == null || current.EffectType != request.EffectType;
-            var changingFilledSlot = current != null && current.EffectType != request.EffectType;
-            var expectedCost = changingFilledSlot ? Config.ChangeInheritanceMoneyVipCost : 0;
-            if (expectedCost < 0)
-                throw new InvalidException("Cấu hình phí thay đổi truyền thừa không hợp lệ");
-            if (clan.Funds < expectedCost)
-                throw new InvalidException("Quỹ tông môn không đủ để thay đổi truyền thừa");
-
             var value = request.EffectType.HasValue ? GetInheritanceValue(request.EffectType, clan.Level) : 0;
+            InheritanceTransactionResult? attemptedChange = null;
             var transactionResult = await ExecuteClanTransactionAsync(async db =>
             {
                 var persisted = await db.Set<ClanInheritanceEffect>().FirstOrDefaultAsync(x =>
@@ -211,9 +203,13 @@ public static partial class ClanManager
                     : persisted?.EffectType == request.EffectType;
                 if (alreadyDesired)
                 {
-                    var unchangedFunds = await db.Clans.Where(x => x.Id == clanId)
-                        .Select(x => x.Funds).SingleAsync();
-                    return new InheritanceTransactionResult(persisted, unchangedFunds, 0, false);
+                    var unchangedPoints = await db.ClanMembers
+                        .Where(x => x.ClanId == clanId && x.CharId == actor.Id)
+                        .Select(x => x.ContribPoints).SingleAsync();
+                    // A transient commit failure can retry after the payment was already committed.
+                    if (attemptedChange != null)
+                        return attemptedChange with { Effect = persisted, ContribPoints = unchangedPoints };
+                    return new InheritanceTransactionResult(persisted, unchangedPoints, 0, false);
                 }
 
                 await ValidateGiamTonThuongTotalLimit(
@@ -224,23 +220,49 @@ public static partial class ClanManager
                     request.EffectType,
                     value);
 
-                var cost = persisted != null ? Config.ChangeInheritanceMoneyVipCost : 0;
-                if (cost < 0)
+                var totalCost = persisted != null ? Config.ChangeInheritanceContribPointsCost : 0;
+                if (totalCost < 0)
                     throw new InvalidException("Cấu hình phí thay đổi truyền thừa không hợp lệ");
 
-                var currentFunds = await db.Clans.Where(x => x.Id == clanId)
-                    .Select(x => x.Funds).SingleAsync();
-                var newFunds = currentFunds - cost;
-                if (newFunds < 0)
-                    throw new InvalidException("Quỹ tông môn không đủ để thay đổi truyền thừa");
+                var currentPoints = await db.ClanMembers
+                    .Where(x => x.ClanId == clanId && x.CharId == actor.Id)
+                    .Select(x => x.ContribPoints).SingleAsync();
+                var cost = (int)Math.Min(Math.Max(0, currentPoints), totalCost);
+                var shortfall = totalCost - cost;
+                var moneyVipCost = shortfall / 2 + shortfall % 2;
+                if (request.ExpectedContribPointsCost != cost || request.ExpectedMoneyVipCost != moneyVipCost)
+                    return new InheritanceTransactionResult(persisted, currentPoints, cost, false,
+                        moneyVipCost, RequiresConfirmation: true);
+
+                var newPoints = currentPoints - cost;
+                var newMoneyVip = actor.MoneyVip - moneyVipCost;
+                if (newMoneyVip < 0)
+                    throw new InvalidException("Không đủ Tiên Ngọc để bù phần điểm cống hiến còn thiếu");
+
+                if (moneyVipCost > 0)
+                {
+                    var updatedActor = await db.Characters
+                        .Where(x => x.Id == actor.Id && x.MoneyVip == actor.MoneyVip && x.MoneyVip >= moneyVipCost)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.MoneyVip, newMoneyVip));
+                    if (updatedActor != 1)
+                        throw new InvalidException("Tiên Ngọc đã thay đổi, vui lòng thử lại");
+                    await db.SpendingMoneyVips.AddAsync(new SpendingMoneyVip
+                    {
+                        CharId = actor.Id,
+                        SpendFor = SpendFor.ChangeClanInheritance,
+                        MoneyVip = moneyVipCost,
+                        Time = DateTime.UtcNow
+                    });
+                }
 
                 if (cost > 0)
                 {
-                    var updated = await db.Clans
-                        .Where(x => x.Id == clanId && x.Funds == currentFunds && x.Funds >= cost)
-                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.Funds, newFunds));
+                    var updated = await db.ClanMembers
+                        .Where(x => x.ClanId == clanId && x.CharId == actor.Id &&
+                                    x.ContribPoints == currentPoints && x.ContribPoints >= cost)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.ContribPoints, newPoints));
                     if (updated != 1)
-                        throw new InvalidException("Quỹ tông môn đã thay đổi, vui lòng thử lại");
+                        throw new InvalidException("Điểm cống hiến đã thay đổi, vui lòng thử lại");
                 }
 
                 if (request.EffectType == null)
@@ -266,14 +288,32 @@ public static partial class ClanManager
                 }
 
                 await db.SaveChangesAsync();
-                return new InheritanceTransactionResult(
+                attemptedChange = new InheritanceTransactionResult(
                     request.EffectType == null ? null : persisted,
-                    newFunds,
+                    newPoints,
                     cost,
-                    true);
+                    true,
+                    moneyVipCost,
+                    newMoneyVip);
+                return attemptedChange;
             });
 
-            clan.Funds = transactionResult.ClanFunds;
+            actorMember.ContribPoints = transactionResult.ContribPoints;
+            if (transactionResult.RequiresConfirmation)
+                return new SetClanInheritanceResult
+                {
+                    Success = false,
+                    RequiresConfirmation = true,
+                    Message = "Chi phí đã thay đổi, vui lòng xác nhận lại",
+                    ClanFunds = clan.Funds,
+                    ContribPoints = transactionResult.ContribPoints,
+                    Cost = transactionResult.Cost,
+                    MoneyVipCost = transactionResult.MoneyVipCost,
+                    NewMoneyVip = actor.MoneyVip
+                };
+
+            if (transactionResult.NewMoneyVip.HasValue)
+                actor.SetMoneyVip(transactionResult.NewMoneyVip.Value);
             clan.InheritanceEffects.RemoveAll(x =>
                 x.Trigger == request.Trigger && x.SlotIndex == request.SlotIndex);
             if (transactionResult.Effect != null)
@@ -293,22 +333,20 @@ public static partial class ClanManager
             };
             if (ramChanged && Observers.TryGetValue(clanId, out var observer))
             {
-                if (transactionResult.Cost > 0)
-                {
-                    observer.SendAll(MessageTag.ClanFundsChanged,
-                        new ClanFundsChanged { ClanId = clanId, Funds = transactionResult.ClanFunds });
-                }
-
                 observer.SendAll(MessageTag.ClanInheritanceChanged, change);
             }
+            if (transactionResult.Cost > 0)
+                NotifyClanMemberPointsChanged(clanId, actor.Id, transactionResult.ContribPoints);
 
             return new SetClanInheritanceResult
             {
                 Success = true,
                 Change = change,
                 NewMoneyVip = actor.MoneyVip,
-                ClanFunds = transactionResult.ClanFunds,
-                Cost = transactionResult.Cost
+                ClanFunds = clan.Funds,
+                ContribPoints = transactionResult.ContribPoints,
+                Cost = transactionResult.Cost,
+                MoneyVipCost = transactionResult.MoneyVipCost
             };
         }
         finally
@@ -555,7 +593,7 @@ public static partial class ClanManager
     public static async Task<UpgradeClanMaxHonResult> UpgradeMaxHon(
         ClanReference reference,
         CharacterData actor,
-        int requestedLimitLevel)
+        UpgradeClanMaxHonRequest request)
     {
         var clan = reference.Clan;
         var actorMember = clan.Members.FirstOrDefault(x => x.CharId == actor.Id)
@@ -564,40 +602,51 @@ public static partial class ClanManager
             throw new InvalidException("Không có quyền nâng giới hạn hồn tông môn");
 
         var nextLimitLevel = clan.HonLimitLevel + 1;
-        var limitLevel = requestedLimitLevel <= 0 ? nextLimitLevel : requestedLimitLevel;
+        var limitLevel = request.LimitLevel <= 0 ? nextLimitLevel : request.LimitLevel;
         if (limitLevel != nextLimitLevel)
             throw new InvalidException("Chỉ có thể mở giới hạn hồn từng cấp");
 
         var newMaxHon = GetMaxHon(limitLevel);
         var newMaxSoulEssence = GetMaxSoulEssence(limitLevel);
-        var funds = GetHonLimitUpgradeCost(limitLevel);
+        var totalCost = GetHonLimitUpgradeCost(limitLevel);
         if (newMaxHon <= clan.MaxHon)
             throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
-        if (clan.Funds < funds)
-            throw new InvalidException("Quỹ tông môn không đủ");
 
         var clanId = clan.Id;
         var gate = AcquireGate(clanId);
         await gate.Semaphore.WaitAsync();
         try
         {
+            UpgradeMaxHonTransactionResult? attemptedUpgrade = null;
             var transactionResult = await ExecuteClanTransactionAsync(async db =>
             {
                 var persisted = await db.Clans
                     .Where(x => x.Id == clanId)
-                    .Select(x => new { x.Funds, x.Hon, x.MaxHon, x.HonLimitLevel, x.SoulEssence })
+                    .Select(x => new { x.Hon, x.MaxHon, x.HonLimitLevel, x.SoulEssence })
                     .SingleAsync();
+                if (attemptedUpgrade != null && persisted.HonLimitLevel == limitLevel)
+                    return attemptedUpgrade;
                 var persistedNextLimitLevel = persisted.HonLimitLevel + 1;
                 if (limitLevel != persistedNextLimitLevel)
                     throw new InvalidException("Chỉ có thể mở giới hạn hồn từng cấp");
-                if (persisted.Funds < funds)
-                    throw new InvalidException("Quỹ tông môn không đủ");
+                var currentPoints = await db.ClanMembers
+                    .Where(x => x.ClanId == clanId && x.CharId == actor.Id)
+                    .Select(x => x.ContribPoints).SingleAsync();
+                var pointsCost = Math.Min(Math.Max(0, currentPoints), totalCost);
+                var shortfall = totalCost - pointsCost;
+                var moneyVipCost = shortfall / 2 + shortfall % 2;
+                if (request.ExpectedContribPointsCost != pointsCost || request.ExpectedMoneyVipCost != moneyVipCost)
+                    return new UpgradeMaxHonTransactionResult(pointsCost, 0, currentPoints,
+                        persisted.Hon, persisted.MaxHon, persisted.HonLimitLevel, persisted.SoulEssence,
+                        GetMaxSoulEssence(persisted.HonLimitLevel), moneyVipCost, actor.MoneyVip, true);
+                if (moneyVipCost > actor.MoneyVip)
+                    throw new InvalidException("Không đủ Tiên Ngọc để bù điểm cống hiến còn thiếu");
+                var newMoneyVip = actor.MoneyVip - (int)moneyVipCost;
 
-                long newFunds;
+                var newPoints = currentPoints - pointsCost;
                 long addedMaxHon;
                 try
                 {
-                    newFunds = checked(persisted.Funds - funds);
                     addedMaxHon = checked(newMaxHon - persisted.MaxHon);
                 }
                 catch (OverflowException)
@@ -607,48 +656,88 @@ public static partial class ClanManager
                 if (addedMaxHon <= 0)
                     throw new InvalidException("Cấu hình giới hạn hồn không hợp lệ");
 
+                if (pointsCost > 0)
+                {
+                    var updatedMember = await db.ClanMembers
+                        .Where(x => x.ClanId == clanId && x.CharId == actor.Id && x.ContribPoints == currentPoints)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.ContribPoints, newPoints));
+                    if (updatedMember != 1)
+                        throw new InvalidException("Điểm cống hiến đã thay đổi, vui lòng thử lại");
+                }
+                if (moneyVipCost > 0)
+                {
+                    var updatedActor = await db.Characters
+                        .Where(x => x.Id == actor.Id && x.MoneyVip == actor.MoneyVip && x.MoneyVip >= moneyVipCost)
+                        .ExecuteUpdateAsync(x => x.SetProperty(c => c.MoneyVip, newMoneyVip));
+                    if (updatedActor != 1)
+                        throw new InvalidException("Tiên Ngọc đã thay đổi, vui lòng thử lại");
+                    await db.SpendingMoneyVips.AddAsync(new SpendingMoneyVip
+                    {
+                        CharId = actor.Id,
+                        SpendFor = SpendFor.UpgradeClanHonLimit,
+                        MoneyVip = moneyVipCost,
+                        Time = DateTime.UtcNow
+                    });
+                }
+
                 var updated = await db.Clans
                     .Where(x => x.Id == clanId &&
-                                x.Funds == persisted.Funds &&
                                 x.Hon == persisted.Hon &&
                                 x.MaxHon == persisted.MaxHon &&
                                 x.HonLimitLevel == persisted.HonLimitLevel)
                     .ExecuteUpdateAsync(x => x
-                        .SetProperty(c => c.Funds, newFunds)
                         .SetProperty(c => c.MaxHon, newMaxHon)
                         .SetProperty(c => c.HonLimitLevel, limitLevel));
                 if (updated != 1)
                     throw new InvalidException("Dữ liệu tông môn đã thay đổi, vui lòng thử lại");
 
-                return new UpgradeMaxHonTransactionResult(
-                    funds,
+                await db.SaveChangesAsync();
+                attemptedUpgrade = new UpgradeMaxHonTransactionResult(
+                    pointsCost,
                     addedMaxHon,
-                    newFunds,
+                    newPoints,
                     persisted.Hon,
                     newMaxHon,
                     limitLevel,
                     persisted.SoulEssence,
-                    newMaxSoulEssence);
+                    newMaxSoulEssence,
+                    moneyVipCost,
+                    newMoneyVip);
+                return attemptedUpgrade;
             });
 
-            clan.Funds = transactionResult.ClanFunds;
+            actorMember.ContribPoints = transactionResult.ContribPoints;
+            if (transactionResult.RequiresConfirmation)
+                return new UpgradeClanMaxHonResult
+                {
+                    RequiresConfirmation = true,
+                    Message = "Chi phí đã thay đổi, vui lòng xác nhận lại",
+                    ContribPointsCost = transactionResult.ContribPointsCost,
+                    ContribPoints = transactionResult.ContribPoints,
+                    MoneyVipCost = transactionResult.MoneyVipCost,
+                    NewMoneyVip = actor.MoneyVip
+                };
+            actor.SetMoneyVip(transactionResult.NewMoneyVip);
             clan.Hon = transactionResult.Hon;
             clan.MaxHon = transactionResult.MaxHon;
             clan.HonLimitLevel = transactionResult.HonLimitLevel;
             clan.SoulEssence = transactionResult.SoulEssence;
             if (Observers.TryGetValue(clanId, out var observer))
             {
-                observer.SendAll(MessageTag.ClanFundsChanged,
-                    new ClanFundsChanged { ClanId = clanId, Funds = clan.Funds });
                 observer.SendAll(MessageTag.ClanHonChanged, CreateClanHonChanged(clan));
             }
+            if (transactionResult.ContribPointsCost > 0)
+                NotifyClanMemberPointsChanged(clanId, actor.Id, transactionResult.ContribPoints);
 
             return new UpgradeClanMaxHonResult
             {
                 Success = true,
-                FundsSpent = transactionResult.FundsSpent,
+                ContribPointsCost = transactionResult.ContribPointsCost,
+                ContribPoints = transactionResult.ContribPoints,
+                MoneyVipCost = transactionResult.MoneyVipCost,
+                NewMoneyVip = transactionResult.NewMoneyVip,
                 AddedMaxHon = transactionResult.AddedMaxHon,
-                ClanFunds = transactionResult.ClanFunds,
+                ClanFunds = clan.Funds,
                 Hon = transactionResult.Hon,
                 MaxHon = transactionResult.MaxHon,
                 HonLimitLevel = transactionResult.HonLimitLevel,
