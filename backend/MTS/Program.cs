@@ -138,6 +138,7 @@ public static class Program
             builder.Services.AddHostedService<RechargeRankService>();
             builder.Services.AddHostedService<MoneyVipSpendingRankService>();
             builder.Services.AddHostedService<AuctionService>();
+            builder.Services.AddHostedService<BossService>();
             builder.Services.AddHostedService<PaymentService>();
             builder.Services.AddHostedService<ClanSoulEssenceFlushService>();
             builder.Services.AddHostedService<Startup>();

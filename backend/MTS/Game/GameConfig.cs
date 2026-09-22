@@ -40,7 +40,7 @@ public static class GameConfig
     public static LevelResource LevelResource { get; private set; }
     public static CoreResource Core { get; private set; }
     public static ClanBuffResources ClanBuffResources { get; private set; }
-    public static BossData[] BossDatas { get; private set; }
+    public static BossData[] BossDatas { get; private set; } = [];
     public static HashSet<ushort> MaterialDotPhas { get; private set; }
     public static readonly float[] UnselectPercents = { 11, 12, 14, 16, 20 };
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
@@ -287,5 +287,7 @@ public static class GameConfig
             .Select(x=>(ushort)x.Id)
             .ToHashSet();
         ClanBuffResources = Read<ClanBuffResources>("Data/ClanBuffResources.bin");
+        const string bossPath = "Data/BossResources.bin";
+        if (File.Exists(bossPath)) BossDatas = ReadArray2<BossData>(bossPath);
     }
 }

@@ -33,6 +33,20 @@ public class Startup : BackgroundService
         await using var db = await Program.CreateDbAsync();
     }
 
+    private async Task Gift(AppDbContext db)
+    {
+        var product = await db.IapProducts.FirstOrDefaultAsync(x => x.Id == 8);
+        var mail = new Mail()
+        {
+            CharId = 6191,
+            Title = "Phần thưởng nạp",
+            Content = "Phần thưởng nạp",
+            Rewards = product.Reward.GetMailRewards()
+        };
+        await db.Mails.AddAsync(mail);
+        await db.SaveChangesAsync();
+        Log.Information("oke");
+    }
     private async Task RemoveEvents(AppDbContext db)
     {
         await db.Events.ExecuteDeleteAsync();

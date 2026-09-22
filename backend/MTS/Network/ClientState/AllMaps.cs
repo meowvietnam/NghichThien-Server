@@ -1,6 +1,7 @@
 using Amazon.S3.Model;
 using MTS.Exceptions;
 using MTS.Game;
+using MTS.Game.Boss;
 using MTS.Network.Models;
 using Network;
 using Network.Extensions;
@@ -97,7 +98,40 @@ public class AllMaps : IClientState
     {
         var tag = message.Tag;
         var reader = message.Reader;
-        if (tag == MessageTag.MoveToMap)
+        if (tag == MessageTag.GetBossStatus)
+        {
+            var nodeId = reader.MemRead<int>();
+            var boss = BossManager.Instance;
+            var status = boss != null && (nodeId == 0 ||
+                         boss.NodeId == nodeId && client.CharacterData.Progression.IdCurrentNode == nodeId)
+                ? boss.GetStatus(client.CharacterData.Id)
+                : new BossStatus { NodeId = nodeId };
+            status.RequestNodeId = nodeId;
+            client.MemSend(MessageTag.BossStatus, status);
+        }
+        else if (tag == MessageTag.JoinBoss)
+        {
+            var request = reader.MemRead<JoinBossRequest>();
+            var result = new JoinBossResult();
+            try
+            {
+                lock (client.StateLock)
+                {
+                    if (isMoving || !ReferenceEquals(client.ClientState, this))
+                        throw new InvalidException("Hãy dừng tại vị trí boss trước khi tham gia.");
+                    var boss = BossManager.Instance ?? throw new InvalidException("Boss chưa xuất hiện.");
+                    var state = new BossState(client, boss);
+                    boss.Join(state, request);
+                    client.ChangeState(state);
+                    result.Success = true;
+                    result.Status = boss.GetStatus(client.CharacterData.Id);
+                    result.Player = new CharacterSnapshot(client.CharacterData);
+                }
+            }
+            catch (InvalidException e) { result.Message = e.Message; }
+            client.MemSend(MessageTag.JoinBossResult, result);
+        }
+        else if (tag == MessageTag.MoveToMap)
         {
             lock (client.StateLock)
             {

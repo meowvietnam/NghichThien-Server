@@ -22,6 +22,45 @@ namespace MTS.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("MTS.Game.Boss.BossProgress", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttemptsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("BossBytes")
+                        .IsRequired()
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("DamageJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Hp")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("KillerId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("KillerRewards")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("ParticipantRewards")
+                        .IsRequired()
+                        .HasColumnType("blob");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BossProgresses");
+                });
+
             modelBuilder.Entity("MTS.Models.Appearance", b =>
                 {
                     b.Property<int>("CharId")
@@ -123,6 +162,9 @@ namespace MTS.Migrations
 
                     b.Property<bool>("IsNoAds")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("LastDailyBossRewardAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("LastFreeClanContributionAt")
                         .HasColumnType("datetime(6)");

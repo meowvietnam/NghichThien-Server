@@ -62,6 +62,8 @@ namespace MTS.Network.Core
                 ResultCombatResult result = null;
                 try
                 {
+                    if (request.TypeCombat == ETypeCombat.Boss || client.ClientState is ClientState.BossState)
+                        throw new InvalidException("Trận boss phải gửi ResultCombatBoss.");
                     EnsureInCombat();
                     lock (client.CharacterLock)
                     {

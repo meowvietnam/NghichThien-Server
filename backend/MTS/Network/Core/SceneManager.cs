@@ -1,5 +1,6 @@
 using MTS.Exceptions;
 using MTS.Game.Auction;
+using MTS.Game.Boss;
 using MTS.Game.DP;
 using MTS.Localization;
 using MTS.Network.ClientState;
@@ -76,6 +77,8 @@ public class SceneManager : IClientHandler
                             client.ChangeState(new ConvertDanLuState(client));
                         }
                         break;
+                    case "Boss":
+                        throw new InvalidException("Hãy tham gia boss từ popup tại vị trí boss trên bản đồ.");
                     case Auction:
                         var auctionManager = AuctionManager.Instance;
                         if (auctionManager != null)

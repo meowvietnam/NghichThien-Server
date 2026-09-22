@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<InventoryManager> InventoryManagers { get; private set; }
     public DbSet<ItemRef> Items { get; private set; }
     public DbSet<FurnaceData> Furnaces { get; private set; }
+    public DbSet<MTS.Game.Boss.BossProgress> BossProgresses { get; set; }
     public DbSet<Mail> Mails { get; private set; }
     public DbSet<Social> Socials { get; private set; }
     public DbSet<Relationship> Relationships { get; private set; }
@@ -121,6 +122,16 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<MTS.Game.Boss.BossProgress>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.BossBytes).HasColumnType("longblob");
+            e.Property(x => x.ParticipantRewards).HasColumnType("blob");
+            e.Property(x => x.KillerRewards).HasColumnType("blob");
+            e.Property(x => x.AttemptsJson).HasColumnType("longtext");
+            e.Property(x => x.DamageJson).HasColumnType("longtext");
+        });
         var json = "json";
         var blob = "blob";
         modelBuilder.Entity<GuestAccount>(e =>

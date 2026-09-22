@@ -39,6 +39,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public DateTime LastFreeClanContributionAt { get; private set; }
     // Mốc thời gian tự rời tông môn gần nhất, dùng để tính cooldown trước khi được xin gia nhập tông môn khác.
     public DateTime LastLeaveClanAt { get; private set; }
+    public DateTime LastDailyBossRewardAt { get; private set; } = DateTime.UnixEpoch;
     public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
     public Appearance Appearance { get; set; } = new();
@@ -118,6 +119,13 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
             LastLeaveClanAt = value;
             dirty = true;
         }
+    }
+
+    public void SetLastDailyBossRewardAt(DateTime value)
+    {
+        if (LastDailyBossRewardAt == value) return;
+        LastDailyBossRewardAt = value;
+        dirty = true;
     }
 
     public void SetIsInfiniteEnergy(bool value)
@@ -357,7 +365,8 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
                         .SetProperty(x => x.TrungSinhCount, TrungSinhCount)
                         .SetProperty(x => x.BonusPoint, BonusPoint)
                         .SetProperty(x => x.LastFreeClanContributionAt, LastFreeClanContributionAt)
-                        .SetProperty(x => x.LastLeaveClanAt, LastLeaveClanAt));
+                        .SetProperty(x => x.LastLeaveClanAt, LastLeaveClanAt)
+                        .SetProperty(x => x.LastDailyBossRewardAt, LastDailyBossRewardAt));
             dirty = false;
         }
 

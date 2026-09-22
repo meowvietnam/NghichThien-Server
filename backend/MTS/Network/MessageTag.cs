@@ -303,7 +303,6 @@ public enum MessageTag
     SetClanMemberRoleRequest = 3686,
     ClanMemberRoleChanged = 3690,
     RequestJoinClanRequest = 3691,
-    RequestJoinClanResult = 3692,
     ClanJoinRequestAdded = 3693,
     ApproveClanJoinRequestRequest = 3694,
     RejectClanJoinRequestRequest = 3695,
@@ -320,7 +319,16 @@ public enum MessageTag
     UpgradeClanMaxHonRequest = 3706,
     ClanHonChanged = 3707,
     
-    
+    ReadyFightingBoss = 3756,
     SyncEndTurnBoss = 3781,
+    FirstDailyBossReward = 3831,
+    ResultCombatBoss = 3841,
+    BossInfo = 3842,
+    BossEnded = 3843,
+    BossHp = 3844,
+        GetBossStatus = 3845,
+        BossStatus = 3846,
+        JoinBoss = 3847,
+        JoinBossResult = 3848,
     
 }
