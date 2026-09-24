@@ -8,6 +8,7 @@ public class BossProgress
     public int NodeId { get; set; }
     public int Hp { get; set; }
     public string AttemptsJson { get; set; } = "{}";
+    public string AttemptDaysJson { get; set; } = "{}";
     public string DamageJson { get; set; } = "{}";
     public int? KillerId { get; set; }
     public byte[] ParticipantRewards { get; set; } = [];

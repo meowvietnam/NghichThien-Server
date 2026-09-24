@@ -6,6 +6,7 @@ using MTS.Game.BaseSkill;
 using MTS.Game.Clan;
 using MTS.Game.DP;
 using MTS.Game.Gacha;
+using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Resources;
 using MTS.IAP;
@@ -31,22 +32,56 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
+        await Gift(db);
     }
 
-    private async Task Gift(AppDbContext db)
+    private async Task Gift2(AppDbContext db)
     {
-        var product = await db.IapProducts.FirstOrDefaultAsync(x => x.Id == 8);
+        var charData = await db.Characters.FirstAsync(x => x.Name == "iseka1");
+        var furnace = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Tier == Tier.LucPham);
+        var rewards = new List<IMailReward>()
+        {
+            new MailRewardMoneyVip()
+            {
+                MoneyVip = 3000
+            },
+            new MailRewardFurnace()
+            {
+                FurnaceData = new FurnaceData()
+                {
+                    Durability = 100,
+                    Id = (ushort)furnace.Id,
+                }
+            }
+        };
         var mail = new Mail()
         {
-            CharId = 6191,
-            Title = "Phần thưởng nạp",
-            Content = "Phần thưởng nạp",
-            Rewards = product.Reward.GetMailRewards()
+            CharId = charData.Id,
+            Title = "Phần thưởng diệt Boss",
+            Content = "Phần thưởng diệt Boss",
+            Rewards = rewards
         };
         await db.Mails.AddAsync(mail);
         await db.SaveChangesAsync();
         Log.Information("oke");
     }
+
+    private async Task Gift(AppDbContext db)
+    {
+        var name = "NhienNhien";
+        var charData = await db.Characters.FirstAsync(x => x.Name == name);
+        var dailyRewards = await db.DailyRewardMonthlyPasses.Where(x => x.CharId == charData.Id).ToListAsync();
+        for (int i = 0; i < 3; i++)
+        {
+            foreach (var d in dailyRewards)
+            {
+                await d.Claim(charData, db);
+            }
+        }
+
+        Log.Information("ok");
+    }
+
     private async Task RemoveEvents(AppDbContext db)
     {
         await db.Events.ExecuteDeleteAsync();

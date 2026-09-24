@@ -33,6 +33,7 @@ var tests = new (string Name, Action Run)[]
     ("schedule boundaries and Vietnam timezone", Schedule),
     ("schedule text reflects configured days, hours and open-ended sessions", ScheduleText),
     ("ready duplicates, reconnect and three attempts", Attempts),
+    ("attempts reset at midnight Vietnam time", DailyAttemptReset),
     ("reject invalid, forged and premature damage", DamageValidation),
     ("simultaneous kills persist once and include departed participants", ConcurrentKill),
     ("result validates stats and grants no reward", Result),
@@ -75,6 +76,7 @@ static CharacterData Character(int id)
     data.Stats.SetHp(1000);
     data.Stats.SetThanThuc(100);
     data.Stats.SetThoNguyen(100);
+    data.Progression.MaxLevel = 4;
     return data;
 }
 static BossData Data() => new(ETypeVisualChar.EnemyLuyenKhiSoKi, new CharacterSnapshot(Character(-100)));
@@ -179,6 +181,40 @@ static void Attempts()
     Reject(() => boss.OnPlayerJoin(new Fighter(Character(1))));
     Join(Boss(), 1); // New spawn has its own quota.
 }
+static void DailyAttemptReset()
+{
+    var now = new DateTimeOffset(2026, 9, 22, 16, 59, 0, TimeSpan.Zero); // 23:59 giờ Việt Nam.
+    var boss = new BossManager(Data(), utcNow: () => now);
+    for (var i = 0; i < BossManager.MaxAttempts; i++)
+    {
+        var player = Join(boss, 1);
+        boss.OnPlayerLeave(player);
+    }
+    Check(boss.GetStatus(1).RemainingAttempts == 0);
+    Reject(() => boss.OnPlayerJoin(new Fighter(Character(1))));
+
+    now = now.AddMinutes(2); // 00:01 ngày kế tiếp tại Việt Nam.
+    Check(boss.GetStatus(1).RemainingAttempts == BossManager.MaxAttempts);
+    var nextDay = Join(boss, 1);
+    Check(boss.GetStatus(1).RemainingAttempts == BossManager.MaxAttempts - 1);
+    boss.OnPlayerLeave(nextDay);
+
+    var progress = new BossProgress
+    {
+        BossBytes = MemoryPackSerializer.Serialize(Data()), Hp = 1000,
+        AttemptsJson = "{\"1\":3}", AttemptDaysJson = "{\"1\":20260922}"
+    };
+    var restored = new BossManager(progress, DateTimeOffset.MaxValue,
+        () => new DateTimeOffset(2026, 9, 22, 10, 0, 0, TimeSpan.Zero));
+    Check(restored.GetStatus(1).RemainingAttempts == 0);
+    restored = new BossManager(progress, DateTimeOffset.MaxValue,
+        () => new DateTimeOffset(2026, 9, 23, 10, 0, 0, TimeSpan.Zero));
+    Check(restored.GetStatus(1).RemainingAttempts == BossManager.MaxAttempts);
+    progress.AttemptDaysJson = "{}"; // Phiên cũ trước migration được reset một lần an toàn.
+    restored = new BossManager(progress, DateTimeOffset.MaxValue,
+        () => new DateTimeOffset(2026, 9, 22, 10, 0, 0, TimeSpan.Zero));
+    Check(restored.GetStatus(1).RemainingAttempts == BossManager.MaxAttempts);
+}
 static void DamageValidation()
 {
     var boss = Boss();
@@ -272,13 +308,15 @@ static void Restore()
     var progress = new BossProgress
     {
         BossBytes = MemoryPackSerializer.Serialize(Data()), Hp = 500,
-        AttemptsJson = "{\"1\":3}", DamageJson = "{\"1\":450}"
+        AttemptsJson = "{\"1\":3}", AttemptDaysJson = "{\"1\":20260923}", DamageJson = "{\"1\":450}"
     };
-    var boss = new BossManager(progress, DateTimeOffset.UtcNow.AddHours(1));
+    var boss = new BossManager(progress, DateTimeOffset.MaxValue,
+        () => new DateTimeOffset(2026, 9, 23, 10, 0, 0, TimeSpan.Zero));
     Check(boss.Character.Hp == 500 && boss.GetDamageTotals()[1] == 450);
     Reject(() => boss.OnPlayerJoin(new Fighter(Character(1))));
     progress.Hp = 0; progress.KillerId = 2;
-    boss = new BossManager(progress, DateTimeOffset.UtcNow.AddHours(1));
+    boss = new BossManager(progress, DateTimeOffset.MaxValue,
+        () => new DateTimeOffset(2026, 9, 23, 10, 0, 0, TimeSpan.Zero));
     Reject(() => boss.OnPlayerJoin(new Fighter(Character(2))));
 }
 static void Close()

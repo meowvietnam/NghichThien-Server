@@ -22,10 +22,13 @@ public class BossManager
 
     // Kept for the entire spawn, even after a player leaves or finishes combat.
     private readonly Dictionary<int, int> attempts = new();
+    private readonly Dictionary<int, int> attemptDays = new();
     private readonly Dictionary<int, long> damageTotals = new();
     private bool isBossKilled;
     private bool isClosed;
     private readonly Action<int, Dictionary<int, int>, Dictionary<int, long>, int?>? save;
+    private readonly Action<int, Dictionary<int, int>, Dictionary<int, int>, Dictionary<int, long>, int?>? saveWithAttemptDays;
+    private readonly Func<DateTimeOffset> utcNow;
     public static BossManager? Instance { get; internal set; }
     public DateTimeOffset EndAt { get; private set; } = DateTimeOffset.MaxValue;
     private bool IsClosed => isClosed || DateTimeOffset.UtcNow >= EndAt;
@@ -37,14 +40,16 @@ public class BossManager
     public int Id => BossData.Character.Id;
     public CharacterSnapshot Character => BossData.Character;
 
-    public BossManager(BossData bossData, Action<int, Dictionary<int, int>, Dictionary<int, long>, int?>? save = null)
+    public BossManager(BossData bossData, Action<int, Dictionary<int, int>, Dictionary<int, long>, int?>? save = null,
+        Func<DateTimeOffset>? utcNow = null)
     {
         BossData = bossData.DeepClone();
         this.save = save;
+        this.utcNow = utcNow ?? (() => DateTimeOffset.UtcNow);
     }
 
-    public BossManager(BossProgress progress, DateTimeOffset endAt)
-        : this(MemoryPackSerializer.Deserialize<BossData>(progress.BossBytes)!)
+    public BossManager(BossProgress progress, DateTimeOffset endAt, Func<DateTimeOffset>? utcNow = null)
+        : this(MemoryPackSerializer.Deserialize<BossData>(progress.BossBytes)!, utcNow: utcNow)
     {
         SpawnId = progress.Id;
         NodeId = progress.NodeId;
@@ -52,8 +57,10 @@ public class BossManager
         isBossKilled = progress.KillerId.HasValue;
         EndAt = endAt;
         attempts = JsonConvert.DeserializeObject<Dictionary<int, int>>(progress.AttemptsJson) ?? new();
+        attemptDays = JsonConvert.DeserializeObject<Dictionary<int, int>>(progress.AttemptDaysJson) ?? new();
         damageTotals = JsonConvert.DeserializeObject<Dictionary<int, long>>(progress.DamageJson) ?? new();
-        save = (hp, used, damage, killer) => BossStore.Save(progress, hp, used, damage, killer);
+        saveWithAttemptDays = (hp, used, days, damage, killer) =>
+            BossStore.Save(progress, hp, used, days, damage, killer);
     }
 
     public BossStatus GetStatus(int characterId)
@@ -68,7 +75,7 @@ public class BossManager
                 Boss = BossData.DeepClone().Character,
                 IsAlive = !IsClosed && !isBossKilled && Character.Hp > 0,
                 FightingCount = readyPlayers.Count(id => players.TryGetValue(id, out var p) && p.IsConnected),
-                RemainingAttempts = Math.Max(0, MaxAttempts - attempts.GetValueOrDefault(characterId)),
+                RemainingAttempts = Math.Max(0, MaxAttempts - GetAttemptsToday(characterId)),
                 DamageDone = damage,
                 TamPhamChance = chances.TamPham / 100f,
                 TuPhamChance = chances.TuPham / 100f,
@@ -86,6 +93,10 @@ public class BossManager
             if (request == null || request.SpawnId != SpawnId || request.NodeId != NodeId ||
                 player.CharData.Progression.IdCurrentNode != NodeId)
                 throw new InvalidException("Bạn phải tới đúng vị trí của phiên boss này.");
+            if (player.CharData.Progression.MaxLevel < 4)
+            {
+                throw new InvalidException("Yêu cầu đạt Trúc cơ sơ kỳ");
+            }
             if (player.CharData.Stats.Hp <= 0)
                 throw new InvalidException("Khí huyết đã cạn, hãy hồi phục trước khi tham gia.");
             OnPlayerJoin(player);
@@ -116,7 +127,7 @@ public class BossManager
         {
             if (IsClosed || isBossKilled || Character.Hp <= 0)
                 throw new InvalidException("Boss đã bị tiêu diệt.");
-            if (attempts.GetValueOrDefault(player.Id) >= MaxAttempts)
+            if (GetAttemptsToday(player.Id) >= MaxAttempts)
                 throw new InvalidException("Bạn đã dùng hết 3 lượt đánh boss này.");
             if (IsCurrentPlayer(player)) return;
             if (!players.TryAdd(player.Id, player))
@@ -138,11 +149,13 @@ public class BossManager
                 return true;
             }
 
-            var used = attempts.GetValueOrDefault(player.Id);
+            var used = GetAttemptsToday(player.Id);
             if (used >= MaxAttempts) return false;
             var nextAttempts = new Dictionary<int, int>(attempts) { [player.Id] = used + 1 };
-            save?.Invoke(Character.Hp, nextAttempts, damageTotals, null);
+            var nextAttemptDays = new Dictionary<int, int>(attemptDays) { [player.Id] = GetVietnamDay() };
+            Save(Character.Hp, nextAttempts, nextAttemptDays, damageTotals, null);
             attempts[player.Id] = used + 1;
+            attemptDays[player.Id] = nextAttemptDays[player.Id];
             readyPlayers.Add(player.Id);
             Send(player, MessageTag.BossHp, Character.Hp);
             Send(player, MessageTag.SyncStartTurn, player.Id);
@@ -208,7 +221,7 @@ public class BossManager
             {
                 [attacker.Id] = damageTotals.GetValueOrDefault(attacker.Id) + effectiveDamage
             };
-            save?.Invoke(hp, attempts, nextDamageTotals, hp == 0 ? attacker.Id : null);
+            Save(hp, attempts, attemptDays, nextDamageTotals, hp == 0 ? attacker.Id : null);
             damageTotals[attacker.Id] = nextDamageTotals[attacker.Id];
             Character.Hp = hp;
             if (Character.Hp == 0)
@@ -226,6 +239,26 @@ public class BossManager
 
             if (isBossKilled) SendToReadyPlayers(MessageTag.BossEnded, true);
         }
+    }
+
+    private int GetAttemptsToday(int characterId)
+    {
+        return attemptDays.GetValueOrDefault(characterId) == GetVietnamDay()
+            ? attempts.GetValueOrDefault(characterId)
+            : 0;
+    }
+
+    private int GetVietnamDay()
+    {
+        var date = utcNow().ToOffset(Utils.Utils.Utc7).Date;
+        return date.Year * 10000 + date.Month * 100 + date.Day;
+    }
+
+    private void Save(int hp, Dictionary<int, int> used, Dictionary<int, int> days,
+        Dictionary<int, long> damage, int? killer)
+    {
+        if (saveWithAttemptDays != null) saveWithAttemptDays(hp, used, days, damage, killer);
+        else save?.Invoke(hp, used, damage, killer);
     }
 
     private void SendToReadyPlayers<T>(MessageTag tag, T model)
@@ -249,7 +282,7 @@ public class BossManager
         }
     }
 
-    public void SyncEndTurnBoss(IBossFighter player, SyncEndTurnBoss model)
+    public void SyncEndTurnBoss(IBossFighter player, SyncEndTurnBoss? model)
     {
         lock (bossLock)
         {

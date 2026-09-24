@@ -27,6 +27,10 @@ namespace MTS.Migrations
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("AttemptDaysJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("AttemptsJson")
                         .IsRequired()
                         .HasColumnType("longtext");

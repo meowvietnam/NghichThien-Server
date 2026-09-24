@@ -52,14 +52,19 @@ Phần thưởng chung và đặc biệt được chốt lúc spawn; lò theo s�
    Server nạp vào `GameConfig.BossDatas`, project tự copy file khi build/publish.
    Nếu chưa có file hoặc danh sách rỗng, service ghi cảnh báo và không mở boss.
 2. Apply migration `20260921100144_AddBossProgress`, `20260921150009_AddBossNodeId`,
-   `20260922100000_AddBossDamage` và `20260922110000_AddDailyBossReward` qua workflow database hiện có trước khi bật server.
-   Các migration thêm phiên boss, NodeId, tổng sát thương và mốc nhận thưởng ngày.
+   `20260922100000_AddBossDamage`, `20260922110000_AddDailyBossReward` và
+   `20260923013405_AddBossAttemptDays` qua workflow database hiện có trước khi bật server.
+   Các migration thêm phiên boss, NodeId, tổng sát thương, mốc nhận thưởng ngày và ngày sử dụng lượt Boss.
 3. Chạy server. Server khôi phục Boss của phiên hiện tại (hoặc tạo nếu chưa tồn tại).
    Boss đã chết không hồi sinh khi restart.
 
 HP, số lượt và tổng sát thương thực gây ra theo từng nhân vật, dữ liệu boss và phần thưởng được lưu theo từng mốc spawn.
-Mỗi lần Ready hợp lệ tốn một lượt, tối đa 3 lượt/nhân vật/boss. Ready gửi lặp
-không tốn thêm. Thoát vào lại hoặc restart server không reset lượt.
+Mỗi lần Ready hợp lệ tốn một lượt, tối đa 3 lượt/nhân vật/ngày theo giờ Việt Nam.
+Lượt tự về 3 khi qua 00:00 UTC+7, kể cả cùng một phiên Boss tồn tại qua nhiều ngày.
+Ready gửi lặp không tốn thêm. Thoát vào lại hoặc restart server không reset lượt trong cùng ngày.
+Tổng sát thương và lịch sử người tham gia vẫn giữ cho toàn bộ phiên Boss.
+Phiên đang tồn tại từ trước migration `AddBossAttemptDays` được reset lượt một lần khi nâng cấp
+vì dữ liệu cũ chưa có ngày sử dụng lượt.
 Người Ready trước lúc boss chết được nhận thưởng, kể cả đã thoát hoặc offline.
 Nếu boss chết/hết giờ lúc client đang tải scene, lượt chưa Ready không bị tính
 và không được tính là tham gia.

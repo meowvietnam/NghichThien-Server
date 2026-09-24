@@ -130,6 +130,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.ParticipantRewards).HasColumnType("blob");
             e.Property(x => x.KillerRewards).HasColumnType("blob");
             e.Property(x => x.AttemptsJson).HasColumnType("longtext");
+            e.Property(x => x.AttemptDaysJson).HasColumnType("longtext");
             e.Property(x => x.DamageJson).HasColumnType("longtext");
         });
         var json = "json";

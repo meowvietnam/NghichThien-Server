@@ -52,7 +52,7 @@ public static class BossStore
     }
 
     public static void Save(BossProgress progress, int hp, Dictionary<int, int> attempts,
-        Dictionary<int, long> damageTotals, int? killerId)
+        Dictionary<int, int> attemptDays, Dictionary<int, long> damageTotals, int? killerId)
     {
         using var db = Program.CreateDbAsync().GetAwaiter().GetResult();
         var row = db.BossProgresses.Single(x => x.Id == progress.Id);
@@ -60,6 +60,7 @@ public static class BossStore
             throw new InvalidOperationException("Boss was already killed.");
         row.Hp = hp;
         row.AttemptsJson = JsonConvert.SerializeObject(attempts);
+        row.AttemptDaysJson = JsonConvert.SerializeObject(attemptDays);
         row.DamageJson = JsonConvert.SerializeObject(damageTotals);
         row.KillerId = killerId;
         if (killerId.HasValue)
