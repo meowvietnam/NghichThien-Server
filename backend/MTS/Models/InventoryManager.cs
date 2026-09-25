@@ -258,56 +258,6 @@ public partial class InventoryManager
         return RemoveFurnace(furnace);
     }
 
-    public int ByteSize()
-    {
-        lock (inventoryLock)
-        {
-            return Furnaces.ByteSize() + Recipes.ByteSize() + Herbs.ByteSize() + ThanThongs.ByteSize() +
-                   CongPhaps.ByteSize() + VuKhis.ByteSize() + PhongCus.ByteSize() + TrangSucs.ByteSize() +
-                   LinhDans.ByteSize() + NgoDaos.ByteSize() + CamNgos.ByteSize() + CongPhapOwners.ByteSize()
-                   + ThanThongOwners.ByteSize() + Materials.ByteSize();
-        }
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        lock (inventoryLock)
-        {
-            writer.WriteArray(Furnaces);
-            writer.WriteArray(Recipes);
-            writer.WriteArray(Herbs);
-            writer.WriteArray(ThanThongs);
-            writer.WriteArray(CongPhaps);
-            writer.WriteArray(VuKhis);
-            writer.WriteArray(PhongCus);
-            writer.WriteArray(TrangSucs);
-            writer.WriteArray(LinhDans);
-            writer.WriteArray(NgoDaos);
-            writer.WriteArray(CamNgos);
-            writer.WriteArray(CongPhapOwners);
-            writer.WriteArray(ThanThongOwners);
-            writer.WriteArray(Materials);
-        }
-    }
-
-    public void Deserialize(IReader reader, ref InventoryManager value)
-    {
-        value.Furnaces = reader.ReadArray<FurnaceData>().ToHashSet();
-        value.Recipes = reader.ReadArray<ItemRef>().ToHashSet();
-        value.Herbs = reader.ReadArray<ItemRef>().ToHashSet();
-        value.ThanThongs = reader.ReadArray<ItemRef>().ToHashSet();
-        value.CongPhaps = reader.ReadArray<ItemRef>().ToHashSet();
-        value.VuKhis = reader.ReadArray<Equipment>().ToHashSet();
-        value.PhongCus = reader.ReadArray<Equipment>().ToHashSet();
-        value.TrangSucs = reader.ReadArray<Equipment>().ToHashSet();
-        value.LinhDans = reader.ReadArray<ItemRef>().ToHashSet();
-        value.NgoDaos = reader.ReadArray<NgoDao>().ToHashSet();
-        value.CamNgos = reader.ReadArray<CamNgo>().ToHashSet();
-        value.CongPhapOwners = reader.ReadArray<CongPhap>().ToHashSet();
-        value.ThanThongOwners = reader.ReadArray<ThanThong>().ToHashSet();
-        value.Materials = reader.ReadArray<ItemRef>().ToHashSet();
-    }
-
     public void Clone(InventoryManager other)
     {
         CharId = other.CharId;

@@ -39,7 +39,8 @@ public partial record Clan
     public List<ClanInheritanceEffect> StartTurnEffects { get; set; } = new();
     [NotMapped]
     public List<ClanInheritanceEffect> EndTurnEffects { get; set; } = new();
-
+    public List<Puppet> Puppets { get; set; } = new();
+    public List<ClanNode> ClanNodes { get; set; } = new();
     public void RefreshInheritanceViews()
     {
         StartTurnEffects = InheritanceEffects

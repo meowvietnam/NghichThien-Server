@@ -14,6 +14,7 @@ namespace MTS.Network.ClientState
         TrungSinh,
         DongPhuState,
         CombatPvp,
-        BossState
+        BossState,
+        TongMonChien
     }
 }

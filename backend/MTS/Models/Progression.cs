@@ -37,35 +37,9 @@ public partial class Progression
 
     [NotMapped] private bool dirty;
 
-    public void Deserialize(IReader reader, ref Progression value)
-    {
-        value.Level = reader.Read<int>();
-        value.CurrentExp = reader.Read<int>();
-        value.CurrentEnergy = reader.Read<int>();
-        value.NgoDaoDiem = reader.Read<int>();
-        value.IdCurrentNode = reader.Read<int>();
-        value.MaxLevel = reader.Read<int>();
-    }
-
     public bool IsDefault()
     {
         return CharId == 0;
-    }
-
-    public int ByteSize()
-    {
-        return Level.ByteSize() + CurrentExp.ByteSize() + CurrentEnergy.ByteSize() + NgoDaoDiem.ByteSize() +
-               IdCurrentNode.ByteSize() + MaxLevel.ByteSize();
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Level);
-        writer.Write(CurrentExp);
-        writer.Write(CurrentEnergy);
-        writer.Write(NgoDaoDiem);
-        writer.Write(IdCurrentNode);
-        writer.Write(MaxLevel);
     }
 
     public void CopyFrom(Progression other)

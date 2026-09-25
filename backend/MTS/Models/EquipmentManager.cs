@@ -59,7 +59,6 @@ public partial class EquipmentManager
             return new[] { DonThuatUsed, PhuTu1Used, PhuTu2Used, PhuTu3Used, PhuTu4Used, ChuTu1Used, ChuTu2Used };
         }
     }
-    // Hoặc nếu muốn viết tường minh, dễ gọi, tách làm 3 hàm như sau cho gọn:
     public void EquipVuKhi(ushort id)
     {
         lock (equipmentLock)
@@ -218,56 +217,6 @@ public partial class EquipmentManager
     {
         return CharId == 0;
     }
-    public void Deserialize(IReader reader, ref EquipmentManager value)
-    {
-        lock (value.equipmentLock)
-        {
-            value.ThanThongEquips = reader.ReadArray<ThanThongEquip>().ToHashSet();
-            value.DanCombatUseds = reader.ReadArray<DanCombatUsed>().ToHashSet();
-            value.DonThuatUsed = reader.Read<ushort>();
-            value.PhuTu1Used = reader.Read<ushort>();
-            value.PhuTu2Used = reader.Read<ushort>();
-            value.PhuTu3Used = reader.Read<ushort>();
-            value.PhuTu4Used = reader.Read<ushort>();
-            value.ChuTu1Used = reader.Read<ushort>();
-            value.ChuTu2Used = reader.Read<ushort>();
-            value.VuKhi = reader.Read<ushort>();
-            value.PhongCu = reader.Read<ushort>();
-            value.TrangSuc = reader.Read<ushort>();
-        }
-    }
-
-    public int ByteSize()
-    {
-        lock (equipmentLock)
-        {
-            return ThanThongEquips.ByteSize() + DanCombatUseds.ByteSize() + DonThuatUsed.ByteSize() +
-                   PhuTu1Used.ByteSize()
-                   + PhuTu2Used.ByteSize() + PhuTu3Used.ByteSize() + PhuTu4Used.ByteSize()
-                   + ChuTu1Used.ByteSize() + ChuTu2Used.ByteSize()
-                   + VuKhi.ByteSize() + PhongCu.ByteSize() + TrangSuc.ByteSize();
-        }
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        lock (equipmentLock)
-        {
-            writer.WriteArray(ThanThongEquips);
-            writer.WriteArray(DanCombatUseds);
-            writer.Write(DonThuatUsed);
-            writer.Write(PhuTu1Used);
-            writer.Write(PhuTu2Used);
-            writer.Write(PhuTu3Used);
-            writer.Write(PhuTu4Used);
-            writer.Write(ChuTu1Used);
-            writer.Write(ChuTu2Used);
-            writer.Write(VuKhi);
-            writer.Write(PhongCu);
-            writer.Write(TrangSuc);
-        }
-    }
-
     public void CopyFrom(EquipmentManager other)
     {
         HashSet<ThanThongEquip> thanThongEquips;

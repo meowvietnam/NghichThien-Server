@@ -52,7 +52,6 @@ public partial class CharacterData
     public int BonusPoint { get; private set; } = 0;
     [MemoryPackIgnore]
     public DateTime LastFreeClanContributionAt { get; private set; }
-    // Mốc thời gian tự rời tông môn gần nhất, dùng để tính cooldown trước khi được xin gia nhập tông môn khác.
     [MemoryPackIgnore]
     public DateTime LastLeaveClanAt { get; private set; }
     [MemoryPackIgnore]

@@ -34,6 +34,24 @@ public class Startup : BackgroundService
         await using var db = await Program.CreateDbAsync();
     }
 
+    private async Task Register(AppDbContext db)
+    {
+        var name = "iziz89";
+        var username = "chidong1989";
+        var password = "khai2803";
+        var charData = await db.Characters.FirstAsync(x => x.Name == name);
+        var userId = charData.UserId;
+        var account = new LocalAccount()
+        {
+            UserId = userId,
+            Username = username,
+            PasswordHash = PasswordService.Hash(password)
+        };
+        charData.Name = "Tiểu Lý Phi Châm";
+        await db.LocalAccounts.AddAsync(account);
+        await db.SaveChangesAsync();
+        Log.Information("oke");
+    }
     private async Task Gift2(AppDbContext db)
     {
         var charData = await db.Characters.FirstAsync(x => x.Name == "iseka1");
