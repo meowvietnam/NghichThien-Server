@@ -28,7 +28,6 @@ public class BossService : BackgroundService
         var local = now.ToOffset(Utils.Utils.Utc7);
         if (keepUntilNextSpawn)
         {
-            // Reuse the latest scheduled spawn, even if it began last week.
             for (var offset = 0; offset <= 7; offset++)
             {
                 var date = local.Date.AddDays(-offset);
@@ -38,7 +37,6 @@ public class BossService : BackgroundService
             }
             return null;
         }
-        // Check yesterday too, because a window may continue past midnight.
         for (var offset = -1; offset <= 0; offset++)
         {
             var date = local.Date.AddDays(offset);

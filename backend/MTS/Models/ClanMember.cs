@@ -18,8 +18,8 @@ public partial class ClanMember
     [NotMapped] public Appearance Appearance => CharData.Appearance;
     // Lifetime contributions for this membership; spending only changes ContribPoints.
     public long TotalContribPoints { get; set; }
+    public int? NodeId { get; set; }
     [MemoryPackIgnore] public CharacterData CharData { get; set; }
-
     public bool HasPermission(ClanPermission permission)
     {
         var permissions = ClanRolePermissions.GetPermissions(Role);

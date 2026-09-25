@@ -12,6 +12,7 @@ using MTS.Localization;
 using MTS.Network.ClientState;
 using MTS.Network.Models;
 using MTS.Utils;
+using MemoryPack;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
@@ -28,10 +29,12 @@ public class ItemCollection
     }
 }
 
-public class InventoryManager : IMemorySerializable<InventoryManager>
+[MemoryPackable]
+public partial class InventoryManager
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
 
     public HashSet<FurnaceData> Furnaces { get; set; } = new();
@@ -40,14 +43,14 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [NotMapped] public HashSet<ItemRef> ThanThongs { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> CongPhaps { get; set; } = new();
     [NotMapped] public HashSet<ItemRef> LinhDans { get; set; } = new();
-    [NotMapped] public HashSet<ItemRef> Materials { get; set; } = new();
-    [NotMapped] public HashSet<Equipment> VuKhis { get; set; } = new();
-    [NotMapped] public HashSet<Equipment> PhongCus { get; set; } = new();
-    [NotMapped] public HashSet<Equipment> TrangSucs { get; set; } = new();
     public HashSet<NgoDao> NgoDaos { get; set; } = new();
     public HashSet<CamNgo> CamNgos { get; set; } = new();
     public HashSet<CongPhap> CongPhapOwners { get; set; } = new();
     public HashSet<ThanThong> ThanThongOwners { get; set; } = new();
+    [NotMapped] public HashSet<ItemRef> Materials { get; set; } = new();
+    [NotMapped] public HashSet<Equipment> VuKhis { get; set; } = new();
+    [NotMapped] public HashSet<Equipment> PhongCus { get; set; } = new();
+    [NotMapped] public HashSet<Equipment> TrangSucs { get; set; } = new();
 
     [NotMapped] [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
     private readonly object inventoryLock = new();
@@ -55,6 +58,7 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [NotMapped]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public object SyncRoot => inventoryLock;
 
     [NotMapped] [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
@@ -66,15 +70,18 @@ public class InventoryManager : IMemorySerializable<InventoryManager>
     [NotMapped]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public InventoryTracking Tracking { get; private set; } = new();
 
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public CharacterData CharacterData { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public HashSet<ItemRef> ItemRefs { get; private set; } = new();
 
     public void Init()

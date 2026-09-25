@@ -8,16 +8,19 @@ using MTS.Game.CreateCharacter;
 using MTS.Localization;
 using MTS.Network;
 using MTS.Network.Models;
+using MemoryPack;
 using Network;
 using Network.Extensions;
 using Serilog;
 
 namespace MTS.Models;
 
-public class Progression : IMemorySerializable<Progression>
+[MemoryPackable]
+public partial class Progression
 {
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
 
     public int Level { get; private set; }
@@ -29,6 +32,7 @@ public class Progression : IMemorySerializable<Progression>
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [ForeignKey(nameof(CharId))]
+    [MemoryPackIgnore]
     public CharacterData CharacterData { get; set; }
 
     [NotMapped] private bool dirty;

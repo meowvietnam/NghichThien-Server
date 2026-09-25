@@ -13,15 +13,16 @@ using MTS.ND;
 using MTS.Network;
 using MTS.Services;
 using MTS.Utils;
-using Network.Extensions.MemoryPack;
 using Serilog;
 
 namespace MTS.Models;
 
-public partial class CharacterData : IMemorySerializable<CharacterData>
+[MemoryPackable]
+public partial class CharacterData
 {
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
+    [MemoryPackIgnore]
     public int UserId { get; set; }
 
     [Key] public int Id { get; set; }
@@ -33,25 +34,34 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
     public bool IsNoAds { get; private set; } = false;
     public bool CanFly { get; private set; } = false;
     public int CurrentFreeAdsMoneyVipCount { get; private set; }
-    public int TrungSinhCount { get; private set; } = 0;
-    public int BonusPoint { get; private set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime LastFreeClanContributionAt { get; private set; }
-    // Mốc thời gian tự rời tông môn gần nhất, dùng để tính cooldown trước khi được xin gia nhập tông môn khác.
-    public DateTime LastLeaveClanAt { get; private set; }
-    public DateTime LastDailyBossRewardAt { get; private set; } = DateTime.UnixEpoch;
-    public CharacterStats Stats { get; set; } = new();
     public Progression Progression { get; set; } = new();
+    public CharacterStats Stats { get; set; } = new();
     public Appearance Appearance { get; set; } = new();
+    public InventoryManager InventoryManager { get; set; } = new();
     public EquipmentManager EquipmentManager { get; set; } = new();
     public Social Social { get; set; } = new();
-    public InventoryManager InventoryManager { get; set; } = new();
     public QuestManager QuestManager { get; set; } = new();
     public ArenaManager ArenaManager { get; set; } = new();
     public ShopManager ShopManager { get; set; } = new();
     public GachaManager GachaManager { get; set; } = new();
+
+    [MemoryPackIgnore]
+    public int TrungSinhCount { get; private set; } = 0;
+    [MemoryPackIgnore]
+    public int BonusPoint { get; private set; } = 0;
+    [MemoryPackIgnore]
+    public DateTime LastFreeClanContributionAt { get; private set; }
+    // Mốc thời gian tự rời tông môn gần nhất, dùng để tính cooldown trước khi được xin gia nhập tông môn khác.
+    [MemoryPackIgnore]
+    public DateTime LastLeaveClanAt { get; private set; }
+    [MemoryPackIgnore]
+    public DateTime LastDailyBossRewardAt { get; private set; } = DateTime.UnixEpoch;
+    [MemoryPackIgnore]
     public MonsterKill MonsterKill { get; set; } = new();
+    [MemoryPackIgnore]
     public EventManager EventManager { get; set; } = new();
+    [MemoryPackIgnore]
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
     
     [ForeignKey(nameof(UserId))]
@@ -166,82 +176,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
 
     public static CharacterData DeepClone(CharacterData clone)
     {
-        var writer = new Writer(clone.ByteSize());
-        writer.Write(clone);
-        var reader = new Reader(writer.Buffer);
-        return reader.Read<CharacterData>();
-    }
-
-    public int ByteSize()
-    {
-        return Id.ByteSize()
-               + Gender.ByteSize()
-               + Name.ByteSize()
-               + Stats.ByteSize()
-               + Progression.ByteSize()
-               + Appearance.ByteSize()
-               + EquipmentManager.ByteSize()
-               + MonPhai.ByteSize()
-               + MoneyVip.ByteSize()
-               + IsInfiniteEnergy.ByteSize()
-               + IsNoAds.ByteSize()
-               + CanFly.ByteSize()
-               + CurrentFreeAdsMoneyVipCount.ByteSize()
-               + InventoryManager.ByteSize()
-               + CreatedAt.ByteSize()
-               + Social.ByteSize()
-               + QuestManager.ByteSize()
-               + ArenaManager.ByteSize()
-               + ShopManager.ByteSize()
-               + GachaManager.ByteSize();
-    }
-
-    public void Serialize(IWriter writer)
-    {
-        writer.Write(Id);
-        writer.Write(Gender);
-        writer.Write(Name);
-        writer.Write(Stats);
-        writer.Write(Progression);
-        writer.Write(Appearance);
-        writer.Write(EquipmentManager);
-        writer.Write(MonPhai);
-        writer.Write(MoneyVip);
-        writer.Write(IsInfiniteEnergy);
-        writer.Write(IsNoAds);
-        writer.Write(CanFly);
-        writer.Write(CurrentFreeAdsMoneyVipCount);
-        writer.Write(InventoryManager);
-        writer.Write(CreatedAt);
-        writer.Write(Social);
-        writer.Write(QuestManager);
-        writer.Write(ArenaManager);
-        writer.Write(ShopManager);
-        writer.Write(GachaManager);
-    }
-
-    public void Deserialize(IReader reader, ref CharacterData value)
-    {
-        value.Id = reader.Read<int>();
-        value.Gender = reader.Read<Gender>();
-        value.Name = reader.Read();
-        value.Stats = reader.Read<CharacterStats>();
-        value.Progression = reader.Read<Progression>();
-        value.Appearance = reader.Read<Appearance>();
-        value.EquipmentManager = reader.Read<EquipmentManager>();
-        value.MonPhai = reader.Read<EMonPhai>();
-        value.MoneyVip = reader.Read<int>();
-        value.IsInfiniteEnergy = reader.Read<bool>();
-        value.IsNoAds = reader.Read<bool>();
-        value.CanFly = reader.Read<bool>();
-        value.CurrentFreeAdsMoneyVipCount = reader.Read<int>();
-        value.InventoryManager = reader.Read<InventoryManager>();
-        value.CreatedAt = reader.Read<DateTime>();
-        value.Social = reader.Read<Social>();
-        value.QuestManager = reader.Read<QuestManager>();
-        value.ArenaManager = reader.Read<ArenaManager>();
-        value.ShopManager = reader.Read<ShopManager>();
-        value.GachaManager = reader.Read<GachaManager>();
+        return MemoryPackSerializer.Deserialize<CharacterData>(MemoryPackSerializer.Serialize(clone));
     }
 
     public bool IsInventoryDefault()
@@ -343,10 +278,7 @@ public partial class CharacterData : IMemorySerializable<CharacterData>
 
     public CharacterData DeepClone()
     {
-        var writer = new Writer(ByteSize());
-        writer.Write(this);
-        var reader = new Reader(writer.Buffer);
-        return reader.Read<CharacterData>();
+        return MemoryPackSerializer.Deserialize<CharacterData>(MemoryPackSerializer.Serialize(this));
     }
 
     public async Task SaveChanges(AppDbContext db)

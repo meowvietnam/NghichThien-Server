@@ -5,16 +5,19 @@ using MTS.Data;
 using MTS.Localization;
 using MTS.Network.Models;
 using MTS.Utils;
+using MemoryPack;
 using Network;
 using Network.Extensions;
 using Newtonsoft.Json;
 
 namespace MTS.Models;
 
-public class EquipmentManager : IMemorySerializable<EquipmentManager>
+[MemoryPackable]
+public partial class EquipmentManager
 {
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public int CharId { get; set; }
     public HashSet<ThanThongEquip> ThanThongEquips { get; set; } = new();
     public HashSet<DanCombatUsed> DanCombatUseds { get; set; } = new();
@@ -31,6 +34,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [ForeignKey(nameof(CharId))]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public CharacterData CharacterData { get; set; }
 
     [NotMapped]
@@ -41,6 +45,7 @@ public class EquipmentManager : IMemorySerializable<EquipmentManager>
     [NotMapped]
     [System.Text.Json.Serialization.JsonIgnore]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public object SyncRoot => equipmentLock;
 
     [NotMapped] private EquipmentTracking tracking = new();

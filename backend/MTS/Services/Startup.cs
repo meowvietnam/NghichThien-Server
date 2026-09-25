@@ -32,7 +32,6 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-        await Gift(db);
     }
 
     private async Task Gift2(AppDbContext db)
