@@ -434,6 +434,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("LastFreeContributionAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("NodeId")
+                        .HasColumnType("int");
+
                     b.Property<byte>("Role")
                         .HasColumnType("tinyint unsigned");
 
@@ -446,6 +449,27 @@ namespace MTS.Migrations
                         .IsUnique();
 
                     b.ToTable("ClanMembers");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanNode", b =>
+                {
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("NodeId");
+
+                    b.HasIndex("ClanId");
+
+                    b.ToTable("ClanNodes");
                 });
 
             modelBuilder.Entity("MTS.Models.ClanShopItem", b =>
@@ -1376,6 +1400,59 @@ namespace MTS.Migrations
                     b.ToTable("Promotions");
                 });
 
+            modelBuilder.Entity("MTS.Models.Puppet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ArrivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Hp")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HpMax")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastHpRecoveryAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextArrivalAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RandomSeed")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Route")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("varchar(1024)");
+
+                    b.Property<byte>("State")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanId");
+
+                    b.ToTable("Puppets");
+                });
+
             modelBuilder.Entity("MTS.Models.QuestManager", b =>
                 {
                     b.Property<int>("CharId")
@@ -1621,6 +1698,112 @@ namespace MTS.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("MTS.Models.WarBattle", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("AttackerCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttackerClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttackerHpAfter")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttackerHpBefore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("DefenderCharId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DefenderClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DefenderHpAfter")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DefenderHpBefore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefenderPuppetId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("EndReason")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsPvp")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Outcome")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<byte>("State")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("WarBattles");
+                });
+
+            modelBuilder.Entity("MTS.Models.WarParticipant", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ArrivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ClanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Hp")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HpMax")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastHpRecoveryAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LastSafeNodeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextArrivalAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Route")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("varchar(1024)");
+
+                    b.Property<byte>("State")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.HasKey("CharId");
+
+                    b.HasIndex("ClanId");
+
+                    b.ToTable("WarParticipants");
+                });
+
             modelBuilder.Entity("MTS.Models.WelcomeReward", b =>
                 {
                     b.Property<int>("CharId")
@@ -1773,6 +1956,14 @@ namespace MTS.Migrations
                         .IsRequired();
 
                     b.Navigation("CharData");
+                });
+
+            modelBuilder.Entity("MTS.Models.ClanNode", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("MTS.Models.ClanShopItem", b =>
@@ -2144,6 +2335,15 @@ namespace MTS.Migrations
                     b.Navigation("CharacterData");
                 });
 
+            modelBuilder.Entity("MTS.Models.Puppet", b =>
+                {
+                    b.HasOne("MTS.Models.Clan", null)
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MTS.Models.QuestManager", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", "CharData")
@@ -2262,6 +2462,15 @@ namespace MTS.Migrations
                     b.HasOne("MTS.Models.CharacterData", null)
                         .WithMany()
                         .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.WarParticipant", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithOne()
+                        .HasForeignKey("MTS.Models.WarParticipant", "CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

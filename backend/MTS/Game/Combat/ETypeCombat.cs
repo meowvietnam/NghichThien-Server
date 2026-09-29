@@ -1,4 +1,4 @@
-﻿namespace MTS.Game.Combat
+namespace MTS.Game.Combat
 {
     public enum ETypeCombat
     {
@@ -8,6 +8,7 @@
         DauTruong,
         Boss,
         LuanBanRealTime,
-        TongMonChienRealTime
+        TongMonChienRealTime,
+        TongMonChienPuppet
     }
 }

@@ -21,6 +21,7 @@ public class SceneManager : IClientHandler
     private const string ConvertDanLu = "ConvertDanLu";
     private const string Auction = "Auction";
     private const string DongPhu = "DongPhu";
+    private const string TongMonChien = "TongMonChien";
     public SceneManager(Client client)
     {
         this.client = client;
@@ -76,6 +77,19 @@ public class SceneManager : IClientHandler
                         {
                             client.ChangeState(new ConvertDanLuState(client));
                         }
+                        break;
+                    case TongMonChien:
+                        if (!Game.TMC.WarManager.IsInitialized)
+                            throw new InvalidException("Tông môn chiến đang khởi động, hãy thử lại sau.");
+                        var warClan = (await Game.Clan.ClanManager.FindReferenceByMember(client.CharacterData.Id)).Clan;
+                        if (warClan.NodeId <= 0)
+                            throw new InvalidException("Tông môn chưa có thành trên bản đồ nên không thể tham chiến.");
+                        lock (client.StateLock)
+                        {
+                            client.ChangeState(new ClientState.TongMonChien(client));
+                        }
+
+                        result.Success = true;
                         break;
                     case "Boss":
                         throw new InvalidException("Hãy tham gia boss từ popup tại vị trí boss trên bản đồ.");

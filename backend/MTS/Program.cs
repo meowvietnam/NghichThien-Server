@@ -141,6 +141,7 @@ public static class Program
             builder.Services.AddHostedService<BossService>();
             builder.Services.AddHostedService<PaymentService>();
             builder.Services.AddHostedService<ClanSoulEssenceFlushService>();
+            builder.Services.AddHostedService<TongMonChienService>();
             builder.Services.AddHostedService<Startup>();
             var configuration = builder.Configuration;
             payOSClient = new PayOSClient(

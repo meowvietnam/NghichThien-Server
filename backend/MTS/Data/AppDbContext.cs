@@ -76,6 +76,10 @@ public class AppDbContext : DbContext
     public DbSet<ClanJoinRequest> ClanJoinRequests { get; private set; }
     public DbSet<ClanShopItem> ClanShopItems { get; private set; }
     public DbSet<ClanInheritanceEffect> ClanInheritanceEffects { get; private set; }
+    public DbSet<ClanNode> ClanNodes { get; private set; }
+    public DbSet<Puppet> Puppets { get; private set; }
+    public DbSet<WarParticipant> WarParticipants { get; private set; }
+    public DbSet<WarBattle> WarBattles { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -227,6 +231,45 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.ClanId, x.Trigger, x.SlotIndex }).IsUnique();
+        });
+        // Tông môn chiến: không khai báo navigation tới Clan để tránh load/serialize kèm Clan.
+        modelBuilder.Entity<ClanNode>(e =>
+        {
+            e.HasKey(x => x.NodeId);
+            e.Property(x => x.NodeId).ValueGeneratedNever();
+            e.HasIndex(x => x.ClanId);
+            e.HasOne<Clan>()
+                .WithMany()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        modelBuilder.Entity<Puppet>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.ClanId);
+            e.Property(x => x.Route).HasMaxLength(1024);
+            e.HasOne<Clan>()
+                .WithMany()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<WarParticipant>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.Property(x => x.CharId).ValueGeneratedNever();
+            e.HasIndex(x => x.ClanId);
+            e.Property(x => x.Route).HasMaxLength(1024);
+            e.HasOne<CharacterData>()
+                .WithOne()
+                .HasForeignKey<WarParticipant>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<WarBattle>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.HasIndex(x => x.State);
+            e.HasIndex(x => x.NodeId);
         });
         modelBuilder.Entity<Progression>(e =>
         {
