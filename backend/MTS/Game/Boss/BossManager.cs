@@ -209,10 +209,9 @@ public class BossManager
         {
             if (IsClosed || isBossKilled || !IsCurrentPlayer(attacker) || !readyPlayers.Contains(attacker.Id)) return;
             if (model == null || model.CharSendDame != attacker.Id || model.CharTakeDame != Id) return;
-            if (model.Datas == null || model.Datas.Count is 0 or > 100) return;
-            // Trust combat calculations, but reject negative or unreasonable damage packets.
-            if (model.Datas.Any(x => x == null || x.Dame is < 0 or > 1_000_000 ||
-                                     x.DameHoTrao is < 0 or > 1_000_000)) return;
+            // if (model.Datas == null || model.Datas.Count is 0 or > 100) return;
+            // if (model.Datas.Any(x => x == null || x.Dame is < 0 or > 1_000_000 ||
+            //                          x.DameHoTrao is < 0 or > 1_000_000)) return;
             var damage = model.Datas.Sum(x => (long)x.Dame);
             if (damage <= 0) return;
             var effectiveDamage = Math.Min(damage, Character.Hp);
@@ -290,6 +289,7 @@ public class BossManager
                 model == null || model.CharId != player.Id) return;
             var isHeadOfQueue = attackQueue.First?.Value == player.Id;
             model.IsKietSuc = model.IsKietSuc || !isHeadOfQueue || isBossKilled || IsClosed;
+            model.CurrentHpBoss = Character.Hp;
             player.MemSend(MessageTag.SyncEndTurnBoss, model);
         }
     }

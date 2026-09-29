@@ -88,7 +88,7 @@ public class Startup : BackgroundService
         var name = "NhienNhien";
         var charData = await db.Characters.FirstAsync(x => x.Name == name);
         var dailyRewards = await db.DailyRewardMonthlyPasses.Where(x => x.CharId == charData.Id).ToListAsync();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 2; i++)
         {
             foreach (var d in dailyRewards)
             {
