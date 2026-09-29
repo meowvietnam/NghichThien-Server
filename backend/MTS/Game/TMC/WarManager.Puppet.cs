@@ -13,13 +13,13 @@ public static partial class WarManager
 
     private static void EnsureLeader(Models.Clan clan, int charId)
     {
-        if (clan.LeaderCharId != charId) throw new InvalidException("Chỉ Tộc Chủ mới được điều khiển khôi lỗi.");
+        if (clan.LeaderCharId != charId) throw new InvalidException("Chỉ Tộc Chủ mới được điều khiển rối.");
     }
 
     private static WarUnit GetClanPuppet(int clanId, int puppetId)
     {
         if (!Units.TryGetValue((WarUnitKind.Puppet, puppetId), out var unit) || unit.ClanId != clanId)
-            throw new InvalidException("Khôi lỗi không tồn tại.");
+            throw new InvalidException("Rối không tồn tại.");
         return unit;
     }
 
@@ -38,9 +38,9 @@ public static partial class WarManager
                 EnsureInitialized();
                 var count = Units.Values.Count(x => x.IsPuppet && x.ClanId == clan.Id);
                 var max = WarConfig.GetMaxPuppetCount(clan.Level);
-                if (count >= max) throw new InvalidException($"Tông môn cấp {clan.Level} chỉ được có tối đa {max} khôi lỗi.");
+                if (count >= max) throw new InvalidException($"Tông môn cấp {clan.Level} chỉ được có tối đa {max} rối.");
                 if (WarConfig.GetCreatePuppetCost(clan.Level, count) > 0)
-                    throw new InvalidException("Chi phí tạo khôi lỗi chưa được hỗ trợ.");
+                    throw new InvalidException("Chi phí tạo rối chưa được hỗ trợ.");
                 var level = WarConfig.GetNewPuppetLevel(clan.Level);
                 var seed = WarConfig.RollPuppetSeed();
                 var hpMax = WarConfig.GetPuppetMaxHp(level, clan.Level, seed);
@@ -50,6 +50,7 @@ public static partial class WarManager
                     HpMax = hpMax, LastHpRecoveryAt = now, State = WarUnitState.Idle, ArrivedAt = now,
                     CreatedAt = now
                 };
+                PuppetVisual.Randomize(puppet);
             }
 
             // Ghi ngay để có Id bền vững; restart không thể sinh thêm rối vì số rối chỉ tăng qua lệnh này.
@@ -85,12 +86,12 @@ public static partial class WarManager
         {
             EnsureInitialized();
             var unit = GetClanPuppet(clan.Id, puppetId);
-            if (unit.State == WarUnitState.Fighting) throw new InvalidException("Khôi lỗi đang giao tranh.");
+            if (unit.State == WarUnitState.Fighting) throw new InvalidException("Rối đang giao tranh.");
             var puppet = unit.Puppet!;
             var maxLevel = WarConfig.GetMaxPuppetLevel(clan.Level);
-            if (puppet.Level >= maxLevel) throw new InvalidException($"Khôi lỗi đã đạt level tối đa ({maxLevel}) của tông.");
+            if (puppet.Level >= maxLevel) throw new InvalidException($"Rối đã đạt level tối đa ({maxLevel}) của tông.");
             if (WarConfig.GetUpgradePuppetCost(puppet.Level) > 0)
-                throw new InvalidException("Chi phí nâng cấp khôi lỗi chưa được hỗ trợ.");
+                throw new InvalidException("Chi phí nâng cấp rối chưa được hỗ trợ.");
             var now = DateTime.UtcNow;
             unit.ApplyRegen(now);
             puppet.Level++;
@@ -115,11 +116,11 @@ public static partial class WarManager
             if (unit.ApplyRegen(now)) MarkUnit(unit);
             if (unit.State != WarUnitState.Idle)
                 throw new InvalidException(unit.State == WarUnitState.Moving
-                    ? "Khôi lỗi đang di chuyển."
-                    : "Khôi lỗi đang giao tranh/phòng thủ tại node.");
-            if (unit.Hp < unit.HpMax) throw new InvalidException("Khôi lỗi phải đầy HP mới được điều đi.");
-            if (targetNodeId == unit.NodeId) throw new InvalidException("Khôi lỗi đang ở node này.");
-            if (!IsAllyNode(clan.Id, targetNodeId)) throw new InvalidException("Chỉ được điều khôi lỗi tới node của tông.");
+                    ? "Rối đang di chuyển."
+                    : "Rối đang giao tranh/phòng thủ tại node.");
+            if (unit.Hp < unit.HpMax) throw new InvalidException("Rối phải đầy HP mới được điều đi.");
+            if (targetNodeId == unit.NodeId) throw new InvalidException("Rối đang ở node này.");
+            if (!IsAllyNode(clan.Id, targetNodeId)) throw new InvalidException("Chỉ được điều rối tới node của tông.");
             var route = FindPuppetRoute(clan.Id, unit.NodeId, targetNodeId)
                         ?? throw new InvalidException("Không có đường đi chỉ qua node của tông.");
             StartMoving(unit, route, now);

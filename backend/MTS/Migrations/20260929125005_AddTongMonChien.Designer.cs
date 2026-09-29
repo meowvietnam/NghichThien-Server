@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260929085536_AddTongMonChien")]
+    [Migration("20260929125005_AddTongMonChien")]
     partial class AddTongMonChien
     {
         /// <inheritdoc />
@@ -1411,6 +1411,10 @@ namespace MTS.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AppearanceJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("ArrivedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1419,6 +1423,9 @@ namespace MTS.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
 
                     b.Property<int>("Hp")
                         .HasColumnType("int");

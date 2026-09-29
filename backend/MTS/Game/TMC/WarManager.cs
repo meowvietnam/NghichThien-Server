@@ -148,6 +148,13 @@ public static partial class WarManager
                 }
 
                 var unit = new WarUnit(puppet);
+                if (string.IsNullOrWhiteSpace(puppet.AppearanceJson))
+                {
+                    // Rối tạo trước khi có ngoại hình: random một lần rồi lưu lại.
+                    PuppetVisual.Randomize(puppet);
+                    MarkUnit(unit);
+                }
+
                 if (unit.State == WarUnitState.Fighting || unit.State == WarUnitState.Holding)
                 {
                     unit.State = WarUnitState.Idle;
@@ -413,6 +420,10 @@ public static partial class WarManager
                 MarkUnit(unit);
                 ResolveNode(unit.NodeId, now);
             }
+            else if (unit != null)
+            {
+                MarkUnit(unit);
+            }
 
             PublishDelta();
         }
@@ -577,9 +588,17 @@ public static partial class WarManager
             Clans = Clans.Values.Select(ToView).ToArray(),
             Nodes = Nodes.Values.Where(x => x.OwnerClanId != null || IsFighting(x.NodeId))
                 .Select(ToView).ToArray(),
-            Units = Units.Values.Select(u => ToView(u, now)).ToArray()
+            Units = Units.Values.Where(IsVisible).Select(u => ToView(u, now)).ToArray()
         };
     }
+
+    /// <summary>
+    /// Đối tượng được hiển thị trên bản đồ chiến: rối, hoặc người chơi đang online và đang ở trong Tông môn chiến
+    /// (mở scene chiến, đang đánh, hoặc vừa đánh xong đang quay lại scene). Người chơi offline/rời scene bị ẩn.
+    /// </summary>
+    private static bool IsVisible(WarUnit unit) =>
+        unit.IsPuppet || Sessions.ContainsKey(unit.Id) || unit.State == WarUnitState.Fighting ||
+        Returning.ContainsKey(unit.Id);
 
     private static bool IsFighting(int nodeId) => Battles.Values.Any(b => !b.Ended && b.NodeId == nodeId);
 
@@ -612,8 +631,10 @@ public static partial class WarManager
         };
         if (u.IsPuppet)
         {
-            view.Name = $"Khôi Lỗi #{u.Id}";
+            view.Name = $"Rối #{u.Id}";
             view.Level = u.Puppet!.Level;
+            view.Gender = u.Puppet.Gender;
+            view.Appearance = u.Puppet.Appearance;
         }
         else if (Sessions.TryGetValue(u.Id, out var session) && session.Client.CharacterData is { } c)
         {
@@ -654,14 +675,17 @@ public static partial class WarManager
             return;
         var now = DateTime.UtcNow;
         version++;
+        // Người chơi vừa offline/rời scene: gửi như bị xoá khỏi bản đồ (client ẩn đi), dữ liệu chiến vẫn giữ ở server.
+        var hidden = pendingUnits.Values.Where(u => !IsVisible(u)).Select(u => u.Key).ToList();
         var delta = new WarDelta
         {
             Version = version,
             ServerTime = now,
             Clans = pendingClans.Values.Select(ToView).ToArray(),
             Nodes = pendingNodes.Values.Select(ToView).ToArray(),
-            Units = pendingUnits.Values.Select(u => ToView(u, now)).ToArray(),
-            RemovedUnits = pendingRemoved.Select(k => new WarUnitRef { Kind = k.Item1, Id = k.Item2 }).ToArray()
+            Units = pendingUnits.Values.Where(IsVisible).Select(u => ToView(u, now)).ToArray(),
+            RemovedUnits = pendingRemoved.Concat(hidden)
+                .Select(k => new WarUnitRef { Kind = k.Item1, Id = k.Item2 }).ToArray()
         };
         ClearPendingDelta();
         foreach (var session in Sessions.Values)
@@ -792,7 +816,8 @@ public static partial class WarManager
     {
         Id = p.Id, ClanId = p.ClanId, Level = p.Level, RandomSeed = p.RandomSeed, NodeId = p.NodeId, Hp = p.Hp,
         HpMax = p.HpMax, LastHpRecoveryAt = p.LastHpRecoveryAt, State = p.State, Route = p.Route,
-        NextArrivalAt = p.NextArrivalAt, ArrivedAt = p.ArrivedAt, CreatedAt = p.CreatedAt
+        NextArrivalAt = p.NextArrivalAt, ArrivedAt = p.ArrivedAt, CreatedAt = p.CreatedAt, Gender = p.Gender,
+        AppearanceJson = p.AppearanceJson
     };
 
     private static WarBattle Clone(WarBattle b) => new()

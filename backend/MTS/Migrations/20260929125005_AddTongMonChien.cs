@@ -57,7 +57,10 @@ namespace MTS.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NextArrivalAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     ArrivedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Gender = table.Column<int>(type: "int", nullable: false),
+                    AppearanceJson = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {

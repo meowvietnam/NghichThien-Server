@@ -111,7 +111,10 @@ public static partial class WarManager
         var snapshot = new CharacterSnapshot(template);
         cuuUThuId ??= GameConfig.NDCPTTManager.ThanThongs.FirstOrDefault(x => x is MTS.TT.CuuUThu)?.Id;
         var puppet = unit.Puppet!;
-        snapshot.Name = $"Khôi Lỗi #{puppet.Id}";
+        snapshot.Name = $"Rối #{puppet.Id}";
+        snapshot.Gender = puppet.Gender;
+        snapshot.Skins = new Dictionary<string, string>(puppet.Appearance.Skins);
+        snapshot.Colors = new Dictionary<string, Color>(puppet.Appearance.Colors);
         snapshot.Level = puppet.Level;
         snapshot.Hp = puppet.Hp;
         snapshot.SinhMenh = puppet.HpMax;
