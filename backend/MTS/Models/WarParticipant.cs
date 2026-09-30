@@ -20,4 +20,6 @@ public class WarParticipant
     /// <summary>Node xuất phát của cạnh đang đi; dùng làm điểm về khi logout giữa đường.</summary>
     public int LastSafeNodeId { get; set; }
     public DateTime ArrivedAt { get; set; }
+    /// <summary>Lần gần nhất mở scene chiến (UTC). Điều kiện nhận thưởng tuần: vào scene ít nhất 1 lần trong tuần.</summary>
+    public DateTime? LastEnterAt { get; set; }
 }

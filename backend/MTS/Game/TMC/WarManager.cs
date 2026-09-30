@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MTS.Exceptions;
+using MTS.Game.AllMaps;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -104,6 +105,7 @@ public static partial class WarManager
             foreach (var map in GameConfig.MapManager.Maps)
             {
                 Nodes[map.Id] = new WarNodeState { NodeId = map.Id };
+                if (map.MapType == MapType.Stronghold) StrongholdNodes.Add(map.Id);
             }
 
             foreach (var node in nodes)
@@ -386,6 +388,7 @@ public static partial class WarManager
             }
 
             Sessions[charId] = session;
+            unit.Player!.LastEnterAt = now;
             ReadySessions.Remove(charId);
             Returning.Remove(charId);
             RememberName(charId, charData.Name, charData.Progression.Level);
@@ -528,9 +531,17 @@ public static partial class WarManager
         if (node.OwnerClanId == clanId) return;
         if (clanId == null && MainCities.ContainsKey(node.NodeId)) return;
         Log.Information("TongMonChien owner node {NodeId}: {Old} -> {New}", node.NodeId, node.OwnerClanId, clanId);
+        // Số Thành Ấn/Địa Mạch của cả tông mất và tông chiếm đều đổi.
+        MarkClan(node.OwnerClanId);
+        MarkClan(clanId);
         node.OwnerClanId = clanId;
         node.Version++;
         MarkNode(node);
+    }
+
+    private static void MarkClan(int? clanId)
+    {
+        if (clanId is { } id && Clans.TryGetValue(id, out var info)) pendingClans[id] = info;
     }
 
     private static void MarkNode(WarNodeState node)
@@ -588,7 +599,10 @@ public static partial class WarManager
             Clans = Clans.Values.Select(ToView).ToArray(),
             Nodes = Nodes.Values.Where(x => x.OwnerClanId != null || IsFighting(x.NodeId))
                 .Select(ToView).ToArray(),
-            Units = Units.Values.Where(IsVisible).Select(u => ToView(u, now)).ToArray()
+            Units = Units.Values.Where(IsVisible).Select(u => ToView(u, now)).ToArray(),
+            StrongholdMoneyVip = WarConfig.StrongholdWeeklyMoneyVip,
+            NodeMoneyVip = WarConfig.NodeWeeklyMoneyVip,
+            NextSettlementAt = WarConfig.GetNextSettlementAt(now)
         };
     }
 
@@ -604,7 +618,8 @@ public static partial class WarManager
 
     private static WarClanView ToView(WarClanInfo c) => new()
     {
-        ClanId = c.Id, Name = c.Name, ImageUrl = c.ImageUrl, MainNodeId = c.MainNodeId
+        ClanId = c.Id, Name = c.Name, ImageUrl = c.ImageUrl, MainNodeId = c.MainNodeId,
+        StrongholdCount = CountHeld(c.Id, stronghold: true), NodeCount = CountHeld(c.Id, stronghold: false)
     };
 
     private static WarNodeView ToView(WarNodeState n) => new()
@@ -809,7 +824,7 @@ public static partial class WarManager
     {
         CharId = p.CharId, ClanId = p.ClanId, NodeId = p.NodeId, Hp = p.Hp, HpMax = p.HpMax,
         LastHpRecoveryAt = p.LastHpRecoveryAt, State = p.State, Route = p.Route, NextArrivalAt = p.NextArrivalAt,
-        LastSafeNodeId = p.LastSafeNodeId, ArrivedAt = p.ArrivedAt
+        LastSafeNodeId = p.LastSafeNodeId, ArrivedAt = p.ArrivedAt, LastEnterAt = p.LastEnterAt
     };
 
     private static Puppet Clone(Puppet p) => new()

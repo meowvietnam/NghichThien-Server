@@ -80,6 +80,7 @@ public class AppDbContext : DbContext
     public DbSet<Puppet> Puppets { get; private set; }
     public DbSet<WarParticipant> WarParticipants { get; private set; }
     public DbSet<WarBattle> WarBattles { get; private set; }
+    public DbSet<WarWeeklySettlement> WarWeeklySettlements { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -270,6 +271,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).ValueGeneratedNever();
             e.HasIndex(x => x.State);
             e.HasIndex(x => x.NodeId);
+        });
+        modelBuilder.Entity<WarWeeklySettlement>(e =>
+        {
+            e.HasKey(x => x.WeekStart);
         });
         modelBuilder.Entity<Progression>(e =>
         {

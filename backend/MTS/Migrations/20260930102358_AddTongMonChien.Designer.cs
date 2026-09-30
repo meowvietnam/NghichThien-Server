@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MTS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260929125005_AddTongMonChien")]
+    [Migration("20260930102358_AddTongMonChien")]
     partial class AddTongMonChien
     {
         /// <inheritdoc />
@@ -1787,6 +1787,9 @@ namespace MTS.Migrations
                     b.Property<int>("HpMax")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("LastEnterAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("LastHpRecoveryAt")
                         .HasColumnType("datetime(6)");
 
@@ -1812,6 +1815,28 @@ namespace MTS.Migrations
                     b.HasIndex("ClanId");
 
                     b.ToTable("WarParticipants");
+                });
+
+            modelBuilder.Entity("MTS.Models.WarWeeklySettlement", b =>
+                {
+                    b.Property<DateTime>("WeekStart")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ClanCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MailCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SettledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("TotalMoneyVip")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("WeekStart");
+
+                    b.ToTable("WarWeeklySettlements");
                 });
 
             modelBuilder.Entity("MTS.Models.WelcomeReward", b =>

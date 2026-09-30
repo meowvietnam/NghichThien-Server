@@ -117,7 +117,8 @@ namespace MTS.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NextArrivalAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     LastSafeNodeId = table.Column<int>(type: "int", nullable: false),
-                    ArrivedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    ArrivedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    LastEnterAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -128,6 +129,22 @@ namespace MTS.Migrations
                         principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "WarWeeklySettlements",
+                columns: table => new
+                {
+                    WeekStart = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    SettledAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ClanCount = table.Column<int>(type: "int", nullable: false),
+                    MailCount = table.Column<int>(type: "int", nullable: false),
+                    TotalMoneyVip = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WarWeeklySettlements", x => x.WeekStart);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -171,6 +188,9 @@ namespace MTS.Migrations
 
             migrationBuilder.DropTable(
                 name: "WarParticipants");
+
+            migrationBuilder.DropTable(
+                name: "WarWeeklySettlements");
 
             migrationBuilder.DropColumn(
                 name: "NodeId",

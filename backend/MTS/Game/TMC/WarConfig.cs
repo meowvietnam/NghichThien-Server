@@ -58,6 +58,36 @@ public static class WarConfig
     /// <summary>[TẠM] Chi phí nâng rối từ <paramref name="fromLevel"/> lên level kế. 0 = miễn phí.</summary>
     public static long GetUpgradePuppetCost(int fromLevel) => 0;
 
+    // ---------------- Thưởng tuần ----------------
+
+    /// <summary>Tên điểm lớn: tính theo số Thành (node Stronghold, không gồm thành chính của tông) đang giữ.</summary>
+    public const string StrongholdPointName = "Thành Ấn";
+
+    /// <summary>Tên điểm bé: tính theo số node thường đang giữ.</summary>
+    public const string NodePointName = "Địa Mạch";
+
+    /// <summary>[TẠM] Tiên ngọc mỗi thành viên nhận cho mỗi Thành Ấn của tông khi chốt tuần.</summary>
+    public const int StrongholdWeeklyMoneyVip = 500;
+
+    /// <summary>[TẠM] Tiên ngọc mỗi thành viên nhận cho mỗi Địa Mạch của tông khi chốt tuần.</summary>
+    public const int NodeWeeklyMoneyVip = 50;
+
+    /// <summary>Tổng tiên ngọc một thành viên nhận theo số điểm của tông (không giới hạn trần).</summary>
+    public static int GetWeeklyMoneyVip(int strongholdCount, int nodeCount) =>
+        strongholdCount * StrongholdWeeklyMoneyVip + nodeCount * NodeWeeklyMoneyVip;
+
+    /// <summary>Mốc bắt đầu tuần (UTC) chứa <paramref name="utcNow"/>: 00:00 thứ Hai giờ Việt Nam (UTC+7).</summary>
+    public static DateTime GetWeekStart(DateTime utcNow)
+    {
+        var local = utcNow + Utils.Utils.Utc7;
+        var daysFromMonday = ((int)local.DayOfWeek + 6) % 7;
+        var mondayLocal = local.Date.AddDays(-daysFromMonday);
+        return DateTime.SpecifyKind(mondayLocal - Utils.Utils.Utc7, DateTimeKind.Utc);
+    }
+
+    /// <summary>Thời điểm chốt thưởng kế tiếp (UTC).</summary>
+    public static DateTime GetNextSettlementAt(DateTime utcNow) => GetWeekStart(utcNow).AddDays(7);
+
     /// <summary>Sinh thành phần ngẫu nhiên cho rối mới; kết quả được lưu vào Puppet.RandomSeed.</summary>
     public static int RollPuppetSeed() => Random.Shared.Next(0, 1_000_000);
 }
