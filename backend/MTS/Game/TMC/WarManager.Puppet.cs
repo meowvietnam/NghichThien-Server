@@ -89,7 +89,7 @@ public static partial class WarManager
             if (unit.State == WarUnitState.Fighting) throw new InvalidException("Rối đang giao tranh.");
             var puppet = unit.Puppet!;
             var maxLevel = WarConfig.GetMaxPuppetLevel(clan.Level);
-            if (puppet.Level >= maxLevel) throw new InvalidException($"Rối đã đạt level tối đa ({maxLevel}) của tông.");
+            if (puppet.Level >= maxLevel) throw new InvalidException("Rối đã đạt cảnh giới tối đa của tông.");
             if (WarConfig.GetUpgradePuppetCost(puppet.Level) > 0)
                 throw new InvalidException("Chi phí nâng cấp rối chưa được hỗ trợ.");
             var now = DateTime.UtcNow;
