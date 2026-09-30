@@ -3,6 +3,7 @@ using System.Runtime.InteropServices.ComTypes;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Exceptions;
+using MTS.Game.DP.Achievements;
 using MTS.IAP;
 using MTS.Models;
 using MTS.Network;
@@ -115,6 +116,8 @@ public static class DongPhuManager
         referenceTarget.AddState(state);
         referenceVisitor.AddState(state);
         observer.AddState(state);
+        // Thành tựu "thăm động phủ": mỗi động phủ người khác tính tối đa 1 lần/ngày.
+        referenceVisitor.DongPhu.Achievements?.AddVisit(targetId);
         return state;
     }
     
@@ -235,6 +238,9 @@ public static class DongPhuManager
                 .ToListAsync();
             dongPhu.Histories = new Queue<DongPhuHistory>(histories);
             dongPhu.Init(config);
+            var loaded = dongPhu;
+            dongPhu.Achievements = new DongPhuAchievements(charId, () => loaded.Level);
+            await dongPhu.Achievements.Load(db, dongPhu.LikeCount);
             reference = new DongPhuReference(dongPhu);
             references.TryAdd(charId, reference);
             return reference;

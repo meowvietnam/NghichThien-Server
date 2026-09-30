@@ -3,6 +3,7 @@ using MemoryPack;
 using MTS.Data;
 using MTS.Exceptions;
 using MTS.Game.DP;
+using MTS.Game.DP.Achievements;
 using MTS.Network.Models;
 using static MTS.Utils.Utils;
 using MTS.Utils;
@@ -32,6 +33,9 @@ public partial class DongPhu
     [MemoryPackIgnore] [NotMapped] private Modify<DongPhuLike> likesTracking = new();
     [MemoryPackIgnore] [NotMapped] private object dongPhuLock = new();
     [MemoryPackIgnore] [NotMapped] private DongPhuConfig config;
+
+    /// <summary>Tiến độ thành tựu Động phủ của chủ động phủ; nạp bởi DongPhuManager khi tải động phủ.</summary>
+    [MemoryPackIgnore] [NotMapped] public DongPhuAchievements? Achievements { get; set; }
 
     public void FirstInit(DongPhuConfig config)
     {
@@ -357,6 +361,7 @@ public partial class DongPhu
 
             SaveHistories(db);
             SaveLikes(db);
+            Achievements?.SaveChanges(db);
             Garden.SaveChanges(db);
             Shop.SaveChanges(db);
             Inventory.SaveChanges(db);
@@ -367,6 +372,7 @@ public partial class DongPhu
                 addedHistories.Clear();
             }
             likesTracking.Clear();
+            Achievements?.AcceptChanges();
             Garden.AcceptChanges();
             Shop.AcceptChanges();
             Inventory.AcceptChanges();

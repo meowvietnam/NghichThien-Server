@@ -1,5 +1,6 @@
 using MTS.Exceptions;
 using MTS.Game.DP;
+using MTS.Game.DP.Achievements;
 using MTS.Models;
 using MTS.Network.Core;
 using MTS.Network.Models;
@@ -66,6 +67,34 @@ public class DongPhuState : IClientState, ISender<MessageTag>
             isClientReady = true;
             var result = GetDongPhuInfo();
             client.MemSend(MessageTag.GetDongPhuInfoResult, result);
+            NotifyAchievements();
+        }
+        else if (tag == MessageTag.GetDongPhuAchievements)
+        {
+            var achievements = MyDongPhu().Achievements;
+            var result = achievements == null
+                ? new GetDongPhuAchievementsResult { Success = false, Message = "Thành tựu chưa sẵn sàng" }
+                : new GetDongPhuAchievementsResult { Success = true, Achievements = achievements.BuildViews() };
+            client.MemSend(MessageTag.GetDongPhuAchievements, result);
+        }
+        else if (tag == MessageTag.ClaimDongPhuAchievement)
+        {
+            var request = reader.MemRead<ClaimDongPhuAchievementRequest>();
+            ClaimDongPhuAchievementResult result;
+            try
+            {
+                result = await ClaimAchievement(request);
+            }
+            catch (InvalidException e)
+            {
+                result = new ClaimDongPhuAchievementResult
+                {
+                    Success = false, Message = e.Message, AchievementId = request.AchievementId,
+                    TierId = request.TierId
+                };
+            }
+
+            client.MemSend(MessageTag.ClaimDongPhuAchievement, result);
         }
         else if (tag == MessageTag.WateringHelp)
         {
@@ -249,11 +278,60 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         };
     }
 
+    /// <summary>Nhận thưởng một mốc thành tựu của động phủ mình; lưu ngay tiến độ và nhân vật.</summary>
+    private async Task<ClaimDongPhuAchievementResult> ClaimAchievement(ClaimDongPhuAchievementRequest request)
+    {
+        var achievements = MyDongPhu().Achievements ?? throw new InvalidException("Thành tựu chưa sẵn sàng");
+        var charData = client.CharacterData ?? throw new InvalidException("Nhân vật không tồn tại");
+        var rewards = achievements.Claim(request.AchievementId, request.TierId);
+        lock (client.CharacterLock)
+        {
+            foreach (var reward in rewards) reward.Claim(charData);
+        }
+
+        Log.Information("DongPhu achievement claimed: CharId={CharId} {AchievementId}:{TierId}", charData.Id,
+            request.AchievementId, request.TierId);
+        await referenceVisitor.SaveChanges();
+        _ = Task.Run(client.SaveChanges);
+        return new ClaimDongPhuAchievementResult
+        {
+            Success = true,
+            AchievementId = request.AchievementId,
+            TierId = request.TierId,
+            Rewards = rewards,
+            ClaimableCount = achievements.CountClaimable()
+        };
+    }
+
+    /// <summary>Cộng chỉ số thành tựu cho động phủ của mình; vừa đạt mốc mới thì báo chấm đỏ.</summary>
+    private void AddMyStat(DongPhuStat stat, long amount = 1)
+    {
+        if (MyDongPhu().Achievements?.Add(stat, amount) == true) NotifyAchievements();
+    }
+
+    /// <summary>Cộng chỉ số cho động phủ đang thăm (chủ động phủ có thể offline; chấm đỏ cập nhật khi họ mở bảng).</summary>
+    private void AddTargetStat(DongPhuStat stat)
+    {
+        var target = TargetDongPhu();
+        if (ReferenceEquals(target, MyDongPhu())) return;
+        target.Achievements?.Add(stat);
+    }
+
+    public void NotifyAchievements()
+    {
+        var achievements = MyDongPhu().Achievements;
+        if (achievements == null) return;
+        client.MemSend(MessageTag.DongPhuAchievementNotify,
+            new DongPhuAchievementNotify { ClaimableCount = achievements.CountClaimable() });
+    }
+
     private void Like()
     {
         var targetDongPhu = TargetDongPhu();
         var charData = client.CharacterData;
         var result = targetDongPhu.Like(charData);
+        AddMyStat(DongPhuStat.LikeGiven);
+        AddTargetStat(DongPhuStat.LikeReceived);
         var notify = new LikeDongPhuNotify()
         {
             NewLike = result.NewLike
@@ -267,6 +345,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         var targetDongPhu = TargetDongPhu();
         var charData = client.CharacterData;
         var result = targetDongPhu.TryHarvest(request, charData);
+        AddMyStat(DongPhuStat.Harvest);
         var notify = new HarvestSlotNotify()
         {
             SlotIndex = result.SlotIndex
@@ -279,7 +358,9 @@ public class DongPhuState : IClientState, ISender<MessageTag>
     {
         var myDongPhu = MyDongPhu();
         var charData = client.CharacterData;
-        return myDongPhu.BuySeed(request, charData);
+        var result = myDongPhu.BuySeed(request, charData);
+        if (result.Success) AddMyStat(DongPhuStat.SeedBought, request.Count);
+        return result;
     }
 
     private DongPhuInventory GetInventory()
@@ -327,6 +408,8 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         };
         client.MemSend(MessageTag.UpgradeDongPhuResult, result);
         observer.SendAllIgnore(this, MessageTag.UpgradeDongPhuNotify, notify);
+        // Cấp động phủ là chỉ số thành tựu (đọc trực tiếp): báo lại chấm đỏ.
+        if (result.Success) NotifyAchievements();
     }
     private GetDongPhuInfoResult GetDongPhuInfo()
     {
@@ -353,6 +436,7 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         var targetDongPhu = TargetDongPhu();
         var charData = client.CharacterData;
         var result = targetDongPhu.Plant(request, charData);
+        AddMyStat(DongPhuStat.Plant);
         var notify = new PlantNotify()
         {
             PlantSeed = result.PlantSeed
@@ -367,6 +451,8 @@ public class DongPhuState : IClientState, ISender<MessageTag>
         var targetDongPhu = TargetDongPhu();
         var helper = client.CharacterData!;
         var result = myDongPhu.HelpWatering(request, helper, targetDongPhu);
+        AddMyStat(DongPhuStat.WaterHelpGiven);
+        AddTargetStat(DongPhuStat.WaterHelpReceived);
         var notify = new WateringHelpNotify()
         {
             SlotIndex = result.SlotIndex,

@@ -909,6 +909,7 @@ public static partial class ClanManager
 
                 clan.MemberCount = Math.Max(0, clan.MemberCount - 1);
                 MemberClanIds.TryRemove(charId, out _);
+                TMC.WarManager.OnMemberRemoved(clanId, charId);
                 if (Observers.TryGetValue(clanId, out var observer))
                 {
                     foreach (var shopItem in returnedShopItems)
@@ -998,6 +999,7 @@ public static partial class ClanManager
     private static void PublishClanMapNodeChanged(Models.Clan clan)
     {
         if (clan.NodeId <= 0) return;
+        TMC.WarManager.UpsertClan(clan);
 
         var changed = new ClanMapNodeChanged { Node = ToMapNode(clan) };
         foreach (var client in TcpServer.Instance.GetClientsOnline())
@@ -1053,6 +1055,7 @@ public static partial class ClanManager
 
     public static void PublishDeleted(int clanId)
     {
+        TMC.WarManager.OnClanDeleted(clanId);
         if (Observers.TryRemove(clanId, out var observer))
         {
             observer.OnClanDeleted();

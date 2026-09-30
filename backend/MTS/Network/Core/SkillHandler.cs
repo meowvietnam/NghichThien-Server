@@ -240,6 +240,23 @@ public class SkillHandler : IClientHandler
             UseDanResult result = null;
             try
             {
+                // Trong scene Tông môn chiến, đan Hp/HoiFullHp chỉ hồi HP chiến, không đổi Stats.Hp.
+                if (client.ClientState is ClientState.TongMonChien && Game.TMC.WarManager.IsWarHpPill(request.Id))
+                {
+                    var warResult = Game.TMC.WarManager.UseHpPill(client, null, new WarUseHpPillRequest
+                    {
+                        DanId = request.Id,
+                        Count = request.Count
+                    });
+                    result = new UseDanResult
+                    {
+                        Success = true,
+                        Message = $"HP chiến: {warResult.Hp}/{warResult.HpMax}",
+                        NgoDaoDiem = client.CharacterData.Progression.NgoDaoDiem
+                    };
+                    return;
+                }
+
                 lock (client.CharacterLock)
                 {
                     var charData = client.CharacterData;

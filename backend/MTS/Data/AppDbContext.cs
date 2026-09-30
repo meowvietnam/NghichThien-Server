@@ -67,6 +67,7 @@ public class AppDbContext : DbContext
     public DbSet<SeedItemShop> SeedItemShops { get; private set; }
     public DbSet<Seed> Seeds { get; private set;  }
     public DbSet<DongPhuLike> DongPhuLikes { get; private set; }
+    public DbSet<DongPhuAchievementProgress> DongPhuAchievementProgresses { get; private set; }
     public DbSet<EventManager> EventManagers { get; private set; }
     public DbSet<Event> Events { get; private set; }
     public DbSet<EventInventory> EventInventories { get; private set; }
@@ -76,6 +77,11 @@ public class AppDbContext : DbContext
     public DbSet<ClanJoinRequest> ClanJoinRequests { get; private set; }
     public DbSet<ClanShopItem> ClanShopItems { get; private set; }
     public DbSet<ClanInheritanceEffect> ClanInheritanceEffects { get; private set; }
+    public DbSet<ClanNode> ClanNodes { get; private set; }
+    public DbSet<Puppet> Puppets { get; private set; }
+    public DbSet<WarParticipant> WarParticipants { get; private set; }
+    public DbSet<WarBattle> WarBattles { get; private set; }
+    public DbSet<WarSettlement> WarSettlements { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -227,6 +233,49 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.ClanId, x.Trigger, x.SlotIndex }).IsUnique();
+        });
+        // Tông môn chiến: không khai báo navigation tới Clan để tránh load/serialize kèm Clan.
+        modelBuilder.Entity<ClanNode>(e =>
+        {
+            e.HasKey(x => x.NodeId);
+            e.Property(x => x.NodeId).ValueGeneratedNever();
+            e.HasIndex(x => x.ClanId);
+            e.HasOne<Clan>()
+                .WithMany()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        modelBuilder.Entity<Puppet>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.ClanId);
+            e.Property(x => x.Route).HasMaxLength(1024);
+            e.HasOne<Clan>()
+                .WithMany()
+                .HasForeignKey(x => x.ClanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<WarParticipant>(e =>
+        {
+            e.HasKey(x => x.CharId);
+            e.Property(x => x.CharId).ValueGeneratedNever();
+            e.HasIndex(x => x.ClanId);
+            e.Property(x => x.Route).HasMaxLength(1024);
+            e.HasOne<CharacterData>()
+                .WithOne()
+                .HasForeignKey<WarParticipant>(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<WarBattle>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.HasIndex(x => x.State);
+            e.HasIndex(x => x.NodeId);
+        });
+        modelBuilder.Entity<WarSettlement>(e =>
+        {
+            e.HasKey(x => new { x.Kind, x.PeriodStart });
         });
         modelBuilder.Entity<Progression>(e =>
         {
@@ -765,6 +814,15 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.Likes)
                 .HasForeignKey(x => x.OwnerCharId)
                 .HasPrincipalKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuAchievementProgress>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Stat });
+            e.Property(x => x.ClaimedTiers).HasMaxLength(4096);
+            e.HasOne<CharacterData>()
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

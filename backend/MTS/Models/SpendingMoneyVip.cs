@@ -16,7 +16,9 @@ public enum SpendFor
     CreateClan = 64,
     ClanContribution = 72,
     ChangeClanInheritance = 80,
-    UpgradeClanHonLimit = 88
+    UpgradeClanHonLimit = 88,
+    CreateWarPuppet = 96,
+    UpgradeWarPuppet = 104
 }
 
 [MemoryPackable]
