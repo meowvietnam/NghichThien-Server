@@ -110,8 +110,8 @@ public class TongMonChien : IClientState, IWarSession
                     WarSnapshot snapshot;
                     try
                     {
-                        var (_, role) = await GetClan();
-                        snapshot = WarManager.GetSnapshot(CharId, role);
+                        var (clan, role) = await GetClan();
+                        snapshot = WarManager.GetSnapshot(CharId, clan, role);
                     }
                     catch (InvalidException e)
                     {

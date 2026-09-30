@@ -93,6 +93,8 @@ public partial class WarSnapshot : Result
     public int MyRewardPercent { get; set; }
     /// <summary>Thời điểm kết thúc mùa hiện tại (UTC); hết mùa làm mới đất đã chiếm.</summary>
     public DateTime SeasonEndAt { get; set; }
+    /// <summary>Số thành viên cùng nhóm chức vụ với bản thân (phần % của nhóm chia đều cho nhóm).</summary>
+    public int MyRoleMemberCount { get; set; }
 }
 
 [MemoryPackable]

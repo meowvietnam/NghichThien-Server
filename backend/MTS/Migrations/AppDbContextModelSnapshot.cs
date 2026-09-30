@@ -633,6 +633,27 @@ namespace MTS.Migrations
                     b.ToTable("DongPhus");
                 });
 
+            modelBuilder.Entity("MTS.Models.DongPhuAchievementProgress", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Stat")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<string>("ClaimedTiers")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("varchar(4096)");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CharId", "Stat");
+
+                    b.ToTable("DongPhuAchievementProgresses");
+                });
+
             modelBuilder.Entity("MTS.Models.DongPhuHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -2066,6 +2087,15 @@ namespace MTS.Migrations
                     b.HasOne("MTS.Models.CharacterData", null)
                         .WithOne()
                         .HasForeignKey("MTS.Models.DongPhu", "CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.DongPhuAchievementProgress", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -1,0 +1,675 @@
+{
+  "_huongDan": [
+    "Sửa file này và lưu: server tự nạp lại sau ~1 giây (file lỗi thì giữ cấu hình cũ, xem log).",
+    "Stat: WaterHelpGiven, WaterHelpReceived, LikeGiven, LikeReceived, Plant, Harvest, Level (1 Hoàng .. 5 Thần), SeedBought, Visit.",
+    "Id thành tựu và Id mốc dùng để nhớ đã nhận: KHÔNG đổi sau khi phát hành; thêm mốc mới thì dùng Id mới. Target các mốc phải tăng dần.",
+    "Description: {target} được thay bằng mục tiêu của mốc.",
+    "Rewards[].type: MoneyVip {MoneyVip}, LinhDan {Id, Count}, Item {Item:{Id, Type, Count}}, Skill {Item:{Id, Type, Count}}, RandomSkill {Tier, Type, Count}, RandomSpecialSkill {Tiers[], Type, TypeSkill?, Count}."
+  ],
+  "Achievements": [
+    {
+      "Id": "water_help_given",
+      "Stat": "WaterHelpGiven",
+      "Name": "Tưới Nước Hộ",
+      "Description": "Tưới nước hộ động phủ đạo hữu {target} lần",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 15,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 70,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 150,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 6000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 450,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 15000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 30000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "water_help_received",
+      "Stat": "WaterHelpReceived",
+      "Name": "Được Tưới Hộ",
+      "Description": "Động phủ được đạo hữu tưới hộ {target} lần",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 10,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2500
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 150,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 5000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 400,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 12000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 25000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "like_given",
+      "Stat": "LikeGiven",
+      "Name": "Kết Giao Đạo Hữu",
+      "Description": "Thích động phủ của {target} đạo hữu",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 500
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 15,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1500
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 40,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 80,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 6000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 150,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 12000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "like_received",
+      "Stat": "LikeReceived",
+      "Name": "Danh Tiếng Động Phủ",
+      "Description": "Động phủ nhận được {target} lượt thích",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 6000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 12000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 200,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 25000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "plant",
+      "Stat": "Plant",
+      "Name": "Gieo Linh Chủng",
+      "Description": "Gieo hạt {target} lần",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 300,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 6000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 15000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 3000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 30000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "harvest",
+      "Stat": "Harvest",
+      "Name": "Thu Hoạch Linh Dược",
+      "Description": "Thu hoạch {target} lần",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 300,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 6000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 15000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 3000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 30000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "level",
+      "Stat": "Level",
+      "Name": "Động Phủ Thăng Giai",
+      "Description": "Nâng động phủ lên {target}",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 1,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 2,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 10000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 3,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 20000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 4,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 40000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 80000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiThuong",
+                "ThienGiaiHa"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "seed_bought",
+      "Stat": "SeedBought",
+      "Name": "Thu Mua Hạt Giống",
+      "Description": "Mua tổng cộng {target} hạt giống",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 500
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 300,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 5000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 3000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 12000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 8000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 25000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "visit",
+      "Stat": "Visit",
+      "Name": "Du Ngoạn Động Phủ",
+      "Description": "Thăm động phủ đạo hữu {target} lần (mỗi động phủ tính 1 lần/ngày)",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 10,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 500
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 1500
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 150,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 3000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 400,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 8000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 15000
+            },
+            {
+              "type": "RandomSpecialSkill",
+              "Tiers": [
+                "DiaGiaiHa",
+                "DiaGiaiTrung"
+              ],
+              "Type": "ThanThong",
+              "Count": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "_canBang": [
+    "Cân bằng 30/09/2026 theo nhịp chơi đều ở Huyền Giai: tưới hộ 5/ngày (Hoàng 3 … Thần 12), trồng/thu hoạch ~10/ngày (cửa hàng ~20 hạt/ngày, cây 1–12 giờ), thăm 3–5 động phủ/ngày.",
+    "Mốc 1→5 ≈ 3 ngày, 2 tuần, 1 tháng, 3 tháng, 6 tháng. Tiên ngọc đã nhân 10 so với bản cân bằng gốc (yêu cầu 30/09/2026).",
+    "Mốc 4 thêm Thần thông Địa Giai Hạ/Trung, mốc 5 thêm Địa Giai Thượng/Thiên Giai Hạ (ngẫu nhiên). Like/mua hạt/thăm chỉ có ở mốc 5.",
+    "Cấp động phủ hoàn ~50% chi phí nâng (5k/20k/40k/80k/160k): 3.000/10.000/20.000/40.000/80.000 (~50%).",
+    "Lưu ý: Phàm Giai chưa có ô đất và lượt tưới hộ; phần lớn thành tựu cần nâng Hoàng Giai."
+  ]
+}

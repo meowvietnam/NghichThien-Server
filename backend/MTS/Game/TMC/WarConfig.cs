@@ -22,11 +22,14 @@ public static class WarConfig
 
     // ---------------- HP người chơi ----------------
 
-    /// <summary>[TẠM] HP chiến khi nhân vật tham chiến lần đầu.</summary>
+    /// <summary>HP chiến khi nhân vật tham chiến lần đầu: đầy.</summary>
     public static int GetInitialPlayerHp(CharacterDataView character) => GetPlayerMaxHp(character);
 
-    /// <summary>[TẠM] HP chiến tối đa của người chơi.</summary>
-    public static int GetPlayerMaxHp(CharacterDataView character) => 1000;
+    /// <summary>
+    /// HP chiến tối đa = Sinh Mệnh của nhân vật bên ngoài (CharacterData.Stats.SinhMenh), đồng bộ mỗi khi vào scene,
+    /// xin snapshot và vào trận. HP chiến hiện tại vẫn lưu riêng (WarParticipant.Hp), không đụng Stats.Hp.
+    /// </summary>
+    public static int GetPlayerMaxHp(CharacterDataView character) => Math.Max(1, character.SinhMenh);
 
     /// <summary>[TẠM] HP chiến hồi mỗi phút của người chơi (1%/phút).</summary>
     public static float GetPlayerRegenPerMinute(int maxHp) => maxHp * 0.01f;
@@ -85,19 +88,20 @@ public static class WarConfig
         (long)strongholdCount * StrongholdDailyMoneyVip + (long)nodeCount * NodeDailyMoneyVip;
 
     /// <summary>
-    /// Phần trăm tổng tiên ngọc/ngày của tông mà MỖI thành viên nhận theo chức vụ (tính riêng từng người, không chia nhóm):
-    /// Tộc chủ 50%, Phó tộc chủ 20%, Trưởng lão 20%, Đệ tử 10%.
+    /// Phần trăm tổng tiên ngọc/ngày của tông dành cho CẢ NHÓM chức vụ, chia đều cho các thành viên đủ điều kiện
+    /// trong nhóm: Tông chủ 50%, Phó tông chủ 20%, Trưởng lão 10%, Thành viên 20% (tổng 100%).
     /// </summary>
     public static int GetRewardPercent(ClanRole role) => role switch
     {
         ClanRole.Leader => 50,
         ClanRole.ViceLeader => 20,
-        ClanRole.Elder => 20,
-        _ => 10
+        ClanRole.Elder => 10,
+        _ => 20
     };
 
-    public static long GetMemberDailyMoneyVip(long clanDailyMoneyVip, ClanRole role) =>
-        clanDailyMoneyVip * GetRewardPercent(role) / 100;
+    /// <summary>Tiên ngọc/ngày một người nhận: phần của nhóm chức vụ chia đều cho <paramref name="groupSize"/> người.</summary>
+    public static long GetMemberDailyMoneyVip(long clanDailyMoneyVip, ClanRole role, int groupSize) =>
+        clanDailyMoneyVip * GetRewardPercent(role) / 100 / Math.Max(1, groupSize);
 
     /// <summary>Mốc bắt đầu ngày (UTC) chứa <paramref name="utcNow"/>: 00:00 giờ Việt Nam (UTC+7).</summary>
     public static DateTime GetDayStart(DateTime utcNow)

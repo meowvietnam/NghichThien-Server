@@ -95,7 +95,10 @@ public static partial class WarManager
         CharacterSnapshot snapshot;
         lock (client.CharacterLock)
         {
-            snapshot = new CharacterSnapshot(client.CharacterData ?? throw new InvalidOperationException("No character"));
+            var charData = client.CharacterData ?? throw new InvalidOperationException("No character");
+            snapshot = new CharacterSnapshot(charData);
+            // Vào trận: HP tối đa theo Sinh Mệnh hiện tại của nhân vật.
+            SyncPlayerMaxHp(unit, charData, DateTime.UtcNow);
         }
 
         snapshot.Hp = unit.Hp;

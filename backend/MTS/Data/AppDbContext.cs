@@ -67,6 +67,7 @@ public class AppDbContext : DbContext
     public DbSet<SeedItemShop> SeedItemShops { get; private set; }
     public DbSet<Seed> Seeds { get; private set;  }
     public DbSet<DongPhuLike> DongPhuLikes { get; private set; }
+    public DbSet<DongPhuAchievementProgress> DongPhuAchievementProgresses { get; private set; }
     public DbSet<EventManager> EventManagers { get; private set; }
     public DbSet<Event> Events { get; private set; }
     public DbSet<EventInventory> EventInventories { get; private set; }
@@ -813,6 +814,15 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.Likes)
                 .HasForeignKey(x => x.OwnerCharId)
                 .HasPrincipalKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DongPhuAchievementProgress>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Stat });
+            e.Property(x => x.ClaimedTiers).HasMaxLength(4096);
+            e.HasOne<CharacterData>()
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

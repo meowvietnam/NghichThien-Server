@@ -9,8 +9,8 @@ namespace MTS.Game.TMC;
 /// Thưởng và mùa của Tông môn chiến.
 /// <list type="bullet">
 /// <item>Hằng ngày 00:00 (UTC+7): chụp số điểm (node thường, 100 tiên ngọc/ngày) và thành (Stronghold, 500/ngày) mỗi tông
-/// đang giữ, gửi thư tiên ngọc cho từng thành viên đủ điều kiện theo % chức vụ (tính riêng từng người):
-/// Tộc chủ 50%, Phó tộc chủ 20%, Trưởng lão 20%, Đệ tử 10%. Điều kiện: còn trong tông lúc chốt và có mặt
+/// đang giữ, gửi thư tiên ngọc: mỗi nhóm chức vụ nhận một phần %, chia đều cho thành viên đủ điều kiện trong nhóm:
+/// Tông chủ 50%, Phó tông chủ 20%, Trưởng lão 10%, Thành viên 20%. Điều kiện: còn trong tông lúc chốt và có mặt
 /// trong scene chiến trong ngày được chốt.</item>
 /// <item>Mỗi mùa kéo dài 14 ngày, nối tiếp nhau. Hết mùa: node thường về trung lập, người và rối về thành chính,
 /// HP hồi đầy; rối giữ level và độ bền.</item>
@@ -117,25 +117,33 @@ public static partial class WarManager
         {
             var clanTotal = WarConfig.GetClanDailyMoneyVip(score.Strongholds, score.Nodes);
             if (clanTotal <= 0) continue;
-            foreach (var charId in score.Members)
-            {
-                if (!membershipOf.TryGetValue(charId, out var member) || member.ClanId != score.ClanId) continue;
-                var role = leaders.TryGetValue(score.ClanId, out var leaderId) && leaderId == charId
+            // Nhóm các thành viên đủ điều kiện theo chức vụ; phần % của nhóm chia đều cho người trong nhóm.
+            var groups = score.Members
+                .Where(charId => membershipOf.TryGetValue(charId, out var m) && m.ClanId == score.ClanId)
+                .GroupBy(charId => leaders.TryGetValue(score.ClanId, out var leaderId) && leaderId == charId
                     ? ClanRole.Leader
-                    : member.Role == ClanRole.Leader ? ClanRole.Member : member.Role;
-                var amount = WarConfig.GetMemberDailyMoneyVip(clanTotal, role);
+                    : membershipOf[charId].Role == ClanRole.Leader ? ClanRole.Member : membershipOf[charId].Role);
+            foreach (var group in groups)
+            {
+                var role = group.Key;
+                var members = group.ToList();
+                var amount = WarConfig.GetMemberDailyMoneyVip(clanTotal, role, members.Count);
                 if (amount <= 0) continue;
-                mails.Add(new Mail
+                foreach (var charId in members)
                 {
-                    CharId = charId,
-                    Title = $"Thưởng Tông môn chiến ngày {dayLocal:dd/MM}",
-                    Content = $"Tông môn {score.Name} giữ {score.Nodes} điểm và {score.Strongholds} thành, " +
-                              $"tổng {clanTotal} tiên ngọc/ngày. Chức vụ {RoleName(role)} nhận " +
-                              $"{WarConfig.GetRewardPercent(role)}%: {amount} tiên ngọc.",
-                    Rewards = [new MailRewardMoneyVip { MoneyVip = (int)Math.Min(amount, int.MaxValue) }],
-                    CreatedAt = now
-                });
-                total += amount;
+                    mails.Add(new Mail
+                    {
+                        CharId = charId,
+                        Title = $"Thưởng Tông môn chiến ngày {dayLocal:dd/MM}",
+                        Content = $"Tông môn {score.Name} giữ {score.Nodes} điểm và {score.Strongholds} thành, " +
+                                  $"tổng {clanTotal} tiên ngọc/ngày. Nhóm {RoleName(role)} nhận " +
+                                  $"{WarConfig.GetRewardPercent(role)}%, chia đều cho {members.Count} người: " +
+                                  $"{amount} tiên ngọc.",
+                        Rewards = [new MailRewardMoneyVip { MoneyVip = (int)Math.Min(amount, int.MaxValue) }],
+                        CreatedAt = now
+                    });
+                    total += amount;
+                }
             }
         }
 
@@ -178,10 +186,10 @@ public static partial class WarManager
 
     private static string RoleName(ClanRole role) => role switch
     {
-        ClanRole.Leader => "Tộc chủ",
-        ClanRole.ViceLeader => "Phó tộc chủ",
+        ClanRole.Leader => "Tông chủ",
+        ClanRole.ViceLeader => "Phó tông chủ",
         ClanRole.Elder => "Trưởng lão",
-        _ => "Đệ tử"
+        _ => "Thành viên"
     };
 
     // =====================================================================

@@ -276,6 +276,9 @@ public static partial class WarManager
                     WarBattleEndReason.ClanRemoved, null, null, now, loserRan: true);
             }
 
+            // Bỏ thành chính trước, nếu không SetOwner sẽ bỏ qua node thành chính và tông đã giải tán
+            // vẫn "giữ" thành chính của nó.
+            if (Clans.TryGetValue(clanId, out var deleted)) MainCities.Remove(deleted.MainNodeId);
             foreach (var node in Nodes.Values.Where(x => x.OwnerClanId == clanId))
             {
                 SetOwner(node, null);
@@ -288,7 +291,12 @@ public static partial class WarManager
                 RemoveUnit(unit);
             }
 
-            if (Clans.Remove(clanId, out var info)) MainCities.Remove(info.MainNodeId);
+            if (Clans.Remove(clanId, out var info))
+            {
+                MainCities.Remove(info.MainNodeId);
+                // Delta không có danh sách tông bị xoá: gửi tông với MainNodeId = 0 để client bỏ icon thành chính.
+                pendingClans[clanId] = new WarClanInfo { Id = clanId, Name = info.Name, ImageUrl = info.ImageUrl };
+            }
             kicked = Sessions.Values.Where(s => !Units.ContainsKey((WarUnitKind.Player, s.CharId))).ToList();
             foreach (var s in kicked)
             {
@@ -367,12 +375,7 @@ public static partial class WarManager
                 unit.ArrivedAt = now;
             }
 
-            var newMax = WarConfig.GetPlayerMaxHp(view);
-            if (newMax != unit.HpMax)
-            {
-                unit.HpMax = newMax;
-                unit.Hp = Math.Min(unit.Hp, newMax);
-            }
+            SyncPlayerMaxHp(unit, charData, now);
 
             unit.ApplyRegen(now);
             if (unit.State != WarUnitState.Fighting)
@@ -402,7 +405,7 @@ public static partial class WarManager
             MarkUnit(unit);
             ResolveNode(unit.NodeId, now);
             PublishDelta();
-            return BuildSnapshot(charId, clan.Id, role);
+            return BuildSnapshot(charId, clan.Id, role, CountRoleMembers(clan, role));
         }
     }
 
@@ -444,21 +447,44 @@ public static partial class WarManager
         }
     }
 
-    public static WarSnapshot GetSnapshot(int charId, ClanRole role)
+    public static WarSnapshot GetSnapshot(int charId, Models.Clan clan, ClanRole role)
     {
         lock (Sync)
         {
             EnsureInitialized();
             var clanId = Units.TryGetValue((WarUnitKind.Player, charId), out var unit) ? unit.ClanId : 0;
+            if (unit != null && Sessions.TryGetValue(charId, out var ownSession) &&
+                ownSession.Client.CharacterData is { } ownData)
+            {
+                SyncPlayerMaxHp(unit, ownData, DateTime.UtcNow);
+            }
+
             if (unit != null && Sessions.ContainsKey(charId) && ReadySessions.Add(charId))
             {
                 // Client đã sẵn sàng: giờ mới có thể bị ghép trận tại node đang đứng.
                 ResolveNode(unit.NodeId, DateTime.UtcNow);
-                PublishDelta();
             }
 
-            return BuildSnapshot(charId, clanId, role);
+            // Gửi thay đổi (HP tối đa mới, ghép trận...) cho người khác; không có gì thay đổi thì bỏ qua.
+            PublishDelta();
+            return BuildSnapshot(charId, clanId, role, CountRoleMembers(clan, role));
         }
+    }
+
+    /// <summary>
+    /// HP chiến tối đa theo Sinh Mệnh hiện tại của nhân vật (đổi trang bị/cảnh giới thì đổi theo).
+    /// HP chiến hiện tại giữ nguyên, chỉ bị cắt xuống nếu vượt HP tối đa mới.
+    /// </summary>
+    private static void SyncPlayerMaxHp(WarUnit unit, CharacterData charData, DateTime now)
+    {
+        if (unit.IsPuppet) return;
+        var max = WarConfig.GetPlayerMaxHp(new CharacterDataView(charData.Id, charData.Progression.Level,
+            charData.Stats.SinhMenh));
+        if (max == unit.HpMax) return;
+        if (unit.State != WarUnitState.Fighting) unit.ApplyRegen(now);
+        unit.HpMax = max;
+        unit.Hp = Math.Min(unit.Hp, max);
+        MarkUnit(unit);
     }
 
     public static bool IsInScene(int charId)
@@ -593,7 +619,15 @@ public static partial class WarManager
     // Snapshot / delta
     // =====================================================================
 
-    private static WarSnapshot BuildSnapshot(int charId, int clanId, ClanRole role)
+    /// <summary>Số thành viên cùng nhóm chức vụ (Tông chủ theo Clan.LeaderCharId), dùng ước tính thưởng ngày.</summary>
+    private static int CountRoleMembers(Models.Clan clan, ClanRole role)
+    {
+        if (role == ClanRole.Leader) return 1;
+        return Math.Max(1, clan.Members.Count(m => m.CharId != clan.LeaderCharId &&
+                                                  (m.Role == ClanRole.Leader ? ClanRole.Member : m.Role) == role));
+    }
+
+    private static WarSnapshot BuildSnapshot(int charId, int clanId, ClanRole role, int roleMemberCount)
     {
         var now = DateTime.UtcNow;
         var clanLevel = Clans.TryGetValue(clanId, out var info) ? info.Level : 1;
@@ -616,7 +650,8 @@ public static partial class WarManager
             NodeMoneyVip = WarConfig.NodeDailyMoneyVip,
             NextSettlementAt = WarConfig.GetNextDailySettlementAt(now),
             MyRewardPercent = WarConfig.GetRewardPercent(role),
-            SeasonEndAt = WarConfig.GetSeasonEndAt(now)
+            SeasonEndAt = WarConfig.GetSeasonEndAt(now),
+            MyRoleMemberCount = roleMemberCount
         };
     }
 
