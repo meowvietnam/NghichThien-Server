@@ -111,7 +111,7 @@ public class TongMonChien : IClientState, IWarSession
                     try
                     {
                         var (_, role) = await GetClan();
-                        snapshot = WarManager.GetSnapshot(CharId, role == ClanRole.Leader);
+                        snapshot = WarManager.GetSnapshot(CharId, role);
                     }
                     catch (InvalidException e)
                     {
@@ -160,12 +160,13 @@ public class TongMonChien : IClientState, IWarSession
                 }
                 case MessageTag.WarCreatePuppet:
                 {
-                    reader.MemRead<WarCreatePuppetRequest>();
+                    var request = reader.MemRead<WarCreatePuppetRequest>();
                     WarPuppetResult result;
                     try
                     {
                         var (clan, _) = await GetClan();
-                        result = await WarManager.CreatePuppet(CharId, clan);
+                        var charData = client.CharacterData ?? throw new InvalidException("Nhân vật không tồn tại");
+                        result = await WarManager.CreatePuppet(charData, clan, request);
                     }
                     catch (InvalidException e)
                     {
@@ -182,11 +183,13 @@ public class TongMonChien : IClientState, IWarSession
                     try
                     {
                         var (clan, _) = await GetClan();
-                        result = WarManager.UpgradePuppet(CharId, clan, request.PuppetId);
+                        var charData = client.CharacterData ?? throw new InvalidException("Nhân vật không tồn tại");
+                        result = await WarManager.UpgradePuppet(charData, clan, request);
                     }
                     catch (InvalidException e)
                     {
-                        result = new WarPuppetResult { Success = false, Message = e.Message };
+                        result = new WarPuppetResult
+                            { Success = false, Message = e.Message, IsUpgrade = true, PuppetId = request.PuppetId };
                     }
 
                     MemSend(MessageTag.WarUpgradePuppetResult, result);

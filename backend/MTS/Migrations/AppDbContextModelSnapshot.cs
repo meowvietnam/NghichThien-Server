@@ -1421,6 +1421,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("Durability")
+                        .HasColumnType("int");
+
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
@@ -1814,9 +1817,12 @@ namespace MTS.Migrations
                     b.ToTable("WarParticipants");
                 });
 
-            modelBuilder.Entity("MTS.Models.WarWeeklySettlement", b =>
+            modelBuilder.Entity("MTS.Models.WarSettlement", b =>
                 {
-                    b.Property<DateTime>("WeekStart")
+                    b.Property<byte>("Kind")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<DateTime>("PeriodStart")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("ClanCount")
@@ -1831,9 +1837,9 @@ namespace MTS.Migrations
                     b.Property<long>("TotalMoneyVip")
                         .HasColumnType("bigint");
 
-                    b.HasKey("WeekStart");
+                    b.HasKey("Kind", "PeriodStart");
 
-                    b.ToTable("WarWeeklySettlements");
+                    b.ToTable("WarSettlements");
                 });
 
             modelBuilder.Entity("MTS.Models.WelcomeReward", b =>

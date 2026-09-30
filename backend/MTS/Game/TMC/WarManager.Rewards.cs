@@ -1,0 +1,281 @@
+using Microsoft.EntityFrameworkCore;
+using MTS.Models;
+using MTS.Network;
+using Serilog;
+
+namespace MTS.Game.TMC;
+
+/// <summary>
+/// Thưởng và mùa của Tông môn chiến.
+/// <list type="bullet">
+/// <item>Hằng ngày 00:00 (UTC+7): chụp số điểm (node thường, 100 tiên ngọc/ngày) và thành (Stronghold, 500/ngày) mỗi tông
+/// đang giữ, gửi thư tiên ngọc cho từng thành viên đủ điều kiện theo % chức vụ (tính riêng từng người):
+/// Tộc chủ 50%, Phó tộc chủ 20%, Trưởng lão 20%, Đệ tử 10%. Điều kiện: còn trong tông lúc chốt và có mặt
+/// trong scene chiến trong ngày được chốt.</item>
+/// <item>Mỗi mùa kéo dài 14 ngày, nối tiếp nhau. Hết mùa: node thường về trung lập, người và rối về thành chính,
+/// HP hồi đầy; rối giữ level và độ bền.</item>
+/// </list>
+/// </summary>
+public static partial class WarManager
+{
+    /// <summary>Các node Stronghold trên bản đồ (tính là "thành").</summary>
+    private static readonly HashSet<int> StrongholdNodes = new();
+
+    private static DateTime? lastSettledDay;
+    private static DateTime? lastResetSeason;
+
+    private static int CountHeld(int clanId, bool stronghold)
+    {
+        var count = 0;
+        foreach (var node in Nodes.Values)
+        {
+            if (node.OwnerClanId != clanId || MainCities.ContainsKey(node.NodeId)) continue;
+            if (StrongholdNodes.Contains(node.NodeId) == stronghold) count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>Gọi định kỳ từ TongMonChienService: chốt thưởng ngày trước, rồi làm mới mùa nếu đã sang mùa mới.</summary>
+    public static async Task RunScheduledSettlements()
+    {
+        if (!IsInitialized) return;
+        await SettleDailyIfDue();
+        await ResetSeasonIfDue();
+    }
+
+    private static async Task<DateTime?> LastPeriod(Data.AppDbContext db, WarSettlementKind kind) =>
+        await db.WarSettlements.AsNoTracking()
+            .Where(x => x.Kind == kind)
+            .OrderByDescending(x => x.PeriodStart)
+            .Select(x => (DateTime?)x.PeriodStart)
+            .FirstOrDefaultAsync();
+
+    private readonly record struct DailyClanScore(int ClanId, string Name, int Strongholds, int Nodes, List<int> Members);
+
+    // =====================================================================
+    // Thưởng hằng ngày
+    // =====================================================================
+
+    private static async Task SettleDailyIfDue()
+    {
+        var now = DateTime.UtcNow;
+        // Ngày vừa kết thúc bắt đầu 1 ngày trước mốc ngày hiện tại.
+        var dayToSettle = WarConfig.GetDayStart(now).AddDays(-1);
+        if (lastSettledDay is { } settled && settled >= dayToSettle) return;
+
+        await using var db = await Program.CreateDbAsync();
+        var last = await LastPeriod(db, WarSettlementKind.Daily);
+        if (last == null)
+        {
+            // Lần chạy đầu tiên sau khi triển khai: đặt mốc, chưa phát thưởng.
+            db.WarSettlements.Add(new WarSettlement
+                { Kind = WarSettlementKind.Daily, PeriodStart = dayToSettle, SettledAt = now });
+            await db.SaveChangesAsync();
+            lastSettledDay = dayToSettle;
+            Log.Information("TongMonChien daily baseline set at {Day}", dayToSettle);
+            return;
+        }
+
+        if (last.Value >= dayToSettle)
+        {
+            lastSettledDay = last.Value;
+            return;
+        }
+
+        // Chụp lãnh thổ và người có mặt trong ngày dưới Sync.
+        List<DailyClanScore> scores;
+        lock (Sync)
+        {
+            scores = Clans.Values.Select(c => new DailyClanScore(c.Id, c.Name, CountHeld(c.Id, true),
+                    CountHeld(c.Id, false),
+                    Units.Values.Where(u => !u.IsPuppet && u.ClanId == c.Id &&
+                                            (Sessions.ContainsKey(u.Id) ||
+                                             u.Player!.LastEnterAt is { } at && at >= dayToSettle))
+                        .Select(u => u.Id).ToList()))
+                .Where(x => x.Strongholds + x.Nodes > 0 && x.Members.Count > 0)
+                .ToList();
+        }
+
+        // Chỉ thành viên còn trong tông lúc chốt; chức vụ đọc từ DB (Tộc chủ theo Clan.LeaderCharId).
+        var candidateIds = scores.SelectMany(x => x.Members).Distinct().ToList();
+        var memberships = await db.ClanMembers.AsNoTracking()
+            .Where(x => candidateIds.Contains(x.CharId))
+            .Select(x => new { x.CharId, x.ClanId, x.Role })
+            .ToListAsync();
+        var clanIds = scores.Select(x => x.ClanId).ToList();
+        var leaders = await db.Clans.AsNoTracking()
+            .Where(x => clanIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.LeaderCharId })
+            .ToDictionaryAsync(x => x.Id, x => x.LeaderCharId);
+        var membershipOf = memberships.ToDictionary(x => x.CharId);
+
+        var mails = new List<Mail>();
+        long total = 0;
+        var dayLocal = dayToSettle + Utils.Utils.Utc7;
+        foreach (var score in scores)
+        {
+            var clanTotal = WarConfig.GetClanDailyMoneyVip(score.Strongholds, score.Nodes);
+            if (clanTotal <= 0) continue;
+            foreach (var charId in score.Members)
+            {
+                if (!membershipOf.TryGetValue(charId, out var member) || member.ClanId != score.ClanId) continue;
+                var role = leaders.TryGetValue(score.ClanId, out var leaderId) && leaderId == charId
+                    ? ClanRole.Leader
+                    : member.Role == ClanRole.Leader ? ClanRole.Member : member.Role;
+                var amount = WarConfig.GetMemberDailyMoneyVip(clanTotal, role);
+                if (amount <= 0) continue;
+                mails.Add(new Mail
+                {
+                    CharId = charId,
+                    Title = $"Thưởng Tông môn chiến ngày {dayLocal:dd/MM}",
+                    Content = $"Tông môn {score.Name} giữ {score.Nodes} điểm và {score.Strongholds} thành, " +
+                              $"tổng {clanTotal} tiên ngọc/ngày. Chức vụ {RoleName(role)} nhận " +
+                              $"{WarConfig.GetRewardPercent(role)}%: {amount} tiên ngọc.",
+                    Rewards = [new MailRewardMoneyVip { MoneyVip = (int)Math.Min(amount, int.MaxValue) }],
+                    CreatedAt = now
+                });
+                total += amount;
+            }
+        }
+
+        db.Mails.AddRange(mails);
+        db.WarSettlements.Add(new WarSettlement
+        {
+            Kind = WarSettlementKind.Daily, PeriodStart = dayToSettle, SettledAt = now, ClanCount = scores.Count,
+            MailCount = mails.Count, TotalMoneyVip = total
+        });
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException e)
+        {
+            // Đã có tiến trình khác chốt ngày này (khoá chính) → bỏ qua.
+            Log.Warning(e, "TongMonChien daily settlement {Day} already saved", dayToSettle);
+            lastSettledDay = dayToSettle;
+            return;
+        }
+
+        lastSettledDay = dayToSettle;
+        Log.Information("TongMonChien daily settled {Day}: {Clans} clans, {Mails} mails, {Total} MoneyVip",
+            dayToSettle, scores.Count, mails.Count, total);
+
+        var onlineClients = TcpServer.Instance?.GetClientsOnline() ?? [];
+        foreach (var mail in mails)
+        {
+            try
+            {
+                var client = onlineClients.FirstOrDefault(x => x.CharacterData?.Id == mail.CharId);
+                client?.Send(MessageTag.NewMail, mail);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "TongMonChien daily mail {MailId} saved but notification failed", mail.Id);
+            }
+        }
+    }
+
+    private static string RoleName(ClanRole role) => role switch
+    {
+        ClanRole.Leader => "Tộc chủ",
+        ClanRole.ViceLeader => "Phó tộc chủ",
+        ClanRole.Elder => "Trưởng lão",
+        _ => "Đệ tử"
+    };
+
+    // =====================================================================
+    // Làm mới mùa
+    // =====================================================================
+
+    private static async Task ResetSeasonIfDue()
+    {
+        var now = DateTime.UtcNow;
+        var seasonStart = WarConfig.GetSeasonStart(now);
+        if (lastResetSeason is { } reset && reset >= seasonStart) return;
+
+        await using var db = await Program.CreateDbAsync();
+        var last = await LastPeriod(db, WarSettlementKind.SeasonReset);
+        if (last != null && last.Value >= seasonStart)
+        {
+            lastResetSeason = last.Value;
+            return;
+        }
+
+        // Ghi mốc trước rồi mới làm mới, để restart giữa chừng không làm mới lần hai.
+        db.WarSettlements.Add(new WarSettlement
+            { Kind = WarSettlementKind.SeasonReset, PeriodStart = seasonStart, SettledAt = now });
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException e)
+        {
+            Log.Warning(e, "TongMonChien season reset {Season} already saved", seasonStart);
+            lastResetSeason = seasonStart;
+            return;
+        }
+
+        lastResetSeason = seasonStart;
+        if (last == null)
+        {
+            // Lần chạy đầu tiên sau khi triển khai: chỉ đặt mốc mùa hiện tại, không làm mới.
+            Log.Information("TongMonChien season baseline set at {Season}", seasonStart);
+            return;
+        }
+
+        ResetTerritory(now);
+        Log.Information("TongMonChien season reset at {Season}", seasonStart);
+    }
+
+    /// <summary>
+    /// Làm mới đất: kết thúc mọi trận (hoà), node thường về trung lập, người và rối về thành chính với HP đầy.
+    /// Rối giữ level và độ bền.
+    /// </summary>
+    private static void ResetTerritory(DateTime now)
+    {
+        lock (Sync)
+        {
+            foreach (var battle in Battles.Values.Where(x => !x.Ended).ToList())
+            {
+                EndBattle(battle, WarBattleOutcome.Draw, WarBattleEndReason.SeasonReset, null, null, now);
+            }
+
+            foreach (var node in Nodes.Values)
+            {
+                if (!MainCities.ContainsKey(node.NodeId)) SetOwner(node, null);
+            }
+
+            foreach (var unit in Units.Values.ToList())
+            {
+                Relocate(unit, MainCityOf(unit.ClanId));
+                unit.Hp = unit.HpMax;
+                unit.LastHpRecoveryAt = now;
+                MarkUnit(unit);
+            }
+
+            Returning.Clear();
+            PublishDelta();
+        }
+
+        foreach (var session in SnapshotSessions())
+        {
+            try
+            {
+                session.MemSend(MessageTag.WarNotice, new Network.Models.WarNotice
+                {
+                    Message = "Mùa Tông môn chiến đã kết thúc. Lãnh thổ được làm mới, mọi người trở về thành chính."
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "TongMonChien notify season reset failed");
+            }
+        }
+    }
+
+    private static List<IWarSession> SnapshotSessions()
+    {
+        lock (Sync) return Sessions.Values.ToList();
+    }
+}

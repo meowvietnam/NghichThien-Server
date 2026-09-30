@@ -8,7 +8,7 @@ public class TongMonChienService : BackgroundService
 {
     private static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan WeeklyCheckInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan SettlementCheckInterval = TimeSpan.FromSeconds(30);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -27,7 +27,7 @@ public class TongMonChienService : BackgroundService
         }
 
         var lastFlush = DateTime.UtcNow;
-        var lastWeeklyCheck = DateTime.MinValue;
+        var lastSettlementCheck = DateTime.MinValue;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -39,10 +39,10 @@ public class TongMonChienService : BackgroundService
                     await WarManager.Flush();
                 }
 
-                if (DateTime.UtcNow - lastWeeklyCheck >= WeeklyCheckInterval)
+                if (DateTime.UtcNow - lastSettlementCheck >= SettlementCheckInterval)
                 {
-                    lastWeeklyCheck = DateTime.UtcNow;
-                    await WarManager.SettleWeeklyIfDue();
+                    lastSettlementCheck = DateTime.UtcNow;
+                    await WarManager.RunScheduledSettlements();
                 }
             }
             catch (Exception e)

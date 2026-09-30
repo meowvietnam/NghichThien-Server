@@ -1,3 +1,5 @@
+using MTS.Models;
+
 namespace MTS.Game.TMC;
 
 /// <summary>
@@ -31,65 +33,97 @@ public static class WarConfig
 
     // ---------------- Rối ----------------
 
-    /// <summary>[TẠM] Số rối tối đa theo cấp tông: 1 rối mỗi cấp, tối đa 5.</summary>
-    public static int GetMaxPuppetCount(int clanLevel) => Math.Clamp(clanLevel, 1, 5);
+    /// <summary>Số rối tối đa = level tông (không trần).</summary>
+    public static int GetMaxPuppetCount(int clanLevel) => Math.Max(1, clanLevel);
 
-    /// <summary>[TẠM] Level tối đa của rối theo cấp tông (3 level mỗi cấp tông, trần Hóa Thần hậu kỳ = 15).</summary>
+    /// <summary>Level tối đa của rối: 3 level mỗi cấp tông (tông cấp 1 → lv3, cấp 2 → lv6...), trần 15 (Hóa Thần hậu kỳ).</summary>
     public static int GetMaxPuppetLevel(int clanLevel) => Math.Clamp(clanLevel * 3, 1, 15);
 
     /// <summary>Cảnh giới của rối theo level (3 level mỗi cảnh giới, giống người chơi).</summary>
     public static WarRealm GetPuppetRealm(int level) => (WarRealm)Math.Clamp((level - 1) / 3, 0, (int)WarRealm.HoaThan);
 
-    /// <summary>[TẠM] Level khởi tạo của rối mới.</summary>
+    /// <summary>Level khởi tạo của rối mới.</summary>
     public static int GetNewPuppetLevel(int clanLevel) => 1;
 
     /// <summary>
-    /// [TẠM] HP tối đa của rối. <paramref name="randomSeed"/> là thành phần ngẫu nhiên đã lưu bền khi tạo rối;
-    /// giá trị tạm chưa dùng tới nó.
+    /// HP tối đa của rối = (level rối × 10)% HP chiến tối đa của người tạo/nâng cấp tại thời điểm đó.
     /// </summary>
-    public static int GetPuppetMaxHp(int puppetLevel, int clanLevel, int randomSeed) => 1000;
+    public static int GetPuppetMaxHp(int puppetLevel, int creatorWarHpMax) =>
+        Math.Max(1, (int)((long)creatorWarHpMax * puppetLevel * 10 / 100));
 
     /// <summary>[TẠM] HP rối hồi mỗi phút, cùng nhịp với người chơi.</summary>
     public static float GetPuppetRegenPerMinute(int maxHp) => maxHp * 0.01f;
 
-    /// <summary>[TẠM] Chi phí tạo rối (quỹ tông). 0 = miễn phí.</summary>
-    public static long GetCreatePuppetCost(int clanLevel, int currentCount) => 0;
+    /// <summary>Độ bền của rối: số lần được phép chết (HP về 0). Hết độ bền thì rối bị xoá. Nâng cấp hồi đầy.</summary>
+    public const int PuppetMaxDurability = 5;
 
-    /// <summary>[TẠM] Chi phí nâng rối từ <paramref name="fromLevel"/> lên level kế. 0 = miễn phí.</summary>
-    public static long GetUpgradePuppetCost(int fromLevel) => 0;
+    /// <summary>Giá tạo một rối, tính bằng tiên ngọc.</summary>
+    public const long CreatePuppetMoneyVip = 5000;
 
-    // ---------------- Thưởng tuần ----------------
+    /// <summary>Giá nâng rối lên <paramref name="targetLevel"/>, tính bằng tiên ngọc: 500 × level cần lên.</summary>
+    public static long GetUpgradePuppetMoneyVip(int targetLevel) => 500L * targetLevel;
 
-    /// <summary>Tên điểm lớn: tính theo số Thành (node Stronghold, không gồm thành chính của tông) đang giữ.</summary>
-    public const string StrongholdPointName = "Thành Ấn";
-
-    /// <summary>Tên điểm bé: tính theo số node thường đang giữ.</summary>
-    public const string NodePointName = "Địa Mạch";
-
-    /// <summary>[TẠM] Tiên ngọc mỗi thành viên nhận cho mỗi Thành Ấn của tông khi chốt tuần.</summary>
-    public const int StrongholdWeeklyMoneyVip = 500;
-
-    /// <summary>[TẠM] Tiên ngọc mỗi thành viên nhận cho mỗi Địa Mạch của tông khi chốt tuần.</summary>
-    public const int NodeWeeklyMoneyVip = 50;
-
-    /// <summary>Tổng tiên ngọc một thành viên nhận theo số điểm của tông (không giới hạn trần).</summary>
-    public static int GetWeeklyMoneyVip(int strongholdCount, int nodeCount) =>
-        strongholdCount * StrongholdWeeklyMoneyVip + nodeCount * NodeWeeklyMoneyVip;
-
-    /// <summary>Mốc bắt đầu tuần (UTC) chứa <paramref name="utcNow"/>: 00:00 thứ Hai giờ Việt Nam (UTC+7).</summary>
-    public static DateTime GetWeekStart(DateTime utcNow)
-    {
-        var local = utcNow + Utils.Utils.Utc7;
-        var daysFromMonday = ((int)local.DayOfWeek + 6) % 7;
-        var mondayLocal = local.Date.AddDays(-daysFromMonday);
-        return DateTime.SpecifyKind(mondayLocal - Utils.Utils.Utc7, DateTimeKind.Utc);
-    }
-
-    /// <summary>Thời điểm chốt thưởng kế tiếp (UTC).</summary>
-    public static DateTime GetNextSettlementAt(DateTime utcNow) => GetWeekStart(utcNow).AddDays(7);
+    /// <summary>
+    /// Trả bằng điểm cống hiến thì giá gấp đôi tiên ngọc. Giống mở giới hạn luyện hồn: trừ điểm cống hiến trước,
+    /// thiếu bao nhiêu điểm thì bù bằng tiên ngọc (2 điểm = 1 tiên ngọc, làm tròn lên).
+    /// </summary>
+    public const int ContribPointsPerMoneyVip = 2;
 
     /// <summary>Sinh thành phần ngẫu nhiên cho rối mới; kết quả được lưu vào Puppet.RandomSeed.</summary>
     public static int RollPuppetSeed() => Random.Shared.Next(0, 1_000_000);
+
+    // ---------------- Thưởng hằng ngày ----------------
+
+    /// <summary>Tiên ngọc mỗi ngày cho mỗi node thường (điểm) tông đang giữ.</summary>
+    public const int NodeDailyMoneyVip = 100;
+
+    /// <summary>Tiên ngọc mỗi ngày cho mỗi thành (node Stronghold, không gồm thành chính) tông đang giữ.</summary>
+    public const int StrongholdDailyMoneyVip = 500;
+
+    /// <summary>Tổng tiên ngọc/ngày của tông theo lãnh thổ đang giữ.</summary>
+    public static long GetClanDailyMoneyVip(int strongholdCount, int nodeCount) =>
+        (long)strongholdCount * StrongholdDailyMoneyVip + (long)nodeCount * NodeDailyMoneyVip;
+
+    /// <summary>
+    /// Phần trăm tổng tiên ngọc/ngày của tông mà MỖI thành viên nhận theo chức vụ (tính riêng từng người, không chia nhóm):
+    /// Tộc chủ 50%, Phó tộc chủ 20%, Trưởng lão 20%, Đệ tử 10%.
+    /// </summary>
+    public static int GetRewardPercent(ClanRole role) => role switch
+    {
+        ClanRole.Leader => 50,
+        ClanRole.ViceLeader => 20,
+        ClanRole.Elder => 20,
+        _ => 10
+    };
+
+    public static long GetMemberDailyMoneyVip(long clanDailyMoneyVip, ClanRole role) =>
+        clanDailyMoneyVip * GetRewardPercent(role) / 100;
+
+    /// <summary>Mốc bắt đầu ngày (UTC) chứa <paramref name="utcNow"/>: 00:00 giờ Việt Nam (UTC+7).</summary>
+    public static DateTime GetDayStart(DateTime utcNow)
+    {
+        var local = utcNow + Utils.Utils.Utc7;
+        return DateTime.SpecifyKind(local.Date - Utils.Utils.Utc7, DateTimeKind.Utc);
+    }
+
+    public static DateTime GetNextDailySettlementAt(DateTime utcNow) => GetDayStart(utcNow).AddDays(1);
+
+    // ---------------- Mùa (sự kiện 2 tuần) ----------------
+
+    /// <summary>Độ dài một mùa. Hết mùa: node thường về trung lập, người và rối về thành chính, HP hồi đầy.</summary>
+    public static readonly TimeSpan SeasonLength = TimeSpan.FromDays(14);
+
+    /// <summary>Mốc gốc của lịch mùa: 00:00 thứ Hai 28/09/2026 giờ Việt Nam. Các mùa nối tiếp nhau mỗi 14 ngày.</summary>
+    public static readonly DateTime SeasonAnchor = new(2026, 9, 27, 17, 0, 0, DateTimeKind.Utc);
+
+    public static DateTime GetSeasonStart(DateTime utcNow)
+    {
+        var elapsed = utcNow - SeasonAnchor;
+        var index = (long)Math.Floor(elapsed.TotalDays / SeasonLength.TotalDays);
+        return SeasonAnchor.AddDays(index * SeasonLength.TotalDays);
+    }
+
+    public static DateTime GetSeasonEndAt(DateTime utcNow) => GetSeasonStart(utcNow) + SeasonLength;
 }
 
 /// <summary>Các thông tin nhân vật mà công thức HP chiến được phép đọc (giữ giao diện hàm ổn định).</summary>

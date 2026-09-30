@@ -350,5 +350,6 @@ public enum MessageTag
     WarBattleReport = 3916,
     WarBattleEnded = 3917,
     WarKicked = 3918,
+    WarNotice = 3919,
     
 }

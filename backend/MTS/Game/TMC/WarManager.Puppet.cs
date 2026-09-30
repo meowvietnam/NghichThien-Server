@@ -1,4 +1,5 @@
 using MTS.Exceptions;
+using MTS.Game.Clan;
 using MTS.Game.LuyenDan;
 using MTS.Models;
 using MTS.Network;
@@ -9,7 +10,8 @@ namespace MTS.Game.TMC;
 
 public static partial class WarManager
 {
-    private static readonly SemaphoreSlim PuppetCreateGate = new(1, 1);
+    /// <summary>Tuần tự hoá tạo/nâng rối (có bước trả phí bất đồng bộ giữa kiểm tra và áp dụng).</summary>
+    private static readonly SemaphoreSlim PuppetGate = new(1, 1);
 
     private static void EnsureLeader(Models.Clan clan, int charId)
     {
@@ -23,41 +25,81 @@ public static partial class WarManager
         return unit;
     }
 
-    /// <summary>Leader tạo rối mới tại thành chính. Số rối tối đa theo cấp tông (WarConfig).</summary>
-    public static async Task<WarPuppetResult> CreatePuppet(int charId, Models.Clan clan)
+    /// <summary>HP chiến tối đa của người tạo/nâng rối, làm gốc cho HP rối.</summary>
+    private static int GetCreatorWarHpMax(CharacterData actor)
     {
-        EnsureLeader(clan, charId);
+        if (Units.TryGetValue((WarUnitKind.Player, actor.Id), out var unit) && unit.HpMax > 0) return unit.HpMax;
+        return WarConfig.GetPlayerMaxHp(new CharacterDataView(actor.Id, actor.Progression.Level, actor.Stats.SinhMenh));
+    }
+
+    private static WarPuppetResult PaymentResult(ClanPaymentResult payment, bool isUpgrade, int puppetId, int targetLevel,
+        string? message = null) => new()
+    {
+        Success = !payment.RequiresConfirmation,
+        Message = message ?? string.Empty,
+        IsUpgrade = isUpgrade,
+        PuppetId = puppetId,
+        TargetLevel = targetLevel,
+        RequiresConfirmation = payment.RequiresConfirmation,
+        ContribPointsCost = payment.ContribPointsCost,
+        MoneyVipCost = payment.MoneyVipCost,
+        ContribPoints = payment.ContribPoints,
+        NewMoneyVip = payment.NewMoneyVip
+    };
+
+    /// <summary>
+    /// Tộc Chủ tạo rối mới tại thành chính. Số rối tối đa = level tông. Giá 5.000 tiên ngọc (hoặc 10.000 điểm cống hiến):
+    /// trừ điểm cống hiến trước, thiếu bù tiên ngọc. Lần gọi với chi phí chưa xác nhận chỉ trả giá để client hỏi lại.
+    /// HP rối = (level × 10)% HP chiến tối đa của người tạo; độ bền đầy.
+    /// </summary>
+    public static async Task<WarPuppetResult> CreatePuppet(CharacterData actor, Models.Clan clan,
+        WarCreatePuppetRequest request)
+    {
+        EnsureLeader(clan, actor.Id);
         if (clan.NodeId <= 0) throw new InvalidException("Tông môn chưa có thành trên bản đồ.");
-        await PuppetCreateGate.WaitAsync();
+        await PuppetGate.WaitAsync();
         try
         {
-            var now = DateTime.UtcNow;
-            Puppet puppet;
+            var level = WarConfig.GetNewPuppetLevel(clan.Level);
             lock (Sync)
             {
                 EnsureInitialized();
                 var count = Units.Values.Count(x => x.IsPuppet && x.ClanId == clan.Id);
                 var max = WarConfig.GetMaxPuppetCount(clan.Level);
                 if (count >= max) throw new InvalidException($"Tông môn cấp {clan.Level} chỉ được có tối đa {max} rối.");
-                if (WarConfig.GetCreatePuppetCost(clan.Level, count) > 0)
-                    throw new InvalidException("Chi phí tạo rối chưa được hỗ trợ.");
-                var level = WarConfig.GetNewPuppetLevel(clan.Level);
-                var seed = WarConfig.RollPuppetSeed();
-                var hpMax = WarConfig.GetPuppetMaxHp(level, clan.Level, seed);
+            }
+
+            var payment = await ClanManager.PayWithContribOrMoneyVip(clan, actor,
+                WarConfig.CreatePuppetMoneyVip * WarConfig.ContribPointsPerMoneyVip,
+                request.ExpectedContribPointsCost, request.ExpectedMoneyVipCost, SpendFor.CreateWarPuppet);
+            if (payment.RequiresConfirmation) return PaymentResult(payment, false, 0, level);
+
+            var now = DateTime.UtcNow;
+            Puppet puppet;
+            lock (Sync)
+            {
+                var hpMax = WarConfig.GetPuppetMaxHp(level, GetCreatorWarHpMax(actor));
                 puppet = new Puppet
                 {
-                    ClanId = clan.Id, Level = level, RandomSeed = seed, NodeId = clan.NodeId, Hp = hpMax,
-                    HpMax = hpMax, LastHpRecoveryAt = now, State = WarUnitState.Idle, ArrivedAt = now,
-                    CreatedAt = now
+                    ClanId = clan.Id, Level = level, RandomSeed = WarConfig.RollPuppetSeed(), NodeId = clan.NodeId,
+                    Hp = hpMax, HpMax = hpMax, Durability = WarConfig.PuppetMaxDurability, LastHpRecoveryAt = now,
+                    State = WarUnitState.Idle, ArrivedAt = now, CreatedAt = now
                 };
                 PuppetVisual.Randomize(puppet);
             }
 
             // Ghi ngay để có Id bền vững; restart không thể sinh thêm rối vì số rối chỉ tăng qua lệnh này.
-            await using (var db = await Program.CreateDbAsync())
+            try
             {
+                await using var db = await Program.CreateDbAsync();
                 db.Puppets.Add(puppet);
                 await db.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "TongMonChien create puppet failed after payment; refund CharId={CharId}", actor.Id);
+                await ClanManager.Refund(clan, actor, payment);
+                throw new InvalidException("Không thể tạo rối, chi phí đã được hoàn lại.");
             }
 
             lock (Sync)
@@ -66,41 +108,83 @@ public static partial class WarManager
                 Units[unit.Key] = unit;
                 pendingUnits[unit.Key] = unit;
                 if (!Clans.ContainsKey(clan.Id)) RemoveUnit(unit);
-                Log.Information("TongMonChien clan {ClanId} created puppet {PuppetId}", clan.Id, puppet.Id);
+                Log.Information("TongMonChien clan {ClanId} created puppet {PuppetId} (cost {Points} points + {Vip} MoneyVip)",
+                    clan.Id, puppet.Id, payment.ContribPointsCost, payment.MoneyVipCost);
                 ResolveNode(puppet.NodeId, now);
                 PublishDelta();
-                return new WarPuppetResult { Success = true, Puppet = ToView(unit, now) };
+                var result = PaymentResult(payment, false, puppet.Id, level);
+                result.Puppet = ToView(unit, now);
+                return result;
             }
         }
         finally
         {
-            PuppetCreateGate.Release();
+            PuppetGate.Release();
         }
     }
 
-    /// <summary>Leader nâng level rối (trần theo cấp tông). HP tối đa tính lại theo WarConfig.</summary>
-    public static WarPuppetResult UpgradePuppet(int charId, Models.Clan clan, int puppetId)
+    /// <summary>
+    /// Tộc Chủ nâng rối lên level kế (trần theo cấp tông). Giá 500 × level cần lên (tiên ngọc, hoặc ×2 điểm cống hiến).
+    /// Sau khi nâng: HP tối đa tính lại = (level × 10)% HP chiến tối đa của người nâng, HP hồi đầy, độ bền hồi đầy.
+    /// </summary>
+    public static async Task<WarPuppetResult> UpgradePuppet(CharacterData actor, Models.Clan clan,
+        WarUpgradePuppetRequest request)
     {
-        EnsureLeader(clan, charId);
-        lock (Sync)
+        EnsureLeader(clan, actor.Id);
+        await PuppetGate.WaitAsync();
+        try
         {
-            EnsureInitialized();
-            var unit = GetClanPuppet(clan.Id, puppetId);
-            if (unit.State == WarUnitState.Fighting) throw new InvalidException("Rối đang giao tranh.");
-            var puppet = unit.Puppet!;
-            var maxLevel = WarConfig.GetMaxPuppetLevel(clan.Level);
-            if (puppet.Level >= maxLevel) throw new InvalidException("Rối đã đạt cảnh giới tối đa của tông.");
-            if (WarConfig.GetUpgradePuppetCost(puppet.Level) > 0)
-                throw new InvalidException("Chi phí nâng cấp rối chưa được hỗ trợ.");
-            var now = DateTime.UtcNow;
-            unit.ApplyRegen(now);
-            puppet.Level++;
-            var newMax = WarConfig.GetPuppetMaxHp(puppet.Level, clan.Level, puppet.RandomSeed);
-            puppet.Hp = Math.Clamp(puppet.Hp + (newMax - puppet.HpMax), 0, newMax);
-            puppet.HpMax = newMax;
-            MarkUnit(unit);
-            PublishDelta();
-            return new WarPuppetResult { Success = true, Puppet = ToView(unit, now) };
+            int targetLevel;
+            lock (Sync)
+            {
+                EnsureInitialized();
+                var unit = GetClanPuppet(clan.Id, request.PuppetId);
+                if (unit.State == WarUnitState.Fighting) throw new InvalidException("Rối đang giao tranh.");
+                var maxLevel = WarConfig.GetMaxPuppetLevel(clan.Level);
+                if (unit.Puppet!.Level >= maxLevel) throw new InvalidException("Rối đã đạt cảnh giới tối đa của tông.");
+                targetLevel = unit.Puppet.Level + 1;
+            }
+
+            var payment = await ClanManager.PayWithContribOrMoneyVip(clan, actor,
+                WarConfig.GetUpgradePuppetMoneyVip(targetLevel) * WarConfig.ContribPointsPerMoneyVip,
+                request.ExpectedContribPointsCost, request.ExpectedMoneyVipCost, SpendFor.UpgradeWarPuppet);
+            if (payment.RequiresConfirmation) return PaymentResult(payment, true, request.PuppetId, targetLevel);
+
+            string? failure = null;
+            lock (Sync)
+            {
+                var now = DateTime.UtcNow;
+                if (!Units.TryGetValue((WarUnitKind.Puppet, request.PuppetId), out var unit) || unit.ClanId != clan.Id)
+                    failure = "Rối không còn tồn tại.";
+                else if (unit.State == WarUnitState.Fighting)
+                    failure = "Rối vừa vào giao tranh.";
+                else if (unit.Puppet!.Level + 1 != targetLevel)
+                    failure = "Level rối đã thay đổi.";
+                else
+                {
+                    var puppet = unit.Puppet;
+                    puppet.Level = targetLevel;
+                    puppet.HpMax = WarConfig.GetPuppetMaxHp(targetLevel, GetCreatorWarHpMax(actor));
+                    puppet.Hp = puppet.HpMax;
+                    puppet.LastHpRecoveryAt = now;
+                    puppet.Durability = WarConfig.PuppetMaxDurability;
+                    MarkUnit(unit);
+                    ResolveNode(unit.NodeId, now);
+                    PublishDelta();
+                    Log.Information("TongMonChien puppet {PuppetId} upgraded to {Level} (cost {Points} points + {Vip} MoneyVip)",
+                        puppet.Id, targetLevel, payment.ContribPointsCost, payment.MoneyVipCost);
+                    var result = PaymentResult(payment, true, puppet.Id, targetLevel);
+                    result.Puppet = ToView(unit, now);
+                    return result;
+                }
+            }
+
+            await ClanManager.Refund(clan, actor, payment);
+            throw new InvalidException($"{failure} Chi phí đã được hoàn lại.");
+        }
+        finally
+        {
+            PuppetGate.Release();
         }
     }
 

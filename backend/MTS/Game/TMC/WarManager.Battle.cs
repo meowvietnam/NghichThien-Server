@@ -373,6 +373,15 @@ public static partial class WarManager
             unit.Hp = hp;
             unit.LastHpRecoveryAt = now;
             WarSideResult result;
+            if (hp <= 0 && unit.IsPuppet && --unit.Puppet!.Durability <= 0)
+            {
+                // Rối hết độ bền: không dùng được nữa, xoá khỏi bản đồ (Tộc Chủ phải tạo rối mới).
+                Log.Information("TongMonChien puppet {PuppetId} of clan {ClanId} ran out of durability",
+                    unit.Id, unit.ClanId);
+                RemoveUnit(unit);
+                continue;
+            }
+
             if (hp <= 0)
             {
                 Relocate(unit, MainCityOf(unit.ClanId));

@@ -14,9 +14,9 @@ public partial class WarClanView
     public string Name { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public int MainNodeId { get; set; }
-    /// <summary>Số Thành Ấn: node Stronghold tông đang giữ (không gồm thành chính).</summary>
+    /// <summary>Số thành đã chiếm: node Stronghold tông đang giữ (không gồm thành chính).</summary>
     public int StrongholdCount { get; set; }
-    /// <summary>Số Địa Mạch: node thường tông đang giữ.</summary>
+    /// <summary>Số điểm đã chiếm: node thường tông đang giữ.</summary>
     public int NodeCount { get; set; }
 }
 
@@ -59,6 +59,9 @@ public partial class WarUnitView
     public bool IsActive { get; set; }
     public Gender Gender { get; set; }
     public Appearance? Appearance { get; set; }
+    /// <summary>Độ bền còn lại của rối (số lần còn được chết). 0 với người chơi.</summary>
+    public int Durability { get; set; }
+    public int MaxDurability { get; set; }
 }
 
 [MemoryPackable]
@@ -80,12 +83,16 @@ public partial class WarSnapshot : Result
     public WarClanView[] Clans { get; set; } = [];
     public WarNodeView[] Nodes { get; set; } = [];
     public WarUnitView[] Units { get; set; } = [];
-    /// <summary>Tiên ngọc mỗi Thành Ấn khi chốt tuần.</summary>
+    /// <summary>Tiên ngọc/ngày cho mỗi thành (Stronghold) tông đang giữ.</summary>
     public int StrongholdMoneyVip { get; set; }
-    /// <summary>Tiên ngọc mỗi Địa Mạch khi chốt tuần.</summary>
+    /// <summary>Tiên ngọc/ngày cho mỗi điểm (node thường) tông đang giữ.</summary>
     public int NodeMoneyVip { get; set; }
-    /// <summary>Thời điểm chốt thưởng tuần kế tiếp (UTC).</summary>
+    /// <summary>Thời điểm chốt phát tiên ngọc hằng ngày kế tiếp (UTC).</summary>
     public DateTime NextSettlementAt { get; set; }
+    /// <summary>% tổng tiên ngọc/ngày của tông mà bản thân nhận theo chức vụ.</summary>
+    public int MyRewardPercent { get; set; }
+    /// <summary>Thời điểm kết thúc mùa hiện tại (UTC); hết mùa làm mới đất đã chiếm.</summary>
+    public DateTime SeasonEndAt { get; set; }
 }
 
 [MemoryPackable]
@@ -141,18 +148,34 @@ public partial class WarUseHpPillResult : Result
 [MemoryPackable]
 public partial class WarCreatePuppetRequest
 {
+    /// <summary>Chi phí client đã xác nhận; -1 = chỉ hỏi giá (server trả RequiresConfirmation).</summary>
+    public long ExpectedContribPointsCost { get; set; } = -1;
+    public long ExpectedMoneyVipCost { get; set; } = -1;
 }
 
 [MemoryPackable]
 public partial class WarUpgradePuppetRequest
 {
     public int PuppetId { get; set; }
+    public long ExpectedContribPointsCost { get; set; } = -1;
+    public long ExpectedMoneyVipCost { get; set; } = -1;
 }
 
 [MemoryPackable]
 public partial class WarPuppetResult : Result
 {
     public WarUnitView? Puppet { get; set; }
+    public bool IsUpgrade { get; set; }
+    public int PuppetId { get; set; }
+    /// <summary>Level rối sau khi nâng (nâng cấp) hoặc level rối mới (tạo).</summary>
+    public int TargetLevel { get; set; }
+    /// <summary>Cần xác nhận chi phí (lần hỏi giá đầu tiên hoặc giá đã đổi); client hiện popup rồi gửi lại.</summary>
+    public bool RequiresConfirmation { get; set; }
+    public long ContribPointsCost { get; set; }
+    public long MoneyVipCost { get; set; }
+    /// <summary>Điểm cống hiến còn lại sau khi trừ.</summary>
+    public long ContribPoints { get; set; }
+    public int NewMoneyVip { get; set; }
 }
 
 [MemoryPackable]
@@ -190,6 +213,13 @@ public partial class WarBattleEnded
 
 [MemoryPackable]
 public partial class WarKicked
+{
+    public string Message { get; set; } = string.Empty;
+}
+
+/// <summary>Thông báo chung từ Tông môn chiến (vd. hết mùa, lãnh thổ được làm mới).</summary>
+[MemoryPackable]
+public partial class WarNotice
 {
     public string Message { get; set; } = string.Empty;
 }

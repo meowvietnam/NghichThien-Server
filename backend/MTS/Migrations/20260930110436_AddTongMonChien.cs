@@ -47,6 +47,7 @@ namespace MTS.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ClanId = table.Column<int>(type: "int", nullable: false),
                     Level = table.Column<int>(type: "int", nullable: false),
+                    Durability = table.Column<int>(type: "int", nullable: false),
                     RandomSeed = table.Column<int>(type: "int", nullable: false),
                     NodeId = table.Column<int>(type: "int", nullable: false),
                     Hp = table.Column<int>(type: "int", nullable: false),
@@ -133,10 +134,11 @@ namespace MTS.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "WarWeeklySettlements",
+                name: "WarSettlements",
                 columns: table => new
                 {
-                    WeekStart = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Kind = table.Column<byte>(type: "tinyint unsigned", nullable: false),
+                    PeriodStart = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     SettledAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ClanCount = table.Column<int>(type: "int", nullable: false),
                     MailCount = table.Column<int>(type: "int", nullable: false),
@@ -144,7 +146,7 @@ namespace MTS.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WarWeeklySettlements", x => x.WeekStart);
+                    table.PrimaryKey("PK_WarSettlements", x => new { x.Kind, x.PeriodStart });
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -190,7 +192,7 @@ namespace MTS.Migrations
                 name: "WarParticipants");
 
             migrationBuilder.DropTable(
-                name: "WarWeeklySettlements");
+                name: "WarSettlements");
 
             migrationBuilder.DropColumn(
                 name: "NodeId",

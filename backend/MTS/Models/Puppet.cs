@@ -13,6 +13,8 @@ public class Puppet
     public int Id { get; set; }
     public int ClanId { get; set; }
     public int Level { get; set; } = 1;
+    /// <summary>Độ bền: số lần còn được chết (HP về 0). Về 0 thì rối bị xoá; nâng cấp hồi đầy.</summary>
+    public int Durability { get; set; } = WarConfig.PuppetMaxDurability;
     /// <summary>Thành phần ngẫu nhiên sinh một lần khi tạo, lưu bền để công thức HP rối dùng lại.</summary>
     public int RandomSeed { get; set; }
     public int NodeId { get; set; }

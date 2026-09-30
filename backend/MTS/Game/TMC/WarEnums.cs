@@ -43,7 +43,8 @@ public enum WarBattleEndReason : byte
     Conflict,
     Draw,
     ClanRemoved,
-    ServerRestart
+    ServerRestart,
+    SeasonReset
 }
 
 /// <summary>Kết quả trận nhìn từ phía một người chơi.</summary>

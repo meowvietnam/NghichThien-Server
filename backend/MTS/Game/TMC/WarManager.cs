@@ -150,6 +150,13 @@ public static partial class WarManager
                 }
 
                 var unit = new WarUnit(puppet);
+                if (puppet.Durability <= 0 || puppet.Durability > WarConfig.PuppetMaxDurability)
+                {
+                    // Rối tạo trước khi có độ bền (cột mới mặc định 0): cho đầy độ bền.
+                    puppet.Durability = WarConfig.PuppetMaxDurability;
+                    MarkUnit(unit);
+                }
+
                 if (string.IsNullOrWhiteSpace(puppet.AppearanceJson))
                 {
                     // Rối tạo trước khi có ngoại hình: random một lần rồi lưu lại.
@@ -395,7 +402,7 @@ public static partial class WarManager
             MarkUnit(unit);
             ResolveNode(unit.NodeId, now);
             PublishDelta();
-            return BuildSnapshot(charId, clan.Id, role == ClanRole.Leader);
+            return BuildSnapshot(charId, clan.Id, role);
         }
     }
 
@@ -409,8 +416,13 @@ public static partial class WarManager
             Sessions.Remove(session.CharId);
             ReadySessions.Remove(session.CharId);
             var now = DateTime.UtcNow;
-            if (Units.TryGetValue((WarUnitKind.Player, session.CharId), out var unit) &&
-                unit.State != WarUnitState.Fighting)
+            if (Units.TryGetValue((WarUnitKind.Player, session.CharId), out var unit))
+            {
+                // Có mặt trong scene tới lúc rời: tính là đã tham chiến trong ngày.
+                unit.Player!.LastEnterAt = now;
+            }
+
+            if (unit != null && unit.State != WarUnitState.Fighting)
             {
                 if (unit.State is WarUnitState.Moving or WarUnitState.Holding)
                 {
@@ -432,7 +444,7 @@ public static partial class WarManager
         }
     }
 
-    public static WarSnapshot GetSnapshot(int charId, bool isLeader)
+    public static WarSnapshot GetSnapshot(int charId, ClanRole role)
     {
         lock (Sync)
         {
@@ -445,7 +457,7 @@ public static partial class WarManager
                 PublishDelta();
             }
 
-            return BuildSnapshot(charId, clanId, isLeader);
+            return BuildSnapshot(charId, clanId, role);
         }
     }
 
@@ -531,7 +543,7 @@ public static partial class WarManager
         if (node.OwnerClanId == clanId) return;
         if (clanId == null && MainCities.ContainsKey(node.NodeId)) return;
         Log.Information("TongMonChien owner node {NodeId}: {Old} -> {New}", node.NodeId, node.OwnerClanId, clanId);
-        // Số Thành Ấn/Địa Mạch của cả tông mất và tông chiếm đều đổi.
+        // Số điểm/thành đã chiếm của cả tông mất và tông chiếm đều đổi.
         MarkClan(node.OwnerClanId);
         MarkClan(clanId);
         node.OwnerClanId = clanId;
@@ -581,7 +593,7 @@ public static partial class WarManager
     // Snapshot / delta
     // =====================================================================
 
-    private static WarSnapshot BuildSnapshot(int charId, int clanId, bool isLeader)
+    private static WarSnapshot BuildSnapshot(int charId, int clanId, ClanRole role)
     {
         var now = DateTime.UtcNow;
         var clanLevel = Clans.TryGetValue(clanId, out var info) ? info.Level : 1;
@@ -593,16 +605,18 @@ public static partial class WarManager
             ServerTime = now,
             MyCharId = charId,
             MyClanId = clanId,
-            IsLeader = isLeader,
+            IsLeader = role == ClanRole.Leader,
             MaxPuppetCount = WarConfig.GetMaxPuppetCount(clanLevel),
             MaxPuppetLevel = WarConfig.GetMaxPuppetLevel(clanLevel),
             Clans = Clans.Values.Select(ToView).ToArray(),
             Nodes = Nodes.Values.Where(x => x.OwnerClanId != null || IsFighting(x.NodeId))
                 .Select(ToView).ToArray(),
             Units = Units.Values.Where(IsVisible).Select(u => ToView(u, now)).ToArray(),
-            StrongholdMoneyVip = WarConfig.StrongholdWeeklyMoneyVip,
-            NodeMoneyVip = WarConfig.NodeWeeklyMoneyVip,
-            NextSettlementAt = WarConfig.GetNextSettlementAt(now)
+            StrongholdMoneyVip = WarConfig.StrongholdDailyMoneyVip,
+            NodeMoneyVip = WarConfig.NodeDailyMoneyVip,
+            NextSettlementAt = WarConfig.GetNextDailySettlementAt(now),
+            MyRewardPercent = WarConfig.GetRewardPercent(role),
+            SeasonEndAt = WarConfig.GetSeasonEndAt(now)
         };
     }
 
@@ -648,6 +662,8 @@ public static partial class WarManager
         {
             view.Name = $"Rối #{u.Id}";
             view.Level = u.Puppet!.Level;
+            view.Durability = u.Puppet.Durability;
+            view.MaxDurability = WarConfig.PuppetMaxDurability;
             view.Gender = u.Puppet.Gender;
             view.Appearance = u.Puppet.Appearance;
         }
@@ -829,7 +845,7 @@ public static partial class WarManager
 
     private static Puppet Clone(Puppet p) => new()
     {
-        Id = p.Id, ClanId = p.ClanId, Level = p.Level, RandomSeed = p.RandomSeed, NodeId = p.NodeId, Hp = p.Hp,
+        Id = p.Id, ClanId = p.ClanId, Level = p.Level, Durability = p.Durability, RandomSeed = p.RandomSeed, NodeId = p.NodeId, Hp = p.Hp,
         HpMax = p.HpMax, LastHpRecoveryAt = p.LastHpRecoveryAt, State = p.State, Route = p.Route,
         NextArrivalAt = p.NextArrivalAt, ArrivedAt = p.ArrivedAt, CreatedAt = p.CreatedAt, Gender = p.Gender,
         AppearanceJson = p.AppearanceJson
