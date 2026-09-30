@@ -345,6 +345,8 @@ public static partial class WarManager
     public static WarSnapshot Enter(IWarSession session, CharacterData charData, Models.Clan clan, ClanRole role)
     {
         if (clan.NodeId <= 0) throw new InvalidException("Tông môn chưa có thành trên bản đồ nên không thể tham chiến.");
+        // Ngoài giờ mở cửa (kể cả vào lại sau khi mất kết nối) không được vào.
+        if (!WarConfig.IsOpen(DateTime.UtcNow)) throw new InvalidException(WarConfig.ClosedMessage);
         UpsertClan(clan);
         lock (Sync)
         {
@@ -445,6 +447,54 @@ public static partial class WarManager
 
             PublishDelta();
         }
+    }
+
+    public static bool HasSessions
+    {
+        get { lock (Sync) return Sessions.Count > 0; }
+    }
+
+    /// <summary>
+    /// Đóng cửa hằng ngày: kết thúc hoà mọi trận đang đánh, đưa mọi người chơi ra khỏi scene chiến
+    /// (đang đi thì dừng ở node an toàn như khi thoát). Lãnh thổ, HP và rối giữ nguyên.
+    /// </summary>
+    public static void CloseForToday()
+    {
+        List<IWarSession> kicked;
+        lock (Sync)
+        {
+            if (!initialized) return;
+            var now = DateTime.UtcNow;
+            foreach (var battle in Battles.Values.Where(b => !b.Ended).ToList())
+            {
+                EndBattle(battle, WarBattleOutcome.Draw, WarBattleEndReason.WarClosed, null, null, now);
+            }
+
+            kicked = Sessions.Values.ToList();
+            foreach (var session in kicked)
+            {
+                Sessions.Remove(session.CharId);
+                ReadySessions.Remove(session.CharId);
+                if (!Units.TryGetValue((WarUnitKind.Player, session.CharId), out var unit)) continue;
+                unit.Player!.LastEnterAt = now;
+                if (unit.State is WarUnitState.Moving or WarUnitState.Holding)
+                {
+                    if (unit.State == WarUnitState.Moving) unit.NodeId = unit.Player.LastSafeNodeId;
+                    unit.ClearRoute();
+                }
+
+                unit.State = WarUnitState.Idle;
+                MarkUnit(unit);
+                ResolveNode(unit.NodeId, now);
+            }
+
+            Returning.Clear();
+            PublishDelta();
+        }
+
+        Log.Information("TongMonChien closed for today, {Count} players removed", kicked.Count);
+        foreach (var session in kicked)
+            session.Kick($"Tông môn chiến đã đóng cửa. {WarConfig.ClosedMessage}");
     }
 
     public static WarSnapshot GetSnapshot(int charId, Models.Clan clan, ClanRole role)

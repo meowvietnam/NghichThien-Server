@@ -32,6 +32,8 @@ public class TongMonChienService : BackgroundService
         {
             try
             {
+                // Hết giờ mở cửa: đưa mọi người ra khỏi scene chiến (kiểm tra mỗi nhịp để bắt cả người vào sát giờ).
+                if (!WarConfig.IsOpen(DateTime.UtcNow) && WarManager.HasSessions) WarManager.CloseForToday();
                 WarManager.Tick();
                 if (DateTime.UtcNow - lastFlush >= FlushInterval)
                 {

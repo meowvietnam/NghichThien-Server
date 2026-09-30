@@ -81,6 +81,8 @@ public class SceneManager : IClientHandler
                     case TongMonChien:
                         if (!Game.TMC.WarManager.IsInitialized)
                             throw new InvalidException("Tông môn chiến đang khởi động, hãy thử lại sau.");
+                        if (!Game.TMC.WarConfig.IsOpen(DateTime.UtcNow))
+                            throw new InvalidException(Game.TMC.WarConfig.ClosedMessage);
                         var warClan = (await Game.Clan.ClanManager.FindReferenceByMember(client.CharacterData.Id)).Clan;
                         if (warClan.NodeId <= 0)
                             throw new InvalidException("Tông môn chưa có thành trên bản đồ nên không thể tham chiến.");

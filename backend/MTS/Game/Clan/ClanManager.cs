@@ -37,7 +37,7 @@ public static partial class ClanManager
         CreateClanMoneyVipPrice = 300_000,
         CreateClanVndPrice = 500_000,
         CreateClanVndBonusMoneyVip = 100_000,
-        CreateMaxMember = 15,
+        CreateMaxMember = 20,
         MemberSlotLevelInterval = 3,
         MemberSlotsPerInterval = 1,
         CreateClanHonLimitLevel = 1,

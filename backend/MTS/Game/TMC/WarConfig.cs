@@ -20,6 +20,32 @@ public static class WarConfig
     /// <summary>Trận kéo dài quá mức này bị server kết thúc hoà (dọn trận treo).</summary>
     public static readonly TimeSpan BattleHardTimeout = TimeSpan.FromMinutes(15);
 
+    // ---------------- Giờ mở cửa ----------------
+
+    /// <summary>Bật giờ mở cửa hằng ngày. false = mở cả ngày.</summary>
+    public const bool ScheduleEnabled = true;
+
+    /// <summary>Giờ mở cửa hằng ngày (giờ Việt Nam, UTC+7).</summary>
+    public static readonly TimeSpan OpenTime = new(19, 0, 0);
+
+    /// <summary>
+    /// Giờ đóng cửa hằng ngày (giờ Việt Nam). Tới giờ: mọi trận đang đánh kết thúc hoà, người đang đi dừng ở node an toàn,
+    /// tất cả bị đưa ra khỏi scene chiến. Lãnh thổ, HP, rối giữ nguyên. OpenTime &gt; CloseTime nghĩa là mở qua đêm.
+    /// </summary>
+    public static readonly TimeSpan CloseTime = new(23, 0, 0);
+
+    public static bool IsOpen(DateTime utcNow)
+    {
+        if (!ScheduleEnabled) return true;
+        var time = (utcNow + Utils.Utils.Utc7).TimeOfDay;
+        return OpenTime <= CloseTime
+            ? time >= OpenTime && time < CloseTime
+            : time >= OpenTime || time < CloseTime;
+    }
+
+    public static string ClosedMessage =>
+        $"Tông môn chiến chỉ mở từ {OpenTime:hh\\:mm} đến {CloseTime:hh\\:mm} hằng ngày.";
+
     // ---------------- HP người chơi ----------------
 
     /// <summary>HP chiến khi nhân vật tham chiến lần đầu: đầy.</summary>

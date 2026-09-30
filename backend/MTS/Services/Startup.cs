@@ -32,6 +32,7 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
+        await Gift(db);
     }
 
     private async Task Register(AppDbContext db)
@@ -85,10 +86,10 @@ public class Startup : BackgroundService
 
     private async Task Gift(AppDbContext db)
     {
-        var name = "NhienNhien";
+        var name = "Hoa Thiên Mệnh";
         var charData = await db.Characters.FirstAsync(x => x.Name == name);
         var dailyRewards = await db.DailyRewardMonthlyPasses.Where(x => x.CharId == charData.Id).ToListAsync();
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 5; i++)
         {
             foreach (var d in dailyRewards)
             {
