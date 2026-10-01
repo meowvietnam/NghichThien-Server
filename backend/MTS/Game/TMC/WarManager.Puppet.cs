@@ -81,6 +81,7 @@ public static partial class WarManager
                 var hpMax = WarConfig.GetPuppetMaxHp(level, GetCreatorWarHpMax(actor));
                 puppet = new Puppet
                 {
+                    DonToc = WarConfig.GetPuppetDonToc(level, actor.Stats.TocDoBay),
                     ClanId = clan.Id, Level = level, RandomSeed = WarConfig.RollPuppetSeed(), NodeId = clan.NodeId,
                     Hp = hpMax, HpMax = hpMax, Durability = WarConfig.PuppetMaxDurability, LastHpRecoveryAt = now,
                     State = WarUnitState.Idle, ArrivedAt = now, CreatedAt = now
@@ -165,6 +166,7 @@ public static partial class WarManager
                     var puppet = unit.Puppet;
                     puppet.Level = targetLevel;
                     puppet.HpMax = WarConfig.GetPuppetMaxHp(targetLevel, GetCreatorWarHpMax(actor));
+                    puppet.DonToc = WarConfig.GetPuppetDonToc(targetLevel, actor.Stats.TocDoBay);
                     puppet.Hp = puppet.HpMax;
                     puppet.LastHpRecoveryAt = now;
                     puppet.Durability = WarConfig.PuppetMaxDurability;

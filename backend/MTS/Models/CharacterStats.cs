@@ -79,7 +79,7 @@ public partial class CharacterStats
         LinhCan = stats.LinhCan;
         Ability = stats.Ability;
         DanDoc = stats.DanDoc;
-        TuoiTac = stats.TuoiTac;
+        TuoiTac = ClampTuoiTac(stats.TuoiTac);
         isDirty = true;
     }
 
@@ -120,8 +120,37 @@ public partial class CharacterStats
         }
     }
 
+    /// <summary>
+    /// Tuổi tác tối đa: 10.000 năm (năm 360 ngày như cách tính tháng 30 ngày của game). Giữ xa giới hạn của TimeSpan
+    /// (~29.000 năm) và của các phép đổi sang ngày/tháng kiểu int để cộng tuổi không bao giờ tràn số.
+    /// </summary>
+    public static readonly TimeSpan MaxTuoiTac = TimeSpan.FromDays(360d * 20_000);
+
+    /// <summary>Kẹp tuổi tác vào [0, MaxTuoiTac].</summary>
+    public static TimeSpan ClampTuoiTac(TimeSpan value) =>
+        value < TimeSpan.Zero ? TimeSpan.Zero : value > MaxTuoiTac ? MaxTuoiTac : value;
+
+    /// <summary>Cộng tuổi an toàn: không tràn TimeSpan, kết quả luôn trong [0, MaxTuoiTac].</summary>
+    public static TimeSpan AddTuoiTac(TimeSpan current, TimeSpan delta)
+    {
+        current = ClampTuoiTac(current);
+        if (delta >= MaxTuoiTac - current) return MaxTuoiTac;
+        if (delta <= -current) return TimeSpan.Zero;
+        return current + delta;
+    }
+
+    /// <summary>Cộng tuổi theo số ngày (double), chặn số ngày quá lớn/không hợp lệ trước khi tạo TimeSpan.</summary>
+    public static TimeSpan AddTuoiTacDays(TimeSpan current, double days)
+    {
+        if (double.IsNaN(days)) return ClampTuoiTac(current);
+        var maxDays = MaxTuoiTac.TotalDays;
+        days = Math.Clamp(days, -maxDays, maxDays);
+        return AddTuoiTac(current, TimeSpan.FromDays(days));
+    }
+
     public void SetTuoiTac(TimeSpan value)
     {
+        value = ClampTuoiTac(value);
         if (TuoiTac != value)
         {
             var oldValue = TuoiTac;
@@ -269,7 +298,7 @@ public partial class CharacterStats
             case StatType.ThoNguyen: ThoNguyen = value; break;
             case StatType.TamCanh: TamCanh = value; break;
             case StatType.DanDoc: DanDoc = value; break;
-            case StatType.TuoiTac: TuoiTac = new TimeSpan(value); break;
+            case StatType.TuoiTac: TuoiTac = ClampTuoiTac(new TimeSpan(value)); break;
         }
     }
 

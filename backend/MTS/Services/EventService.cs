@@ -290,7 +290,7 @@ public static class EventService
             EndAt = endAt,
             GameEvent = gameEvent2
         };
-        var event3StartAt = new DateTimeOffset(2026, 09, 14, 0, 0, 0, Utc7).UtcDateTime;
+        var event3StartAt = new DateTimeOffset(2026, 10, 01, 0, 0, 0, Utc7).UtcDateTime;
         var event3EndAt = event3StartAt.AddDays(8);
         var gameEvent3 = new EventShop()
         {
@@ -498,8 +498,8 @@ public static class EventService
             EndAt = event3EndAt,
             GameEvent = gameEvent3
         };
-        eventList.Add(event1);
-        eventList.Add(event2);
+        // eventList.Add(event1);
+        // eventList.Add(event2);
         eventList.Add(event3);
         return eventList;
     }

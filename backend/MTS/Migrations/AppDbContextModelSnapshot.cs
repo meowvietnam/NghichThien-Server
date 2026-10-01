@@ -1442,6 +1442,9 @@ namespace MTS.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("DonToc")
+                        .HasColumnType("int");
+
                     b.Property<int>("Durability")
                         .HasColumnType("int");
 

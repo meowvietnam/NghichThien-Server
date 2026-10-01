@@ -385,7 +385,7 @@ public partial class CharacterData
         Stats.SetLinhThach(remaining);
         Stats.SetTamCanh(newTamCanh);
         Stats.SetHp(newHp);
-        Stats.SetTuoiTac(Stats.TuoiTac + time);
+        Stats.SetTuoiTac(CharacterStats.AddTuoiTac(Stats.TuoiTac, time));
         return new TuLuyenResult()
         {
             Success = true,
@@ -449,7 +449,7 @@ public partial class CharacterData
                 Level = 1
             };
             cp.LearnCongPhapSuccess(this, congPhap.Level);
-            var newTuoiTac = Stats.TuoiTac + time;
+            var newTuoiTac = CharacterStats.AddTuoiTac(Stats.TuoiTac, time);
             InventoryManager.Add(congPhap);
             Stats.SetLinhThach(remaining);
             SetTuoiTacSpecial(newTuoiTac);
@@ -514,7 +514,7 @@ public partial class CharacterData
             {
                 Id = id,
             };
-            var newTuoiTac = Stats.TuoiTac + time;
+            var newTuoiTac = CharacterStats.AddTuoiTac(Stats.TuoiTac, time);
             InventoryManager.Add(thanThong);
             Stats.SetLinhThach(remaining);
             SetTuoiTacSpecial(newTuoiTac);
@@ -547,6 +547,7 @@ public partial class CharacterData
 
     public void SetTuoiTacSpecial(TimeSpan tuoiTac)
     {
+        tuoiTac = CharacterStats.ClampTuoiTac(tuoiTac);
         if (Progression.MaxLevel > 3)
         {
             Stats.SetTuoiTac(tuoiTac);
@@ -615,7 +616,7 @@ public partial class CharacterData
             throw new InvalidException(Strings.NotEnoughMoney);
         }
 
-        var newTuoiTac = Stats.TuoiTac + time;
+        var newTuoiTac = CharacterStats.AddTuoiTac(Stats.TuoiTac, time);
         CongPhap cpOwnerNewValue = new CongPhap()
         {
             Id = cpOwner.Id,

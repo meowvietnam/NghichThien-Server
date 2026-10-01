@@ -228,15 +228,22 @@ namespace MTS.Network.Core
 
         public void ClaimCombatAds()
         {
+            if (combatSession == null)
+            {
+                 return;
+            }
             combatSession.HasClaimedAdReward = true;
             var reward = combatSession.RewardSnapshot;
             var charData = client.CharacterData;
-            charData.Claim(reward);
-            client.MemSend(MessageTag.WatchAdsCombatResult, new WatchAdsCombatResult()
+            if (reward is not null && charData is not null)
             {
-                Success = true,
-                Reward = reward,
-            });
+                charData.Claim(reward);
+                client.MemSend(MessageTag.WatchAdsCombatResult, new WatchAdsCombatResult()
+                {
+                    Success = true,
+                    Reward = reward,
+                });
+            }
         }
 
         public void SendLoadCharCombatArena()

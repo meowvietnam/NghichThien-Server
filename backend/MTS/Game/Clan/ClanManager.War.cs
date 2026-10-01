@@ -15,6 +15,40 @@ public sealed record ClanPaymentResult(
 public static partial class ClanManager
 {
     /// <summary>
+    /// Đặt lại thành chính (Clan.NodeId) cho tông — thao tác quản trị. Node mong muốn đã bị tông khác chiếm thì
+    /// chọn ngẫu nhiên node liền kề với lãnh thổ của tông (xem <see cref="TMC.WarManager.PickMainCityNode"/>).
+    /// Sau khi đổi, mọi node tông đã chiếm (kể cả thành chính cũ) về trung lập, người và rối về thành chính mới.
+    /// Trả về node được chọn.
+    /// </summary>
+    public static async Task<(int NodeId, string Note)> RelocateMainCity(int clanId, int targetNodeId)
+    {
+        var nodeId = TMC.WarManager.PickMainCityNode(clanId, targetNodeId, out var note);
+        if (nodeId <= 0) throw new InvalidException(note);
+
+        await using var db = await Program.CreateDbAsync();
+        if (await db.Clans.AnyAsync(x => x.Id != clanId && x.NodeId == nodeId))
+            throw new InvalidException($"Node {nodeId} đã là thành chính của tông khác.");
+        var updated = await db.Clans.Where(x => x.Id == clanId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.NodeId, nodeId));
+        if (updated == 0) throw new InvalidException("Tông môn không tồn tại");
+
+        Models.Clan clan;
+        if (References.TryGetValue(clanId, out var reference))
+        {
+            reference.Clan.NodeId = nodeId;
+            clan = reference.Clan;
+        }
+        else
+        {
+            clan = await db.Clans.AsNoTracking().FirstAsync(x => x.Id == clanId);
+        }
+        PublishClanMapNodeChanged(clan);
+        // Đổi vị trí thành chính: toàn bộ node đã chiếm của tông (kể cả thành chính cũ) về trung lập.
+        TMC.WarManager.ResetClanTerritory(clanId);
+        return (nodeId, note);
+    }
+
+    /// <summary>
     /// Trả chi phí tính bằng điểm cống hiến theo cách của mở giới hạn luyện hồn: trừ điểm cống hiến cá nhân trước,
     /// thiếu bao nhiêu điểm thì bù bằng tiên ngọc (2 điểm = 1 tiên ngọc, làm tròn lên).
     /// Nếu chi phí client đã xác nhận (<paramref name="expectedPointsCost"/>, <paramref name="expectedMoneyVipCost"/>)

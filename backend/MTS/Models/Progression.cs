@@ -282,7 +282,8 @@ public partial class Progression
             return;
         }
         var buffExp = CharacterData.GetBuffExp(delta, 0);
-        SetCurrentExp(CurrentExp + buffExp);
+        // Cộng exp bằng long rồi kẹp để không tràn int khi tuổi tăng rất nhiều một lần.
+        SetCurrentExp((int)Math.Clamp((long)CurrentExp + buffExp, 0, int.MaxValue));
         var client = CharacterData.Client;
         if (client != null)
         {

@@ -484,7 +484,7 @@ public partial class InventoryManager
                             Message = RefineMessage.ThereNoRecipeRefineFail,
                             ItemRefs = new(),
                             Modify = modify,
-                            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                            NewTuoiTac = CharacterStats.AddTuoiTacDays(tuoiTac, (double)baseTime * count),
                         };
                     }
                 }
@@ -508,7 +508,7 @@ public partial class InventoryManager
                             Message = $"-{loss} độ bền, {furnaceData.Name} chỉ còn {dur} độ bền dẫn đến nổ lò",
                             ItemRefs = new(),
                             Modify = modify,
-                            NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                            NewTuoiTac = CharacterStats.AddTuoiTacDays(tuoiTac, (double)baseTime * count),
                         };
                     }
                 }
@@ -530,7 +530,7 @@ public partial class InventoryManager
                     Message = RefineMessage.Success,
                     ItemRefs = new() { linhDanRef },
                     Modify = modify,
-                    NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                    NewTuoiTac = CharacterStats.AddTuoiTacDays(tuoiTac, (double)baseTime * count),
                 };
             }
 
@@ -540,7 +540,7 @@ public partial class InventoryManager
                 Message = RefineMessage.RecipeInvalid,
                 ItemRefs = new(),
                 Modify = modify,
-                NewTuoiTac = tuoiTac.Add(TimeSpan.FromDays(baseTime * count)),
+                NewTuoiTac = CharacterStats.AddTuoiTacDays(tuoiTac, (double)baseTime * count),
             };
         }
     }
@@ -1013,7 +1013,7 @@ public partial class InventoryManager
             var equipmentTier = res.EquipmentTiers.First(x => x.Tier == tier);
             var dayCost = equipmentTier.DayCost;
             var stats = CharacterData.Stats;
-            var newTuoiTac = stats.TuoiTac.Add(TimeSpan.FromDays(dayCost));
+            var newTuoiTac = CharacterStats.AddTuoiTacDays(stats.TuoiTac, dayCost);
             CharacterData.SetTuoiTacSpecial(newTuoiTac);
             var equipment = new Equipment()
             {

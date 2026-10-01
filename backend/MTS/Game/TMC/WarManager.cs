@@ -260,6 +260,123 @@ public static partial class WarManager
         }
     }
 
+    /// <summary>
+    /// Chọn node đặt lại thành chính cho tông (thao tác quản trị). Node mong muốn hợp lệ khi tồn tại, không phải
+    /// cứ điểm (Stronghold), không là thành chính của tông khác và không bị tông khác chiếm. Nếu không hợp lệ:
+    /// chọn ngẫu nhiên một node liền kề (có cạnh nối) với các node tông đang giữ, còn trống hoặc của chính tông;
+    /// không còn node liền kề nào thì chọn ngẫu nhiên một node thông thường tông đang giữ. Trả về 0 nếu không chọn được.
+    /// </summary>
+    public static int PickMainCityNode(int clanId, int targetNodeId, out string note)
+    {
+        lock (Sync)
+        {
+            EnsureInitialized();
+            if (!Clans.TryGetValue(clanId, out var info))
+            {
+                note = "Tông môn không có trong Tông môn chiến.";
+                return 0;
+            }
+
+            bool Usable(int nodeId) =>
+                Nodes.ContainsKey(nodeId) && !StrongholdNodes.Contains(nodeId) &&
+                (OwnerOf(nodeId) is not { } owner || owner == clanId);
+
+            if (Usable(targetNodeId))
+            {
+                note = $"Dùng node mong muốn {targetNodeId}.";
+                return targetNodeId;
+            }
+
+            var owned = Nodes.Values.Where(x => x.OwnerClanId == clanId).Select(x => x.NodeId).ToHashSet();
+            if (info.MainNodeId > 0) owned.Add(info.MainNodeId);
+
+            // Đồ thị có thể chỉ lưu một chiều: xét cả cạnh đi ra và cạnh đi vào.
+            var neighbors = new HashSet<int>();
+            foreach (var (from, next) in Graph)
+            {
+                foreach (var to in next)
+                {
+                    if (owned.Contains(from)) neighbors.Add(to);
+                    if (owned.Contains(to)) neighbors.Add(from);
+                }
+            }
+
+            var candidates = neighbors.Where(x => !owned.Contains(x) && Usable(x)).ToList();
+            var reason = StrongholdNodes.Contains(targetNodeId)
+                ? "là cứ điểm"
+                : Nodes.ContainsKey(targetNodeId) ? $"đã bị tông {OwnerOf(targetNodeId)} chiếm" : "không tồn tại";
+            if (candidates.Count == 0)
+            {
+                candidates = owned.Where(x => x != info.MainNodeId && Usable(x)).ToList();
+                if (candidates.Count == 0)
+                {
+                    note = $"Node {targetNodeId} {reason} và không còn node liền kề nào trống.";
+                    return 0;
+                }
+            }
+
+            var picked = candidates[Random.Shared.Next(candidates.Count)];
+            note = $"Node {targetNodeId} {reason}, chọn ngẫu nhiên node liền kề {picked} (trong {candidates.Count} node).";
+            return picked;
+        }
+    }
+
+    /// <summary>
+    /// Sau khi tông đổi thành chính: kết thúc hoà các trận của tông, trả mọi node tông đang chiếm (kể cả thành chính cũ)
+    /// về trung lập, đưa người và rối của tông về thành chính mới (giữ HP). Đơn vị tông khác đứng trên các node vừa
+    /// trung lập được xét chiếm lại như bình thường.
+    /// </summary>
+    public static void ResetClanTerritory(int clanId)
+    {
+        List<IWarSession> notify;
+        int newMain;
+        lock (Sync)
+        {
+            if (!initialized || !Clans.TryGetValue(clanId, out var info)) return;
+            var now = DateTime.UtcNow;
+            newMain = info.MainNodeId;
+            foreach (var battle in Battles.Values
+                         .Where(b => !b.Ended && (b.Attacker.ClanId == clanId || b.Defender.ClanId == clanId)).ToList())
+            {
+                EndBattle(battle, WarBattleOutcome.Draw, WarBattleEndReason.MainCityMoved, null, null, now);
+            }
+
+            var affected = new HashSet<int>();
+            foreach (var node in Nodes.Values.Where(x => x.OwnerClanId == clanId && x.NodeId != newMain).ToList())
+            {
+                SetOwner(node, null);
+                affected.Add(node.NodeId);
+            }
+
+            foreach (var unit in Units.Values.Where(x => x.ClanId == clanId).ToList())
+            {
+                if (unit.NodeId != newMain || unit.State != WarUnitState.Idle) affected.Add(unit.NodeId);
+                Relocate(unit, newMain);
+            }
+
+            foreach (var nodeId in affected) ResolveNode(nodeId, now);
+            PublishDelta();
+            notify = Sessions.Values.Where(s => Units.TryGetValue((WarUnitKind.Player, s.CharId), out var u) &&
+                                                u.ClanId == clanId).ToList();
+        }
+
+        foreach (var session in notify)
+        {
+            try
+            {
+                session.MemSend(MessageTag.WarNotice, new Network.Models.WarNotice
+                {
+                    Message = $"Thành chính của tông đã chuyển sang node {newMain}. Lãnh thổ đã chiếm được làm mới, " +
+                              "mọi người và rối trở về thành chính mới."
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "TongMonChien notify main city moved failed");
+            }
+        }
+    }
+
     /// <summary>Tông bị giải tán: xử thua, trả node về trung lập, xoá rối, đưa người chơi về AllMaps.</summary>
     public static void OnClanDeleted(int clanId)
     {
@@ -347,6 +464,7 @@ public static partial class WarManager
         if (clan.NodeId <= 0) throw new InvalidException("Tông môn chưa có thành trên bản đồ nên không thể tham chiến.");
         // Ngoài giờ mở cửa (kể cả vào lại sau khi mất kết nối) không được vào.
         if (!WarConfig.IsOpen(DateTime.UtcNow)) throw new InvalidException(WarConfig.ClosedMessage);
+        if (charData.Progression.MaxLevel < WarConfig.MinMaxLevel) throw new InvalidException(WarConfig.MinLevelMessage);
         UpsertClan(clan);
         lock (Sync)
         {
@@ -749,6 +867,7 @@ public static partial class WarManager
             view.Level = u.Puppet!.Level;
             view.Durability = u.Puppet.Durability;
             view.MaxDurability = WarConfig.PuppetMaxDurability;
+            view.DonToc = u.Puppet.DonToc;
             view.Gender = u.Puppet.Gender;
             view.Appearance = u.Puppet.Appearance;
         }
@@ -931,7 +1050,7 @@ public static partial class WarManager
     private static Puppet Clone(Puppet p) => new()
     {
         Id = p.Id, ClanId = p.ClanId, Level = p.Level, Durability = p.Durability, RandomSeed = p.RandomSeed, NodeId = p.NodeId, Hp = p.Hp,
-        HpMax = p.HpMax, LastHpRecoveryAt = p.LastHpRecoveryAt, State = p.State, Route = p.Route,
+        HpMax = p.HpMax, DonToc = p.DonToc, LastHpRecoveryAt = p.LastHpRecoveryAt, State = p.State, Route = p.Route,
         NextArrivalAt = p.NextArrivalAt, ArrivedAt = p.ArrivedAt, CreatedAt = p.CreatedAt, Gender = p.Gender,
         AppearanceJson = p.AppearanceJson
     };

@@ -20,6 +20,8 @@ public class Puppet
     public int NodeId { get; set; }
     public int Hp { get; set; }
     public int HpMax { get; set; }
+    /// <summary>Độn tốc (TocDoBay) của rối = (level × 10)% độn tốc người tạo/nâng cấp, chốt lúc tạo/nâng.</summary>
+    public int DonToc { get; set; }
     public DateTime LastHpRecoveryAt { get; set; }
     public WarUnitState State { get; set; }
     /// <summary>Các node còn phải đi, không gồm node hiện tại. Lưu dạng "12,15,18".</summary>

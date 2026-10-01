@@ -32,56 +32,95 @@ public class Startup : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-        await Gift(db);
+        // Ví dụ nạp tay (chạy 1 lần, chạy lại không cộng trùng nhờ key):
+        // await CustomRecharge(db, "Kiếm Tu", "Kiếm Tu 5m");
+        // Ví dụ đặt lại thành chính cho tông (node bị chiếm thì chọn ngẫu nhiên node liền kề lãnh thổ của tông):
+        // await RelocateClanMainCity(db, "LUYỆN HỒN TÔNG", 142, stoppingToken);
     }
+    
+    /// <summary>
+    /// Đặt lại thành chính (Clan.NodeId) cho tông theo tên. Node bị tông khác chiếm thì chọn ngẫu nhiên node liền kề
+    /// lãnh thổ của tông. Sau khi đổi, toàn bộ node tông đã chiếm (kể cả thành chính cũ) về trung lập,
+    /// người và rối của tông về thành chính mới.
+    /// </summary>
+    private async Task RelocateClanMainCity(AppDbContext db, string clanName, int targetNodeId,
+        CancellationToken stoppingToken)
+    {
+        var clanId = await db.Clans.AsNoTracking()
+            .Where(x => x.Name == clanName)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync(stoppingToken);
+        if (clanId == null)
+        {
+            Log.Warning("RelocateClanMainCity: không tìm thấy tông {ClanName}", clanName);
+            return;
+        }
 
-    private async Task Register(AppDbContext db)
-    {
-        var name = "iziz89";
-        var username = "chidong1989";
-        var password = "khai2803";
-        var charData = await db.Characters.FirstAsync(x => x.Name == name);
-        var userId = charData.UserId;
-        var account = new LocalAccount()
+        while (!Game.TMC.WarManager.IsInitialized)
+            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+
+        try
         {
-            UserId = userId,
-            Username = username,
-            PasswordHash = PasswordService.Hash(password)
-        };
-        charData.Name = "Tiểu Lý Phi Châm";
-        await db.LocalAccounts.AddAsync(account);
-        await db.SaveChangesAsync();
-        Log.Information("oke");
+            var (nodeId, note) = await ClanManager.RelocateMainCity(clanId.Value, targetNodeId);
+            Log.Information("RelocateClanMainCity: tông {ClanName} ({ClanId}) → node {NodeId}. {Note}",
+                clanName, clanId, nodeId, note);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "RelocateClanMainCity: không đặt lại được thành chính cho tông {ClanName}", clanName);
+        }
     }
-    private async Task Gift2(AppDbContext db)
+    
+    private async Task CustomRecharge(
+        AppDbContext db,
+        string charName,
+        string key,
+        long amountVnd = 5_000_000,
+        long moneyVipSnapshot = 500_000,
+        int moneyVipReward = 1_500_000)
     {
-        var charData = await db.Characters.FirstAsync(x => x.Name == "iseka1");
-        var furnace = GameConfig.LuyenDanResources.TempFurnaceDatas.First(x => x.Tier == Tier.LucPham);
-        var rewards = new List<IMailReward>()
+        if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Cần key duy nhất cho lần nạp.", nameof(key));
+        var charData = await db.Characters.AsNoTracking()
+            .Where(x => x.Name == charName)
+            .Select(x => new { x.Id, x.Name })
+            .FirstOrDefaultAsync();
+        if (charData == null)
         {
-            new MailRewardMoneyVip()
-            {
-                MoneyVip = 3000
-            },
-            new MailRewardFurnace()
-            {
-                FurnaceData = new FurnaceData()
-                {
-                    Durability = 100,
-                    Id = (ushort)furnace.Id,
-                }
-            }
-        };
-        var mail = new Mail()
+            Log.Warning("CustomRecharge: không tìm thấy nhân vật {Name}", charName);
+            return;
+        }
+
+        var tokenHash = Utils.Utils.HashSHA256($"custom-recharge:{key}");
+        var existed = await db.IapPurchases
+            .AnyAsync(x => x.Store == Store.Web && x.PurchaseTokenHash == tokenHash);
+        if (existed)
+        {
+            Log.Information("CustomRecharge: key {Key} đã nạp trước đó, bỏ qua", key);
+            return;
+        }
+
+        db.IapPurchases.Add(new IapPurchase
         {
             CharId = charData.Id,
-            Title = "Phần thưởng diệt Boss",
-            Content = "Phần thưởng diệt Boss",
-            Rewards = rewards
-        };
-        await db.Mails.AddAsync(mail);
+            ProductId = null,
+            Store = Store.Web,
+            PurchaseTokenHash = tokenHash,
+            AmountSnapshot = amountVnd,
+            MoneyVipSnapshot = moneyVipSnapshot,
+            PurchaseDate = DateTime.UtcNow
+        });
+        db.Mails.Add(new Mail
+        {
+            CharId = charData.Id,
+            Title = "Nạp tiền thành công!",
+            Content = $"Bạn vừa nạp thành công {amountVnd:N0} VND và nhận {moneyVipReward:N0} Tiên Ngọc.\n" +
+                      "Cảm ơn bạn đã ủng hộ game! Chúc bạn chơi game vui vẻ và có những trải nghiệm thật tuyệt!",
+            Rewards = [new MailRewardMoneyVip { MoneyVip = moneyVipReward }]
+        });
         await db.SaveChangesAsync();
-        Log.Information("oke");
+        Log.Information(
+            "CustomRecharge: {Name} (CharId {CharId}) nạp {Amount} VND, snapshot {Snapshot} tiên ngọc, thư {Reward} tiên ngọc, key {Key}",
+            charData.Name, charData.Id, amountVnd, moneyVipSnapshot, moneyVipReward, key);
     }
 
     private async Task Gift(AppDbContext db)

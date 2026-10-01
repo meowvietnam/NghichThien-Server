@@ -121,6 +121,8 @@ public static partial class WarManager
         snapshot.Level = puppet.Level;
         snapshot.Hp = puppet.Hp;
         snapshot.SinhMenh = puppet.HpMax;
+        // Độn tốc = (level × 10)% độn tốc người tạo/nâng; rối cũ (chưa có giá trị) dùng chỉ số của mẫu.
+        if (puppet.DonToc > 0) snapshot.TocDoBay = puppet.DonToc;
         // Thọ nguyên vô tận, chỉ trang bị Cửu U Thứ.
         snapshot.ThoNguyen = int.MaxValue / 2;
         snapshot.TuoiTac = TimeSpan.Zero;

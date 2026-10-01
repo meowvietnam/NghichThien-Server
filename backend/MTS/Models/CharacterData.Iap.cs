@@ -73,6 +73,8 @@ public partial class CharacterData
             throw new InvalidException(Strings.IapStoreNotSupported);
         }
 
+        // Tạm khoá nạp theo cửa hàng (hiện App Store): chặn trước khi mua để không trừ tiền người chơi.
+        IapStorePolicy.EnsurePurchasable(store);
         await using var db = await Program.CreateDbAsync();
         
         var product = await db.IapProducts
@@ -89,6 +91,7 @@ public partial class CharacterData
         {
             throw new InvalidException(Strings.IapStoreNotSupported);
         }
+        IapStorePolicy.EnsurePurchasable(store);
         await using var db = await Program.CreateDbAsync();
         var product = await db.IapProducts
             .AsNoTracking()

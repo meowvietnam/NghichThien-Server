@@ -161,7 +161,7 @@ public class AllMaps : IClientState
 
                     var stats = charData.Stats;
                     var dayUsed = (int)Math.Round(32f * path.Count / stats.TocDoBay, MidpointRounding.AwayFromZero);
-                    var newAge = stats.TuoiTac + new TimeSpan(dayUsed, 0, 0, 0);
+                    var newAge = MTS.Models.CharacterStats.AddTuoiTacDays(stats.TuoiTac, Math.Max(0, dayUsed));
                     charData.SetTuoiTacSpecial(newAge);
                     charData.Progression.SetIdCurrentNode(id);
                     charData.Progression.SetCurrentEnergy(newEnergy);

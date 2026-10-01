@@ -9,7 +9,7 @@ namespace MTS.Game.TMC;
 public static class WarConfig
 {
     /// <summary>Thời gian đi một cạnh (giây), dùng chung cho người và rối. Gửi cho client trong snapshot.</summary>
-    public const float SecondsPerEdge = 0.75f;
+    public const float SecondsPerEdge = 60f;
 
     /// <summary>Thời gian chờ client vào trận (Ready) trước khi bên chưa sẵn sàng bị xử thua.</summary>
     public static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(30);
@@ -19,6 +19,13 @@ public static class WarConfig
 
     /// <summary>Trận kéo dài quá mức này bị server kết thúc hoà (dọn trận treo).</summary>
     public static readonly TimeSpan BattleHardTimeout = TimeSpan.FromMinutes(15);
+
+    // ---------------- Điều kiện tham chiến ----------------
+
+    /// <summary>Cảnh giới cao nhất từng đạt (Progression.MaxLevel) tối thiểu để vào Tông môn chiến (4 = Trúc Cơ sơ kỳ).</summary>
+    public const int MinMaxLevel = 4;
+
+    public const string MinLevelMessage = "Yêu cầu đạt Trúc Cơ sơ kỳ trở lên mới được tham gia Tông môn chiến.";
 
     // ---------------- Giờ mở cửa ----------------
 
@@ -79,6 +86,12 @@ public static class WarConfig
     /// </summary>
     public static int GetPuppetMaxHp(int puppetLevel, int creatorWarHpMax) =>
         Math.Max(1, (int)((long)creatorWarHpMax * puppetLevel * 10 / 100));
+
+    /// <summary>
+    /// Độn tốc (TocDoBay) của rối = (level rối × 10)% độn tốc của người tạo/nâng cấp tại thời điểm đó.
+    /// </summary>
+    public static int GetPuppetDonToc(int puppetLevel, int creatorDonToc) =>
+        Math.Max(0, (int)((long)creatorDonToc * puppetLevel * 10 / 100));
 
     /// <summary>[TẠM] HP rối hồi mỗi phút, cùng nhịp với người chơi.</summary>
     public static float GetPuppetRegenPerMinute(int maxHp) => maxHp * 0.01f;

@@ -52,6 +52,7 @@ public static partial class WarManager
             .FirstOrDefaultAsync();
 
     private readonly record struct DailyClanScore(int ClanId, string Name, int Strongholds, int Nodes, List<int> Members);
+    private readonly record struct DailyMembership(int CharId, int ClanId, ClanRole Role);
 
     // =====================================================================
     // Thưởng hằng ngày
@@ -60,7 +61,6 @@ public static partial class WarManager
     private static async Task SettleDailyIfDue()
     {
         var now = DateTime.UtcNow;
-        // Ngày vừa kết thúc bắt đầu 1 ngày trước mốc ngày hiện tại.
         var dayToSettle = WarConfig.GetDayStart(now).AddDays(-1);
         if (lastSettledDay is { } settled && settled >= dayToSettle) return;
 
@@ -83,32 +83,39 @@ public static partial class WarManager
             return;
         }
 
-        // Chụp lãnh thổ và người có mặt trong ngày dưới Sync.
-        List<DailyClanScore> scores;
+        List<(int ClanId, string Name, int Strongholds, int Nodes)> held;
         lock (Sync)
         {
-            scores = Clans.Values.Select(c => new DailyClanScore(c.Id, c.Name, CountHeld(c.Id, true),
-                    CountHeld(c.Id, false),
-                    Units.Values.Where(u => !u.IsPuppet && u.ClanId == c.Id &&
-                                            (Sessions.ContainsKey(u.Id) ||
-                                             u.Player!.LastEnterAt is { } at && at >= dayToSettle))
-                        .Select(u => u.Id).ToList()))
-                .Where(x => x.Strongholds + x.Nodes > 0 && x.Members.Count > 0)
+            held = Clans.Values.Select(c => (c.Id, c.Name, CountHeld(c.Id, true), CountHeld(c.Id, false)))
+                .Where(x => x.Item3 + x.Item4 > 0)
                 .ToList();
         }
-
-        // Chỉ thành viên còn trong tông lúc chốt; chức vụ đọc từ DB (Tộc chủ theo Clan.LeaderCharId).
-        var candidateIds = scores.SelectMany(x => x.Members).Distinct().ToList();
-        var memberships = await db.ClanMembers.AsNoTracking()
-            .Where(x => candidateIds.Contains(x.CharId))
-            .Select(x => new { x.CharId, x.ClanId, x.Role })
-            .ToListAsync();
-        var clanIds = scores.Select(x => x.ClanId).ToList();
+        var clanIds = held.Select(x => x.ClanId).ToList();
+        var memberships = (await db.ClanMembers.AsNoTracking()
+                .Where(x => clanIds.Contains(x.ClanId))
+                .Select(x => new { x.CharId, x.ClanId, x.Role })
+                .ToListAsync())
+            .Select(x => new DailyMembership(x.CharId, x.ClanId, x.Role))
+            .ToList();
         var leaders = await db.Clans.AsNoTracking()
             .Where(x => clanIds.Contains(x.Id))
             .Select(x => new { x.Id, x.LeaderCharId })
             .ToDictionaryAsync(x => x.Id, x => x.LeaderCharId);
-        var membershipOf = memberships.ToDictionary(x => x.CharId);
+        var membershipOf = memberships.GroupBy(x => x.CharId).ToDictionary(g => g.Key, g => g.First());
+        var scores = new List<DailyClanScore>();
+        foreach (var h in held)
+        {
+            var members = memberships.Where(m => m.ClanId == h.ClanId).Select(m => m.CharId).Distinct().ToList();
+            if (leaders.TryGetValue(h.ClanId, out var leaderId) && leaderId > 0 && !membershipOf.ContainsKey(leaderId))
+            {
+                // Tông chủ không có dòng ClanMembers vẫn được thưởng phần Tông chủ.
+                members.Add(leaderId);
+                membershipOf[leaderId] = new DailyMembership(leaderId, h.ClanId, ClanRole.Leader);
+            }
+
+            if (members.Count > 0)
+                scores.Add(new DailyClanScore(h.ClanId, h.Name, h.Strongholds, h.Nodes, members));
+        }
 
         var mails = new List<Mail>();
         long total = 0;

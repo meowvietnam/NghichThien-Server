@@ -62,6 +62,8 @@ public partial class WarUnitView
     /// <summary>Độ bền còn lại của rối (số lần còn được chết). 0 với người chơi.</summary>
     public int Durability { get; set; }
     public int MaxDurability { get; set; }
+    /// <summary>Độn tốc của rối ((level × 10)% độn tốc người tạo). 0 với người chơi.</summary>
+    public int DonToc { get; set; }
 }
 
 [MemoryPackable]
