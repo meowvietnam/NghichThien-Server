@@ -265,9 +265,11 @@ public static partial class WarManager
                 });
             }
 
+            // Đan Hp hồi theo % HP tối đa (giống ngoài chiến: BuffValue% Sinh Mệnh mỗi viên), không phải số HP cố định.
             unit.Hp = linhDan.EBuffType == EDanBuffType.HoiFullHp
                 ? unit.HpMax
-                : (int)Math.Min(unit.HpMax, (long)unit.Hp + (long)linhDan.BuffValue * request.Count);
+                : (int)Math.Min(unit.HpMax,
+                    unit.Hp + (long)Math.Floor((double)unit.HpMax * linhDan.BuffValue / 100d * request.Count));
             if (unit.Hp >= unit.HpMax) unit.LastHpRecoveryAt = now;
             MarkUnit(unit);
             Log.Information("TongMonChien char {CharId} used pill {DanId} x{Count} on {Kind} {Id}: hp {Hp}/{Max}",

@@ -11,9 +11,11 @@ using MTS.Game.LuyenDan;
 using MTS.Network.Models;
 using Action = MTS.Game.CreateCharacter.Action;
 using Network.Extensions.MemoryPack;
+
 namespace MTS.Models;
+
 [MemoryPackable]
-public partial class CharacterStats 
+public partial class CharacterStats
 {
     public float Kim { get; private set; }
     public float Moc { get; private set; }
@@ -35,9 +37,7 @@ public partial class CharacterStats
     public int DanDoc { get; private set; }
     public TimeSpan TuoiTac { get; private set; }
 
-    [NotMapped] 
-    [MemoryPackIgnore]
-    private bool isDirty;
+    [NotMapped] [MemoryPackIgnore] private bool isDirty;
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -49,6 +49,7 @@ public partial class CharacterStats
     [Newtonsoft.Json.JsonIgnore]
     [MemoryPackIgnore]
     public CharacterData CharacterData { get; set; }
+
     [MemoryPackConstructor]
     public CharacterStats()
     {
@@ -198,6 +199,7 @@ public partial class CharacterStats
             isDirty = true;
         }
     }
+
     public void ApplyFrom(StatsSnapshot snapshot)
     {
         Kim = snapshot.Kim;
@@ -217,6 +219,7 @@ public partial class CharacterStats
         TamCanh = snapshot.TamCanh;
         DanDoc = snapshot.DanDoc;
     }
+
     public void Apply(StatModifier modifier)
     {
         Apply(modifier.Type, modifier.Action, modifier.Value);
@@ -340,6 +343,7 @@ public partial class CharacterStats
 
         isDirty = true;
     }
+
     public bool IsDefault()
     {
         return CharId == 0;
@@ -378,7 +382,7 @@ public partial class CharacterStats
         var value = linhDan.BuffValue * count;
         var danDoc = linhDan.DanDoc * count;
         bool isAddDanDoc = true;
-        
+
         void AddStat(StatType type)
         {
             var currentValue = Convert.ToSingle(GetValue(type));
@@ -397,30 +401,37 @@ public partial class CharacterStats
             {
                 return ETypeSkill.Kim;
             }
+
             if (eDanBuffType == EDanBuffType.MocChiDao)
             {
                 return ETypeSkill.Moc;
             }
+
             if (eDanBuffType == EDanBuffType.ThuyChiDao)
             {
                 return ETypeSkill.Thuy;
             }
+
             if (eDanBuffType == EDanBuffType.HoaChiDao)
             {
                 return ETypeSkill.Hoa;
             }
+
             if (eDanBuffType == EDanBuffType.ThoChiDao)
             {
                 return ETypeSkill.Tho;
             }
+
             if (eDanBuffType == EDanBuffType.KiemChiDao)
             {
                 return ETypeSkill.Kiem;
             }
+
             if (eDanBuffType == EDanBuffType.ThanThucChiDao)
             {
                 return ETypeSkill.Than;
             }
+
             return ETypeSkill.None;
         }
 
@@ -485,7 +496,7 @@ public partial class CharacterStats
                 ClampDanDoc();
                 break;
             case EDanBuffType.Hp:
-                SetHp(Math.Clamp(Hp + (int)(value / 100f * SinhMenh), 0, SinhMenh));
+                SetHp(Math.Clamp(Hp + (int)(value * SinhMenh / 100f), 0, SinhMenh));
                 break;
             case EDanBuffType.SinhMenh:
                 SetSinhMenh(SinhMenh + value);
@@ -542,6 +553,7 @@ public partial class CharacterStats
             SetValue(StatType.DanDoc, DanDoc + danDoc);
             ClampDanDoc();
         }
+
         CharacterData.AddUseDan((ushort)linhDan.Id, count);
     }
 
@@ -550,6 +562,7 @@ public partial class CharacterStats
         DanDoc = Math.Max(0, DanDoc);
         isDirty = true;
     }
+
     public void ClampHp()
     {
         Hp = Math.Clamp(Hp, 0, SinhMenh);
@@ -582,8 +595,8 @@ public partial class CharacterStats
 
     public void SetDanDoc(int danDoc)
     {
-       DanDoc = danDoc;
-       isDirty = true;
+        DanDoc = danDoc;
+        isDirty = true;
     }
 
     public void ResetAbility()
@@ -597,6 +610,7 @@ public partial class CharacterStats
         TuoiTac = GameConfig.CharacterTemplate.Stats.TuoiTac;
         isDirty = true;
     }
+
     public void ResetTuChat()
     {
         TuChat = GameConfig.CharacterTemplate.Stats.TuChat;
