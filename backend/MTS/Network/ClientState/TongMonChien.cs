@@ -84,6 +84,9 @@ public class TongMonChien : IClientState, IWarSession
             var charData = client.CharacterData ?? throw new InvalidException("Nhân vật không tồn tại");
             var snapshot = WarManager.Enter(this, charData, clan, role);
             MemSend(MessageTag.WarSnapshot, snapshot);
+            // Chấm đỏ nút Thành tựu.
+            MemSend(MessageTag.WarAchievementNotify,
+                new DongPhuAchievementNotify { ClaimableCount = WarManager.CountClaimableAchievements(CharId) });
         }
         catch (InvalidException e)
         {
@@ -201,7 +204,7 @@ public class TongMonChien : IClientState, IWarSession
                     WarUseHpPillResult result;
                     try
                     {
-                        MTS.Models.Clan? clan = null;
+                        Clan? clan = null;
                         if (request.PuppetId > 0) (clan, _) = await GetClan();
                         result = WarManager.UseHpPill(client, clan, request);
                         // Lưu tồn kho ngay sau khi trừ đan để không lệch với HP chiến đã cộng.
@@ -215,12 +218,64 @@ public class TongMonChien : IClientState, IWarSession
                     MemSend(MessageTag.WarUseHpPillResult, result);
                     break;
                 }
+                case MessageTag.WarGetAchievements:
+                {
+                    MemSend(MessageTag.WarGetAchievements, new GetDongPhuAchievementsResult
+                    {
+                        Success = true, Achievements = WarManager.GetAchievements(CharId)
+                    });
+                    break;
+                }
+                case MessageTag.WarClaimAchievement:
+                {
+                    var request = reader.MemRead<ClaimDongPhuAchievementRequest>();
+                    ClaimDongPhuAchievementResult result;
+                    try
+                    {
+                        result = await ClaimAchievement(request);
+                    }
+                    catch (InvalidException e)
+                    {
+                        result = new ClaimDongPhuAchievementResult
+                        {
+                            Success = false, Message = e.Message, AchievementId = request.AchievementId,
+                            TierId = request.TierId
+                        };
+                    }
+
+                    MemSend(MessageTag.WarClaimAchievement, result);
+                    break;
+                }
             }
         }
         catch (Exception e)
         {
             Log.Error(e, "TongMonChien handle {Tag} failed; CharId={CharId}", tag, CharId);
         }
+    }
+
+    /// <summary>Nhận thưởng một mốc thành tựu Tông môn chiến: ghi đã nhận xuống DB trước, rồi phát thưởng và lưu nhân vật.</summary>
+    private async Task<ClaimDongPhuAchievementResult> ClaimAchievement(ClaimDongPhuAchievementRequest request)
+    {
+        var charData = client.CharacterData ?? throw new InvalidException("Nhân vật không tồn tại");
+        var rewards = WarManager.ClaimAchievement(charData.Id, request.AchievementId, request.TierId);
+        await WarManager.FlushAchievements();
+        lock (client.CharacterLock)
+        {
+            foreach (var reward in rewards) reward.Claim(charData);
+        }
+
+        Log.Information("TongMonChien achievement claimed: CharId={CharId} {AchievementId}:{TierId}", charData.Id,
+            request.AchievementId, request.TierId);
+        _ = Task.Run(client.SaveChanges);
+        return new ClaimDongPhuAchievementResult
+        {
+            Success = true,
+            AchievementId = request.AchievementId,
+            TierId = request.TierId,
+            Rewards = rewards,
+            ClaimableCount = WarManager.CountClaimableAchievements(charData.Id)
+        };
     }
 
     public void OnLeave()

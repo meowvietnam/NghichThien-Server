@@ -190,7 +190,7 @@ public static partial class WarManager
         }
     }
 
-    /// <summary>Leader điều rối tới node của tông. Rối phải đầy HP; chỉ đi qua node của tông.</summary>
+    /// <summary>Leader điều rối tới node của tông. Rối phải đạt 99% HP; chỉ đi qua node của tông.</summary>
     public static int[] DeployPuppet(int charId, Models.Clan clan, int puppetId, int targetNodeId)
     {
         EnsureLeader(clan, charId);
@@ -204,7 +204,7 @@ public static partial class WarManager
                 throw new InvalidException(unit.State == WarUnitState.Moving
                     ? "Rối đang di chuyển."
                     : "Rối đang giao tranh/phòng thủ tại node.");
-            if (unit.Hp < unit.HpMax) throw new InvalidException("Rối phải đầy HP mới được điều đi.");
+            if (!WarConfig.CanMove(unit.Hp, unit.HpMax)) throw new InvalidException(WarConfig.MoveHpMessage("Rối"));
             if (targetNodeId == unit.NodeId) throw new InvalidException("Rối đang ở node này.");
             if (!IsAllyNode(clan.Id, targetNodeId)) throw new InvalidException("Chỉ được điều rối tới node của tông.");
             var route = FindPuppetRoute(clan.Id, unit.NodeId, targetNodeId)

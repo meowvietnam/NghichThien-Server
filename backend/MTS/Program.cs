@@ -159,6 +159,7 @@ public static class Program
             Db = App.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
             GameConfig.Init();
             MTS.Game.DP.Achievements.DongPhuAchievementConfig.Initialize();
+            MTS.Game.TMC.Achievements.WarAchievementConfig.Initialize();
             if (App.Environment.IsDevelopment() || enableSwagger)
             {
                 App.UseSwagger();

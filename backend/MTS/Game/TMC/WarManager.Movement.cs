@@ -5,7 +5,26 @@ namespace MTS.Game.TMC;
 
 public static partial class WarManager
 {
-    private static TimeSpan EdgeDuration => TimeSpan.FromSeconds(WarConfig.SecondsPerEdge);
+    /// <summary>Độn tốc hiện tại của đối tượng: rối theo giá trị đã chốt, người chơi theo chỉ số nhân vật đang online.</summary>
+    private static int DonTocOf(WarUnit unit) =>
+        unit.IsPuppet
+            ? unit.Puppet!.DonToc
+            : Sessions.TryGetValue(unit.Id, out var session) && session.Client.CharacterData is { } c
+                ? c.Stats.TocDoBay
+                : 0;
+
+    /// <summary>Thời gian đi một cạnh của đối tượng (10 giây, mỗi 2000 độn tốc giảm 1 giây, tối thiểu 1 giây).</summary>
+    private static TimeSpan EdgeDurationOf(WarUnit unit) =>
+        TimeSpan.FromSeconds(WarConfig.GetSecondsPerEdge(DonTocOf(unit)));
+
+    /// <summary>Bắt đầu đi một cạnh mới từ thời điểm <paramref name="start"/>: chốt thời gian đi cạnh và mốc tới node kế.</summary>
+    private static void BeginEdge(WarUnit unit, DateTime start)
+    {
+        var duration = EdgeDurationOf(unit);
+        unit.ClearEdge();
+        unit.EdgeSeconds = duration.TotalSeconds;
+        unit.NextArrivalAt = start + duration;
+    }
 
     /// <summary>Người chơi chọn node đích; server tìm route hợp lệ và bắt đầu đi. Không có lệnh huỷ.</summary>
     public static int[] Move(int charId, int targetNodeId)
@@ -25,7 +44,8 @@ public static partial class WarManager
                 case WarUnitState.Holding: throw new InvalidException("Node hiện tại đang giao tranh, hãy chờ phân thắng bại.");
             }
 
-            if (unit.Hp < 1) throw new InvalidException("HP chiến đã cạn, hãy hồi phục (theo thời gian hoặc dùng đan).");
+            if (!WarConfig.CanMove(unit.Hp, unit.HpMax))
+                throw new InvalidException(WarConfig.MoveHpMessage("Bạn") + " Hãy chờ hồi phục hoặc dùng đan.");
             if (!Nodes.ContainsKey(targetNodeId)) throw new InvalidException("Node không tồn tại.");
             if (targetNodeId == unit.NodeId) throw new InvalidException("Bạn đang ở node này.");
             if (IsEnemyMainCity(unit.ClanId, targetNodeId))
@@ -39,7 +59,7 @@ public static partial class WarManager
     }
 
     /// <summary>
-    /// BFS: node trung gian phải là node đồng minh, node trung lập (sẽ chiếm khi đi qua) hoặc thành chính địch
+    /// BFS: node trung gian phải là node đồng minh, node trung lập (dừng lại đánh rối trung lập, thắng thì chiếm) hoặc thành chính địch
     /// (chỉ đi xuyên). Node đích là bất kỳ node nào trừ thành chính địch.
     /// </summary>
     private static List<int>? FindPlayerRoute(int clanId, int start, int target)
@@ -86,7 +106,7 @@ public static partial class WarManager
         var from = unit.NodeId;
         unit.SetRoute(route);
         unit.State = WarUnitState.Moving;
-        unit.NextArrivalAt = now + EdgeDuration;
+        BeginEdge(unit, now);
         if (unit.Player != null) unit.Player.LastSafeNodeId = from;
         MarkUnit(unit);
         ResolveNode(from, now);
@@ -108,6 +128,9 @@ public static partial class WarManager
                     .ThenBy(x => x.IsPuppet ? 1 : 0)
                     .ThenBy(x => x.Id)
                     .ToList();
+                // Gặp nhau giữa đường xảy ra trước khi tới node: xét trước, ai vào trận thì không còn "đang đi".
+                MatchOnEdges(now);
+                arrivals = arrivals.Where(x => x.State == WarUnitState.Moving).ToList();
                 if (arrivals.Count == 0) break;
                 foreach (var unit in arrivals)
                 {
@@ -120,7 +143,9 @@ public static partial class WarManager
             foreach (var (charId, until) in Returning.Where(x => x.Value <= now).ToList())
             {
                 Returning.Remove(charId);
-                if (Units.TryGetValue((WarUnitKind.Player, charId), out var unit) && unit.State != WarUnitState.Fighting)
+                // Người vừa thắng trận giữa đường đang đi nốt cạnh: để đi tới node kế rồi mới dừng.
+                if (Units.TryGetValue((WarUnitKind.Player, charId), out var unit) && unit.State != WarUnitState.Fighting &&
+                    !(unit.State == WarUnitState.Moving && unit.EdgeResume))
                 {
                     unit.ClearRoute();
                     unit.State = WarUnitState.Idle;
@@ -185,17 +210,103 @@ public static partial class WarManager
         if (IsEnemyMainCity(clanId, next))
         {
             // Đi xuyên thành chính địch: không dừng, không chiếm, không bị chặn.
-            unit.NextArrivalAt = arrivalTime + EdgeDuration;
+            BeginEdge(unit, arrivalTime);
             MarkUnit(unit);
             return;
         }
 
         if (unit.Player != null) unit.Player.LastSafeNodeId = next;
         unit.NextArrivalAt = null;
+        unit.ClearEdge();
         unit.State = WarUnitState.Holding;
         MarkUnit(unit);
         Log.Debug("TongMonChien arrive {Kind} {Id} node {NodeId}", unit.Kind, unit.Id, next);
         ResolveNode(next, now);
+        // Người đi nốt cạnh sau trận giữa đường mà chưa quay lại scene: tới node thì đứng yên chờ họ vào lại.
+        if (!unit.IsPuppet && unit.State == WarUnitState.Holding && !Sessions.ContainsKey(unit.Id) &&
+            !Returning.ContainsKey(unit.Id))
+        {
+            unit.ClearRoute();
+            unit.State = WarUnitState.Idle;
+            MarkUnit(unit);
+        }
+    }
+
+    // =====================================================================
+    // Gặp nhau giữa đường
+    // =====================================================================
+
+    /// <summary>Vị trí trên cạnh tính từ node có Id nhỏ hơn (0..1) và vận tốc (phần cạnh mỗi giây, có dấu theo chiều đi).</summary>
+    private static (double X, double V) EdgeMotion(WarUnit unit, DateTime at)
+    {
+        var from = unit.NodeId;
+        var to = unit.Route[0];
+        // Không kẹp về [0,1]: đối tượng đã quá giờ tới node (chờ xử lý trong tick này) vẫn nội suy tuyến tính đúng.
+        var progress = 1 - (unit.NextArrivalAt!.Value - at).TotalSeconds / unit.EdgeSeconds;
+        var speed = 1 / unit.EdgeSeconds;
+        return from < to ? (progress, speed) : (1 - progress, -speed);
+    }
+
+    /// <summary>
+    /// Hai đơn vị khác tông đang đi trên cùng một cạnh mà gặp nhau (đi ngược chiều, hoặc cùng chiều và bị đuổi kịp)
+    /// thì ghép trận ngay giữa đường. Rối không đánh rối. Mỗi cặp chỉ ghép một lần trên một cạnh.
+    /// Người thắng/hoà đi nốt cạnh; người thua về thành chính.
+    /// </summary>
+    private static void MatchOnEdges(DateTime now)
+    {
+        var movers = Units.Values
+            .Where(x => x.State == WarUnitState.Moving && x.Route.Count > 0 && x.NextArrivalAt != null &&
+                        x.EdgeSeconds > 0 && x.Hp >= 1 && (x.IsPuppet || ReadySessions.Contains(x.Id)))
+            .GroupBy(x => (Math.Min(x.NodeId, x.Route[0]), Math.Max(x.NodeId, x.Route[0])))
+            .Where(g => g.Count() >= 2 && g.Select(x => x.ClanId).Distinct().Count() >= 2);
+        var meetings = new List<(DateTime At, WarUnit A, WarUnit B)>();
+        foreach (var group in movers)
+        {
+            var list = group.OrderBy(x => x.IsPuppet ? 1 : 0).ThenBy(x => x.Id).ToList();
+            for (var i = 0; i < list.Count; i++)
+            for (var j = i + 1; j < list.Count; j++)
+            {
+                var a = list[i];
+                var b = list[j];
+                if (a.ClanId == b.ClanId || (a.IsPuppet && b.IsPuppet) || a.EdgePassed.Contains(b.Key)) continue;
+                var (xa, va) = EdgeMotion(a, now);
+                var (xb, vb) = EdgeMotion(b, now);
+                if (Math.Abs(va - vb) < 1e-9) continue;
+                // Thời điểm hai vị trí trùng nhau (âm = đã gặp trước "now").
+                var seconds = (xb - xa) / (va - vb);
+                if (seconds > 0) continue;
+                var at = now.AddSeconds(seconds);
+                // Cả hai phải đang ở trên cạnh lúc gặp (sau khi cả hai xuất phát).
+                var startA = a.NextArrivalAt!.Value.AddSeconds(-a.EdgeSeconds);
+                var startB = b.NextArrivalAt!.Value.AddSeconds(-b.EdgeSeconds);
+                if (at < startA || at < startB) continue;
+                // Một bên đã tới node trước khi kịp gặp: không tính là gặp giữa đường (sẽ xử lý tại node).
+                if (at > a.NextArrivalAt.Value || at > b.NextArrivalAt.Value) continue;
+                meetings.Add((at, a, b));
+            }
+        }
+
+        foreach (var (at, a, b) in meetings.OrderBy(x => x.At))
+        {
+            if (a.State != WarUnitState.Moving || b.State != WarUnitState.Moving) continue;
+            // Rối luôn là bên phòng thủ; giữa hai người chơi, người xuất phát sau là bên tấn công.
+            var attacker = a.IsPuppet ? b : b.IsPuppet ? a
+                : a.NextArrivalAt!.Value.AddSeconds(-a.EdgeSeconds) >= b.NextArrivalAt!.Value.AddSeconds(-b.EdgeSeconds) ? a : b;
+            var defender = ReferenceEquals(attacker, a) ? b : a;
+            var remainingA = a.NextArrivalAt!.Value - at;
+            var remainingB = b.NextArrivalAt!.Value - at;
+            a.EdgePassed.Add(b.Key);
+            b.EdgePassed.Add(a.Key);
+            StartBattle(attacker.NodeId, attacker, defender, now, onEdge: true);
+            if (a.State != WarUnitState.Fighting || b.State != WarUnitState.Fighting) continue;
+            // Dừng cả hai tại chỗ gặp nhau: nhớ phần đường còn lại để đi nốt sau trận.
+            a.EdgeRemaining = remainingA < TimeSpan.Zero ? TimeSpan.Zero : remainingA;
+            b.EdgeRemaining = remainingB < TimeSpan.Zero ? TimeSpan.Zero : remainingB;
+            MarkUnit(a);
+            MarkUnit(b);
+            Log.Information("TongMonChien edge battle {AKind} {AId} vs {BKind} {BId} on edge {From}-{To}",
+                a.Kind, a.Id, b.Kind, b.Id, a.NodeId, a.Route[0]);
+        }
     }
 
     /// <summary>
@@ -227,16 +338,30 @@ public static partial class WarManager
         }
 
         if (Battles.Values.Any(b => !b.Ended && b.NodeId == nodeId)) return;
-        if (clans.Count == 1)
+        if (clans.Count == 1 && clans[0] != WarConfig.NeutralClanId)
         {
+            var captured = node.OwnerClanId != clans[0];
             SetOwner(node, clans[0]);
             node.Contested = false;
+            // Thành tựu "chiếm điểm/thành": tính cho người chơi trực tiếp có mặt lúc node về tay tông mình.
+            if (captured) CreditCapture(nodeId, present);
             ContinueHolders(nodeId, clans[0], now);
+        }
+        else if (clans.Count == 1)
+        {
+            // Chỉ còn rối trung lập: thành vẫn trung lập, rối đứng canh tiếp.
+            node.Contested = false;
+            foreach (var unit in present.Where(x => x.State == WarUnitState.Holding))
+            {
+                unit.State = WarUnitState.Idle;
+                MarkUnit(unit);
+            }
         }
         else if (node.Contested)
         {
             node.Contested = false;
             SetOwner(node, null);
+            EnsureNeutralPuppet(nodeId, now);
         }
     }
 
@@ -245,10 +370,11 @@ public static partial class WarManager
     {
         foreach (var unit in UnitsAt(nodeId).Where(x => x.State == WarUnitState.Holding).ToList())
         {
-            if (unit.ClanId == ownerClanId && unit.Route.Count > 0 && unit.Hp >= 1)
+            // Sau giao tranh, HP dưới 99% thì dừng lại ở node này (phải hồi đủ mới đi tiếp).
+            if (unit.ClanId == ownerClanId && unit.Route.Count > 0 && WarConfig.CanMove(unit.Hp, unit.HpMax))
             {
                 unit.State = WarUnitState.Moving;
-                unit.NextArrivalAt = now + EdgeDuration;
+                BeginEdge(unit, now);
                 if (unit.Player != null) unit.Player.LastSafeNodeId = nodeId;
             }
             else

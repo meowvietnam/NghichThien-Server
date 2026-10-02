@@ -8,8 +8,29 @@ namespace MTS.Game.TMC;
 /// </summary>
 public static class WarConfig
 {
-    /// <summary>Thời gian đi một cạnh (giây), dùng chung cho người và rối. Gửi cho client trong snapshot.</summary>
-    public const float SecondsPerEdge = 60f;
+    /// <summary>Thời gian đi một cạnh (giây) khi độn tốc bằng 0: mức chậm nhất. Gửi cho client trong snapshot.</summary>
+    public const float SecondsPerEdge = 10f;
+
+    /// <summary>Thời gian đi một cạnh nhanh nhất (giây).</summary>
+    public const float MinSecondsPerEdge = 1f;
+
+    /// <summary>Mỗi chừng này độn tốc (TocDoBay) giảm 1 giây đi một cạnh.</summary>
+    public const int DonTocPerSecond = 2000;
+
+    /// <summary>
+    /// Thời gian đi một cạnh theo độn tốc của đối tượng: khởi đầu 10 giây, mỗi 2000 độn tốc giảm 1 giây,
+    /// tối thiểu 1 giây, tối đa 10 giây.
+    /// </summary>
+    public static float GetSecondsPerEdge(int donToc) =>
+        Math.Clamp(SecondsPerEdge - Math.Max(0, donToc) / DonTocPerSecond, MinSecondsPerEdge, SecondsPerEdge);
+
+    /// <summary>Người chơi/rối phải có ít nhất chừng này % HP chiến mới được di chuyển.</summary>
+    public const int MoveMinHpPercent = 99;
+
+    public static bool CanMove(int hp, int hpMax) => hp >= 1 && (long)hp * 100 >= (long)hpMax * MoveMinHpPercent;
+
+    public static string MoveHpMessage(string who) =>
+        $"{who} phải đạt từ {MoveMinHpPercent}% HP trở lên mới được di chuyển.";
 
     /// <summary>Thời gian chờ client vào trận (Ready) trước khi bên chưa sẵn sàng bị xử thua.</summary>
     public static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(30);
@@ -28,18 +49,9 @@ public static class WarConfig
     public const string MinLevelMessage = "Yêu cầu đạt Trúc Cơ sơ kỳ trở lên mới được tham gia Tông môn chiến.";
 
     // ---------------- Giờ mở cửa ----------------
-
-    /// <summary>Bật giờ mở cửa hằng ngày. false = mở cả ngày.</summary>
     public const bool ScheduleEnabled = true;
-
-    /// <summary>Giờ mở cửa hằng ngày (giờ Việt Nam, UTC+7).</summary>
-    public static readonly TimeSpan OpenTime = new(19, 0, 0);
-
-    /// <summary>
-    /// Giờ đóng cửa hằng ngày (giờ Việt Nam). Tới giờ: mọi trận đang đánh kết thúc hoà, người đang đi dừng ở node an toàn,
-    /// tất cả bị đưa ra khỏi scene chiến. Lãnh thổ, HP, rối giữ nguyên. OpenTime &gt; CloseTime nghĩa là mở qua đêm.
-    /// </summary>
-    public static readonly TimeSpan CloseTime = new(23, 0, 0);
+    public static readonly TimeSpan OpenTime = new(21, 0, 0);
+    public static readonly TimeSpan CloseTime = new(22, 0, 0);
 
     public static bool IsOpen(DateTime utcNow)
     {
@@ -64,8 +76,11 @@ public static class WarConfig
     /// </summary>
     public static int GetPlayerMaxHp(CharacterDataView character) => Math.Max(1, character.SinhMenh);
 
-    /// <summary>[TẠM] HP chiến hồi mỗi phút của người chơi (1%/phút).</summary>
-    public static float GetPlayerRegenPerMinute(int maxHp) => maxHp * 0.01f;
+    /// <summary>% HP chiến tối đa hồi mỗi phút (người chơi, rối tông và rối trung lập).</summary>
+    public const float RegenPercentPerMinute = 0.10f;
+
+    /// <summary>HP chiến hồi mỗi phút của người chơi (10%/phút).</summary>
+    public static float GetPlayerRegenPerMinute(int maxHp) => maxHp * RegenPercentPerMinute;
 
     // ---------------- Rối ----------------
 
@@ -93,8 +108,23 @@ public static class WarConfig
     public static int GetPuppetDonToc(int puppetLevel, int creatorDonToc) =>
         Math.Max(0, (int)((long)creatorDonToc * puppetLevel * 10 / 100));
 
-    /// <summary>[TẠM] HP rối hồi mỗi phút, cùng nhịp với người chơi.</summary>
-    public static float GetPuppetRegenPerMinute(int maxHp) => maxHp * 0.01f;
+    /// <summary>HP rối hồi mỗi phút, cùng nhịp với người chơi (10%/phút).</summary>
+    public static float GetPuppetRegenPerMinute(int maxHp) => maxHp * RegenPercentPerMinute;
+
+    // ---------------- Rối trung lập ----------------
+
+    /// <summary>ClanId của rối trung lập (không thuộc tông nào).</summary>
+    public const int NeutralClanId = 0;
+
+    /// <summary>
+    /// Mỗi node đang trung lập (điểm thường lẫn thành) có một rối trung lập canh giữ, chỉ cầm Cửu U Thứ. Hạ được rối
+    /// mới chiếm được node; node trở lại trung lập thì có rối mới đầy máu. Rối trung lập chỉ nằm trong bộ nhớ (không lưu DB).
+    /// </summary>
+    public const int NeutralPuppetHp = 100_000;
+
+    public const int NeutralPuppetDonToc = 10;
+    public const int NeutralPuppetLevel = 1;
+    public const string NeutralPuppetName = "Rối trung lập";
 
     /// <summary>Độ bền của rối: số lần được phép chết (HP về 0). Hết độ bền thì rối bị xoá. Nâng cấp hồi đầy.</summary>
     public const int PuppetMaxDurability = 5;

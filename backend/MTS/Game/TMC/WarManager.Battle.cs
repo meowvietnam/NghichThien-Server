@@ -1,4 +1,5 @@
 using MTS.Game.Combat;
+using MTS.Game.TMC.Achievements;
 using MTS.Models;
 using MTS.Network;
 using MTS.Network.Models;
@@ -12,7 +13,7 @@ public static partial class WarManager
     private static readonly Dictionary<(long, int), WarBattleEnded> EndedResults = new();
     private static readonly Queue<(long, int)> EndedResultOrder = new();
 
-    private static void StartBattle(int nodeId, WarUnit attacker, WarUnit defender, DateTime now)
+    private static void StartBattle(int nodeId, WarUnit attacker, WarUnit defender, DateTime now, bool onEdge = false)
     {
         attacker.ApplyRegen(now);
         defender.ApplyRegen(now);
@@ -56,7 +57,7 @@ public static partial class WarManager
             return;
         }
 
-        var battle = new WarBattleRuntime { Record = record, Attacker = attacker, Defender = defender };
+        var battle = new WarBattleRuntime { Record = record, Attacker = attacker, Defender = defender, IsEdge = onEdge };
         Battles[battle.Id] = battle;
         dirtyBattles.Add(battle.Id);
         foreach (var unit in new[] { attacker, defender })
@@ -67,7 +68,10 @@ public static partial class WarManager
             MarkUnit(unit);
         }
 
-        if (Nodes.TryGetValue(nodeId, out var node)) pendingNodes[nodeId] = node;
+        if (!onEdge && Nodes.TryGetValue(nodeId, out var node)) pendingNodes[nodeId] = node;
+        // Thành tựu "ghép trận": tính cho mọi người chơi trong trận (đánh rối cũng tính).
+        AddAchievementStat(attacker, WarStat.Battle);
+        AddAchievementStat(defender, WarStat.Battle);
         Log.Information(
             "TongMonChien battle {BattleId} start node {NodeId}: {AKind} {AId} (clan {AClan}, hp {AHp}) vs {DKind} {DId} (clan {DClan}, hp {DHp})",
             battle.Id, nodeId, attacker.Kind, attacker.Id, attacker.ClanId, attacker.Hp, defender.Kind, defender.Id,
@@ -114,7 +118,7 @@ public static partial class WarManager
         var snapshot = new CharacterSnapshot(template);
         cuuUThuId ??= GameConfig.NDCPTTManager.ThanThongs.FirstOrDefault(x => x is MTS.TT.CuuUThu)?.Id;
         var puppet = unit.Puppet!;
-        snapshot.Name = $"Rối #{puppet.Id}";
+        snapshot.Name = unit.IsNeutral ? WarConfig.NeutralPuppetName : $"Rối #{puppet.Id}";
         snapshot.Gender = puppet.Gender;
         snapshot.Skins = new Dictionary<string, string>(puppet.Appearance.Skins);
         snapshot.Colors = new Dictionary<string, Color>(puppet.Appearance.Colors);
@@ -346,8 +350,8 @@ public static partial class WarManager
     }
 
     /// <summary>
-    /// Kết thúc trận: áp HP (không vượt HP trước trận), đưa bên thua về thành chính (hết HP) hoặc node đồng minh
-    /// gần nhất (bỏ chạy/mất kết nối), bên thắng/hoà ở lại node; sau đó quyết định lại node.
+    /// Kết thúc trận: áp HP (không vượt HP trước trận), bên thua luôn về thành chính của tông (hết HP, bỏ chạy hay
+    /// mất kết nối đều vậy), bên thắng/hoà ở lại node; sau đó quyết định lại node.
     /// </summary>
     private static void EndBattle(WarBattleRuntime battle, WarBattleOutcome outcome, WarBattleEndReason reason,
         int? attackerHp, int? defenderHp, DateTime now, bool loserRan = false)
@@ -387,14 +391,42 @@ public static partial class WarManager
                 continue;
             }
 
-            if (hp <= 0)
+            if (battle.IsEdge && hp > 0 && !lost && reason != WarBattleEndReason.WarClosed)
+            {
+                // Trận giữa đường, thắng hoặc hoà: đi nốt cạnh đang đi. HP dưới 99% thì tới node kế là dừng.
+                unit.State = WarUnitState.Moving;
+                unit.NextArrivalAt = now + (unit.EdgeRemaining ?? TimeSpan.Zero);
+                unit.EdgeRemaining = null;
+                unit.EdgeResume = true;
+                if (!WarConfig.CanMove(unit.Hp, unit.HpMax) && unit.Route.Count > 1) unit.SetRoute(unit.Route.Take(1));
+                result = won ? WarSideResult.Win : WarSideResult.Draw;
+                if (!unit.IsPuppet) Returning[unit.Id] = now + ReturnGrace;
+                if (won) AddAchievementStat(unit, WarStat.Win);
+            }
+            else if (battle.IsEdge && hp > 0 && !lost)
+            {
+                // Đóng cửa khi đang đánh giữa đường: về lại node xuất phát của cạnh đang đi.
+                Relocate(unit, unit.NodeId);
+                result = WarSideResult.Draw;
+            }
+            else if (unit.IsNeutral)
+            {
+                // Rối trung lập còn sống: đứng canh tiếp tại node (không có thành chính để về).
+                unit.State = WarUnitState.Holding;
+                result = WarSideResult.Draw;
+                // Node đã có chủ trong lúc rối đang đánh (vd. vừa thành thành chính của tông mới): gỡ rối.
+                EnsureNeutralPuppet(unit.NodeId, now);
+                if (!Units.ContainsKey(unit.Key)) continue;
+            }
+            else if (hp <= 0)
             {
                 Relocate(unit, MainCityOf(unit.ClanId));
                 result = lost ? WarSideResult.LoseDied : WarSideResult.Draw;
             }
             else if (lost)
             {
-                Relocate(unit, unit.IsPuppet ? MainCityOf(unit.ClanId) : FindNearestAllyNode(unit.ClanId, battle.NodeId));
+                // Thua trận nào cũng về thẳng thành chính của tông.
+                Relocate(unit, MainCityOf(unit.ClanId));
                 result = WarSideResult.LoseRun;
             }
             else
@@ -402,6 +434,8 @@ public static partial class WarManager
                 unit.State = WarUnitState.Holding;
                 result = won ? WarSideResult.Win : WarSideResult.Draw;
                 if (!unit.IsPuppet) Returning[unit.Id] = now + ReturnGrace;
+                // Thành tựu "thắng trận": thắng người chơi, rối tông hay rối trung lập đều tính.
+                if (won) AddAchievementStat(unit, WarStat.Win);
             }
 
             MarkUnit(unit);
@@ -415,9 +449,11 @@ public static partial class WarManager
                 NodeId = unit.NodeId,
                 Message = result switch
                 {
-                    WarSideResult.Win => "Chiến thắng! Giữ nguyên HP còn lại.",
+                    WarSideResult.Win => battle.IsEdge
+                        ? "Chiến thắng giữa đường! Tiếp tục đi tới node kế."
+                        : "Chiến thắng! Giữ nguyên HP còn lại.",
                     WarSideResult.LoseDied => "Thất bại, trở về thành chính.",
-                    WarSideResult.LoseRun => "Rút lui về node đồng minh gần nhất.",
+                    WarSideResult.LoseRun => "Rút lui, trở về thành chính.",
                     _ => "Bất phân thắng bại."
                 }
             };

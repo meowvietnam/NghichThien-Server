@@ -64,6 +64,12 @@ public partial class WarUnitView
     public int MaxDurability { get; set; }
     /// <summary>Độn tốc của rối ((level × 10)% độn tốc người tạo). 0 với người chơi.</summary>
     public int DonToc { get; set; }
+    /// <summary>Thời gian đi một cạnh của đối tượng này (giây), theo độn tốc: 10 giây, mỗi 2000 độn tốc giảm 1, tối thiểu 1.</summary>
+    public float SecondsPerEdge { get; set; }
+    /// <summary>
+    /// Lớn hơn 0 khi đang đánh giữa đường: vị trí đứng trên cạnh NodeId → Route[0] (0 = node xuất phát, 1 = node kế).
+    /// </summary>
+    public float EdgeProgress { get; set; }
 }
 
 [MemoryPackable]

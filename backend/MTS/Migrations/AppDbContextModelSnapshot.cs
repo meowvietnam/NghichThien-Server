@@ -1732,6 +1732,27 @@ namespace MTS.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("MTS.Models.WarAchievementProgress", b =>
+                {
+                    b.Property<int>("CharId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Stat")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<string>("ClaimedTiers")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("varchar(4096)");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CharId", "Stat");
+
+                    b.ToTable("WarAchievementProgresses");
+                });
+
             modelBuilder.Entity("MTS.Models.WarBattle", b =>
                 {
                     b.Property<long>("Id")
@@ -2529,6 +2550,15 @@ namespace MTS.Migrations
                 });
 
             modelBuilder.Entity("MTS.Models.UseDan", b =>
+                {
+                    b.HasOne("MTS.Models.CharacterData", null)
+                        .WithMany()
+                        .HasForeignKey("CharId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MTS.Models.WarAchievementProgress", b =>
                 {
                     b.HasOne("MTS.Models.CharacterData", null)
                         .WithMany()

@@ -239,6 +239,16 @@ public class DongPhuState : IClientState, ISender<MessageTag>
                     Message = e.Message
                 };
             }
+            catch (Exception e)
+            {
+                // Lỗi khác (DB...): vẫn phải trả kết quả hợp lệ, nếu không client nhận null và kẹt màn hình chờ.
+                Log.Error(e, "DongPhu visit failed: CharId={CharId} Name={Name}", client.CharacterData?.Id, request.Name);
+                result = new VisitDongPhuResult()
+                {
+                    Success = false,
+                    Message = "Không thăm được Động phủ, vui lòng thử lại"
+                };
+            }
             finally
             {
                 client.MemSend(MessageTag.VisitDongPhuRequest, result);

@@ -1,0 +1,284 @@
+{
+  "_huongDan": [
+    "Sửa file này và lưu: server tự nạp lại sau ~1 giây (file lỗi thì giữ cấu hình cũ, xem log).",
+    "Thành tựu tính theo mùa 2 tuần: sang mùa mới, tiến độ và mốc đã nhận của mọi nhân vật về 0 (mốc đạt mà chưa nhận sẽ mất).",
+    "Stat: CaptureNode (chiếm điểm), CaptureStronghold (chiếm thành), Battle (ghép trận), Win (thắng trận, thắng rối cũng tính).",
+    "Thưởng mặc định = mục tiêu × độ khó × 100 tiên ngọc. Độ khó: chiếm điểm 1, chiếm thành 2, ghép trận 1, thắng trận 4.",
+    "Id thành tựu và Id mốc dùng để nhớ đã nhận: KHÔNG đổi sau khi phát hành; thêm mốc mới thì dùng Id mới. Target các mốc phải tăng dần.",
+    "Rewards[].type: MoneyVip {MoneyVip}, LinhDan {Id, Count}, Item {Item:{Id, Type, Count}}, Skill {Item:{Id, Type, Count}}, RandomSkill {Tier, Type, Count}, RandomSpecialSkill {Tiers[], Type, TypeSkill?, Count}."
+  ],
+  "Achievements": [
+    {
+      "Id": "capture_node",
+      "Stat": "CaptureNode",
+      "Name": "Chiếm Điểm",
+      "Description": "Trực tiếp chiếm {target} điểm trong Tông môn chiến",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 500
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 5000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 10000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 200,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 20000
+            }
+          ]
+        },
+        {
+          "Id": 6,
+          "Target": 500,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 50000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "capture_stronghold",
+      "Stat": "CaptureStronghold",
+      "Name": "Công Thành",
+      "Description": "Trực tiếp chiếm {target} thành trong Tông môn chiến",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 1,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 200
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 3,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 600
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 10,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 25,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 5000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 10000
+            }
+          ]
+        },
+        {
+          "Id": 6,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 20000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "battle",
+      "Stat": "Battle",
+      "Name": "Chinh Chiến",
+      "Description": "Được ghép {target} trận trong Tông môn chiến",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 500
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 5000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 100,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 10000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 300,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 30000
+            }
+          ]
+        },
+        {
+          "Id": 6,
+          "Target": 1000,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 100000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Id": "win",
+      "Stat": "Win",
+      "Name": "Bách Chiến Bách Thắng",
+      "Description": "Thắng {target} trận trong Tông môn chiến (thắng rối cũng tính)",
+      "Tiers": [
+        {
+          "Id": 1,
+          "Target": 1,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 400
+            }
+          ]
+        },
+        {
+          "Id": 2,
+          "Target": 5,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 2000
+            }
+          ]
+        },
+        {
+          "Id": 3,
+          "Target": 20,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 8000
+            }
+          ]
+        },
+        {
+          "Id": 4,
+          "Target": 50,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 20000
+            }
+          ]
+        },
+        {
+          "Id": 5,
+          "Target": 150,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 60000
+            }
+          ]
+        },
+        {
+          "Id": 6,
+          "Target": 500,
+          "Rewards": [
+            {
+              "type": "MoneyVip",
+              "MoneyVip": 200000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

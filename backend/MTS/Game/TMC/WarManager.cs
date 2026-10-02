@@ -74,6 +74,7 @@ public static partial class WarManager
         var nodes = await db.ClanNodes.AsNoTracking().ToListAsync();
         var participants = await db.WarParticipants.AsNoTracking().ToListAsync();
         var puppets = await db.Puppets.AsNoTracking().ToListAsync();
+        var achievementRows = await db.WarAchievementProgresses.AsNoTracking().ToListAsync();
         var participantIds = participants.Select(x => x.CharId).ToList();
         var names = await db.Characters.AsNoTracking()
             .Where(x => participantIds.Contains(x.Id))
@@ -183,6 +184,10 @@ public static partial class WarManager
                 }
             }
 
+            // Mỗi node đang trung lập có một rối trung lập canh giữ (chỉ trong bộ nhớ, tạo lại đầy máu sau restart).
+            foreach (var nodeId in Nodes.Keys.ToList()) EnsureNeutralPuppet(nodeId, now);
+            LoadAchievements(achievementRows);
+
             foreach (var n in names) OfflineNames[n.Id] = (n.Name, n.Level);
             initialized = true;
             ClearPendingDelta();
@@ -257,123 +262,6 @@ public static partial class WarManager
             }
 
             PublishDelta();
-        }
-    }
-
-    /// <summary>
-    /// Chọn node đặt lại thành chính cho tông (thao tác quản trị). Node mong muốn hợp lệ khi tồn tại, không phải
-    /// cứ điểm (Stronghold), không là thành chính của tông khác và không bị tông khác chiếm. Nếu không hợp lệ:
-    /// chọn ngẫu nhiên một node liền kề (có cạnh nối) với các node tông đang giữ, còn trống hoặc của chính tông;
-    /// không còn node liền kề nào thì chọn ngẫu nhiên một node thông thường tông đang giữ. Trả về 0 nếu không chọn được.
-    /// </summary>
-    public static int PickMainCityNode(int clanId, int targetNodeId, out string note)
-    {
-        lock (Sync)
-        {
-            EnsureInitialized();
-            if (!Clans.TryGetValue(clanId, out var info))
-            {
-                note = "Tông môn không có trong Tông môn chiến.";
-                return 0;
-            }
-
-            bool Usable(int nodeId) =>
-                Nodes.ContainsKey(nodeId) && !StrongholdNodes.Contains(nodeId) &&
-                (OwnerOf(nodeId) is not { } owner || owner == clanId);
-
-            if (Usable(targetNodeId))
-            {
-                note = $"Dùng node mong muốn {targetNodeId}.";
-                return targetNodeId;
-            }
-
-            var owned = Nodes.Values.Where(x => x.OwnerClanId == clanId).Select(x => x.NodeId).ToHashSet();
-            if (info.MainNodeId > 0) owned.Add(info.MainNodeId);
-
-            // Đồ thị có thể chỉ lưu một chiều: xét cả cạnh đi ra và cạnh đi vào.
-            var neighbors = new HashSet<int>();
-            foreach (var (from, next) in Graph)
-            {
-                foreach (var to in next)
-                {
-                    if (owned.Contains(from)) neighbors.Add(to);
-                    if (owned.Contains(to)) neighbors.Add(from);
-                }
-            }
-
-            var candidates = neighbors.Where(x => !owned.Contains(x) && Usable(x)).ToList();
-            var reason = StrongholdNodes.Contains(targetNodeId)
-                ? "là cứ điểm"
-                : Nodes.ContainsKey(targetNodeId) ? $"đã bị tông {OwnerOf(targetNodeId)} chiếm" : "không tồn tại";
-            if (candidates.Count == 0)
-            {
-                candidates = owned.Where(x => x != info.MainNodeId && Usable(x)).ToList();
-                if (candidates.Count == 0)
-                {
-                    note = $"Node {targetNodeId} {reason} và không còn node liền kề nào trống.";
-                    return 0;
-                }
-            }
-
-            var picked = candidates[Random.Shared.Next(candidates.Count)];
-            note = $"Node {targetNodeId} {reason}, chọn ngẫu nhiên node liền kề {picked} (trong {candidates.Count} node).";
-            return picked;
-        }
-    }
-
-    /// <summary>
-    /// Sau khi tông đổi thành chính: kết thúc hoà các trận của tông, trả mọi node tông đang chiếm (kể cả thành chính cũ)
-    /// về trung lập, đưa người và rối của tông về thành chính mới (giữ HP). Đơn vị tông khác đứng trên các node vừa
-    /// trung lập được xét chiếm lại như bình thường.
-    /// </summary>
-    public static void ResetClanTerritory(int clanId)
-    {
-        List<IWarSession> notify;
-        int newMain;
-        lock (Sync)
-        {
-            if (!initialized || !Clans.TryGetValue(clanId, out var info)) return;
-            var now = DateTime.UtcNow;
-            newMain = info.MainNodeId;
-            foreach (var battle in Battles.Values
-                         .Where(b => !b.Ended && (b.Attacker.ClanId == clanId || b.Defender.ClanId == clanId)).ToList())
-            {
-                EndBattle(battle, WarBattleOutcome.Draw, WarBattleEndReason.MainCityMoved, null, null, now);
-            }
-
-            var affected = new HashSet<int>();
-            foreach (var node in Nodes.Values.Where(x => x.OwnerClanId == clanId && x.NodeId != newMain).ToList())
-            {
-                SetOwner(node, null);
-                affected.Add(node.NodeId);
-            }
-
-            foreach (var unit in Units.Values.Where(x => x.ClanId == clanId).ToList())
-            {
-                if (unit.NodeId != newMain || unit.State != WarUnitState.Idle) affected.Add(unit.NodeId);
-                Relocate(unit, newMain);
-            }
-
-            foreach (var nodeId in affected) ResolveNode(nodeId, now);
-            PublishDelta();
-            notify = Sessions.Values.Where(s => Units.TryGetValue((WarUnitKind.Player, s.CharId), out var u) &&
-                                                u.ClanId == clanId).ToList();
-        }
-
-        foreach (var session in notify)
-        {
-            try
-            {
-                session.MemSend(MessageTag.WarNotice, new Network.Models.WarNotice
-                {
-                    Message = $"Thành chính của tông đã chuyển sang node {newMain}. Lãnh thổ đã chiếm được làm mới, " +
-                              "mọi người và rối trở về thành chính mới."
-                });
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, "TongMonChien notify main city moved failed");
-            }
         }
     }
 
@@ -498,7 +386,11 @@ public static partial class WarManager
             SyncPlayerMaxHp(unit, charData, now);
 
             unit.ApplyRegen(now);
-            if (unit.State != WarUnitState.Fighting)
+            if (unit.State == WarUnitState.Moving && unit.EdgeResume)
+            {
+                // Vừa thắng/hoà trận giữa đường và đang đi nốt cạnh: giữ nguyên hành trình khi quay lại scene.
+            }
+            else if (unit.State != WarUnitState.Fighting)
             {
                 if (unit.State is WarUnitState.Moving or WarUnitState.Holding)
                 {
@@ -743,6 +635,39 @@ public static partial class WarManager
         node.OwnerClanId = clanId;
         node.Version++;
         MarkNode(node);
+        // Thành về trung lập thì có rối trung lập mới; thành đã có chủ thì không còn rối trung lập.
+        EnsureNeutralPuppet(node.NodeId, DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Giữ bất biến "node trung lập (điểm thường lẫn thành) ⇔ có đúng một rối trung lập": tạo rối đầy máu khi node
+    /// trung lập mà chưa có rối, gỡ rối khi node đã có chủ (kể cả khi trở thành thành chính của một tông).
+    /// </summary>
+    private static void EnsureNeutralPuppet(int nodeId, DateTime now)
+    {
+        if (!Nodes.ContainsKey(nodeId)) return;
+        var key = (WarUnitKind.Puppet, -nodeId);
+        var exists = Units.TryGetValue(key, out var existing);
+        if (OwnerOf(nodeId) != null)
+        {
+            if (exists && existing!.State != WarUnitState.Fighting) RemoveUnit(existing);
+            return;
+        }
+
+        if (exists) return;
+        var puppet = new Puppet
+        {
+            // Id âm để không trùng rối của tông (Id tự tăng trong DB).
+            Id = -nodeId, ClanId = WarConfig.NeutralClanId, Level = WarConfig.NeutralPuppetLevel, Durability = 1,
+            NodeId = nodeId, Hp = WarConfig.NeutralPuppetHp, HpMax = WarConfig.NeutralPuppetHp,
+            DonToc = WarConfig.NeutralPuppetDonToc, LastHpRecoveryAt = now, State = WarUnitState.Idle,
+            ArrivedAt = now, CreatedAt = now
+        };
+        PuppetVisual.Randomize(puppet);
+        var unit = new WarUnit(puppet);
+        Units[unit.Key] = unit;
+        pendingRemoved.Remove(unit.Key);
+        MarkUnit(unit);
     }
 
     private static void MarkClan(int? clanId)
@@ -758,7 +683,8 @@ public static partial class WarManager
 
     private static void MarkUnit(WarUnit unit)
     {
-        dirtyUnits.Add(unit.Key);
+        // Rối trung lập chỉ nằm trong bộ nhớ: gửi delta nhưng không ghi DB.
+        if (!unit.IsNeutral) dirtyUnits.Add(unit.Key);
         pendingUnits[unit.Key] = unit;
     }
 
@@ -768,6 +694,7 @@ public static partial class WarManager
         pendingUnits.Remove(unit.Key);
         pendingRemoved.Add(unit.Key);
         dirtyUnits.Remove(unit.Key);
+        if (unit.IsNeutral) return;
         if (unit.IsPuppet) deletedPuppets.Add(unit.Id);
         else deletedParticipants.Add(unit.Id);
     }
@@ -859,11 +786,18 @@ public static partial class WarManager
             State = u.State,
             Route = u.Route.ToArray(),
             NextArrivalAt = u.NextArrivalAt,
-            IsActive = u.IsPuppet || Sessions.ContainsKey(u.Id)
+            IsActive = u.IsPuppet || Sessions.ContainsKey(u.Id),
+            // Đang đi hoặc đang đánh giữa đường: dùng thời gian đã chốt của cạnh hiện tại để client vẽ đúng vị trí.
+            SecondsPerEdge = u.EdgeSeconds > 0 && (u.State == WarUnitState.Moving || u.EdgeRemaining != null)
+                ? (float)u.EdgeSeconds
+                : (float)EdgeDurationOf(u).TotalSeconds,
+            EdgeProgress = u.State == WarUnitState.Fighting && u.EdgeRemaining != null && u.Route.Count > 0
+                ? (float)Math.Max(0.001, u.EdgeProgressAt(now))
+                : 0f
         };
         if (u.IsPuppet)
         {
-            view.Name = $"Rối #{u.Id}";
+            view.Name = u.IsNeutral ? WarConfig.NeutralPuppetName : $"Rối #{u.Id}";
             view.Level = u.Puppet!.Level;
             view.Durability = u.Puppet.Durability;
             view.MaxDurability = WarConfig.PuppetMaxDurability;
@@ -943,6 +877,7 @@ public static partial class WarManager
     /// <summary>Ghi các bản ghi đã đổi xuống DB. Gọi định kỳ và khi dừng server.</summary>
     public static async Task Flush()
     {
+        await FlushAchievements();
         List<ClanNode> nodes;
         List<WarParticipant> participants;
         List<Puppet> puppets;

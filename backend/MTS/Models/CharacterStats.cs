@@ -485,7 +485,7 @@ public partial class CharacterStats
                 ClampDanDoc();
                 break;
             case EDanBuffType.Hp:
-                SetHp(Math.Clamp(Hp + value, 0, SinhMenh));
+                SetHp(Math.Clamp(Hp + (int)(value / 100f * SinhMenh), 0, SinhMenh));
                 break;
             case EDanBuffType.SinhMenh:
                 SetSinhMenh(SinhMenh + value);

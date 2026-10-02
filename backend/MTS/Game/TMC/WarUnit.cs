@@ -33,6 +33,32 @@ internal sealed class WarUnit
     /// <summary>Trận đang tham gia (khi State = Fighting).</summary>
     public long BattleId { get; set; }
 
+    // ---- Trạng thái trên cạnh đang đi (chỉ trong bộ nhớ; restart thì đối tượng đang đi dừng ở node xuất phát) ----
+
+    /// <summary>Thời gian đi hết cạnh hiện tại (giây), chốt lúc bắt đầu cạnh theo độn tốc khi đó.</summary>
+    public double EdgeSeconds { get; set; }
+    /// <summary>Đang đánh giữa đường: phần thời gian còn lại của cạnh lúc bị dừng. Null khi không đánh giữa đường.</summary>
+    public TimeSpan? EdgeRemaining { get; set; }
+    /// <summary>Vừa thắng/hoà trận giữa đường và đang đi nốt cạnh: vào lại scene không bị huỷ lộ trình.</summary>
+    public bool EdgeResume { get; set; }
+    /// <summary>Đối thủ đã gặp trên cạnh hiện tại (không ghép lại lần nữa trên cùng cạnh).</summary>
+    public HashSet<(WarUnitKind, int)> EdgePassed { get; } = new();
+
+    /// <summary>Tiến độ trên cạnh hiện tại (0 = node xuất phát, 1 = node kế) tại thời điểm <paramref name="at"/>.</summary>
+    public double EdgeProgressAt(DateTime at)
+    {
+        if (EdgeSeconds <= 0) return 0;
+        var remaining = EdgeRemaining ?? (NextArrivalAt is { } arrival ? arrival - at : TimeSpan.Zero);
+        return Math.Clamp(1 - remaining.TotalSeconds / EdgeSeconds, 0, 1);
+    }
+
+    public void ClearEdge()
+    {
+        EdgeRemaining = null;
+        EdgeResume = false;
+        EdgePassed.Clear();
+    }
+
     public WarUnit(WarParticipant player)
     {
         Kind = WarUnitKind.Player;
@@ -50,6 +76,8 @@ internal sealed class WarUnit
     public (WarUnitKind, int) Key => (Kind, Id);
     public int Id => Kind == WarUnitKind.Player ? Player!.CharId : Puppet!.Id;
     public bool IsPuppet => Kind == WarUnitKind.Puppet;
+    /// <summary>Rối trung lập canh thành trung lập: không thuộc tông nào, không lưu DB, không di chuyển.</summary>
+    public bool IsNeutral => Kind == WarUnitKind.Puppet && Puppet!.ClanId == WarConfig.NeutralClanId;
 
     public int ClanId
     {
@@ -115,6 +143,7 @@ internal sealed class WarUnit
     {
         SetRoute(Array.Empty<int>());
         NextArrivalAt = null;
+        ClearEdge();
     }
 
     /// <summary>Áp phần HP hồi theo thời gian server kể từ mốc hồi gần nhất (tính lười, gồm cả lúc offline).</summary>
@@ -168,7 +197,8 @@ internal sealed class WarBattleRuntime
 {
     public required WarBattle Record { get; init; }
     public long Id => Record.Id;
-    public int NodeId => Record.NodeId;
+    /// <summary>Node diễn ra trận; 0 với trận giữa đường (Record.NodeId khi đó chỉ ghi node xuất phát của bên tấn công).</summary>
+    public int NodeId => IsEdge ? 0 : Record.NodeId;
     public bool IsPvp => Record.IsPvp;
     public required WarUnit Attacker { get; init; }
     public required WarUnit Defender { get; init; }
@@ -180,6 +210,8 @@ internal sealed class WarBattleRuntime
     public DateTime? StartedAt { get; set; }
     public DateTime CreatedAt => Record.CreatedAt;
     public bool Ended { get; set; }
+    /// <summary>Trận ghép giữa đường (hai đơn vị gặp nhau trên một cạnh): không gắn với node nào.</summary>
+    public bool IsEdge { get; init; }
 
     public int SideOf(int charId)
     {

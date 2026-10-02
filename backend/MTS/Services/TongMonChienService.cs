@@ -12,6 +12,8 @@ public class TongMonChienService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Chờ script một lần trong Startup (vd. đặt lại thành chính) ghi xong DB rồi mới nạp trạng thái chiến.
+        await Startup.Ready.Task.WaitAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             try

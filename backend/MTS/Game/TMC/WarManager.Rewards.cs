@@ -240,6 +240,8 @@ public static partial class WarManager
         }
 
         ResetTerritory(now);
+        // Thành tựu Tông môn chiến tính theo mùa: sang mùa mới thì tiến độ và mốc đã nhận đều về 0.
+        await ResetAchievements();
         Log.Information("TongMonChien season reset at {Season}", seasonStart);
     }
 
@@ -263,11 +265,16 @@ public static partial class WarManager
 
             foreach (var unit in Units.Values.ToList())
             {
-                Relocate(unit, MainCityOf(unit.ClanId));
+                // Rối trung lập không có thành chính: ở lại thành, chỉ hồi đầy máu.
+                if (!unit.IsNeutral) Relocate(unit, MainCityOf(unit.ClanId));
+                else unit.State = WarUnitState.Idle;
                 unit.Hp = unit.HpMax;
                 unit.LastHpRecoveryAt = now;
                 MarkUnit(unit);
             }
+
+            // Node nào trung lập mà chưa có rối trung lập (vd. vừa được làm mới) thì bổ sung.
+            foreach (var nodeId in Nodes.Keys.ToList()) EnsureNeutralPuppet(nodeId, now);
 
             Returning.Clear();
             PublishDelta();

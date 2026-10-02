@@ -82,6 +82,7 @@ public class AppDbContext : DbContext
     public DbSet<WarParticipant> WarParticipants { get; private set; }
     public DbSet<WarBattle> WarBattles { get; private set; }
     public DbSet<WarSettlement> WarSettlements { get; private set; }
+    public DbSet<WarAchievementProgress> WarAchievementProgresses { get; private set; }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -276,6 +277,15 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WarSettlement>(e =>
         {
             e.HasKey(x => new { x.Kind, x.PeriodStart });
+        });
+        modelBuilder.Entity<WarAchievementProgress>(e =>
+        {
+            e.HasKey(x => new { x.CharId, x.Stat });
+            e.Property(x => x.ClaimedTiers).HasMaxLength(4096);
+            e.HasOne<CharacterData>()
+                .WithMany()
+                .HasForeignKey(x => x.CharId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<Progression>(e =>
         {

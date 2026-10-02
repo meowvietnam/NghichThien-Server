@@ -1,7 +1,8 @@
-using MemoryPack;
+﻿using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using MTS.Data;
 using MTS.Game;
+using MTS.Game.AllMaps;
 using MTS.Game.BaseSkill;
 using MTS.Game.Clan;
 using MTS.Game.DP;
@@ -9,6 +10,7 @@ using MTS.Game.Gacha;
 using MTS.Game.LuyenDan;
 using MTS.Game.LuyenKhi;
 using MTS.Game.Resources;
+using MTS.Game.TMC;
 using MTS.IAP;
 using MTS.Models;
 using MTS.ND;
@@ -29,48 +31,188 @@ public class Startup : BackgroundService
         this.logger = logger;
     }
 
+    /// <summary>Hoàn tất khi các script một lần trong Startup chạy xong; Tông môn chiến chờ mốc này mới khởi tạo.</summary>
+    public static readonly TaskCompletionSource Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var db = await Program.CreateDbAsync();
-        // Ví dụ nạp tay (chạy 1 lần, chạy lại không cộng trùng nhờ key):
-        // await CustomRecharge(db, "Kiếm Tu", "Kiếm Tu 5m");
-        // Ví dụ đặt lại thành chính cho tông (node bị chiếm thì chọn ngẫu nhiên node liền kề lãnh thổ của tông):
-        // await RelocateClanMainCity(db, "LUYỆN HỒN TÔNG", 142, stoppingToken);
+        try
+        {
+            await RunOnceScripts(stoppingToken);
+        }
+        finally
+        {
+            Ready.TrySetResult();
+        }
     }
-    
-    /// <summary>
-    /// Đặt lại thành chính (Clan.NodeId) cho tông theo tên. Node bị tông khác chiếm thì chọn ngẫu nhiên node liền kề
-    /// lãnh thổ của tông. Sau khi đổi, toàn bộ node tông đã chiếm (kể cả thành chính cũ) về trung lập,
-    /// người và rối của tông về thành chính mới.
-    /// </summary>
+
+    private async Task RunOnceScripts(CancellationToken stoppingToken)
+    {
+        await using var db = await Program.CreateDbAsync();
+
+    }
     private async Task RelocateClanMainCity(AppDbContext db, string clanName, int targetNodeId,
         CancellationToken stoppingToken)
     {
-        var clanId = await db.Clans.AsNoTracking()
-            .Where(x => x.Name == clanName)
-            .Select(x => (int?)x.Id)
-            .FirstOrDefaultAsync(stoppingToken);
-        if (clanId == null)
-        {
-            Log.Warning("RelocateClanMainCity: không tìm thấy tông {ClanName}", clanName);
-            return;
-        }
-
-        while (!Game.TMC.WarManager.IsInitialized)
-            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-
         try
         {
-            var (nodeId, note) = await ClanManager.RelocateMainCity(clanId.Value, targetNodeId);
-            Log.Information("RelocateClanMainCity: tông {ClanName} ({ClanId}) → node {NodeId}. {Note}",
-                clanName, clanId, nodeId, note);
+            var clan = await db.Clans.FirstOrDefaultAsync(x => x.Name == clanName, stoppingToken);
+            if (clan == null)
+            {
+                Log.Warning("RelocateClanMainCity: không tìm thấy tông {ClanName}", clanName);
+                return;
+            }
+
+            if (clan.NodeId == targetNodeId)
+            {
+                // Chạy lại (server khởi động lại mà quên comment dòng gọi): không reset lãnh thổ lần nữa.
+                Log.Information("RelocateClanMainCity: tông {ClanName} đã ở node {Target}, bỏ qua", clanName, targetNodeId);
+                return;
+            }
+
+            var maps = GameConfig.MapManager.Maps.ToDictionary(x => x.Id);
+            bool IsNormalNode(int nodeId) =>
+                maps.TryGetValue(nodeId, out var m) && m.MapType != Game.AllMaps.MapType.Stronghold;
+
+            // NodeId thành chính → ClanId (các tông khác).
+            var mainCityOwners = (await db.Clans.AsNoTracking()
+                    .Where(x => x.Id != clan.Id && x.NodeId > 0)
+                    .Select(x => new { x.Id, x.NodeId })
+                    .ToListAsync(stoppingToken))
+                .GroupBy(x => x.NodeId)
+                .ToDictionary(g => g.Key, g => g.First().Id);
+            if (!IsNormalNode(targetNodeId) || mainCityOwners.ContainsKey(targetNodeId))
+            {
+                Log.Error("RelocateClanMainCity: node {Target} không hợp lệ (không tồn tại, là cứ điểm hoặc thành chính tông khác)",
+                    targetNodeId);
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            var rows = await db.ClanNodes.ToDictionaryAsync(x => x.NodeId, stoppingToken);
+            void SetOwner(int nodeId, int? owner)
+            {
+                if (!rows.TryGetValue(nodeId, out var row))
+                {
+                    if (owner == null) return;
+                    row = new ClanNode { NodeId = nodeId };
+                    db.ClanNodes.Add(row);
+                    rows[nodeId] = row;
+                }
+                else if (row.ClanId == owner) return;
+
+                row.ClanId = owner;
+                row.Version++;
+                row.UpdatedAt = now;
+            }
+
+            int? OwnerOf(int nodeId) =>
+                mainCityOwners.TryGetValue(nodeId, out var main) ? main
+                : nodeId == targetNodeId ? clan.Id
+                : rows.TryGetValue(nodeId, out var row) ? row.ClanId : null;
+
+            var oldMainNodeId = clan.NodeId;
+            var displacedClanId = rows.TryGetValue(targetNodeId, out var targetRow) &&
+                                  targetRow.ClanId is { } c && c != clan.Id
+                ? c
+                : (int?)null;
+
+            // 1) Toàn bộ lãnh thổ tông đổi vị trí về trung lập; node đích là thành chính nên không lưu ở ClanNodes.
+            var resetNodes = 0;
+            foreach (var row in rows.Values.Where(x => x.ClanId == clan.Id).ToList())
+            {
+                SetOwner(row.NodeId, null);
+                resetNodes++;
+            }
+
+            SetOwner(targetNodeId, null);
+            clan.NodeId = targetNodeId;
+
+            // 2) Bù cho tông bị chiếm chỗ: node thường trung lập ngẫu nhiên liền kề lãnh thổ còn lại của họ.
+            int? compensationNodeId = null;
+            var displacedMainNodeId = 0;
+            if (displacedClanId is { } displaced)
+            {
+                displacedMainNodeId = mainCityOwners.FirstOrDefault(x => x.Value == displaced).Key;
+                var territory = rows.Values.Where(x => x.ClanId == displaced).Select(x => x.NodeId).ToHashSet();
+                if (displacedMainNodeId > 0) territory.Add(displacedMainNodeId);
+                // Đồ thị có thể chỉ lưu một chiều: xét cả cạnh đi ra và đi vào.
+                var neighbors = new HashSet<int>();
+                foreach (var map in maps.Values)
+                {
+                    foreach (var next in map.NextMapIds ?? [])
+                    {
+                        if (territory.Contains(map.Id)) neighbors.Add(next);
+                        if (territory.Contains(next)) neighbors.Add(map.Id);
+                    }
+                }
+
+                var candidates = neighbors.Where(x => IsNormalNode(x) && OwnerOf(x) == null).ToList();
+                if (candidates.Count == 0)
+                {
+                    // Không còn node liền kề trống: lấy bất kỳ node thường trung lập nào.
+                    candidates = maps.Keys.Where(x => IsNormalNode(x) && OwnerOf(x) == null).ToList();
+                }
+
+                if (candidates.Count > 0)
+                {
+                    compensationNodeId = candidates[Random.Shared.Next(candidates.Count)];
+                    SetOwner(compensationNodeId.Value, displaced);
+                }
+                else
+                {
+                    Log.Warning("RelocateClanMainCity: không còn node trống để bù cho tông {ClanId}", displaced);
+                }
+            }
+
+            int HomeOf(int clanId) =>
+                clanId == displacedClanId && compensationNodeId is { } comp ? comp
+                : mainCityOwners.FirstOrDefault(x => x.Value == clanId).Key;
+
+            // 3) Dời đơn vị: tông đổi vị trí về thành chính mới; tông khác đang đứng ở node đích về node bù/thành chính.
+            var participants = await db.WarParticipants
+                .Where(x => x.ClanId == clan.Id || x.NodeId == targetNodeId)
+                .ToListAsync(stoppingToken);
+            foreach (var p in participants)
+            {
+                var home = p.ClanId == clan.Id ? targetNodeId : HomeOf(p.ClanId);
+                if (home <= 0) continue;
+                p.NodeId = home;
+                p.LastSafeNodeId = home;
+                p.State = Game.TMC.WarUnitState.Idle;
+                p.Route = string.Empty;
+                p.NextArrivalAt = null;
+                p.ArrivedAt = now;
+            }
+
+            var puppets = await db.Puppets
+                .Where(x => x.ClanId == clan.Id || x.NodeId == targetNodeId)
+                .ToListAsync(stoppingToken);
+            foreach (var p in puppets)
+            {
+                var home = p.ClanId == clan.Id ? targetNodeId : HomeOf(p.ClanId);
+                if (home <= 0) continue;
+                p.NodeId = home;
+                p.State = Game.TMC.WarUnitState.Idle;
+                p.Route = string.Empty;
+                p.NextArrivalAt = null;
+                p.ArrivedAt = now;
+            }
+
+            await db.SaveChangesAsync(stoppingToken);
+
+            Log.Information(
+                "RelocateClanMainCity: tông {ClanName} ({ClanId}) thành chính {Old} → {New}; {Nodes} node về trung lập; " +
+                "{Players} người, {Puppets} rối được dời. Tông bị chiếm chỗ: {Displaced}, node bù: {Compensation}",
+                clanName, clan.Id, oldMainNodeId, targetNodeId, resetNodes, participants.Count, puppets.Count,
+                displacedClanId?.ToString() ?? "không", compensationNodeId?.ToString() ?? "không");
         }
         catch (Exception e)
         {
             Log.Error(e, "RelocateClanMainCity: không đặt lại được thành chính cho tông {ClanName}", clanName);
         }
     }
-    
+
     private async Task CustomRecharge(
         AppDbContext db,
         string charName,
