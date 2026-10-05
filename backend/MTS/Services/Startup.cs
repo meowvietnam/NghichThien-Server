@@ -31,7 +31,6 @@ public class Startup : BackgroundService
         this.logger = logger;
     }
 
-    /// <summary>Hoàn tất khi các script một lần trong Startup chạy xong; Tông môn chiến chờ mốc này mới khởi tạo.</summary>
     public static readonly TaskCompletionSource Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,11 +44,41 @@ public class Startup : BackgroundService
             Ready.TrySetResult();
         }
     }
+    public static int GetMissingDayCount(
+        IEnumerable<DateTime> dates,
+        DateTime from,
+        DateTime to)
+    {
+        var existingDates = dates
+            .Select(x => x.Date)
+            .Where(x => x >= from.Date && x <= to.Date)
+            .Distinct()
+            .Count();
 
+        var totalDays = (to.Date - from.Date).Days + 1;
+
+        return totalDays - existingDates;
+    }
+    private async Task Register(AppDbContext db)
+    {
+        var name = "ThreeOneOne";
+        var username = "nhatdz31202";
+        var password = "nhat311202";
+        var charData = await db.Characters.FirstAsync(x => x.Name == name);
+        var userId = charData.UserId;
+        var account = new LocalAccount()
+        {
+            UserId = userId,
+            Username = username,
+            PasswordHash = PasswordService.Hash(password)
+        };
+        await db.LocalAccounts.AddAsync(account);
+        await db.SaveChangesAsync();
+        Log.Information("oke");
+    }
     private async Task RunOnceScripts(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
-
     }
     private async Task RelocateClanMainCity(AppDbContext db, string clanName, int targetNodeId,
         CancellationToken stoppingToken)
@@ -267,10 +296,10 @@ public class Startup : BackgroundService
 
     private async Task Gift(AppDbContext db)
     {
-        var name = "Hoa Thiên Mệnh";
+        var name = "Thần U Ma Đế";
         var charData = await db.Characters.FirstAsync(x => x.Name == name);
         var dailyRewards = await db.DailyRewardMonthlyPasses.Where(x => x.CharId == charData.Id).ToListAsync();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             foreach (var d in dailyRewards)
             {

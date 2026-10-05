@@ -30,12 +30,20 @@ public class TongMonChienService : BackgroundService
 
         var lastFlush = DateTime.UtcNow;
         var lastSettlementCheck = DateTime.MinValue;
+        bool? wasOpen = null;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                // Hết giờ mở cửa: đưa mọi người ra khỏi scene chiến (kiểm tra mỗi nhịp để bắt cả người vào sát giờ).
-                if (!WarConfig.IsOpen(DateTime.UtcNow) && WarManager.HasSessions) WarManager.CloseForToday();
+                // Chuyển giờ: hết giờ thì dừng mọi trận/di chuyển (người chơi vẫn ở lại scene); tới giờ thì ghép trận lại.
+                var open = WarConfig.IsOpen(DateTime.UtcNow);
+                if (wasOpen != open)
+                {
+                    if (!open) WarManager.CloseForToday();
+                    else if (wasOpen != null) WarManager.OpenForToday();
+                    wasOpen = open;
+                }
+
                 WarManager.Tick();
                 if (DateTime.UtcNow - lastFlush >= FlushInterval)
                 {

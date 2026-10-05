@@ -50,8 +50,8 @@ public static class WarConfig
 
     // ---------------- Giờ mở cửa ----------------
     public const bool ScheduleEnabled = true;
-    public static readonly TimeSpan OpenTime = new(21, 0, 0);
-    public static readonly TimeSpan CloseTime = new(22, 0, 0);
+    public static readonly TimeSpan OpenTime = new(20, 0, 0);
+    public static readonly TimeSpan CloseTime = new(21, 0, 0);
 
     public static bool IsOpen(DateTime utcNow)
     {
@@ -64,6 +64,10 @@ public static class WarConfig
 
     public static string ClosedMessage =>
         $"Tông môn chiến chỉ mở từ {OpenTime:hh\\:mm} đến {CloseTime:hh\\:mm} hằng ngày.";
+
+    /// <summary>Ngoài giờ vẫn vào được scene để xem bản đồ, nhưng không di chuyển/điều rối/giao tranh.</summary>
+    public static string ClosedMoveMessage =>
+        $"Ngoài giờ Tông môn chiến ({OpenTime:hh\\:mm}–{CloseTime:hh\\:mm}) không thể di chuyển.";
 
     // ---------------- HP người chơi ----------------
 

@@ -350,8 +350,7 @@ public static partial class WarManager
     public static WarSnapshot Enter(IWarSession session, CharacterData charData, Models.Clan clan, ClanRole role)
     {
         if (clan.NodeId <= 0) throw new InvalidException("Tông môn chưa có thành trên bản đồ nên không thể tham chiến.");
-        // Ngoài giờ mở cửa (kể cả vào lại sau khi mất kết nối) không được vào.
-        if (!WarConfig.IsOpen(DateTime.UtcNow)) throw new InvalidException(WarConfig.ClosedMessage);
+        // Ngoài giờ mở cửa vẫn vào được scene (xem bản đồ, dùng đan...), chỉ không di chuyển được.
         if (charData.Progression.MaxLevel < WarConfig.MinMaxLevel) throw new InvalidException(WarConfig.MinLevelMessage);
         UpsertClan(clan);
         lock (Sync)
@@ -470,7 +469,6 @@ public static partial class WarManager
     /// </summary>
     public static void CloseForToday()
     {
-        List<IWarSession> kicked;
         lock (Sync)
         {
             if (!initialized) return;
@@ -480,31 +478,57 @@ public static partial class WarManager
                 EndBattle(battle, WarBattleOutcome.Draw, WarBattleEndReason.WarClosed, null, null, now);
             }
 
-            kicked = Sessions.Values.ToList();
-            foreach (var session in kicked)
+            // Ai đang đi dở thì dừng lại: người chơi về node an toàn gần nhất, rối về node của tông (hoặc thành chính).
+            foreach (var unit in Units.Values.Where(x => x.State == WarUnitState.Moving).ToList())
             {
-                Sessions.Remove(session.CharId);
-                ReadySessions.Remove(session.CharId);
-                if (!Units.TryGetValue((WarUnitKind.Player, session.CharId), out var unit)) continue;
-                unit.Player!.LastEnterAt = now;
-                if (unit.State is WarUnitState.Moving or WarUnitState.Holding)
-                {
-                    if (unit.State == WarUnitState.Moving) unit.NodeId = unit.Player.LastSafeNodeId;
-                    unit.ClearRoute();
-                }
-
-                unit.State = WarUnitState.Idle;
-                MarkUnit(unit);
-                ResolveNode(unit.NodeId, now);
+                int target;
+                if (unit.Player != null) target = unit.Player.LastSafeNodeId;
+                else if (Nodes.TryGetValue(unit.NodeId, out var at) && at.OwnerClanId == unit.ClanId) target = unit.NodeId;
+                else target = MainCityOf(unit.ClanId);
+                Relocate(unit, target);
             }
 
             Returning.Clear();
             PublishDelta();
         }
 
-        Log.Information("TongMonChien closed for today, {Count} players removed", kicked.Count);
-        foreach (var session in kicked)
-            session.Kick($"Tông môn chiến đã đóng cửa. {WarConfig.ClosedMessage}");
+        Log.Information("TongMonChien closed for today");
+        NotifyAll($"Đã hết giờ Tông môn chiến. {WarConfig.ClosedMoveMessage}");
+    }
+
+    /// <summary>Tới giờ mở cửa: các node đang có nhiều tông đứng chung được ghép trận lại.</summary>
+    public static void OpenForToday()
+    {
+        lock (Sync)
+        {
+            if (!initialized) return;
+            var now = DateTime.UtcNow;
+            foreach (var nodeId in Units.Values.Where(x => x.State != WarUnitState.Moving)
+                         .Select(x => x.NodeId).Distinct().ToList())
+            {
+                ResolveNode(nodeId, now);
+            }
+
+            PublishDelta();
+        }
+
+        Log.Information("TongMonChien opened for today");
+        NotifyAll("Tông môn chiến đã mở cửa, có thể di chuyển và giao tranh.");
+    }
+
+    private static void NotifyAll(string message)
+    {
+        foreach (var session in SnapshotSessions())
+        {
+            try
+            {
+                session.MemSend(MessageTag.WarNotice, new Network.Models.WarNotice { Message = message });
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "TongMonChien notify failed");
+            }
+        }
     }
 
     public static WarSnapshot GetSnapshot(int charId, Models.Clan clan, ClanRole role)

@@ -36,6 +36,7 @@ public static partial class WarManager
             if (!Units.TryGetValue((WarUnitKind.Player, charId), out var unit))
                 throw new InvalidException("Bạn chưa vào Tông môn chiến.");
             var now = DateTime.UtcNow;
+            if (!WarConfig.IsOpen(now)) throw new InvalidException(WarConfig.ClosedMoveMessage);
             if (unit.ApplyRegen(now)) MarkUnit(unit);
             switch (unit.State)
             {
@@ -254,6 +255,7 @@ public static partial class WarManager
     /// </summary>
     private static void MatchOnEdges(DateTime now)
     {
+        if (!WarConfig.IsOpen(now)) return;
         var movers = Units.Values
             .Where(x => x.State == WarUnitState.Moving && x.Route.Count > 0 && x.NextArrivalAt != null &&
                         x.EdgeSeconds > 0 && x.Hp >= 1 && (x.IsPuppet || ReadySessions.Contains(x.Id)))
@@ -390,6 +392,8 @@ public static partial class WarManager
     /// <summary>Ghép 1v1 theo thứ tự đến node (cùng lúc: người trước rối, rồi ID tăng dần). Rối không đánh rối.</summary>
     private static void MatchAt(int nodeId, List<WarUnit> present, DateTime now)
     {
+        // Ngoài giờ không ghép trận mới; tới giờ mở cửa OpenForToday sẽ xét lại các node.
+        if (!WarConfig.IsOpen(now)) return;
         var free = present.Where(CanBeMatched)
             .OrderBy(x => x.ArrivedAt)
             .ThenBy(x => x.IsPuppet ? 1 : 0)

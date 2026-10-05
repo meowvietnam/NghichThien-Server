@@ -199,6 +199,7 @@ public static partial class WarManager
             EnsureInitialized();
             var unit = GetClanPuppet(clan.Id, puppetId);
             var now = DateTime.UtcNow;
+            if (!WarConfig.IsOpen(now)) throw new InvalidException(WarConfig.ClosedMoveMessage);
             if (unit.ApplyRegen(now)) MarkUnit(unit);
             if (unit.State != WarUnitState.Idle)
                 throw new InvalidException(unit.State == WarUnitState.Moving
