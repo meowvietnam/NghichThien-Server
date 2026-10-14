@@ -44,6 +44,7 @@ public class Startup : BackgroundService
             Ready.TrySetResult();
         }
     }
+
     public static int GetMissingDayCount(
         IEnumerable<DateTime> dates,
         DateTime from,
@@ -59,6 +60,7 @@ public class Startup : BackgroundService
 
         return totalDays - existingDates;
     }
+
     private async Task Register(AppDbContext db)
     {
         var name = "ThreeOneOne";
@@ -76,10 +78,12 @@ public class Startup : BackgroundService
         await db.SaveChangesAsync();
         Log.Information("oke");
     }
+
     private async Task RunOnceScripts(CancellationToken stoppingToken)
     {
         await using var db = await Program.CreateDbAsync();
     }
+
     private async Task RelocateClanMainCity(AppDbContext db, string clanName, int targetNodeId,
         CancellationToken stoppingToken)
     {
@@ -95,11 +99,13 @@ public class Startup : BackgroundService
             if (clan.NodeId == targetNodeId)
             {
                 // Chạy lại (server khởi động lại mà quên comment dòng gọi): không reset lãnh thổ lần nữa.
-                Log.Information("RelocateClanMainCity: tông {ClanName} đã ở node {Target}, bỏ qua", clanName, targetNodeId);
+                Log.Information("RelocateClanMainCity: tông {ClanName} đã ở node {Target}, bỏ qua", clanName,
+                    targetNodeId);
                 return;
             }
 
             var maps = GameConfig.MapManager.Maps.ToDictionary(x => x.Id);
+
             bool IsNormalNode(int nodeId) =>
                 maps.TryGetValue(nodeId, out var m) && m.MapType != Game.AllMaps.MapType.Stronghold;
 
@@ -112,13 +118,15 @@ public class Startup : BackgroundService
                 .ToDictionary(g => g.Key, g => g.First().Id);
             if (!IsNormalNode(targetNodeId) || mainCityOwners.ContainsKey(targetNodeId))
             {
-                Log.Error("RelocateClanMainCity: node {Target} không hợp lệ (không tồn tại, là cứ điểm hoặc thành chính tông khác)",
+                Log.Error(
+                    "RelocateClanMainCity: node {Target} không hợp lệ (không tồn tại, là cứ điểm hoặc thành chính tông khác)",
                     targetNodeId);
                 return;
             }
 
             var now = DateTime.UtcNow;
             var rows = await db.ClanNodes.ToDictionaryAsync(x => x.NodeId, stoppingToken);
+
             void SetOwner(int nodeId, int? owner)
             {
                 if (!rows.TryGetValue(nodeId, out var row))
@@ -195,8 +203,9 @@ public class Startup : BackgroundService
             }
 
             int HomeOf(int clanId) =>
-                clanId == displacedClanId && compensationNodeId is { } comp ? comp
-                : mainCityOwners.FirstOrDefault(x => x.Value == clanId).Key;
+                clanId == displacedClanId && compensationNodeId is { } comp
+                    ? comp
+                    : mainCityOwners.FirstOrDefault(x => x.Value == clanId).Key;
 
             // 3) Dời đơn vị: tông đổi vị trí về thành chính mới; tông khác đang đứng ở node đích về node bù/thành chính.
             var participants = await db.WarParticipants
@@ -294,12 +303,11 @@ public class Startup : BackgroundService
             charData.Name, charData.Id, amountVnd, moneyVipSnapshot, moneyVipReward, key);
     }
 
-    private async Task Gift(AppDbContext db)
+    private async Task Gift(AppDbContext db, string name, int count)
     {
-        var name = "Thần U Ma Đế";
         var charData = await db.Characters.FirstAsync(x => x.Name == name);
         var dailyRewards = await db.DailyRewardMonthlyPasses.Where(x => x.CharId == charData.Id).ToListAsync();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < count; i++)
         {
             foreach (var d in dailyRewards)
             {

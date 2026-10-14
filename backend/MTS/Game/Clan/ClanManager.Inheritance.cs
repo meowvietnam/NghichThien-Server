@@ -119,7 +119,7 @@ public static partial class ClanManager
             Config.MaxInheritanceSlotsPerColumn < 0)
             throw new InvalidException("Cấu hình số ô truyền thừa không hợp lệ");
 
-        var slots = (long)Config.BaseInheritanceSlots +
+        var slots = Config.BaseInheritanceSlots +
                     (long)Math.Max(0, clanLevel - 1) * Config.InheritanceSlotsPerLevel;
         return (int)Math.Clamp(slots, 0, Config.MaxInheritanceSlotsPerColumn);
     }

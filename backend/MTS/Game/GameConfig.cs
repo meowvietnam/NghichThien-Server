@@ -13,11 +13,6 @@ using MTS.Game.Managers;
 using MTS.Game.Snapshot;
 using MTS.Game.Social;
 using MTS.Models;
-using Network;
-using Network.Extensions;
-using Newtonsoft.Json;
-using MTS.Game.Gacha;
-using Serilog;
 using static MTS.Utils.Utils;
 
 namespace MTS.Game;
@@ -46,7 +41,7 @@ public static class GameConfig
     public static int[] TrungSinhPrices = new[] { 500,1000, 2000, 5000, 10000 };
     public const int OriginalMoney = 20;
     public const int NewCharacterLinhThachBonus = 20_000;
-    public static bool EnableWebPay { get; set; } = true;
+    public static bool EnableWebPay { get; set; } = false;
     
     public static readonly string[] tamCanh = new[]
     {

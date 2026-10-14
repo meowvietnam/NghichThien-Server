@@ -230,6 +230,7 @@ public partial class CharacterData
             }
 
             newHp = Math.Clamp(newHp, 0, Stats.SinhMenh);
+            Stats.SetLinhThach(newReward.Money + Stats.LinhThach);
             Stats.SetHp(newHp);
             Stats.SetThoNguyen(request.CurrentThoNguyen);
             Stats.SetThanThuc(request.CurrentThanThuc);
@@ -271,13 +272,9 @@ public partial class CharacterData
             };
             var newPoints = MonsterKill.Points + addPoints;
             MonsterKill.SetPoints(newPoints);
-            // Fire-and-forget: không chặn luồng xử lý kết quả combat chờ DB;
-            // TryAddSoulEssenceFromMonsterKill tự bắt và log lỗi bên trong.
             _ = ClanManager.TryAddSoulEssenceFromMonsterKill(Id);
         }
-
         Stats.SetTamCanh(newTamCanh);
-
         return new ResultCombatResult()
         {
             Success = true,
