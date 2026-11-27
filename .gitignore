@@ -4,3 +4,4 @@
 backend/MTS/Logs
 frontend/mts-web/mts-web-build
 backend/.vs
+backend/MTS/Data/google-play-service-account.json
