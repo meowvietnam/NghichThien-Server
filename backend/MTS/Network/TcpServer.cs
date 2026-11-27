@@ -82,6 +82,9 @@ public class TcpServer : BaseTcpServer
     }
     public void AuthenticatedSuccess(UnauthenticatedClient client)
     {
+        // Protocol được chuyển sang Client mới nên OnDisconnected của UnauthenticatedClient sẽ không bao giờ chạy;
+        // phải xoá ở đây, nếu không nó giữ tham chiếu tới Tcp -> Client -> CharacterData mãi mãi.
+        unauthenticatedClients.TryRemove(client.Id, out _);
         var newClient = new Client(client);
 
         clients.TryAdd(client.Id, newClient);

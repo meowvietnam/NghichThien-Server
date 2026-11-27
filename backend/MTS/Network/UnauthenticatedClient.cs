@@ -110,6 +110,8 @@ public class UnauthenticatedClient : ClientConnection
                         isAuthenticated = true;
                         disconnectedClient.TcpClient.Reconnect(client.TcpClient);
                         TcpServer.Instance.OnReconnected(disconnectedClient);
+                        // Socket đã chuyển sang client cũ, read loop của client tạm dừng mà không gọi OnDisconnected.
+                        TcpServer.Instance.Remove(client);
                         tcp = disconnectedClient.TcpClient;
                         result = new Result()
                         {
@@ -151,6 +153,21 @@ public class UnauthenticatedClient : ClientConnection
         TcpClient = new TcpClient(client);
         AddProtocol(TcpClient);
         TcpClient.StartRead();
+    }
+
+    // Trước khi xác thực chỉ có Connect/Reconnect/CheckVersion, đều rất nhỏ.
+    public override bool ValidatePacketSize(int size)
+    {
+        return size >= 0 && size <= 1024;
+    }
+
+    protected override void OnError(IProtocol<MessageTag> protocol, Exception ex)
+    {
+        // Gói bị từ chối vẫn còn phần thân trong stream, đọc tiếp sẽ lệch header -> ngắt luôn.
+        if (ex is InvalidPacketSizeException)
+        {
+            protocol.Disconnect();
+        }
     }
 
     private void ChangeState(IMessageState<MessageTag, MessageState> state)

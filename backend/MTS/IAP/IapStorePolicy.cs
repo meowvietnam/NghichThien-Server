@@ -11,7 +11,7 @@ public static class IapStorePolicy
 {
     private static readonly HashSet<Store> DisabledStores = [Store.AppStore];
 
-    public const string DisabledMessage = "Tạm thời chưa hỗ trợ nạp qua App Store, hãy nạp tại https://play.nghichthien.online";
+    public const string DisabledMessage = "Tạm thời chưa hỗ trợ nạp qua App Store";
 
     public static bool IsDisabled(Store store) => DisabledStores.Contains(store);
 
